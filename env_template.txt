@@ -1,0 +1,16 @@
+# Langfuse Configuration (Observability)
+LANGFUSE_PUBLIC_KEY=your_langfuse_public_key_here
+LANGFUSE_SECRET_KEY=your_langfuse_secret_key_here
+LANGFUSE_HOST=https://cloud.langfuse.com
+
+# LangChain Configuration
+LANGCHAIN_PROJECT=wealthai1-chat
+LANGCHAIN_API_KEY=your_langchain_api_key_here
+LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+
+# OpenAI Configuration (if needed)
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Modal Configuration
+MODAL_ENDPOINT=https://anjanr--mf-assistant-web.modal.run/
+

@@ -1,253 +1,446 @@
 import os
 import json
-import sqlite3
-from typing import Dict, Any, Optional
-from datetime import datetime
 import uuid
+import time
+import logging
+from typing import Dict, Any, Optional, List, Callable
+from datetime import datetime
+import httpx
+from dotenv import load_dotenv
+from dataclasses import dataclass, asdict
+from collections import deque
+import asyncio
+
+# Load environment variables
+load_dotenv()
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+@dataclass
+class ObservabilityEvent:
+    """Custom observability event structure"""
+    trace_id: str
+    event_type: str
+    event_data: Dict[str, Any]
+    timestamp: float
+    duration: Optional[float] = None
+
+@dataclass
+class ConversationMemory:
+    """Custom conversation memory for LangChain"""
+    conversation_id: str
+    messages: List[Dict[str, str]]
+    metadata: Dict[str, Any]
+    created_at: float
+    last_updated: float
+
+@dataclass
+class ChainStep:
+    """Custom LangChain step structure"""
+    step_id: str
+    step_type: str
+    input_data: Dict[str, Any]
+    output_data: Dict[str, Any]
+    execution_time: float
+    status: str
+    error_message: Optional[str] = None
+
+class CustomObservability:
+    """Custom observability system without database"""
+    
+    def __init__(self, max_events: int = 1000):
+        self.events: deque = deque(maxlen=max_events)
+        self.metrics: Dict[str, Any] = {
+            "total_requests": 0,
+            "successful_requests": 0,
+            "failed_requests": 0,
+            "avg_processing_time": 0.0,
+            "total_processing_time": 0.0
+        }
+        self.traces: Dict[str, List[ObservabilityEvent]] = {}
+    
+    def log_event(self, trace_id: str, event_type: str, event_data: Dict[str, Any], duration: Optional[float] = None):
+        """Log an observability event"""
+        event = ObservabilityEvent(
+            trace_id=trace_id,
+            event_type=event_type,
+            event_data=event_data,
+            timestamp=time.time(),
+            duration=duration
+        )
+        
+        self.events.append(event)
+        
+        # Store in trace-specific list
+        if trace_id not in self.traces:
+            self.traces[trace_id] = []
+        self.traces[trace_id].append(event)
+        
+        logger.info(f"🔍 OBSERVABILITY: {event_type} - {trace_id}")
+    
+    def get_trace_events(self, trace_id: str) -> List[Dict[str, Any]]:
+        """Get all events for a specific trace"""
+        if trace_id not in self.traces:
+            return []
+        
+        return [asdict(event) for event in self.traces[trace_id]]
+    
+    def get_performance_metrics(self) -> Dict[str, Any]:
+        """Get current performance metrics"""
+        return self.metrics.copy()
+    
+    def update_metrics(self, success: bool, processing_time: float):
+        """Update performance metrics"""
+        self.metrics["total_requests"] += 1
+        self.metrics["total_processing_time"] += processing_time
+        
+        if success:
+            self.metrics["successful_requests"] += 1
+        else:
+            self.metrics["failed_requests"] += 1
+        
+        # Calculate average processing time
+        if self.metrics["total_requests"] > 0:
+            self.metrics["avg_processing_time"] = (
+                self.metrics["total_processing_time"] / self.metrics["total_requests"]
+            )
+
+class CustomLangChain:
+    """Custom LangChain implementation without external dependencies"""
+    
+    def __init__(self, max_memory: int = 100):
+        self.memories: Dict[str, ConversationMemory] = {}
+        self.chains: Dict[str, List[ChainStep]] = {}
+        self.prompt_templates: Dict[str, str] = {}
+        self.tools: Dict[str, Callable] = {}
+        self.max_memory = max_memory
+    
+    def add_prompt_template(self, name: str, template: str):
+        """Add a prompt template"""
+        self.prompt_templates[name] = template
+        logger.info(f"📝 LANGCHAIN: Added prompt template '{name}'")
+    
+    def format_prompt(self, template_name: str, **kwargs) -> str:
+        """Format a prompt using a template"""
+        if template_name not in self.prompt_templates:
+            raise ValueError(f"Prompt template '{template_name}' not found")
+        
+        template = self.prompt_templates[template_name]
+        return template.format(**kwargs)
+    
+    def add_tool(self, name: str, tool_function: Callable):
+        """Add a tool to the LangChain"""
+        self.tools[name] = tool_function
+        logger.info(f"🔧 LANGCHAIN: Added tool '{name}'")
+    
+    def execute_tool(self, tool_name: str, **kwargs) -> Any:
+        """Execute a tool"""
+        if tool_name not in self.tools:
+            raise ValueError(f"Tool '{tool_name}' not found")
+        
+        return self.tools[tool_name](**kwargs)
+    
+    def create_memory(self, conversation_id: str) -> str:
+        """Create a new conversation memory"""
+        memory = ConversationMemory(
+            conversation_id=conversation_id,
+            messages=[],
+            metadata={},
+            created_at=time.time(),
+            last_updated=time.time()
+        )
+        
+        self.memories[conversation_id] = memory
+        logger.info(f"🧠 LANGCHAIN: Created memory for conversation '{conversation_id}'")
+        return conversation_id
+    
+    def add_message_to_memory(self, conversation_id: str, role: str, content: str):
+        """Add a message to conversation memory"""
+        if conversation_id not in self.memories:
+            self.create_memory(conversation_id)
+        
+        memory = self.memories[conversation_id]
+        memory.messages.append({
+            "role": role,
+            "content": content,
+            "timestamp": time.time()
+        })
+        memory.last_updated = time.time()
+        
+        # Limit memory size
+        if len(memory.messages) > self.max_memory:
+            memory.messages = memory.messages[-self.max_memory:]
+    
+    def get_conversation_history(self, conversation_id: str, limit: int = 10) -> List[Dict[str, str]]:
+        """Get conversation history"""
+        if conversation_id not in self.memories:
+            return []
+        
+        memory = self.memories[conversation_id]
+        return memory.messages[-limit:] if limit > 0 else memory.messages
+    
+    def create_chain(self, chain_id: str) -> str:
+        """Create a new execution chain"""
+        self.chains[chain_id] = []
+        logger.info(f"⛓️ LANGCHAIN: Created chain '{chain_id}'")
+        return chain_id
+    
+    def add_chain_step(self, chain_id: str, step_type: str, input_data: Dict[str, Any], 
+                      output_data: Dict[str, Any], execution_time: float, 
+                      status: str = "success", error_message: Optional[str] = None):
+        """Add a step to a chain"""
+        if chain_id not in self.chains:
+            self.create_chain(chain_id)
+        
+        step = ChainStep(
+            step_id=str(uuid.uuid4()),
+            step_type=step_type,
+            input_data=input_data,
+            output_data=output_data,
+            execution_time=execution_time,
+            status=status,
+            error_message=error_message
+        )
+        
+        self.chains[chain_id].append(step)
+        logger.info(f"⛓️ LANGCHAIN: Added step '{step_type}' to chain '{chain_id}'")
+    
+    def get_chain_execution(self, chain_id: str) -> List[Dict[str, Any]]:
+        """Get chain execution history"""
+        if chain_id not in self.chains:
+            return []
+        
+        return [asdict(step) for step in self.chains[chain_id]]
 
 class ChatAICore:
-    def __init__(self, db_path: str = "chat_ai_data.db"):
-        """Initialize ChatAI core with database connection"""
-        self.db_path = db_path
-        self.init_database()
+    def __init__(self):
+        """Initialize ChatAI core with custom observability and LangChain"""
+        self.modal_endpoint = "https://anjanr--mf-assistant-web.modal.run/chat"
         
-    def init_database(self):
-        """Initialize the database with required tables"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # Create conversations table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS conversations (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    conversation_id TEXT UNIQUE,
-                    user_prompt TEXT,
-                    ai_response TEXT,
-                    system_prompt TEXT,
-                    model_used TEXT,
-                    provider TEXT,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    rating REAL,
-                    feedback_comment TEXT
-                )
-            ''')
-            
-            # Create ratings table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS ratings (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    trace_id TEXT UNIQUE,
-                    conversation_id TEXT,
-                    user_rating INTEGER,
-                    feedback_comment TEXT,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (conversation_id) REFERENCES conversations (conversation_id)
-                )
-            ''')
-            
-            conn.commit()
-            conn.close()
-            print("✅ ChatAI database initialized successfully")
-            
-        except Exception as e:
-            print(f"❌ Error initializing ChatAI database: {e}")
+        # Initialize custom systems
+        self.observability = CustomObservability()
+        self.langchain = CustomLangChain()
+        
+        # Setup default prompt templates
+        self._setup_default_templates()
+        
+        logger.info("✅ ChatAI Core initialized with custom observability and LangChain")
     
-    def generate_response(self, prompt: str, system_prompt: Optional[str] = None) -> Dict[str, Any]:
-        """Generate AI response using the existing backend logic"""
+    def _setup_default_templates(self):
+        """Setup default prompt templates"""
+        self.langchain.add_prompt_template(
+            "financial_expert",
+            "You are a ChatGPT-style financial expert. FORMAT: Start with 📚 DEFINITION (30 words max), then 💡 KEY POINTS (1 line each), add 🎯 EXAMPLE (1-2 lines), end with ✅ PRACTICAL TAKEAWAY (1 line). Use emojis, bullet points, and clear sections. Keep it concise but engaging like ChatGPT.\n\nUser Question: {prompt}"
+        )
+        
+        self.langchain.add_prompt_template(
+            "simple_response",
+            "You are a helpful financial assistant. Answer the following question clearly and concisely:\n\n{prompt}"
+        )
+        
+        self.langchain.add_prompt_template(
+            "detailed_analysis",
+            "You are a financial analyst. Provide a detailed analysis of the following topic:\n\n{prompt}\n\nInclude:\n- Definition and explanation\n- Key benefits and risks\n- Market considerations\n- Practical recommendations"
+        )
+    
+    async def _call_modal_model(self, prompt: str, system_prompt: Optional[str], trace_id: str) -> Dict[str, Any]:
+        """Call the Modal model endpoint with observability"""
+        start_time = time.time()
+        
         try:
-            # Default system prompt if none provided
-            if not system_prompt:
-                system_prompt = "You are a ChatGPT-style financial expert. FORMAT: Start with 📚 DEFINITION (30 words max), then 💡 KEY POINTS (1 line each), add 🎯 EXAMPLE (1-2 lines), end with ✅ PRACTICAL TAKEAWAY (1 line). Use emojis, bullet points, and clear sections. Keep it concise but engaging like ChatGPT."
+            # Prepare the request payload
+            payload = {
+                "prompt": prompt,
+                "system_prompt": system_prompt or "You are a ChatGPT-style financial expert."
+            }
             
-            # Generate response using the enhanced sample response generator
-            response = self._generate_sample_response(prompt)
+            # Log the request
+            self.observability.log_event(trace_id, "modal_request", payload)
             
-            # Store conversation in database
-            conversation_id = str(uuid.uuid4())
-            self._store_conversation(
-                conversation_id=conversation_id,
-                user_prompt=prompt,
-                ai_response=response,
-                system_prompt=system_prompt,
-                model_used="mf-assistant:latest",
-                provider="langchain_modal"
-            )
+            # Make the request to Modal
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    self.modal_endpoint,
+                    json=payload,
+                    headers={"Content-Type": "application/json"}
+                )
+                
+                execution_time = time.time() - start_time
+                
+                if response.status_code == 200:
+                    modal_data = response.json()
+                    
+                    # Log the response
+                    self.observability.log_event(trace_id, "modal_response", {
+                        "status_code": response.status_code,
+                        "response_id": modal_data.get("response_id"),
+                        "model_used": modal_data.get("model_used"),
+                        "execution_time": execution_time
+                    }, duration=execution_time)
+                    
+                    return modal_data
+                else:
+                    error_msg = f"Modal API returned status {response.status_code}: {response.text}"
+                    self.observability.log_event(trace_id, "modal_error", {
+                        "status_code": response.status_code,
+                        "error": response.text,
+                        "execution_time": execution_time
+                    }, duration=execution_time)
+                    
+                    raise Exception(f"Modal API failed: {error_msg}")
+                    
+        except Exception as e:
+            execution_time = time.time() - start_time
+            self.observability.log_event(trace_id, "modal_exception", {
+                "error": str(e),
+                "execution_time": execution_time
+            }, duration=execution_time)
+            
+            raise Exception(f"Modal API exception: {e}")
+
+    async def generate_response(self, prompt: str, system_prompt: Optional[str] = None, 
+                              conversation_id: Optional[str] = None,
+                              use_template: Optional[str] = None,
+                              template_params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Generate AI response using custom LangChain and observability"""
+        trace_id = str(uuid.uuid4())
+        chain_id = f"chain_{trace_id}"
+        start_time = time.time()
+        
+        try:
+            # Create chain for this request
+            self.langchain.create_chain(chain_id)
+            
+            # Log the start of the request
+            self.observability.log_event(trace_id, "request_start", {
+                "prompt": prompt,
+                "system_prompt": system_prompt,
+                "conversation_id": conversation_id,
+                "use_template": use_template
+            })
+            
+            # Add to chain
+            self.langchain.add_chain_step(chain_id, "request_start", {
+                "prompt": prompt,
+                "system_prompt": system_prompt
+            }, {}, 0.0)
+            
+            # Process prompt template if specified
+            final_prompt = prompt
+            if use_template and template_params:
+                template_start = time.time()
+                final_prompt = self.langchain.format_prompt(use_template, **template_params)
+                template_time = time.time() - template_start
+                
+                self.langchain.add_chain_step(chain_id, "prompt_template", {
+                    "template": use_template,
+                    "params": template_params
+                }, {"formatted_prompt": final_prompt}, template_time)
+            
+            # Call Modal model
+            modal_response = await self._call_modal_model(final_prompt, system_prompt, trace_id)
+            
+            # Add to chain
+            self.langchain.add_chain_step(chain_id, "modal_call", {
+                "prompt": final_prompt,
+                "system_prompt": system_prompt
+            }, {"response": modal_response.get("response", "")}, 
+               modal_response.get("processing_time", 0.0))
+            
+            # Update conversation memory if conversation_id provided
+            if conversation_id:
+                self.langchain.add_message_to_memory(conversation_id, "user", prompt)
+                self.langchain.add_message_to_memory(conversation_id, "assistant", 
+                                                   modal_response.get("response", ""))
+            
+            processing_time = time.time() - start_time
+            
+            # Log successful response
+            self.observability.log_event(trace_id, "response_success", {
+                "processing_time": processing_time,
+                "response_length": len(modal_response.get("response", "")),
+                "chain_id": chain_id
+            }, duration=processing_time)
+            
+            # Update metrics
+            self.observability.update_metrics(True, processing_time)
             
             return {
-                "response": response,
-                "model_used": "mf-assistant:latest",
-                "provider": "langchain_modal",
-                "conversation_id": conversation_id
+                "response": modal_response.get("response", "Sorry, I couldn't process your request."),
+                "model_used": modal_response.get("model_used", "modal-mf-assistant"),
+                "provider": "modal",
+                "trace_id": trace_id,
+                "chain_id": chain_id,
+                "conversation_id": conversation_id,
+                "processing_time": processing_time,
+                "modal_response_id": modal_response.get("response_id")
             }
             
         except Exception as e:
-            print(f"❌ Error generating response: {e}")
+            processing_time = time.time() - start_time
+            error_msg = f"Error generating response: {str(e)}"
+            
+            # Log error
+            self.observability.log_event(trace_id, "response_error", {
+                "error": str(e),
+                "processing_time": processing_time,
+                "chain_id": chain_id
+            }, duration=processing_time)
+            
+            # Add error to chain
+            self.langchain.add_chain_step(chain_id, "error", {
+                "error": str(e)
+            }, {}, processing_time, status="error", error_message=str(e))
+            
+            # Update metrics
+            self.observability.update_metrics(False, processing_time)
+            
+            logger.error(f"❌ {error_msg}")
+            
             return {
                 "response": "Sorry, I couldn't process your request. Please try again.",
                 "model_used": "error",
                 "provider": "error",
-                "conversation_id": None
+                "trace_id": trace_id,
+                "chain_id": chain_id,
+                "conversation_id": conversation_id,
+                "processing_time": processing_time,
+                "error": str(e)
             }
     
-    def _generate_sample_response(self, prompt: str) -> str:
-        """Generate a sample response (replace with your actual AI integration)"""
-        # This is a placeholder - replace with your actual AI backend integration
-        sample_responses = {
-            "mutual fund": "📚 DEFINITION: A mutual fund is a type of investment vehicle that pools money from many investors to purchase a portfolio of stocks, bonds, or other securities.\n\n💡 KEY POINTS:\n• Mutual funds offer diversification and professional management\n• Investors can choose from various fund types based on goals and risk tolerance\n\n🎯 EXAMPLE: Vanguard 500 Index Fund tracks the S&P 500 index and offers broad US stock market exposure.\n\n✅ PRACTICAL TAKEAWAY: Investing in mutual funds provides access to diversified portfolios without individual security selection.",
-            "etf": "📚 DEFINITION: An ETF (Exchange-Traded Fund) is a type of investment fund that trades on stock exchanges like individual stocks.\n\n💡 KEY POINTS:\n• ETFs offer diversification with lower expense ratios than mutual funds\n• They provide real-time pricing and intraday trading flexibility\n\n🎯 EXAMPLE: SPY (SPDR S&P 500 ETF) is one of the most popular ETFs tracking the S&P 500 index.\n\n✅ PRACTICAL TAKEAWAY: ETFs combine the benefits of mutual funds with the trading flexibility of stocks.",
-            "stock": "📚 DEFINITION: A stock represents ownership in a company, giving shareholders a claim on the company's assets and earnings.\n\n💡 KEY POINTS:\n• Stocks offer potential for capital appreciation and dividend income\n• They carry higher risk but potentially higher returns than bonds\n\n🎯 EXAMPLE: Apple Inc. (AAPL) stock represents ownership in the technology company.\n\n✅ PRACTICAL TAKEAWAY: Stocks are fundamental building blocks for long-term wealth building.",
-            "bond": "📚 DEFINITION: A bond is a fixed-income security that represents a loan made by an investor to a borrower, typically corporate or governmental.\n\n💡 KEY POINTS:\n• Bonds provide regular interest payments and return of principal at maturity\n• They are generally considered lower risk than stocks but offer lower potential returns\n\n🎯 EXAMPLE: US Treasury bonds are government-issued bonds considered among the safest investments.\n\n✅ PRACTICAL TAKEAWAY: Bonds provide income and stability to investment portfolios.",
-            "dividend": "📚 DEFINITION: A dividend is a distribution of profits by a corporation to its shareholders, usually paid in cash or additional shares.\n\n💡 KEY POINTS:\n• Dividends provide regular income to shareholders\n• Companies with stable earnings typically pay consistent dividends\n\n🎯 EXAMPLE: Coca-Cola (KO) has paid quarterly dividends for over 50 years, making it a dividend aristocrat.\n\n✅ PRACTICAL TAKEAWAY: Dividend-paying stocks can provide income and potential for growth.",
-            "portfolio": "📚 DEFINITION: A portfolio is a collection of financial investments like stocks, bonds, mutual funds, and other assets.\n\n💡 KEY POINTS:\n• Diversification across different asset classes reduces risk\n• Regular rebalancing helps maintain target allocation\n\n🎯 EXAMPLE: A balanced portfolio might include 60% stocks, 30% bonds, and 10% cash.\n\n✅ PRACTICAL TAKEAWAY: Building a diversified portfolio is key to long-term investment success.",
-            "diversification": "📚 DEFINITION: Diversification is an investment strategy that spreads money across different assets to reduce risk.\n\n💡 KEY POINTS:\n• Don't put all your eggs in one basket - spread investments across sectors\n• Diversification can reduce portfolio volatility without sacrificing returns\n\n🎯 EXAMPLE: Instead of investing only in tech stocks, diversify across healthcare, finance, and consumer goods.\n\n✅ PRACTICAL TAKEAWAY: Diversification is essential for managing investment risk.",
-            "risk": "📚 DEFINITION: Investment risk is the possibility of losing money or not achieving expected returns on an investment.\n\n💡 KEY POINTS:\n• Higher potential returns typically come with higher risk\n• Understanding your risk tolerance helps in investment decisions\n\n🎯 EXAMPLE: Stocks are riskier than bonds but historically offer higher returns over time.\n\n✅ PRACTICAL TAKEAWAY: Balance risk and return based on your financial goals and timeline.",
-            "retirement": "📚 DEFINITION: Retirement planning involves saving and investing to ensure financial security after leaving the workforce.\n\n💡 KEY POINTS:\n• Start saving early to benefit from compound interest\n• Consider tax-advantaged accounts like 401(k)s and IRAs\n\n🎯 EXAMPLE: Contributing $500 monthly to a 401(k) starting at age 25 could grow to over $1 million by age 65.\n\n✅ PRACTICAL TAKEAWAY: Early and consistent retirement saving is crucial for financial security.",
-            "compound": "📚 DEFINITION: Compound interest is when you earn interest on both your original investment and accumulated interest.\n\n💡 KEY POINTS:\n• Time is your greatest ally in compound growth\n• Regular contributions accelerate wealth building\n\n🎯 EXAMPLE: $10,000 invested at 7% annual return grows to $19,672 in 10 years through compounding.\n\n✅ PRACTICAL TAKEAWAY: Start investing early to maximize the power of compound interest.",
-            "index": "📚 DEFINITION: An index is a statistical measure that tracks the performance of a group of securities representing a market segment.\n\n💡 KEY POINTS:\n• Index funds provide broad market exposure at low cost\n• They typically outperform most actively managed funds over time\n\n🎯 EXAMPLE: The S&P 500 index tracks 500 large US companies and is a benchmark for market performance.\n\n✅ PRACTICAL TAKEAWAY: Index investing is a simple, effective strategy for most investors.",
-            "expense ratio": "📚 DEFINITION: An expense ratio is the annual fee charged by mutual funds and ETFs, expressed as a percentage of assets.\n\n💡 KEY POINTS:\n• Lower expense ratios mean more money stays in your pocket\n• Index funds typically have lower expense ratios than active funds\n\n🎯 EXAMPLE: A 1% expense ratio on a $10,000 investment costs $100 annually in fees.\n\n✅ PRACTICAL TAKEAWAY: Choose low-cost funds to maximize your investment returns.",
-            "asset allocation": "📚 DEFINITION: Asset allocation is the distribution of investments across different asset classes like stocks, bonds, and cash.\n\n💡 KEY POINTS:\n• Allocation should match your risk tolerance and time horizon\n• Younger investors can typically take more risk with higher stock allocations\n\n🎯 EXAMPLE: A 30-year-old might allocate 80% to stocks and 20% to bonds, while a 60-year-old might reverse this.\n\n✅ PRACTICAL TAKEAWAY: Proper asset allocation is fundamental to investment success.",
-            "market cap": "📚 DEFINITION: Market capitalization is the total value of a company's outstanding shares, calculated by share price × number of shares.\n\n💡 KEY POINTS:\n• Large-cap companies are generally more stable but may grow slower\n• Small-cap companies offer higher growth potential but more volatility\n\n🎯 EXAMPLE: Apple's market cap of $3 trillion makes it a large-cap stock, while smaller companies under $2 billion are small-cap.\n\n✅ PRACTICAL TAKEAWAY: Market cap helps categorize companies by size and investment characteristics.",
-            "bull market": "📚 DEFINITION: A bull market is a period of rising stock prices, typically accompanied by investor optimism and economic growth.\n\n💡 KEY POINTS:\n• Bull markets can last for years and provide significant returns\n• Stay invested during bull markets to capture growth\n\n🎯 EXAMPLE: The 2009-2020 bull market saw the S&P 500 rise over 400% from its financial crisis low.\n\n✅ PRACTICAL TAKEAWAY: Bull markets create wealth-building opportunities for patient investors.",
-            "bear market": "📚 DEFINITION: A bear market is a period of falling stock prices, typically defined as a 20% or greater decline from recent highs.\n\n💡 KEY POINTS:\n• Bear markets are normal parts of the investment cycle\n• They can present buying opportunities for long-term investors\n\n🎯 EXAMPLE: The 2020 COVID-19 bear market was the shortest in history, lasting just 33 days.\n\n✅ PRACTICAL TAKEAWAY: Bear markets are temporary and often create opportunities to buy quality investments at lower prices."
-        }
-        
-        # Check if prompt contains any keywords
-        prompt_lower = prompt.lower()
-        
-        # Sort keywords by length (longest first) to match multi-word terms first
-        sorted_keywords = sorted(sample_responses.keys(), key=len, reverse=True)
-        
-        for keyword in sorted_keywords:
-            if keyword in prompt_lower:
-                return sample_responses[keyword]
-        
-        # If no specific keyword found, provide a helpful response based on the question
-        if any(word in prompt_lower for word in ["what", "how", "why", "when", "where", "which", "who"]):
-            return "📚 DEFINITION: I'd be happy to help with your specific financial question.\n\n💡 KEY POINTS:\n• Please provide more details about your investment topic\n• I can explain concepts, strategies, or specific financial products\n\n🎯 EXAMPLE: Try asking about specific topics like 'mutual funds', 'retirement planning', or 'risk management'.\n\n✅ PRACTICAL TAKEAWAY: The more specific your question, the better I can assist with your financial education."
-        
-        # For general statements or greetings, provide a brief, helpful response
-        return "📚 DEFINITION: I'm your AI financial assistant, ready to help with investment questions.\n\n💡 KEY POINTS:\n• Ask me about any financial topic or investment concept\n• I provide clear, structured explanations with practical examples\n\n🎯 EXAMPLE: Try asking 'What is a mutual fund?' or 'How does compound interest work?'\n\n✅ PRACTICAL TAKEAWAY: I'm here to help you understand investing and make informed financial decisions."
+    def get_observability_logs(self, trace_id: str) -> List[Dict[str, Any]]:
+        """Get observability logs for a specific trace"""
+        return self.observability.get_trace_events(trace_id)
     
-    def _store_conversation(self, conversation_id: str, user_prompt: str, ai_response: str, 
-                           system_prompt: str, model_used: str, provider: str):
-        """Store conversation in database"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                INSERT INTO conversations 
-                (conversation_id, user_prompt, ai_response, system_prompt, model_used, provider)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (conversation_id, user_prompt, ai_response, system_prompt, model_used, provider))
-            
-            conn.commit()
-            conn.close()
-            
-        except Exception as e:
-            print(f"❌ Error storing conversation: {e}")
+    def get_performance_metrics(self) -> Dict[str, Any]:
+        """Get performance metrics"""
+        return self.observability.get_performance_metrics()
     
-    def store_rating(self, trace_id: str, user_rating: int, feedback_comment: str = "") -> bool:
-        """Store user rating and feedback"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # Store rating
-            cursor.execute('''
-                INSERT OR REPLACE INTO ratings 
-                (trace_id, user_rating, feedback_comment)
-                VALUES (?, ?, ?)
-            ''', (trace_id, user_rating, feedback_comment))
-            
-            # Update conversation with rating
-            cursor.execute('''
-                UPDATE conversations 
-                SET rating = ?, feedback_comment = ?
-                WHERE conversation_id = ?
-            ''', (user_rating, feedback_comment, trace_id))
-            
-            conn.commit()
-            conn.close()
-            
-            print(f"✅ Rating stored successfully: {trace_id}")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Error storing rating: {e}")
-            return False
+    def get_conversation_history(self, conversation_id: str, limit: int = 10) -> List[Dict[str, str]]:
+        """Get conversation history from LangChain memory"""
+        return self.langchain.get_conversation_history(conversation_id, limit)
     
-    def get_conversation_history(self, limit: int = 10) -> list:
-        """Get recent conversation history"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                SELECT conversation_id, user_prompt, ai_response, timestamp, rating
-                FROM conversations 
-                ORDER BY timestamp DESC 
-                LIMIT ?
-            ''', (limit,))
-            
-            conversations = []
-            for row in cursor.fetchall():
-                conversations.append({
-                    "conversation_id": row[0],
-                    "user_prompt": row[1],
-                    "ai_response": row[2],
-                    "timestamp": row[3],
-                    "rating": row[4]
-                })
-            
-            conn.close()
-            return conversations
-            
-        except Exception as e:
-            print(f"❌ Error getting conversation history: {e}")
-            return []
+    def get_chain_execution(self, chain_id: str) -> List[Dict[str, Any]]:
+        """Get chain execution history"""
+        return self.langchain.get_chain_execution(chain_id)
     
-    def get_rating_stats(self) -> Dict[str, Any]:
-        """Get rating statistics"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # Get average rating
-            cursor.execute('SELECT AVG(rating) FROM conversations WHERE rating IS NOT NULL')
-            avg_rating = cursor.fetchone()[0] or 0
-            
-            # Get total conversations
-            cursor.execute('SELECT COUNT(*) FROM conversations')
-            total_conversations = cursor.fetchone()[0]
-            
-            # Get rated conversations
-            cursor.execute('SELECT COUNT(*) FROM conversations WHERE rating IS NOT NULL')
-            rated_conversations = cursor.fetchone()[0]
-            
-            conn.close()
-            
-            return {
-                "average_rating": round(avg_rating, 2),
-                "total_conversations": total_conversations,
-                "rated_conversations": rated_conversations,
-                "rating_percentage": round((rated_conversations / total_conversations * 100) if total_conversations > 0 else 0, 2)
-            }
-            
-        except Exception as e:
-            print(f"❌ Error getting rating stats: {e}")
-            return {
-                "average_rating": 0,
-                "total_conversations": 0,
-                "rated_conversations": 0,
-                "rating_percentage": 0
-            }
+    def add_prompt_template(self, name: str, template: str):
+        """Add a custom prompt template"""
+        self.langchain.add_prompt_template(name, template)
+    
+    def add_tool(self, name: str, tool_function: Callable):
+        """Add a custom tool to LangChain"""
+        self.langchain.add_tool(name, tool_function)
+    
+    def execute_tool(self, tool_name: str, **kwargs) -> Any:
+        """Execute a LangChain tool"""
+        return self.langchain.execute_tool(tool_name, **kwargs)
     
     def cleanup(self):
         """Clean up resources"""
         try:
-            # Close any open database connections if needed
-            print("✅ ChatAI cleanup completed")
+            logger.info("✅ ChatAI Core cleanup completed")
         except Exception as e:
-            print(f"❌ Error during ChatAI cleanup: {e}")
+            logger.error(f"❌ Error during cleanup: {e}")

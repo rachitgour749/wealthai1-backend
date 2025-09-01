@@ -13,7 +13,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'chatAI'))
 # Import the separate API modules
 from stock_api import stock_router, initialize_stock_backtester, cleanup_stock_backtester
 from etf_api import etf_router, initialize_etf_backtester, cleanup_etf_backtester
-from chat_api import chat_router, initialize_chat_ai, cleanup_chat_ai
+from chat_api import chat_router, init_chat_ai, cleanup_chat_ai
 
 # Create main FastAPI app
 app = FastAPI(title="Unified Rotation Backtester API", version="1.0.0")
@@ -32,7 +32,8 @@ app.add_middleware(
 # Initialize backtesters and ChatAI
 stock_backtester_initialized = initialize_stock_backtester("unified_etf_data.sqlite")
 etf_backtester_initialized = initialize_etf_backtester("unified_etf_data.sqlite")
-chat_ai_initialized = initialize_chat_ai()
+init_chat_ai()
+chat_ai_initialized = True
 
 # Add cleanup on shutdown
 @app.on_event("shutdown")
