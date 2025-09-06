@@ -1,0 +1,195 @@
+ETF Daily High and Low Prices - November 11, 2022
+============================================================
+
+Data found for 2022-11-11:
+----------------------------------------
+
+BANKBEES:
+  High: Rs.427.60
+  Low: Rs.421.75
+
+JUNIORBEES:
+  High: Rs.465.00
+  Low: Rs.455.31
+
+NIFTYBEES:
+  High: Rs.200.35
+  Low: Rs.198.45
+
+
+Sample Data Structure:
+----------------------------------------
+Columns: id, symbol, date, open, high, low, close, volume, adj_close, created_at
+Total rows: 63
+Date range: 2022-11-01 to 2022-11-30
+
+NIFTYBEES - First 5 rows:
+  2022-11-01: id                         238573
+symbol                  NIFTYBEES
+date                   2022-11-01
+open                   197.800003
+high                   198.240005
+low                    196.360001
+close                  197.979996
+volume                    3943610
+adj_close              197.979996
+created_at    2025-08-21 08:13:36
+Name: 42, dtype: object
+  2022-11-02: id                         238574
+symbol                  NIFTYBEES
+date                   2022-11-02
+open                   198.800003
+high                   198.800003
+low                    197.070007
+close                  197.410004
+volume                    1911519
+adj_close              197.410004
+created_at    2025-08-21 08:13:36
+Name: 43, dtype: object
+  2022-11-03: id                         238575
+symbol                  NIFTYBEES
+date                   2022-11-03
+open                   197.399994
+high                   197.820007
+low                    194.600006
+close                  197.389999
+volume                    2800681
+adj_close              197.389999
+created_at    2025-08-21 08:13:36
+Name: 44, dtype: object
+  2022-11-04: id                         238576
+symbol                  NIFTYBEES
+date                   2022-11-04
+open                   198.600006
+high                   198.600006
+low                    196.699997
+close                  197.770004
+volume                    1577276
+adj_close              197.770004
+created_at    2025-08-21 08:13:36
+Name: 45, dtype: object
+  2022-11-07: id                         238577
+symbol                  NIFTYBEES
+date                   2022-11-07
+open                        199.0
+high                   199.399994
+low                    197.419998
+close                  198.619995
+volume                    2821469
+adj_close              198.619995
+created_at    2025-08-21 08:13:36
+Name: 46, dtype: object
+
+BANKBEES - First 5 rows:
+  2022-11-01: id                         246773
+symbol                   BANKBEES
+date                   2022-11-01
+open                    417.26001
+high                        421.0
+low                    416.429993
+close                  417.399994
+volume                     649256
+adj_close              417.399994
+created_at    2025-08-21 08:13:38
+Name: 0, dtype: object
+  2022-11-02: id                         246774
+symbol                   BANKBEES
+date                   2022-11-02
+open                    418.98999
+high                    419.48999
+low                     415.26001
+close                  415.859985
+volume                     751675
+adj_close              415.859985
+created_at    2025-08-21 08:13:38
+Name: 1, dtype: object
+  2022-11-03: id                         246775
+symbol                   BANKBEES
+date                   2022-11-03
+open                    419.48999
+high                    419.48999
+low                    413.399994
+close                  417.380005
+volume                    1265401
+adj_close              417.380005
+created_at    2025-08-21 08:13:38
+Name: 2, dtype: object
+  2022-11-04: id                         246776
+symbol                   BANKBEES
+date                   2022-11-04
+open                    418.98999
+high                        421.0
+low                    415.200012
+close                       417.0
+volume                     478743
+adj_close                   417.0
+created_at    2025-08-21 08:13:38
+Name: 3, dtype: object
+  2022-11-07: id                         246777
+symbol                   BANKBEES
+date                   2022-11-07
+open                   419.209991
+high                   421.799988
+low                         418.0
+close                  421.160004
+volume                     618412
+adj_close              421.160004
+created_at    2025-08-21 08:13:38
+Name: 4, dtype: object
+
+JUNIORBEES - First 5 rows:
+  2022-11-01: id                         242673
+symbol                 JUNIORBEES
+date                   2022-11-01
+open                   452.799988
+high                        456.0
+low                    450.299988
+close                  454.769989
+volume                     139908
+adj_close              454.769989
+created_at    2025-08-21 08:13:37
+Name: 21, dtype: object
+  2022-11-02: id                         242674
+symbol                 JUNIORBEES
+date                   2022-11-02
+open                        458.0
+high                        458.0
+low                    452.329987
+close                  453.420013
+volume                      80444
+adj_close              453.420013
+created_at    2025-08-21 08:13:37
+Name: 22, dtype: object
+  2022-11-03: id                         242675
+symbol                 JUNIORBEES
+date                   2022-11-03
+open                        454.5
+high                   454.899994
+low                         449.5
+close                       453.5
+volume                      81530
+adj_close                   453.5
+created_at    2025-08-21 08:13:37
+Name: 23, dtype: object
+  2022-11-04: id                         242676
+symbol                 JUNIORBEES
+date                   2022-11-04
+open                        456.0
+high                        456.0
+low                    452.600006
+close                  454.380005
+volume                     273723
+adj_close              454.380005
+created_at    2025-08-21 08:13:37
+Name: 24, dtype: object
+  2022-11-07: id                         242677
+symbol                 JUNIORBEES
+date                   2022-11-07
+open                        463.0
+high                        463.0
+low                         455.0
+close                  458.429993
+volume                     106977
+adj_close              458.429993
+created_at    2025-08-21 08:13:37
+Name: 25, dtype: object

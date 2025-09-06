@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 import warnings
 import os
+import json
 warnings.filterwarnings('ignore')
 
 try:
@@ -882,7 +883,7 @@ class stockRotationBacktester:
         Execute Capital Raising Process as per pseudo-code:
         
         target_capital = weekly_capital_amount
-        stocks_ranked_by_distance_from_high = sort_descending(distance_from_52w_high)
+        stocks_ranked_by_distance_from_high = sort_ascending(distance_from_52w_high)  # Closest to high first
         for each stock in stocks_ranked_by_distance_from_high:
             if total_raised >= target_capital:
                 break
@@ -896,9 +897,9 @@ class stockRotationBacktester:
         total_capital_gains_tax = 0
         updated_holdings = current_holdings.copy()
         
-        # Step 1: Rank stocks by distance from 52-week high (descending)
-        # PDF: stocks_ranked_by_distance_from_high = sort_descending(distance_from_52w_high)
-        sorted_for_sell = high_low_data.sort_values('distance_from_high', ascending=False).reset_index(drop=True)
+        # Step 1: Rank stocks by distance from 52-week high (ascending - closest to high first)
+        # PDF: stocks_ranked_by_distance_from_high = sort_ascending(distance_from_52w_high)  # Closest to high first
+        sorted_for_sell = high_low_data.sort_values('distance_from_high', ascending=True).reset_index(drop=True)
         
         print(f"📊 Selling priority (closest to 52-week high first):")
         for idx, row in sorted_for_sell.head().iterrows():
@@ -2223,6 +2224,77 @@ class stockRotationBacktester:
                     formatted_data['📈 Benchmark Buy & Hold'].append(benchmark_val)
 
         return pd.DataFrame(formatted_data)
+
+    def check_strategy_exists(self, strategy_name: str, user_id: str, tickers: List[str], 
+                            start_date: str, end_date: str, capital_per_week: float, 
+                            accumulation_weeks: int, brokerage_percent: float, 
+                            compounding_enabled: bool, risk_free_rate: float, 
+                            use_custom_dates: bool, db_path: str = "unified_etf_data.sqlite") -> Dict:
+        """
+        Check if a strategy with the same parameters already exists in the database
+        
+        Returns:
+            Dict with 'exists' boolean and 'existing_strategy' details if found
+        """
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            
+            # Check if the saved_stock_strategy table exists
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='saved_stock_strategy'")
+            if not cursor.fetchone():
+                conn.close()
+                return {"exists": False, "message": "Strategy table not found"}
+            
+            # Convert tickers to JSON for comparison
+            tickers_json = json.dumps(sorted(tickers))
+            
+            # Check for exact match of all parameters
+            cursor.execute('''
+                SELECT id, strategy_name, created_at, created_timestamp
+                FROM saved_stock_strategy 
+                WHERE user_id = ? 
+                AND strategy_name = ?
+                AND tickers = ?
+                AND start_date = ?
+                AND end_date = ?
+                AND capital_per_week = ?
+                AND accumulation_weeks = ?
+                AND brokerage_percent = ?
+                AND compounding_enabled = ?
+                AND risk_free_rate = ?
+                AND use_custom_dates = ?
+            ''', (
+                user_id, strategy_name, tickers_json, start_date, end_date,
+                capital_per_week, accumulation_weeks, brokerage_percent,
+                compounding_enabled, risk_free_rate, use_custom_dates
+            ))
+            
+            existing_strategy = cursor.fetchone()
+            conn.close()
+            
+            if existing_strategy:
+                return {
+                    "exists": True,
+                    "existing_strategy": {
+                        "id": existing_strategy[0],
+                        "strategy_name": existing_strategy[1],
+                        "created_at": existing_strategy[2],
+                        "created_timestamp": existing_strategy[3]
+                    },
+                    "message": f"Stock Strategy already exists"
+                }
+            else:
+                return {
+                    "exists": False,
+                    "message": "No identical strategy found"
+                }
+                
+        except Exception as e:
+            return {
+                "exists": False,
+                "error": f"Error checking strategy existence: {str(e)}"
+            }
 
     def diagnose_stock_data(self, selected_stocks: List[str]) -> Dict:
         """Diagnose stock data availability and provide recommendations"""

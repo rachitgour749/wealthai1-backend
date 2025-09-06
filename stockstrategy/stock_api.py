@@ -4,6 +4,9 @@ from typing import List, Dict, Any, Optional
 import pandas as pd
 import sys
 import os
+import sqlite3
+import json
+from datetime import datetime
 
 # Add the parent directory to the path for imports
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -39,6 +42,45 @@ class BacktestResult(BaseModel):
     total_return: float
     total_brokerage: float
     error: Optional[str] = None
+
+class BacktestResults(BaseModel):
+    total_return: Optional[str] = None
+    cagr: Optional[str] = None
+    sharpe_ratio: Optional[str] = None
+    max_drawdown: Optional[str] = None
+
+class SaveStockStrategyRequest(BaseModel):
+    strategy_name: str
+    strategy_type: str
+    user_id: str
+    tickers: List[str]
+    start_date: str
+    end_date: str
+    capital_per_week: float
+    accumulation_weeks: int
+    brokerage_percent: float
+    compounding_enabled: bool
+    risk_free_rate: float
+    use_custom_dates: bool
+    backtest_results: BacktestResults
+    created_at: str
+
+class SavedStockStrategy(BaseModel):
+    id: int
+    strategy_name: str
+    strategy_type: str
+    user_id: str
+    tickers: List[str]
+    start_date: str
+    end_date: str
+    capital_per_week: float
+    accumulation_weeks: int
+    brokerage_percent: float
+    compounding_enabled: bool
+    risk_free_rate: float
+    use_custom_dates: bool
+    backtest_results: Dict[str, Any]
+    created_at: str
 
 # Global stock backtester instance
 stock_backtester = None
@@ -691,3 +733,360 @@ async def get_stock_costs_breakdown():
         return {"breakdown": yearly_costs}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error calculating stock costs breakdown: {str(e)}")
+
+# ============================================================================
+# SAVED STRATEGY DATABASE FUNCTIONS
+# ============================================================================
+
+def init_saved_strategies_table(db_path: str = "unified_etf_data.sqlite"):
+    """Initialize the saved_stock_strategy table if it doesn't exist"""
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS saved_stock_strategy (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                strategy_name TEXT NOT NULL,
+                strategy_type TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                tickers TEXT NOT NULL,  -- JSON array of tickers
+                start_date TEXT NOT NULL,
+                end_date TEXT NOT NULL,
+                capital_per_week REAL NOT NULL,
+                accumulation_weeks INTEGER NOT NULL,
+                brokerage_percent REAL NOT NULL,
+                compounding_enabled BOOLEAN NOT NULL,
+                risk_free_rate REAL NOT NULL,
+                use_custom_dates BOOLEAN NOT NULL,
+                backtest_results TEXT NOT NULL,  -- JSON object
+                created_at TEXT NOT NULL,
+                created_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Create index on user_id for faster queries
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_saved_stock_strategy_user_id 
+            ON saved_stock_strategy(user_id)
+        ''')
+        
+        conn.commit()
+        conn.close()
+        print("✅ Saved stock strategy table initialized successfully")
+        return True
+    except Exception as e:
+        print(f"❌ Error initializing saved stock strategy table: {e}")
+        return False
+
+# ============================================================================
+# SAVED STRATEGY ROUTES
+# ============================================================================
+
+@stock_router.post("/save-strategy")
+async def save_stock_strategy(request: SaveStockStrategyRequest):
+    """Save a stock strategy to the database with validation"""
+    try:
+        # Initialize the table if it doesn't exist
+        if not init_saved_strategies_table():
+            raise HTTPException(status_code=500, detail="Failed to initialize database table")
+        
+        # Check if strategy already exists using the backtester core validation
+        from stockbacktester_core import stockRotationBacktester
+        
+        backtester = stockRotationBacktester()
+        validation_result = backtester.check_strategy_exists(
+            strategy_name=request.strategy_name,
+            user_id=request.user_id,
+            tickers=request.tickers,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            capital_per_week=request.capital_per_week,
+            accumulation_weeks=request.accumulation_weeks,
+            brokerage_percent=request.brokerage_percent,
+            compounding_enabled=request.compounding_enabled,
+            risk_free_rate=request.risk_free_rate,
+            use_custom_dates=request.use_custom_dates
+        )
+        
+        # If strategy exists, return appropriate response
+        if validation_result.get("exists", False):
+            existing_strategy = validation_result.get("existing_strategy", {})
+            return {
+                "success": False,
+                "message": validation_result.get("message", "Strategy already exists"),
+                "existing_strategy": existing_strategy,
+                "strategy_exists": True
+            }
+        
+        # If validation failed due to error, return error
+        if "error" in validation_result:
+            raise HTTPException(status_code=500, detail=validation_result["error"])
+        
+        # Strategy doesn't exist, proceed with saving
+        conn = sqlite3.connect("unified_etf_data.sqlite")
+        cursor = conn.cursor()
+        
+        # Convert tickers list to JSON string
+        tickers_json = json.dumps(request.tickers)
+        
+        # Convert backtest_results to JSON string (handle None values)
+        backtest_results_dict = request.backtest_results.dict()
+        # Filter out None values
+        backtest_results_dict = {k: v for k, v in backtest_results_dict.items() if v is not None}
+        backtest_results_json = json.dumps(backtest_results_dict)
+        
+        # Insert the strategy
+        cursor.execute('''
+            INSERT INTO saved_stock_strategy (
+                strategy_name, strategy_type, user_id, tickers, start_date, end_date,
+                capital_per_week, accumulation_weeks, brokerage_percent, compounding_enabled,
+                risk_free_rate, use_custom_dates, backtest_results, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            request.strategy_name, request.strategy_type, request.user_id, tickers_json,
+            request.start_date, request.end_date, request.capital_per_week, request.accumulation_weeks,
+            request.brokerage_percent, request.compounding_enabled, request.risk_free_rate,
+            request.use_custom_dates, backtest_results_json, request.created_at
+        ))
+        
+        strategy_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return {
+            "success": True,
+            "message": "Strategy saved successfully",
+            "strategy_id": strategy_id,
+            "strategy_exists": False
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving strategy: {str(e)}")
+
+@stock_router.get("/get-saved-strategies-list/{user_id}")
+async def get_saved_stock_strategies(user_id: str):
+    """Get all saved stock strategies for a specific user"""
+    try:
+        # Initialize the table if it doesn't exist
+        if not init_saved_strategies_table():
+            raise HTTPException(status_code=500, detail="Failed to initialize database table")
+        
+        conn = sqlite3.connect("unified_etf_data.sqlite")
+        cursor = conn.cursor()
+        
+        # Get strategies for the user
+        cursor.execute('''
+            SELECT id, strategy_name, strategy_type, user_id, tickers, start_date, end_date,
+                   capital_per_week, accumulation_weeks, brokerage_percent, compounding_enabled,
+                   risk_free_rate, use_custom_dates, backtest_results, created_at, created_timestamp
+            FROM saved_stock_strategy 
+            WHERE user_id = ?
+            ORDER BY created_timestamp DESC
+        ''', (user_id,))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        strategies = []
+        for row in rows:
+            try:
+                # Parse JSON fields
+                tickers = json.loads(row[4]) if row[4] else []  # tickers
+                backtest_results = json.loads(row[13]) if row[13] else {}  # backtest_results
+                
+                strategies.append({
+                    "id": row[0],
+                    "strategy_name": row[1],
+                    "strategy_type": row[2],
+                    "user_id": row[3],
+                    "tickers": tickers,
+                    "start_date": row[5],
+                    "end_date": row[6],
+                    "capital_per_week": row[7],
+                    "accumulation_weeks": row[8],
+                    "brokerage_percent": row[9],
+                    "compounding_enabled": bool(row[10]),
+                    "risk_free_rate": row[11],
+                    "use_custom_dates": bool(row[12]),
+                    "backtest_results": backtest_results,
+                    "created_at": row[14],
+                    "created_timestamp": row[15]
+                })
+            except json.JSONDecodeError as e:
+                print(f"Warning: Could not parse JSON for strategy ID {row[0]}: {e}")
+                continue
+        
+        # Ensure we always return a proper structure
+        if not strategies:
+            strategies = []
+        
+        return {"strategies": strategies}
+        
+    except Exception as e:
+        print(f"Error retrieving saved strategies: {str(e)}")
+        # Return empty array instead of throwing error to prevent frontend crashes
+        return {"strategies": []}
+
+@stock_router.get("/get-saved-strategy/{strategy_id}")
+async def get_saved_stock_strategy_by_id(strategy_id: int):
+    """Get a specific saved stock strategy by ID"""
+    try:
+        # Initialize the table if it doesn't exist
+        if not init_saved_strategies_table():
+            raise HTTPException(status_code=500, detail="Failed to initialize database table")
+        
+        conn = sqlite3.connect("unified_etf_data.sqlite")
+        cursor = conn.cursor()
+        
+        # Get the specific strategy
+        cursor.execute('''
+            SELECT id, strategy_name, strategy_type, user_id, tickers, start_date, end_date,
+                   capital_per_week, accumulation_weeks, brokerage_percent, compounding_enabled,
+                   risk_free_rate, use_custom_dates, backtest_results, created_at, created_timestamp
+            FROM saved_stock_strategy 
+            WHERE id = ?
+        ''', (strategy_id,))
+        
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row:
+            raise HTTPException(status_code=404, detail="Strategy not found")
+        
+        try:
+            # Parse JSON fields
+            tickers = json.loads(row[4]) if row[4] else []  # tickers
+            backtest_results = json.loads(row[13]) if row[13] else {}  # backtest_results
+            
+            strategy = {
+                "id": row[0],
+                "strategy_name": row[1],
+                "strategy_type": row[2],
+                "user_id": row[3],
+                "tickers": tickers,
+                "start_date": row[5],
+                "end_date": row[6],
+                "capital_per_week": row[7],
+                "accumulation_weeks": row[8],
+                "brokerage_percent": row[9],
+                "compounding_enabled": bool(row[10]),
+                "risk_free_rate": row[11],
+                "use_custom_dates": bool(row[12]),
+                "backtest_results": backtest_results,
+                "created_at": row[14],
+                "created_timestamp": row[15]
+            }
+            
+            return {"strategy": strategy}
+            
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=500, detail=f"Error parsing strategy data: {str(e)}")
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving strategy: {str(e)}")
+
+@stock_router.delete("/delete-saved-strategy/{strategy_id}")
+async def delete_saved_stock_strategy(strategy_id: int):
+    """Delete a saved stock strategy by ID"""
+    try:
+        # Initialize the table if it doesn't exist
+        if not init_saved_strategies_table():
+            raise HTTPException(status_code=500, detail="Failed to initialize database table")
+        
+        conn = sqlite3.connect("unified_etf_data.sqlite")
+        cursor = conn.cursor()
+        
+        # Check if strategy exists
+        cursor.execute('SELECT id FROM saved_stock_strategy WHERE id = ?', (strategy_id,))
+        if not cursor.fetchone():
+            conn.close()
+            raise HTTPException(status_code=404, detail="Strategy not found")
+        
+        # Delete the strategy
+        cursor.execute('DELETE FROM saved_stock_strategy WHERE id = ?', (strategy_id,))
+        conn.commit()
+        conn.close()
+        
+        return {
+            "success": True,
+            "message": "Strategy deleted successfully"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting strategy: {str(e)}")
+
+@stock_router.put("/update-saved-strategy/{strategy_id}")
+async def update_saved_stock_strategy(strategy_id: int, request: SaveStockStrategyRequest):
+    """Update a saved stock strategy"""
+    try:
+        # Initialize the table if it doesn't exist
+        if not init_saved_strategies_table():
+            raise HTTPException(status_code=500, detail="Failed to initialize database table")
+        
+        conn = sqlite3.connect("unified_etf_data.sqlite")
+        cursor = conn.cursor()
+        
+        # Check if strategy exists
+        cursor.execute('SELECT id FROM saved_stock_strategy WHERE id = ?', (strategy_id,))
+        if not cursor.fetchone():
+            conn.close()
+            raise HTTPException(status_code=404, detail="Strategy not found")
+        
+        # Convert tickers list to JSON string
+        tickers_json = json.dumps(request.tickers)
+        
+        # Convert backtest_results to JSON string (handle None values)
+        backtest_results_dict = request.backtest_results.dict()
+        # Filter out None values
+        backtest_results_dict = {k: v for k, v in backtest_results_dict.items() if v is not None}
+        backtest_results_json = json.dumps(backtest_results_dict)
+        
+        # Update the strategy
+        cursor.execute('''
+            UPDATE saved_stock_strategy SET
+                strategy_name = ?, strategy_type = ?, user_id = ?, tickers = ?, start_date = ?, end_date = ?,
+                capital_per_week = ?, accumulation_weeks = ?, brokerage_percent = ?, compounding_enabled = ?,
+                risk_free_rate = ?, use_custom_dates = ?, backtest_results = ?, created_at = ?
+            WHERE id = ?
+        ''', (
+            request.strategy_name, request.strategy_type, request.user_id, tickers_json,
+            request.start_date, request.end_date, request.capital_per_week, request.accumulation_weeks,
+            request.brokerage_percent, request.compounding_enabled, request.risk_free_rate,
+            request.use_custom_dates, backtest_results_json, request.created_at, strategy_id
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return {
+            "success": True,
+            "message": "Strategy updated successfully"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating strategy: {str(e)}")
+
+@stock_router.get("/get-saved-strategies-count/{user_id}")
+async def get_saved_stock_strategies_count(user_id: str):
+    """Get count of saved stock strategies for a specific user"""
+    try:
+        # Initialize the table if it doesn't exist
+        if not init_saved_strategies_table():
+            raise HTTPException(status_code=500, detail="Failed to initialize database table")
+        
+        conn = sqlite3.connect("unified_etf_data.sqlite")
+        cursor = conn.cursor()
+        
+        # Get count of strategies for the user
+        cursor.execute('''
+            SELECT COUNT(*) FROM saved_stock_strategy WHERE user_id = ?
+        ''', (user_id,))
+        
+        count = cursor.fetchone()[0]
+        conn.close()
+        
+        return {"count": count}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting strategy count: {str(e)}")
