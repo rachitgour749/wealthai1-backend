@@ -4,18 +4,24 @@ from fastapi.responses import Response
 import uvicorn
 import sys
 import os
+import threading
+import atexit
 
 # Add the strategy directories to the path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), 'stockstrategy'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'etf-strategy'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'chatAI'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'Payment'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'cronjob'))
 
 # Import the separate API modules
 from stock_api import stock_router, initialize_stock_backtester, cleanup_stock_backtester
 from etf_api import etf_router, initialize_etf_backtester, cleanup_etf_backtester
 from chat_api import chat_router, init_chat_ai, cleanup_chat_ai
 from api import payment_router, init_payment_service, cleanup_payment_service
+
+# Import scheduler
+from scheduler import ETFScheduler
 
 # Create main FastAPI app
 app = FastAPI(title="Unified Rotation Backtester API", version="1.0.0")
@@ -38,10 +44,56 @@ chat_ai_initialized = True
 # Initialize payment service
 payment_service_initialized = init_payment_service()
 
+# Initialize scheduler
+scheduler_instance = None
+scheduler_thread = None
+scheduler_initialized = False
+
+def start_scheduler():
+    """Start the ETF scheduler in a separate thread"""
+    global scheduler_instance, scheduler_thread, scheduler_initialized
+    
+    try:
+        print("🕐 Starting ETF scheduler...")
+        scheduler_instance = ETFScheduler()
+        
+        # Start scheduler in a separate thread to avoid blocking the main server
+        scheduler_thread = threading.Thread(target=scheduler_instance.start_scheduler, daemon=True)
+        scheduler_thread.start()
+        
+        scheduler_initialized = True
+        print("✅ ETF scheduler started successfully - will run daily at 4:00 PM IST")
+        
+    except Exception as e:
+        print(f"❌ Failed to start ETF scheduler: {e}")
+        scheduler_initialized = False
+
+# Add startup event
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup"""
+    print("🚀 Server starting up...")
+    start_scheduler()
+
 # Add cleanup on shutdown
 @app.on_event("shutdown")
 async def shutdown_event():
     """Clean up resources on shutdown"""
+    global scheduler_instance, scheduler_initialized
+    
+    print("🛑 Server shutting down...")
+    
+    # Stop scheduler
+    if scheduler_instance and scheduler_initialized:
+        try:
+            print("🕐 Stopping ETF scheduler...")
+            scheduler_instance.scheduler.shutdown()
+            scheduler_initialized = False
+            print("✅ ETF scheduler stopped successfully")
+        except Exception as e:
+            print(f"❌ Error stopping ETF scheduler: {e}")
+    
+    # Cleanup other services
     cleanup_stock_backtester()
     cleanup_etf_backtester()
     cleanup_chat_ai()
@@ -62,12 +114,15 @@ async def health_check():
             "etf_backtester_initialized": etf_backtester_initialized,
             "chat_ai_initialized": chat_ai_initialized,
             "payment_service_initialized": payment_service_initialized,
+            "scheduler_initialized": scheduler_initialized,
             "stock_database_available": stock_backtester_initialized,
             "etf_database_available": etf_backtester_initialized,
             "chat_ai_database_available": chat_ai_initialized,
             "payment_database_available": payment_service_initialized,
+            "scheduler_database_available": scheduler_initialized,
             "stock_count": 0,
-            "etf_count": 0
+            "etf_count": 0,
+            "scheduler_status": "running" if scheduler_initialized else "stopped"
         }
         
         return status
@@ -78,7 +133,8 @@ async def health_check():
             "stock_backtester_initialized": stock_backtester_initialized,
             "etf_backtester_initialized": etf_backtester_initialized,
             "chat_ai_initialized": chat_ai_initialized,
-            "payment_service_initialized": payment_service_initialized
+            "payment_service_initialized": payment_service_initialized,
+            "scheduler_initialized": scheduler_initialized
         }
 
 @app.get("/favicon.ico")

@@ -1,0 +1,9 @@
+2025-09-08 09:43:47,618 - INFO - === Starting daily Indian ETF data fetch ===
+2025-09-08 09:43:47,628 - INFO - Market is still open. Waiting for market close to fetch EOD data.
+2025-09-08 09:43:47,631 - INFO - All data fetches completed successfully
+2025-09-08 14:48:13,174 - INFO - === Starting daily Indian ETF data fetch ===
+2025-09-08 14:48:13,179 - INFO - Market is still open. Waiting for market close to fetch EOD data.
+2025-09-08 14:48:13,180 - INFO - All data fetches completed successfully
+2025-09-08 16:56:16,175 - INFO - === Starting daily Indian ETF data fetch ===
+2025-09-08 16:56:16,191 - ERROR - Database error: near "https": syntax error
+2025-09-08 16:56:16,193 - CRITICAL - Critical error in main execution: near "https": syntax error

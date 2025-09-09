@@ -399,9 +399,12 @@ class ETFRotationBacktester:
         return strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
 
     def load_data_from_sqlite(self, tickers: List[str], start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
-        """Load daily OHLCV data from central database for selected tickers"""
-        # Check cache first
-        cache_key = f"{','.join(sorted(tickers))}_{start_date}_{end_date}"
+        """Load daily OHLCV data from central database for selected tickers with historical buffer for momentum calculations"""
+        # Calculate buffer start date for cache key
+        buffer_start_date = (pd.to_datetime(start_date) - timedelta(days=400)).strftime('%Y-%m-%d')
+        
+        # Check cache first (using buffer dates for cache key)
+        cache_key = f"{','.join(sorted(tickers))}_{buffer_start_date}_{end_date}"
         if cache_key in self._data_cache:
             if self._verbose:
                 print(f"📦 Using cached data for {len(tickers)} ETFs")
@@ -430,14 +433,20 @@ class ETFRotationBacktester:
             else:
                 raise ValueError(f"No recognized ETF table found in database. Available tables: {tables}")
 
-            # Optimized query - get available symbols in one go
+            if self._verbose:
+                print(f"📊 Loading data with historical buffer:")
+                print(f"   Strategy period: {start_date} to {end_date}")
+                print(f"   Data loading period: {buffer_start_date} to {end_date}")
+                print(f"   Buffer: 400 calendar days (~252 trading days) for momentum calculations")
+
+            # Optimized query - get available symbols in one go (using buffer dates)
             placeholders = ','.join(['?' for _ in tickers])
             cursor.execute(f"""
                 SELECT DISTINCT symbol 
                 FROM {table_name} 
                 WHERE symbol IN ({placeholders})
                 AND date >= ? AND date <= ?
-            """, tickers + [start_date, end_date])
+            """, tickers + [buffer_start_date, end_date])
             
             available_tickers = [row[0] for row in cursor.fetchall()]
             missing_tickers = [t for t in tickers if t not in available_tickers]
@@ -448,7 +457,7 @@ class ETFRotationBacktester:
             if not available_tickers:
                 raise ValueError("No data available for any of the selected ETFs")
 
-            # Optimized data loading - single query with all columns
+            # Optimized data loading - single query with all columns (using buffer dates)
             placeholders = ','.join(['?' for _ in available_tickers])
             query = f"""
                 SELECT {query_columns}
@@ -458,7 +467,7 @@ class ETFRotationBacktester:
                 ORDER BY date, symbol
             """
 
-            df = pd.read_sql_query(query, conn, params=available_tickers + [start_date, end_date])
+            df = pd.read_sql_query(query, conn, params=available_tickers + [buffer_start_date, end_date])
 
             if df.empty:
                 raise ValueError(f"No data found for the selected date range {start_date} to {end_date}")
@@ -917,7 +926,7 @@ class ETFRotationBacktester:
             # Step 3: Calculate units to sell
             # PDF: sell_units = min(available_units, required_units_for_remaining_capital)
             remaining_needed = target_capital - total_raised
-            units_to_sell = min(available_units, int(remaining_needed / price) + 1)
+            units_to_sell = min(available_units, int(remaining_needed / price) + 2)
             
             if units_to_sell <= 0:
                 continue
@@ -1276,12 +1285,17 @@ class ETFRotationBacktester:
                 print(f"📊 Momentum-based selection: {target_etf} ({distance_from_low:.2f}% from 52-week low)")
             else:
                 # Fallback strategy when insufficient momentum data (early periods)
-                print("⚠️ Insufficient momentum data - using fallback selection")
-                for etf in open_prices.index:
-                    if not pd.isna(open_prices[etf]) and open_prices[etf] > 0:
-                        target_etf = etf
-                        print(f"🎯 Fallback selection: {target_etf} (first available ETF)")
-                        break
+                print("⚠️ Insufficient momentum data - using round-robin fallback selection")
+                available_etfs = [etf for etf in open_prices.index 
+                                 if not pd.isna(open_prices[etf]) and open_prices[etf] > 0]
+                
+                if available_etfs:
+                    # Round-robin selection based on week number for proper rotation
+                    target_etf = available_etfs[week_num % len(available_etfs)]
+                    print(f"🎯 Fallback selection: {target_etf} (round-robin week {week_num}, ETF {week_num % len(available_etfs) + 1}/{len(available_etfs)})")
+                else:
+                    target_etf = None
+                    print("❌ No available ETFs for fallback selection")
 
             if target_etf and target_etf in open_prices.index and not pd.isna(open_prices[target_etf]):
                 # PDF Specification: execution_price = monday_open_price
@@ -1503,6 +1517,7 @@ class ETFRotationBacktester:
                         print(f"📊 Computing 52-week momentum for signal date...")
                     high_low_data = self.compute_52_week_high_low(close_df, signal_date)
 
+                    
                     # Get execution prices (Monday opening prices)
                     open_prices = open_df.loc[execution_date]
                     close_prices = close_df.loc[execution_date]

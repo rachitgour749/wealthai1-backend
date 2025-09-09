@@ -407,9 +407,12 @@ class stockRotationBacktester:
         return strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
 
     def load_data_from_sqlite(self, tickers: List[str], start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
-        """Load daily OHLCV data from central database for selected tickers"""
-        # Check cache first
-        cache_key = f"{','.join(sorted(tickers))}_{start_date}_{end_date}"
+        """Load daily OHLCV data from central database for selected tickers with historical buffer for momentum calculations"""
+        # Calculate buffer start date for cache key
+        buffer_start_date = (pd.to_datetime(start_date) - timedelta(days=400)).strftime('%Y-%m-%d')
+        
+        # Check cache first (using buffer dates for cache key)
+        cache_key = f"{','.join(sorted(tickers))}_{buffer_start_date}_{end_date}"
         if cache_key in self._data_cache:
             if self._verbose:
                 print(f"📦 Using cached data for {len(tickers)} stocks")
@@ -441,14 +444,20 @@ class stockRotationBacktester:
             else:
                 raise ValueError(f"No recognized table found in database. Available tables: {tables}")
 
-            # Optimized query - get available symbols in one go
+            if self._verbose:
+                print(f"📊 Loading data with historical buffer:")
+                print(f"   Strategy period: {start_date} to {end_date}")
+                print(f"   Data loading period: {buffer_start_date} to {end_date}")
+                print(f"   Buffer: 400 calendar days (~252 trading days) for momentum calculations")
+
+            # Optimized query - get available symbols in one go (using buffer dates)
             placeholders = ','.join(['?' for _ in tickers])
             cursor.execute(f"""
                 SELECT DISTINCT symbol 
                 FROM {table_name} 
                 WHERE symbol IN ({placeholders})
                 AND date >= ? AND date <= ?
-            """, tickers + [start_date, end_date])
+            """, tickers + [buffer_start_date, end_date])
             
             available_tickers = [row[0] for row in cursor.fetchall()]
             missing_tickers = [t for t in tickers if t not in available_tickers]
@@ -459,7 +468,7 @@ class stockRotationBacktester:
             if not available_tickers:
                 raise ValueError("No data available for any of the selected stocks")
 
-            # Optimized data loading - single query with all columns
+            # Optimized data loading - single query with all columns (using buffer dates)
             placeholders = ','.join(['?' for _ in available_tickers])
             query = f"""
                 SELECT {query_columns}
@@ -469,7 +478,7 @@ class stockRotationBacktester:
                 ORDER BY date, symbol
             """
 
-            df = pd.read_sql_query(query, conn, params=available_tickers + [start_date, end_date])
+            df = pd.read_sql_query(query, conn, params=available_tickers + [buffer_start_date, end_date])
 
             if df.empty:
                 raise ValueError(f"No data found for the selected date range {start_date} to {end_date}")
@@ -1287,12 +1296,17 @@ class stockRotationBacktester:
                 print(f"📊 Momentum-based selection: {target_stock} ({distance_from_low:.2f}% from 52-week low)")
             else:
                 # Fallback strategy when insufficient momentum data (early periods)
-                print("⚠️ Insufficient momentum data - using fallback selection")
-                for stock in open_prices.index:
-                    if not pd.isna(open_prices[stock]) and open_prices[stock] > 0:
-                        target_stock = stock
-                        print(f"🎯 Fallback selection: {target_stock} (first available stock)")
-                        break
+                print("⚠️ Insufficient momentum data - using round-robin fallback selection")
+                available_stocks = [stock for stock in open_prices.index 
+                                   if not pd.isna(open_prices[stock]) and open_prices[stock] > 0]
+                
+                if available_stocks:
+                    # Round-robin selection based on week number for proper rotation
+                    target_stock = available_stocks[week_num % len(available_stocks)]
+                    print(f"🎯 Fallback selection: {target_stock} (round-robin week {week_num}, Stock {week_num % len(available_stocks) + 1}/{len(available_stocks)})")
+                else:
+                    target_stock = None
+                    print("❌ No available stocks for fallback selection")
 
             if target_stock and target_stock in open_prices.index and not pd.isna(open_prices[target_stock]):
                 # PDF Specification: execution_price = monday_open_price

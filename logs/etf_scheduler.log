@@ -1,0 +1,51 @@
+2025-09-09 17:35:45,273 - INFO - === Starting daily Indian ETF data fetch ===
+2025-09-09 17:35:45,292 - INFO - Database table created/verified successfully
+2025-09-09 17:35:45,293 - INFO - Fetching data for BANKBEES.NS...
+2025-09-09 17:35:46,576 - INFO - Successfully fetched data for BANKBEES.NS
+2025-09-09 17:35:46,606 - INFO - Successfully saved BANKBEES.NS data to database
+2025-09-09 17:35:47,608 - INFO - Fetching data for CPSEETF.NS...
+2025-09-09 17:35:47,871 - INFO - Successfully fetched data for CPSEETF.NS
+2025-09-09 17:35:47,893 - INFO - Successfully saved CPSEETF.NS data to database
+2025-09-09 17:35:48,907 - INFO - Fetching data for GOLDBEES.NS...
+2025-09-09 17:35:49,199 - INFO - Successfully fetched data for GOLDBEES.NS
+2025-09-09 17:35:49,223 - INFO - Successfully saved GOLDBEES.NS data to database
+2025-09-09 17:35:50,235 - INFO - Fetching data for INFRABEES.NS...
+2025-09-09 17:35:50,505 - INFO - Successfully fetched data for INFRABEES.NS
+2025-09-09 17:35:50,524 - INFO - Successfully saved INFRABEES.NS data to database
+2025-09-09 17:35:51,535 - INFO - Fetching data for ITBEES.NS...
+2025-09-09 17:35:51,804 - INFO - Successfully fetched data for ITBEES.NS
+2025-09-09 17:35:51,838 - INFO - Successfully saved ITBEES.NS data to database
+2025-09-09 17:35:52,853 - INFO - Fetching data for JUNIORBEES.NS...
+2025-09-09 17:35:53,170 - INFO - Successfully fetched data for JUNIORBEES.NS
+2025-09-09 17:35:53,208 - INFO - Successfully saved JUNIORBEES.NS data to database
+2025-09-09 17:35:54,216 - INFO - Fetching data for LIQUIDBEES.NS...
+2025-09-09 17:35:54,398 - INFO - Successfully fetched data for LIQUIDBEES.NS
+2025-09-09 17:35:54,423 - INFO - Successfully saved LIQUIDBEES.NS data to database
+2025-09-09 17:35:55,434 - INFO - Fetching data for METALIETF.NS...
+2025-09-09 17:35:55,734 - INFO - Successfully fetched data for METALIETF.NS
+2025-09-09 17:35:55,768 - INFO - Successfully saved METALIETF.NS data to database
+2025-09-09 17:35:56,780 - INFO - Fetching data for MIDCAPETF.NS...
+2025-09-09 17:35:57,060 - INFO - Successfully fetched data for MIDCAPETF.NS
+2025-09-09 17:35:57,087 - INFO - Successfully saved MIDCAPETF.NS data to database
+2025-09-09 17:35:58,128 - INFO - Fetching data for MODEFENCE.NS...
+2025-09-09 17:35:58,414 - INFO - Successfully fetched data for MODEFENCE.NS
+2025-09-09 17:35:58,596 - INFO - Successfully saved MODEFENCE.NS data to database
+2025-09-09 17:35:59,603 - INFO - Fetching data for MON100.NS...
+2025-09-09 17:35:59,818 - INFO - Successfully fetched data for MON100.NS
+2025-09-09 17:35:59,844 - INFO - Successfully saved MON100.NS data to database
+2025-09-09 17:36:00,847 - INFO - Fetching data for NIFTYBEES.NS...
+2025-09-09 17:36:01,126 - INFO - Successfully fetched data for NIFTYBEES.NS
+2025-09-09 17:36:01,146 - INFO - Successfully saved NIFTYBEES.NS data to database
+2025-09-09 17:36:02,150 - INFO - Fetching data for OILIETF.NS...
+2025-09-09 17:36:02,325 - INFO - Successfully fetched data for OILIETF.NS
+2025-09-09 17:36:02,373 - INFO - Successfully saved OILIETF.NS data to database
+2025-09-09 17:36:03,376 - INFO - Fetching data for PHARMABEES.NS...
+2025-09-09 17:36:03,542 - INFO - Successfully fetched data for PHARMABEES.NS
+2025-09-09 17:36:03,583 - INFO - Successfully saved PHARMABEES.NS data to database
+2025-09-09 17:36:04,609 - INFO - Fetching data for PSUBNKBEES.NS...
+2025-09-09 17:36:04,775 - INFO - Successfully fetched data for PSUBNKBEES.NS
+2025-09-09 17:36:04,824 - INFO - Successfully saved PSUBNKBEES.NS data to database
+2025-09-09 17:36:05,840 - INFO - === Daily fetch completed ===
+2025-09-09 17:36:05,840 - INFO - Successful fetches: 15
+2025-09-09 17:36:05,840 - INFO - Failed fetches: 0
+2025-09-09 17:36:05,840 - INFO - Total duration: 20.57 seconds
