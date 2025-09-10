@@ -13,12 +13,14 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'etf-strategy'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'chatAI'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'Payment'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'cronjob'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'webhook'))
 
 # Import the separate API modules
 from stock_api import stock_router, initialize_stock_backtester, cleanup_stock_backtester
 from etf_api import etf_router, initialize_etf_backtester, cleanup_etf_backtester
 from chat_api import chat_router, init_chat_ai, cleanup_chat_ai
 from api import payment_router, init_payment_service, cleanup_payment_service
+from webhook_api import router as webhook_router
 
 # Import scheduler
 from scheduler import ETFScheduler
@@ -114,11 +116,13 @@ async def health_check():
             "etf_backtester_initialized": etf_backtester_initialized,
             "chat_ai_initialized": chat_ai_initialized,
             "payment_service_initialized": payment_service_initialized,
+            "webhook_service_initialized": True,
             "scheduler_initialized": scheduler_initialized,
             "stock_database_available": stock_backtester_initialized,
             "etf_database_available": etf_backtester_initialized,
             "chat_ai_database_available": chat_ai_initialized,
             "payment_database_available": payment_service_initialized,
+            "webhook_database_available": True,
             "scheduler_database_available": scheduler_initialized,
             "stock_count": 0,
             "etf_count": 0,
@@ -149,6 +153,7 @@ app.include_router(stock_router)
 app.include_router(etf_router)
 app.include_router(chat_router)
 app.include_router(payment_router)
+app.include_router(webhook_router)
 
 # Unified strategy save endpoint that routes based on strategy_type
 @app.post("/api/save-strategy")
@@ -254,5 +259,13 @@ if __name__ == "__main__":
     print("   POST /api/payment/refund - Process refund")
     print("   GET  /api/payment/history - Get payment history")
     print("   GET  /api/payment/analytics - Get payment analytics")
+    print("   GET  /api/strategies - Get all webhook strategies")
+    print("   POST /api/strategies - Create webhook strategy")
+    print("   GET  /api/strategies/{id} - Get specific webhook strategy")
+    print("   PUT  /api/strategies/{id} - Update webhook strategy")
+    print("   DELETE /api/strategies/{id} - Delete webhook strategy")
+    print("   POST /api/generate-json - Generate JSON data for trading orders")
+    print("   POST /api/save-json - Save JSON data")
+    print("   GET  /api/saved-json/{user_email} - Get saved JSON data")
     print("🌐 Server will be available at: http://127.0.0.1:8000")
     uvicorn.run(app, host="127.0.0.1", port=8000)
