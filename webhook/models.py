@@ -100,6 +100,33 @@ class JsonSave(BaseModel):
             raise ValueError('User email cannot be empty')
         return v.strip()
 
+class DeployRequest(BaseModel):
+    """Request model for deploy functionality - generates and saves JSON data"""
+    user_email: str = Field(..., description="User email address")
+    client_ids: List[str] = Field(..., min_items=1, description="List of client IDs")
+    capitals: List[float] = Field(..., min_items=1, description="List of capital amounts")
+    strategy_name: Optional[str] = Field(None, description="Name of the strategy")
+    
+    @validator('user_email')
+    def validate_user_email(cls, v):
+        if not v or not v.strip():
+            raise ValueError('User email cannot be empty')
+        return v.strip()
+    
+    @validator('client_ids')
+    def validate_client_ids(cls, v):
+        if not v or len(v) == 0:
+            raise ValueError('At least one client ID is required')
+        return v
+    
+    @validator('capitals')
+    def validate_capitals(cls, v):
+        if not v or len(v) == 0:
+            raise ValueError('At least one capital amount is required')
+        if any(capital <= 0 for capital in v):
+            raise ValueError('All capital amounts must be positive')
+        return v
+
 class HealthResponse(BaseModel):
     """Response model for health check"""
     status: str

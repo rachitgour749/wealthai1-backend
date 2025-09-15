@@ -2076,8 +2076,12 @@ class stockRotationBacktester:
             'Sell Transactions': sell_transactions
         }
 
-    def plot_equity_curve(self, show_benchmark: bool = True, show_stock_strategy: bool = True) -> go.Figure:
+    def plot_equity_curve(self, show_benchmark: bool = True, show_stock_strategy: bool = True):
         """Create interactive equity curve plot with optional stock strategy and benchmark comparison"""
+        if not PLOTLY_AVAILABLE:
+            print("Warning: Plotly not available. Cannot create equity curve plot.")
+            return None
+            
         if self.weekly_nav_df.empty:
             return go.Figure()
 
@@ -2145,8 +2149,12 @@ class stockRotationBacktester:
 
         return fig
 
-    def plot_transaction_costs_over_time(self) -> go.Figure:
+    def plot_transaction_costs_over_time(self):
         """Create transaction costs analysis chart"""
+        if not PLOTLY_AVAILABLE:
+            print("Warning: Plotly not available. Cannot create transaction costs plot.")
+            return None
+            
         if not self.transaction_costs_log:
             return go.Figure()
 

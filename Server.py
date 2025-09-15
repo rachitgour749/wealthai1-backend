@@ -21,6 +21,7 @@ from etf_api import etf_router, initialize_etf_backtester, cleanup_etf_backteste
 from chat_api import chat_router, init_chat_ai, cleanup_chat_ai
 from api import payment_router, init_payment_service, cleanup_payment_service
 from webhook_api import router as webhook_router
+from webhook_logic import init_db as init_webhook_db
 
 # Import scheduler
 from scheduler import ETFScheduler
@@ -31,7 +32,7 @@ app = FastAPI(title="Unified Rotation Backtester API", version="1.0.0")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -45,6 +46,15 @@ chat_ai_initialized = True
 
 # Initialize payment service
 payment_service_initialized = init_payment_service()
+
+# Initialize webhook database
+try:
+    init_webhook_db()
+    webhook_service_initialized = True
+    print("✅ Webhook database initialized successfully")
+except Exception as e:
+    webhook_service_initialized = False
+    print(f"❌ Failed to initialize webhook database: {e}")
 
 # Initialize scheduler
 scheduler_instance = None
@@ -116,7 +126,7 @@ async def health_check():
             "etf_backtester_initialized": etf_backtester_initialized,
             "chat_ai_initialized": chat_ai_initialized,
             "payment_service_initialized": payment_service_initialized,
-            "webhook_service_initialized": True,
+            "webhook_service_initialized": webhook_service_initialized,
             "scheduler_initialized": scheduler_initialized,
             "stock_database_available": stock_backtester_initialized,
             "etf_database_available": etf_backtester_initialized,
@@ -266,6 +276,7 @@ if __name__ == "__main__":
     print("   DELETE /api/strategies/{id} - Delete webhook strategy")
     print("   POST /api/generate-json - Generate JSON data for trading orders")
     print("   POST /api/save-json - Save JSON data")
+    print("   POST /api/deploy - Deploy strategy (generate and save JSON to unified_etf_data.sqlite)")
     print("   GET  /api/saved-json/{user_email} - Get saved JSON data")
     print("🌐 Server will be available at: http://127.0.0.1:8000")
     uvicorn.run(app, host="127.0.0.1", port=8000)

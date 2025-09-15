@@ -13,7 +13,7 @@ from typing import List, Optional
 from webhook.config import config
 from webhook.models import (
     StrategyCreate, StrategyUpdate, StrategyStatusUpdate,
-    JsonGenerate, JsonSave, StrategyResponse, HealthResponse
+    JsonGenerate, JsonSave, DeployRequest, StrategyResponse, HealthResponse
 )
 from webhook.webhook_logic import (
     WebhookLogic, get_db_connection, init_db
@@ -145,16 +145,48 @@ async def save_json(json_save: JsonSave):
         raise HTTPException(status_code=500, detail="Failed to save JSON data")
 
 @router.get("/saved-json/{user_email}", response_model=dict)
-async def get_saved_json(user_email: str):
-    """Get all saved JSON data for a user"""
+async def get_saved_json(user_email: str, strategy_name: Optional[str] = None):
+    """Get saved JSON data for a user, optionally filtered by strategy name"""
     try:
-        return await webhook_logic.get_saved_json_data(user_email)
+        return await webhook_logic.get_saved_json_data(user_email, strategy_name)
     except Exception as e:
         logger.error(f"Error getting saved JSON: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get saved JSON data")
 
+@router.delete("/saved-json/{json_id}", response_model=dict)
+async def delete_saved_json(json_id: int):
+    """Delete a specific saved JSON entry by ID"""
+    try:
+        return await webhook_logic.delete_saved_json_data(json_id)
+    except Exception as e:
+        logger.error(f"Error deleting saved JSON: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete saved JSON data")
+
+@router.delete("/delete-json/{identifier}", response_model=dict)
+async def delete_saved_json_legacy(identifier: str):
+    """Legacy route accepting numeric id or composite identifier"""
+    try:
+        return await webhook_logic.delete_saved_json_data_any(identifier)
+    except Exception as e:
+        logger.error(f"Error deleting saved JSON (legacy): {str(e)}")
+        # If underlying raised HTTPException, re-raise to preserve status
+        if hasattr(e, 'status_code'):
+            raise e
+        raise HTTPException(status_code=500, detail="Failed to delete saved JSON data")
+
+@router.post("/deploy", response_model=dict, status_code=201)
+async def deploy_strategy(deploy_request: DeployRequest):
+    """Deploy strategy - generates JSON data and saves it to unified_etf_data.sqlite"""
+    try:
+        return await webhook_logic.deploy_strategy(deploy_request)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deploying strategy: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to deploy strategy")
+
 # Legacy endpoint for backward compatibility
-@router.post("/deploy", response_model=dict)
+@router.post("/deploy-legacy", response_model=dict)
 async def deploy_legacy(data: dict):
     """Legacy deploy endpoint"""
     try:

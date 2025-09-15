@@ -69,8 +69,6 @@ def generate_json_data(client_ids: List[str], capitals: List[float], strategy_ty
                 "order_id": f"order_{i+1}_{int(datetime.now().timestamp())}",
                 "client_id": client_id,
                 "capital": capital,
-                "strategy_type": strategy_type,
-                "timestamp": datetime.now().isoformat(),
                 "status": "pending"
             }
             orders.append(order)
@@ -78,9 +76,7 @@ def generate_json_data(client_ids: List[str], capitals: List[float], strategy_ty
         return {
             "orders": orders,
             "total_orders": len(orders),
-            "total_capital": sum(capitals),
-            "generated_at": datetime.now().isoformat(),
-            "strategy_type": strategy_type
+            "total_capital": sum(capitals)
         }
     except Exception as e:
         logger.error(f"Error generating JSON data: {e}")
