@@ -167,10 +167,20 @@ class ChatAICore:
         logger.info("✅ ChatAI Core initialized successfully")
         
     def init_database(self):
-        """Initialize the database with required tables"""
+        """Initialize the database with required tables and WAL mode"""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(
+                self.db_path,
+                timeout=30.0,
+                isolation_level=None
+            )
             cursor = conn.cursor()
+            
+            # Enable WAL mode for better concurrency
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA synchronous=NORMAL")
+            cursor.execute("PRAGMA cache_size=10000")
+            cursor.execute("PRAGMA temp_store=MEMORY")
             
             # Create conversations table
             cursor.execute('''
@@ -186,7 +196,8 @@ class ChatAICore:
                     processing_time REAL,
                     modal_response_id TEXT,
                     error_message TEXT,
-                    trace_id TEXT
+                    trace_id TEXT,
+                    user_id TEXT
                 )
             ''')
             
@@ -225,7 +236,7 @@ class ChatAICore:
             
             conn.commit()
             conn.close()
-            print("✅ ChatAI database initialized successfully")
+            print("✅ ChatAI database initialized successfully with WAL mode")
             
         except Exception as e:
             print(f"❌ Error initializing ChatAI database: {e}")
@@ -324,7 +335,8 @@ class ChatAICore:
             if not conversation_id:
                 conversation_id = str(uuid.uuid4())
             
-            self._store_conversation(
+            # Store conversation and log success
+            storage_success, new_conversation_id = self._store_conversation(
                 conversation_id=conversation_id,
                 user_prompt=prompt,
                 ai_response=modal_response.get("response", ""),
@@ -337,11 +349,18 @@ class ChatAICore:
                 user_id=user_id
             )
             
+            if storage_success:
+                # Update conversation_id with the new unique ID from database
+                conversation_id = new_conversation_id
+                logger.info(f"✅ Conversation successfully saved to database with new ID: {conversation_id}")
+            else:
+                logger.warning(f"⚠️ Failed to save conversation to database: {conversation_id}")
+            
             return {
                 "response": modal_response.get("response", "Sorry, I couldn't process your request."),
                 "model_used": modal_response.get("model_used", "modal-mf-assistant"),
                 "provider": "modal",
-                "conversation_id": conversation_id,
+                "conversation_id": conversation_id,  # This now contains the new unique ID from database
                 "trace_id": trace_id,
                 "processing_time": processing_time,
                 "modal_response_id": modal_response.get("response_id"),
@@ -378,170 +397,282 @@ class ChatAICore:
                            system_prompt: str, model_used: str, provider: str,
                            processing_time: float = None, modal_response_id: str = None,
                            trace_id: str = None, error_message: str = None, user_id: str = None):
-        """Store conversation in database with uniqueness validation based on prompt content"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # Check for duplicate prompt content (same user_prompt and user_id)
-            cursor.execute('''
-                SELECT COUNT(*) FROM conversations 
-                WHERE user_prompt = ? AND user_id = ?
-            ''', (user_prompt, user_id))
-            
-            duplicate_count = cursor.fetchone()[0]
-            
-            if duplicate_count > 0:
-                print(f"⚠️ Duplicate prompt detected for user {user_id}: '{user_prompt[:50]}...' - Skipping duplicate.")
-                conn.close()
-                return False
-            
-            # Insert new conversation
-            cursor.execute('''
-                INSERT INTO conversations 
-                (conversation_id, user_prompt, ai_response, system_prompt, model_used, 
-                 provider, processing_time, modal_response_id, trace_id, error_message, user_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (conversation_id, user_prompt, ai_response, system_prompt, model_used, 
-                  provider, processing_time, modal_response_id, trace_id, error_message, user_id))
-            
-            conn.commit()
-            conn.close()
-            print(f"✅ Conversation stored successfully: {conversation_id}")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Error storing conversation: {e}")
-            return False
+        """Store conversation in database - always create new record with unique ID with retry mechanism"""
+        max_retries = 3
+        retry_delay = 0.1  # 100ms
+        
+        for attempt in range(max_retries):
+            conn = None
+            try:
+                # Configure SQLite connection with proper settings to avoid locking
+                conn = sqlite3.connect(
+                    self.db_path,
+                    timeout=30.0,  # 30 second timeout
+                    isolation_level=None  # Autocommit mode
+                )
+                
+                # Set WAL mode and other optimizations
+                conn.execute("PRAGMA journal_mode=WAL")
+                conn.execute("PRAGMA synchronous=NORMAL")
+                conn.execute("PRAGMA cache_size=10000")
+                conn.execute("PRAGMA temp_store=MEMORY")
+                
+                cursor = conn.cursor()
+                
+                # Always generate a new unique conversation_id to avoid conflicts
+                new_conversation_id = str(uuid.uuid4())
+                
+                # Insert new conversation with unique ID
+                cursor.execute('''
+                    INSERT INTO conversations 
+                    (conversation_id, user_prompt, ai_response, system_prompt, model_used, 
+                     provider, processing_time, modal_response_id, trace_id, error_message, user_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (new_conversation_id, user_prompt, ai_response, system_prompt, model_used, 
+                      provider, processing_time, modal_response_id, trace_id, error_message, user_id))
+                
+                # Commit the transaction
+                conn.commit()
+                print(f"✅ Conversation stored successfully with new ID: {new_conversation_id}")
+                return True, new_conversation_id
+                
+            except sqlite3.OperationalError as e:
+                if "database is locked" in str(e).lower() and attempt < max_retries - 1:
+                    print(f"⚠️ Database locked, retrying in {retry_delay}s... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                    continue
+                else:
+                    print(f"❌ Database error after {max_retries} attempts: {e}")
+                    return False, None
+            except Exception as e:
+                print(f"❌ Error storing conversation: {e}")
+                return False, None
+            finally:
+                # Ensure connection is always closed
+                if conn:
+                    try:
+                        conn.close()
+                    except:
+                        pass  # Ignore errors when closing
     
     def store_rating(self, trace_id: str, user_rating: int, feedback_comment: str = "") -> bool:
-        """Store user rating and feedback"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # Store rating
-            cursor.execute('''
-                INSERT OR REPLACE INTO ratings 
-                (trace_id, user_rating, feedback_comment)
-                VALUES (?, ?, ?)
-            ''', (trace_id, user_rating, feedback_comment))
-            
-            conn.commit()
-            conn.close()
-            
-            print(f"✅ Rating stored successfully: {trace_id}")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Error storing rating: {e}")
-            return False
+        """Store user rating and feedback with robust connection handling"""
+        max_retries = 3
+        retry_delay = 0.1
+        
+        for attempt in range(max_retries):
+            conn = None
+            try:
+                conn = sqlite3.connect(
+                    self.db_path,
+                    timeout=30.0,
+                    isolation_level=None
+                )
+                
+                # Set WAL mode and optimizations
+                conn.execute("PRAGMA journal_mode=WAL")
+                conn.execute("PRAGMA synchronous=NORMAL")
+                
+                cursor = conn.cursor()
+                
+                # Store rating
+                cursor.execute('''
+                    INSERT OR REPLACE INTO ratings 
+                    (trace_id, user_rating, feedback_comment)
+                    VALUES (?, ?, ?)
+                ''', (trace_id, user_rating, feedback_comment))
+                
+                conn.commit()
+                print(f"✅ Rating stored successfully: {trace_id}")
+                return True
+                
+            except sqlite3.OperationalError as e:
+                if "database is locked" in str(e).lower() and attempt < max_retries - 1:
+                    print(f"⚠️ Database locked, retrying in {retry_delay}s... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                    continue
+                else:
+                    print(f"❌ Database error after {max_retries} attempts: {e}")
+                    return False
+            except Exception as e:
+                print(f"❌ Error storing rating: {e}")
+                return False
+            finally:
+                if conn:
+                    try:
+                        conn.close()
+                    except:
+                        pass
 
 
     def get_user_history(self, user_id: str = None, limit: int = 50) -> Dict[str, Any]:
-        """Get user conversation history - API endpoint"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # Get conversation history
-            if user_id:
-                cursor.execute('''
-                    SELECT conversation_id, user_prompt, ai_response, timestamp, 
-                           model_used, processing_time, trace_id
-                    FROM conversations 
-                    WHERE user_id = ? OR user_id IS NULL
-                    ORDER BY timestamp DESC 
-                    LIMIT ?
-                ''', (user_id, limit))
-            else:
-                cursor.execute('''
-                    SELECT conversation_id, user_prompt, ai_response, timestamp, 
-                           model_used, processing_time, trace_id
-                    FROM conversations 
-                    ORDER BY timestamp DESC 
-                    LIMIT ?
-                ''', (limit,))
-            
-            conversations = cursor.fetchall()
-            conn.close()
-            
-            # Format the response
-            history = []
-            for conv in conversations:
-                history.append({
-                    "conversation_id": conv[0],
-                    "user_prompt": conv[1],
-                    "timestamp": conv[3],
-                    "model_used": conv[4],
-                    "processing_time": conv[5],
-                    "trace_id": conv[6]
-                })
-            
-            logger.info(f"✅ Retrieved {len(history)} conversations for user: {user_id}")
-            return {
-                "success": True,
-                "conversations": history,
-                "total_count": len(history)
-            }
-            
-        except Exception as e:
-            logger.error(f"❌ Error retrieving user history: {e}")
-            return {
-                "success": False,
-                "message": f"Error retrieving history: {str(e)}",
-                "conversations": []
-            }
-
-    def delete_user_prompt(self, user_id: str, conversation_id: str) -> Dict[str, Any]:
-        """Delete a single saved prompt for a user by conversation_id"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # First, check if the conversation exists and belongs to the user
-            cursor.execute('''
-                SELECT COUNT(*) FROM conversations 
-                WHERE conversation_id = ? AND user_id = ?
-            ''', (conversation_id, user_id))
-            
-            exists_count = cursor.fetchone()[0]
-            
-            if exists_count == 0:
-                conn.close()
-                return {
-                    "success": False,
-                    "message": f"Conversation {conversation_id} not found for user {user_id}"
-                }
-            
-            # Delete the conversation
-            cursor.execute('''
-                DELETE FROM conversations 
-                WHERE conversation_id = ? AND user_id = ?
-            ''', (conversation_id, user_id))
-            
-            deleted_count = cursor.rowcount
-            conn.commit()
-            conn.close()
-            
-            if deleted_count > 0:
-                logger.info(f"✅ Deleted conversation {conversation_id} for user {user_id}")
+        """Get user conversation history - API endpoint with robust connection handling"""
+        max_retries = 3
+        retry_delay = 0.1
+        
+        for attempt in range(max_retries):
+            conn = None
+            try:
+                conn = sqlite3.connect(
+                    self.db_path,
+                    timeout=30.0,
+                    isolation_level=None
+                )
+                
+                # Set WAL mode and optimizations
+                conn.execute("PRAGMA journal_mode=WAL")
+                conn.execute("PRAGMA synchronous=NORMAL")
+                
+                cursor = conn.cursor()
+                
+                # Get conversation history
+                if user_id:
+                    cursor.execute('''
+                        SELECT conversation_id, user_prompt, ai_response, timestamp, 
+                               model_used, processing_time, trace_id
+                        FROM conversations 
+                        WHERE user_id = ? OR user_id IS NULL
+                        ORDER BY timestamp DESC 
+                        LIMIT ?
+                    ''', (user_id, limit))
+                else:
+                    cursor.execute('''
+                        SELECT conversation_id, user_prompt, ai_response, timestamp, 
+                               model_used, processing_time, trace_id
+                        FROM conversations 
+                        ORDER BY timestamp DESC 
+                        LIMIT ?
+                    ''', (limit,))
+                
+                conversations = cursor.fetchall()
+                
+                # Format the response
+                history = []
+                for conv in conversations:
+                    history.append({
+                        "conversation_id": conv[0],
+                        "user_prompt": conv[1],
+                        "timestamp": conv[3],
+                        "model_used": conv[4],
+                        "processing_time": conv[5],
+                        "trace_id": conv[6]
+                    })
+                
+                logger.info(f"✅ Retrieved {len(history)} conversations for user: {user_id}")
                 return {
                     "success": True,
-                    "message": f"Conversation {conversation_id} deleted successfully"
+                    "conversations": history,
+                    "total_count": len(history)
                 }
-            else:
+                
+            except sqlite3.OperationalError as e:
+                if "database is locked" in str(e).lower() and attempt < max_retries - 1:
+                    print(f"⚠️ Database locked, retrying in {retry_delay}s... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                    continue
+                else:
+                    logger.error(f"❌ Database error after {max_retries} attempts: {e}")
+                    return {
+                        "success": False,
+                        "message": f"Database error: {str(e)}",
+                        "conversations": []
+                    }
+            except Exception as e:
+                logger.error(f"❌ Error retrieving user history: {e}")
                 return {
                     "success": False,
-                    "message": f"Failed to delete conversation {conversation_id}"
+                    "message": f"Error retrieving history: {str(e)}",
+                    "conversations": []
                 }
-            
-        except Exception as e:
-            logger.error(f"❌ Error deleting conversation: {e}")
-            return {
-                "success": False,
-                "message": f"Error deleting conversation: {str(e)}"
-            }
+            finally:
+                if conn:
+                    try:
+                        conn.close()
+                    except:
+                        pass
+
+    def delete_user_prompt(self, user_id: str, conversation_id: str) -> Dict[str, Any]:
+        """Delete a single saved prompt for a user by conversation_id with robust connection handling"""
+        max_retries = 3
+        retry_delay = 0.1
+        
+        for attempt in range(max_retries):
+            conn = None
+            try:
+                conn = sqlite3.connect(
+                    self.db_path,
+                    timeout=30.0,
+                    isolation_level=None
+                )
+                
+                # Set WAL mode and optimizations
+                conn.execute("PRAGMA journal_mode=WAL")
+                conn.execute("PRAGMA synchronous=NORMAL")
+                
+                cursor = conn.cursor()
+                
+                # First, check if the conversation exists and belongs to the user
+                cursor.execute('''
+                    SELECT COUNT(*) FROM conversations 
+                    WHERE conversation_id = ? AND user_id = ?
+                ''', (conversation_id, user_id))
+                
+                exists_count = cursor.fetchone()[0]
+                
+                if exists_count == 0:
+                    return {
+                        "success": False,
+                        "message": f"Conversation {conversation_id} not found for user {user_id}"
+                    }
+                
+                # Delete the conversation
+                cursor.execute('''
+                    DELETE FROM conversations 
+                    WHERE conversation_id = ? AND user_id = ?
+                ''', (conversation_id, user_id))
+                
+                deleted_count = cursor.rowcount
+                conn.commit()
+                
+                if deleted_count > 0:
+                    logger.info(f"✅ Deleted conversation {conversation_id} for user {user_id}")
+                    return {
+                        "success": True,
+                        "message": f"Conversation {conversation_id} deleted successfully"
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "message": f"Failed to delete conversation {conversation_id}"
+                    }
+                
+            except sqlite3.OperationalError as e:
+                if "database is locked" in str(e).lower() and attempt < max_retries - 1:
+                    print(f"⚠️ Database locked, retrying in {retry_delay}s... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                    continue
+                else:
+                    logger.error(f"❌ Database error after {max_retries} attempts: {e}")
+                    return {
+                        "success": False,
+                        "message": f"Database error: {str(e)}"
+                    }
+            except Exception as e:
+                logger.error(f"❌ Error deleting conversation: {e}")
+                return {
+                    "success": False,
+                    "message": f"Error deleting conversation: {str(e)}"
+                }
+            finally:
+                if conn:
+                    try:
+                        conn.close()
+                    except:
+                        pass
 
     def cleanup(self):
         """Clean up resources"""

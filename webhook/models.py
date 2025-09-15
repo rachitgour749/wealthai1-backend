@@ -90,15 +90,18 @@ class JsonGenerate(BaseModel):
 
 class JsonSave(BaseModel):
     """Request model for saving JSON data"""
-    user_email: str = Field(..., description="User email address")
-    json_data: Dict[str, Any] = Field(..., description="JSON data to save")
-    strategy_name: Optional[str] = Field(None, description="Name of the strategy")
+    user_email: str = Field(..., alias="userEmail", description="User email address")
+    json_data: Dict[str, Any] = Field(..., alias="jsonData", description="JSON data to save")
+    strategy_name: Optional[str] = Field(None, alias="strategyName", description="Name of the strategy")
     
     @validator('user_email')
     def validate_user_email(cls, v):
         if not v or not v.strip():
             raise ValueError('User email cannot be empty')
         return v.strip()
+    
+    class Config:
+        allow_population_by_field_name = True
 
 class DeployRequest(BaseModel):
     """Request model for deploy functionality - generates and saves JSON data"""
