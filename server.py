@@ -201,7 +201,7 @@ async def health_check():
     """Health check endpoint to verify API and database status"""
     try:
         status = {
-            "api_status": "healthy",
+            "api_status_latest": "healthy",
             "stock_backtester_initialized": stock_backtester_initialized,
             "etf_backtester_initialized": etf_backtester_initialized,
             "rs_strategy_initialized": True,  # RS strategy is always available
@@ -1566,7 +1566,7 @@ async def execute_stock_signals(request: dict = None):
 if __name__ == "__main__":
     print("🚀 Starting Unified Rotation Backtester API Server...")
     print("📊 Available endpoints:")
-    print("   GET  /health - Health check")
+    print("   GET  /health_check - Health check")
     print("   GET  /api/stocks - List available stocks")
     print("   GET  /api/etfs - List available ETFs")
     print("   POST /api/stocks/metrics - Run stock backtest")
