@@ -1491,3 +1491,24 @@
 2025-11-11 16:27:11,170 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
 2025-11-11 16:27:11,171 - rs_scheduler - INFO - Scheduler will run in the background
 2025-11-11 19:59:23,079 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-13 01:25:31,491 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-13 01:25:31,493 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\newFolder\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-13 01:25:31,495 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-13 01:25:31,500 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-13 01:25:31,501 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-13 01:25:31,504 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-13 01:25:31,508 - rs_scheduler - INFO - 
+2025-11-13 01:25:31,509 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-13 01:25:31,512 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-13 01:25:31,515 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-13 10:40:32,224 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-13 10:40:32,228 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\newFolder\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-13 10:40:32,231 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-13 10:40:32,240 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-13 10:40:32,242 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-13 10:40:32,245 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-13 10:40:32,245 - rs_scheduler - INFO - 
+2025-11-13 10:40:32,248 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-13 10:40:32,252 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-13 10:40:32,254 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-13 11:29:03,002 - rs_scheduler - INFO - RS Strategy Scheduler stopped

@@ -12,6 +12,12 @@ import json
 # Add the etf-strategy path for backtester import
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'etf-strategy'))
 
+# Add Databases path for market data connection
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(os.path.dirname(current_dir))
+databases_path = os.path.join(parent_dir, 'Databases')
+sys.path.insert(0, databases_path)
+
 try:
     from backtester_core import ETFRotationBacktester
 except ImportError:
@@ -24,16 +30,26 @@ class LiveStockSignalGenerator:
     """
     
     def __init__(self, db_path: str = None):
-        """Initialize the stock signal generator"""
+        """
+        Initialize the stock signal generator
+        
+        Args:
+            db_path: Deprecated - kept for compatibility. Market data now uses PostgreSQL.
+                    If provided, will be used for live_stock_signals table (SQLite).
+        """
+        # For live_stock_signals table, use SQLite if db_path provided, otherwise use default
         if db_path is None:
             db_path = os.path.join(os.path.dirname(__file__), '..', '..', 'unified_etf_data.sqlite')
         
         # Ensure absolute path
-        self.db_path = os.path.abspath(db_path)
-        self.backtester = ETFRotationBacktester() if ETFRotationBacktester else None
+        self.db_path = os.path.abspath(db_path) if db_path else None
+        
+        # Initialize backtester (now uses PostgreSQL for market data)
+        self.backtester = ETFRotationBacktester(None) if ETFRotationBacktester else None
         self.user_id = None  # Will be set from deployment
         self.setup_logging()
-        self.create_tables()
+        if self.db_path:
+            self.create_tables()
     
     def setup_logging(self):
         """Setup logging for stock signal generation"""
@@ -162,9 +178,12 @@ class LiveStockSignalGenerator:
         """
         Get stock symbols for signal generation (exclude the 20 ETF symbols)
         """
+        from market_data_db_connection import get_session as get_market_data_session
+        from sqlalchemy import text
+        
+        session = None
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            session = get_market_data_session()
             
             # Define the 20 ETF symbols to exclude
             etf_symbols = [
@@ -185,8 +204,9 @@ class LiveStockSignalGenerator:
             self.logger.info(f"Using last Friday's date: {end_date} for stock signal generation")
             
             # Get all symbols from etf_unified table
-            cursor.execute('SELECT DISTINCT symbol FROM etf_unified ORDER BY symbol')
-            all_symbols = [row[0] for row in cursor.fetchall()]
+            query = text("SELECT DISTINCT symbol FROM etf_unified ORDER BY symbol")
+            result = session.execute(query)
+            all_symbols = [row[0] for row in result.fetchall()]
             
             # Filter out ETF symbols to get only stocks
             stock_symbols = [symbol for symbol in all_symbols if symbol not in etf_symbols]
@@ -194,16 +214,14 @@ class LiveStockSignalGenerator:
             # Filter symbols that have data in the specified date range
             valid_stock_symbols = []
             for symbol in stock_symbols:
-                cursor.execute('''
+                query = text("""
                     SELECT COUNT(*) FROM etf_unified 
-                    WHERE symbol = ? AND date >= ? AND date <= ?
-                ''', (symbol, start_date, end_date))
-                
-                count = cursor.fetchone()[0]
+                    WHERE symbol = :symbol AND date >= :start_date AND date <= :end_date
+                """)
+                result = session.execute(query, {"symbol": symbol, "start_date": start_date, "end_date": end_date})
+                count = result.fetchone()[0]
                 if count >= 100:  # At least 100 trading days for testing
                     valid_stock_symbols.append(symbol)
-            
-            conn.close()
             
             self.logger.info(f"Found {len(valid_stock_symbols)} stock symbols for signal generation")
             return valid_stock_symbols
@@ -211,27 +229,32 @@ class LiveStockSignalGenerator:
         except Exception as e:
             self.logger.error(f"Error getting stock symbols: {e}")
             raise
+        finally:
+            if session:
+                session.close()
     
     def load_stock_data_from_database(self, symbol: str, start_date: str, end_date: str) -> pd.DataFrame:
-        """Load stock data from the database"""
+        """Load stock data from PostgreSQL database"""
+        from market_data_db_connection import get_session as get_market_data_session
+        from sqlalchemy import text
+        
+        session = None
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            session = get_market_data_session()
             
-            cursor.execute('''
-                SELECT date, open, high, low, close, volume
+            query = text("""
+                SELECT date, open_price as open, high_price as high, 
+                       low_price as low, close_price as close, volume
                 FROM etf_unified
-                WHERE symbol = ? AND date >= ? AND date <= ?
+                WHERE symbol = :symbol AND date >= :start_date AND date <= :end_date
                 ORDER BY date
-            ''', (symbol, start_date, end_date))
+            """)
             
-            data = cursor.fetchall()
-            conn.close()
+            df = pd.read_sql(query, session.bind, params={"symbol": symbol, "start_date": start_date, "end_date": end_date})
             
-            if not data:
+            if df.empty:
                 return pd.DataFrame()
             
-            df = pd.DataFrame(data, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
             df['date'] = pd.to_datetime(df['date'])
             df.set_index('date', inplace=True)
             df['symbol'] = symbol
@@ -241,6 +264,9 @@ class LiveStockSignalGenerator:
         except Exception as e:
             self.logger.error(f"Error loading data for {symbol}: {e}")
             return pd.DataFrame()
+        finally:
+            if session:
+                session.close()
     
     def calculate_stock_metrics(self, symbols: List[str], days_back: int = 365) -> pd.DataFrame:
         """Calculate metrics for all stock symbols"""

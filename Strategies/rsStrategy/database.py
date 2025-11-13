@@ -3,28 +3,37 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import os
+import sys
 import asyncio
 import time
 import logging
 from contextlib import contextmanager
 
-# Database URL
-DATABASE_URL = "sqlite:///./Strategies/rsStrategy/nifty500_data_with_metadata.sqlite"
+# Import market data database connection for market data tables
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(os.path.dirname(current_dir))
+databases_path = os.path.join(parent_dir, 'Databases')
+sys.path.insert(0, databases_path)
 
-# Enhanced SQLite configuration to prevent locking issues
-engine = create_engine(
-    DATABASE_URL, 
-    connect_args={
-        "check_same_thread": False,
-        "timeout": 30,  # 30 second timeout
-        "isolation_level": None  # Autocommit mode to reduce locking
-    },
-    pool_pre_ping=True,  # Verify connections before use
-    pool_recycle=3600,   # Recycle connections every hour
-    echo=False
+from market_data_db_connection import (
+    create_connection as create_market_data_connection,
+    get_session as get_market_data_session,
+    get_engine as get_market_data_engine,
+    init_database as init_market_data_database,
+    Base as MarketDataBase,
+    StockData,
+    IndexData,
+    Nifty500Metadata
 )
+
+# Use market data connection for market data tables
+# Initialize connection
+if not create_market_data_connection():
+    raise RuntimeError("Failed to connect to MarketData database")
+
+engine = get_market_data_engine()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+Base = MarketDataBase  # Use the same Base for all models
 
 # Dependency to get database session with enhanced error handling
 def get_db():
@@ -44,43 +53,11 @@ def get_db():
             except Exception as e:
                 logging.error(f"Error closing database session: {e}")
 
-# Stock data model
-class StockData(Base):
-    __tablename__ = "stock_data"
-    
-    symbol = Column(String, primary_key=True, index=True)
-    date = Column(DateTime, primary_key=True, index=True)
-    open = Column(Float)
-    high = Column(Float)
-    low = Column(Float)
-    close = Column(Float)
-    adj_close = Column(Float)
-    volume = Column(Integer)
-    
-# Index data model
-class IndexData(Base):
-    __tablename__ = "index_data"
-    
-    symbol = Column(String, primary_key=True, index=True)  # e.g., "^NSEI" for Nifty 50
-    date = Column(DateTime, primary_key=True, index=True)
-    open = Column(Float)
-    high = Column(Float)
-    low = Column(Float)
-    close = Column(Float)
-    adj_close = Column(Float)
-    volume = Column(Integer)
+# Stock data model - using models from market_data_db_connection
+# StockData, IndexData, and Nifty500Metadata are imported from market_data_db_connection
 
-# Nifty 500 metadata
-class Nifty500Constituents(Base):
-    __tablename__ = "nifty500_metadata"
-    
-    symbol = Column(String, primary_key=True, index=True)
-    start_date = Column(String)  # DATE as string
-    end_date = Column(String)    # DATE as string
-    total_records = Column(Integer)
-    last_updated = Column(String)  # DATE as string
-    data_source = Column(String)
-    years_available = Column(Float)
+# Alias for compatibility
+Nifty500Constituents = Nifty500Metadata
 
 # Strategy configuration
 class StrategyConfig(Base):
@@ -175,6 +152,32 @@ class PortfolioSnapshot(Base):
     cumulative_pnl = Column(Float)
     drawdown_pct = Column(Float)
 
+# Saved RS Strategy
+class SavedRSStrategy(Base):
+    __tablename__ = "saved_rs_strategies"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    strategy_name = Column(String, index=True)
+    strategy_type = Column(String, default="RS Strategy")
+    user_id = Column(String, index=True)
+    start_date = Column(DateTime, index=True)
+    end_date = Column(DateTime, index=True)
+    stock_universe = Column(String)
+    backtest_results = Column(Text)  # JSON string of backtest results
+    strategy_config = Column(Text)  # JSON string of strategy configuration
+    created_at = Column(DateTime, default=datetime.now)
+    is_active = Column(Boolean, default=True)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    # Additional fields for strategy management
+    last_run_date = Column(DateTime, nullable=True)
+    next_run_date = Column(DateTime, nullable=True)
+    run_frequency = Column(String, default="daily")  # daily, weekly, monthly
+    status = Column(String, default="deploy")   # deploy, paused, stopped
+    run_id = Column(String, index=True, nullable=True)
+    webhook_url = Column(String, nullable=True)
+    client_information_json = Column(Text, nullable=True)
+
 # RS Live signals
 class RSLiveSignal(Base):
     __tablename__ = "rs_live"
@@ -197,20 +200,10 @@ class RSLiveSignal(Base):
     update_price_json = Column(String)  # NEW: JSON with price updates
     created_at = Column(DateTime, default=datetime.now)
 
-# Backtest database setup with enhanced configuration
-BACKTEST_DATABASE_URL = "sqlite:///./Strategies/rsStrategy/nifty500_data_with_metadata.sqlite"
-backtest_engine = create_engine(
-    BACKTEST_DATABASE_URL, 
-    connect_args={
-        "check_same_thread": False,
-        "timeout": 30,  # 30 second timeout
-        "isolation_level": None  # Autocommit mode to reduce locking
-    },
-    pool_pre_ping=True,  # Verify connections before use
-    pool_recycle=3600,   # Recycle connections every hour
-    echo=False
-)
-BacktestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=backtest_engine)
+# Backtest database setup - use same PostgreSQL connection for market data
+# Strategy-specific tables (backtest_results, trade_logs, etc.) can use the same connection
+backtest_engine = engine  # Use the same engine
+BacktestSessionLocal = SessionLocal  # Use the same session maker
 
 # Utility functions
 async def execute_with_retry(func, max_retries=3, delay=0.5):
@@ -328,30 +321,14 @@ def reset_database_connections():
         logging.error(f"Failed to reset database connections: {e}")
 
 def force_unlock_database():
-    """Force unlock database by resetting connections and clearing lock files"""
+    """Force unlock database by resetting connections"""
     try:
         # Reset all database connections
         reset_database_connections()
-        
-        # Wait for connections to close
-        time.sleep(0.5)
-        
-        # Try to remove any SQLite lock files (if they exist)
-        db_path = "./Strategies/rsStrategy/nifty500_data_with_metadata.sqlite"
-        lock_files = [f"{db_path}-wal", f"{db_path}-shm", f"{db_path}-journal"]
-        
-        for lock_file in lock_files:
-            try:
-                if os.path.exists(lock_file):
-                    os.remove(lock_file)
-                    logging.info(f"Removed lock file: {lock_file}")
-            except Exception as e:
-                logging.warning(f"Could not remove lock file {lock_file}: {e}")
-        
-        logging.info("Database unlocked successfully")
+        logging.info("Database connections reset successfully")
         return True
     except Exception as e:
-        logging.error(f"Failed to unlock database: {e}")
+        logging.error(f"Failed to reset database connections: {e}")
         return False
 
 @contextmanager

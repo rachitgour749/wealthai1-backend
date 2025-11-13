@@ -2,7 +2,8 @@
 Neon PostgreSQL Database Connection Module
 
 This module provides connection to Neon PostgreSQL database for all backend storage
-except ETF, RS, Stock, backtest, and live signal generation which use SQLite.
+including strategy configurations, live signals, and execution tracking.
+Market data (ETF/Stock prices) is also stored in PostgreSQL.
 """
 
 import os
@@ -104,8 +105,12 @@ def init_database():
         raise RuntimeError("Database connection not initialized. Call create_connection() first.")
     
     try:
+        # Import strategy models to register them with Base
+        from Databases import strategy_models  # noqa: F401
+        
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables initialized successfully")
+        logger.info("Strategy and signal tables are now using PostgreSQL")
         return True
     except Exception as e:
         logger.error(f"Error initializing database tables: {e}")

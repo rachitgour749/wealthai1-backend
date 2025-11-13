@@ -1,5 +1,4 @@
 # Complete ETF & Stock EOD Data Fetcher Script for Indian Markets with Automatic Scheduling
-import sqlite3
 import yfinance as yf
 import logging
 import pandas as pd
@@ -12,6 +11,20 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 import threading
+from sqlalchemy.exc import IntegrityError
+
+# Import market data database connection
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(os.path.dirname(current_dir))
+databases_path = os.path.join(parent_dir, 'Databases')
+sys.path.insert(0, databases_path)
+
+from market_data_db_connection import (
+    create_connection as create_market_data_connection,
+    get_session as get_market_data_session,
+    init_database as init_market_data_database,
+    ETFUnified
+)
 
 # Setup enhanced logging with rotation
 from logging.handlers import RotatingFileHandler
@@ -49,16 +62,14 @@ class IndianMarketDataFetcher:
         Initialize the Indian market data fetcher
         
         Args:
-            db_path (str): Path to SQLite database file
+            db_path (str): Deprecated - kept for compatibility, not used anymore
         """
-        if db_path is None:
-            # Updated path for Schedulers folder
-            self.db_path = os.path.join(parent_dir, 'unified_etf_data.sqlite')
-        else:
-            self.db_path = os.path.abspath(db_path)
+        # Initialize PostgreSQL connection
+        if not create_market_data_connection():
+            raise RuntimeError("Failed to connect to MarketData database")
         
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        # Initialize database tables
+        init_market_data_database()
         
         # Indian market holidays
         self.indian_holidays = holidays.India()
@@ -176,54 +187,58 @@ class IndianMarketDataFetcher:
     
     def save_to_database(self, symbol_data):
         """
-        Save symbol data to database
+        Save symbol data to PostgreSQL database
         
         Args:
             symbol_data (dict): Data to save
         """
+        if not symbol_data['success'] or not symbol_data['data']:
+            return
+        
+        session = None
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            session = get_market_data_session()
+            data = symbol_data['data']
             
-            # Create table if it doesn't exist
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS etf_unified (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    symbol TEXT NOT NULL,
-                    date TEXT NOT NULL,
-                    open_price REAL,
-                    high_price REAL,
-                    low_price REAL,
-                    close_price REAL,
-                    volume INTEGER,
-                    adj_close REAL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(symbol, date)
+            # Use PostgreSQL UPSERT (ON CONFLICT DO UPDATE)
+            from sqlalchemy.dialects.postgresql import insert
+            
+            stmt = insert(ETFUnified).values(
+                symbol=symbol_data['symbol'],
+                date=data['date'],
+                open_price=data['open'],
+                high_price=data['high'],
+                low_price=data['low'],
+                close_price=data['close'],
+                volume=data['volume'],
+                adj_close=data['adj_close']
+            )
+            
+            stmt = stmt.on_conflict_do_update(
+                index_elements=['symbol', 'date'],
+                set_=dict(
+                    open_price=stmt.excluded.open_price,
+                    high_price=stmt.excluded.high_price,
+                    low_price=stmt.excluded.low_price,
+                    close_price=stmt.excluded.close_price,
+                    volume=stmt.excluded.volume,
+                    adj_close=stmt.excluded.adj_close
                 )
-            ''')
+            )
             
-            if symbol_data['success'] and symbol_data['data']:
-                data = symbol_data['data']
-                cursor.execute('''
-                    INSERT OR REPLACE INTO etf_unified 
-                    (symbol, date, open_price, high_price, low_price, close_price, volume, adj_close)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    symbol_data['symbol'],
-                    data['date'],
-                    data['open'],
-                    data['high'],
-                    data['low'],
-                    data['close'],
-                    data['volume'],
-                    data['adj_close']
-                ))
+            session.execute(stmt)
+            session.commit()
             
-            conn.commit()
-            conn.close()
-            
+        except IntegrityError as e:
+            session.rollback()
+            logging.error(f"Database integrity error for {symbol_data['symbol']}: {e}")
         except Exception as e:
+            if session:
+                session.rollback()
             logging.error(f"Database error for {symbol_data['symbol']}: {e}")
+        finally:
+            if session:
+                session.close()
     
     def run_daily_fetch(self, days_back=1):
         """
@@ -271,15 +286,8 @@ class MarketDataScheduler:
         """
         Initialize the market data scheduler
         """
-        # Updated path for Schedulers folder
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = os.path.dirname(os.path.dirname(current_dir))
-        db_path = os.path.join(parent_dir, 'unified_etf_data.sqlite')
-        
-        # Store db_path as instance variable for use in jobs
-        self.db_path = db_path
-        
-        self.fetcher = IndianMarketDataFetcher(db_path)
+        # Initialize market data fetcher (uses PostgreSQL now)
+        self.fetcher = IndianMarketDataFetcher()
         self.scheduler = BlockingScheduler()
         
         # Initialize signal generators
@@ -288,14 +296,18 @@ class MarketDataScheduler:
         
         if LiveSignalGenerator:
             try:
-                self.etf_signal_generator = LiveSignalGenerator(db_path)
+                # Signal generators will be updated to use PostgreSQL
+                # For now, pass None - they should handle it gracefully
+                self.etf_signal_generator = LiveSignalGenerator(None)
                 logging.info("ETF signal generator initialized successfully")
             except Exception as e:
                 logging.error(f"Failed to initialize ETF signal generator: {e}")
         
         if LiveStockSignalGenerator:
             try:
-                self.stock_signal_generator = LiveStockSignalGenerator(db_path)
+                # Signal generators will be updated to use PostgreSQL
+                # For now, pass None - they should handle it gracefully
+                self.stock_signal_generator = LiveStockSignalGenerator(None)
                 logging.info("Stock signal generator initialized successfully")
             except Exception as e:
                 logging.error(f"Failed to initialize Stock signal generator: {e}")
@@ -524,19 +536,9 @@ class MarketDataScheduler:
                 sys.path.insert(0, os.path.join(parent_dir, 'Strategies', 'etfstrategy'))
                 from etf_signal_generator import ETFSignalGenerator
                 
-                # Use the same database path as the fetcher (which is already correct)
-                db_path = self.fetcher.db_path
-                logging.info(f"Using database path for ETF signals: {db_path}")
-                logging.info(f"Database exists: {os.path.exists(db_path)}")
-                
-                # Check if database exists, if not try alternative
-                if not os.path.exists(db_path):
-                    alt_path = os.path.join(parent_dir, "unified_etf_data.sqlite")
-                    if os.path.exists(alt_path):
-                        db_path = alt_path
-                        logging.info(f"Using alternative database path: {db_path}")
-                
-                generator = ETFSignalGenerator(db_path=db_path)
+                # Signal generators now use PostgreSQL (MarketData database)
+                # Pass None - signal generators will be updated to use PostgreSQL connection
+                generator = ETFSignalGenerator(db_path=None)
                 result = generator.generate_signals(signal_date=target_date)
                 
                 if result.get('success'):
@@ -589,19 +591,9 @@ class MarketDataScheduler:
                 sys.path.insert(0, os.path.join(parent_dir, 'Strategies', 'stockstrategy'))
                 from stock_signal_generator import StockSignalGenerator
                 
-                # Use the same database path as the fetcher (which is already correct)
-                db_path = self.fetcher.db_path
-                logging.info(f"Using database path for STOCK signals: {db_path}")
-                logging.info(f"Database exists: {os.path.exists(db_path)}")
-                
-                # Check if database exists, if not try alternative
-                if not os.path.exists(db_path):
-                    alt_path = os.path.join(parent_dir, "unified_etf_data.sqlite")
-                    if os.path.exists(alt_path):
-                        db_path = alt_path
-                        logging.info(f"Using alternative database path: {db_path}")
-                
-                generator = StockSignalGenerator(db_path=db_path)
+                # Signal generators now use PostgreSQL (MarketData database)
+                # Pass None - signal generators will be updated to use PostgreSQL connection
+                generator = StockSignalGenerator(db_path=None)
                 result = generator.generate_signals(signal_date=target_date)
                 
                 if result.get('success'):

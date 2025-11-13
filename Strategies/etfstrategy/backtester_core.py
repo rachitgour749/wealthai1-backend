@@ -1,12 +1,26 @@
-import sqlite3
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 import warnings
 import os
+import sys
 import json
 warnings.filterwarnings('ignore')
+
+# Import market data database connection
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(os.path.dirname(current_dir))
+databases_path = os.path.join(parent_dir, 'Databases')
+sys.path.insert(0, databases_path)
+
+from market_data_db_connection import (
+    create_connection as create_market_data_connection,
+    get_session as get_market_data_session,
+    init_database as init_market_data_database,
+    ETFUnified,
+    ETFMetadata
+)
 
 try:
     import plotly.graph_objects as go
@@ -19,14 +33,26 @@ except ImportError:
 
 
 class ETFRotationBacktester:
-    def __init__(self, db_path: str = "../unified_etf_data.sqlite"):
-        self.db_path = db_path
+    def __init__(self, db_path: str = None):
+        """
+        Initialize ETF Rotation Backtester
+        
+        Args:
+            db_path: Deprecated - kept for compatibility. Now uses PostgreSQL MarketData database.
+        """
+        # Initialize PostgreSQL connection
+        if not create_market_data_connection():
+            raise RuntimeError("Failed to connect to MarketData database")
+        
+        # Initialize database tables
+        init_market_data_database()
+        
         self.portfolio_log = []
         self.weekly_nav_df = pd.DataFrame()
         self.nifty50_df = pd.DataFrame()
         self.transaction_costs_log = []
         self.purchase_history = {}
-        self.available_databases = self.check_available_databases()
+        self.available_databases = []  # Not needed for PostgreSQL
         self.etf_metadata = self.load_etf_metadata()
         
         # Trade execution tracking
@@ -39,33 +65,18 @@ class ETFRotationBacktester:
         
         # Performance optimizations
         self._data_cache = {}
-        self._connection = None
         self._verbose = False  # Set to True for debugging
 
     def set_verbose(self, verbose: bool = True):
         """Enable or disable verbose logging for debugging"""
         self._verbose = verbose
 
-    def _get_connection(self):
-        """Get or create database connection with optimization"""
-        if self._connection is None:
-            self._connection = sqlite3.connect(self.db_path)
-            # Enable WAL mode for better performance
-            self._connection.execute("PRAGMA journal_mode=WAL")
-            self._connection.execute("PRAGMA synchronous=NORMAL")
-            self._connection.execute("PRAGMA cache_size=10000")
-            self._connection.execute("PRAGMA temp_store=MEMORY")
-        return self._connection
-
-    def _close_connection(self):
-        """Close database connection"""
-        if self._connection:
-            self._connection.close()
-            self._connection = None
+    def _get_session(self):
+        """Get database session for PostgreSQL"""
+        return get_market_data_session()
 
     def cleanup(self):
-        """Clean up resources and close connections"""
-        self._close_connection()
+        """Clean up resources and clear cache"""
         self._data_cache.clear()
 
     def get_trading_summary(self):
@@ -106,89 +117,76 @@ class ETFRotationBacktester:
         }
 
     def check_available_databases(self) -> List[str]:
-        """Check which database files are available"""
-        potential_dbs = [
-            "unified_etf_data.sqlite",
-            "etf_flexible_complete.sqlite",
-            "etf_10year_reliable.sqlite",
-            "etf_flexible_data.sqlite",
-            "etf_clean_ohlcv.sqlite"
-        ]
-
-        available = []
-        for db in potential_dbs:
-            if os.path.exists(db):
-                available.append(db)
-        return available
+        """Check which database files are available - Not needed for PostgreSQL"""
+        return []
 
     def load_etf_metadata(self) -> Dict[str, Dict]:
-        """Load ETF metadata from central database"""
+        """Load ETF metadata from PostgreSQL database"""
+        session = None
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-
-            # Check if etf_metadata table exists in central database
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='etf_metadata';")
-            if cursor.fetchone():
-                metadata_df = pd.read_sql_query("SELECT * FROM etf_metadata", conn)
+            session = self._get_session()
+            
+            # Try to load from etf_metadata table first
+            from sqlalchemy import text
+            result = session.execute(text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' AND table_name = 'etf_metadata'
+            """))
+            
+            if result.fetchone():
+                # Load from metadata table
+                metadata_records = session.query(ETFMetadata).all()
                 metadata = {}
-                for _, row in metadata_df.iterrows():
-                    metadata[row['symbol']] = {
-                        'start_date': row['start_date'],
-                        'end_date': row['end_date'],
-                        'years_available': row.get('years_available', row.get('availableyears', 0)),
-                        'total_records': row.get('total_records', row.get('rows', 0)),
-                        'data_source': row.get('data_source', 'database')
+                for record in metadata_records:
+                    metadata[record.symbol] = {
+                        'start_date': record.start_date,
+                        'end_date': record.end_date,
+                        'years_available': record.years_available or 0,
+                        'total_records': record.total_records or 0,
+                        'data_source': record.data_source or 'database'
                     }
             else:
                 # Fallback: calculate metadata from data table
-                metadata = self.calculate_metadata_from_data(conn)
+                metadata = self.calculate_metadata_from_data(session)
 
-            conn.close()
             return metadata
 
         except Exception as e:
             print(f"Error loading ETF metadata: {e}")
             return {}
+        finally:
+            if session:
+                session.close()
 
-    def calculate_metadata_from_data(self, conn) -> Dict[str, Dict]:
+    def calculate_metadata_from_data(self, session) -> Dict[str, Dict]:
         """Calculate metadata from ETF data table if metadata table doesn't exist"""
         try:
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-            tables = [row[0] for row in cursor.fetchall()]
-
-            # ETF-specific table priority
-            if 'etf_unified' in tables:
-                table_name = 'etf_unified'
-            elif 'etf_metadata' in tables:
-                table_name = 'etf_metadata'
-            elif 'etf_data' in tables:
-                table_name = 'etf_data'
-            elif 'ohlcv' in tables:
-                table_name = 'ohlcv'
-            else:
-                print(f"No suitable ETF data table found. Available tables: {tables}")
-                return {}
-
-            metadata_df = pd.read_sql_query(f"""
+            from sqlalchemy import text, func
+            from sqlalchemy.orm import Session
+            
+            # Use etf_unified table
+            query = text("""
                 SELECT 
                     symbol,
                     MIN(date) as start_date,
                     MAX(date) as end_date,
                     COUNT(*) as total_records,
-                    ROUND((JULIANDAY(MAX(date)) - JULIANDAY(MIN(date))) / 365.25, 1) as years_available
-                FROM {table_name}
+                    ROUND(EXTRACT(EPOCH FROM (MAX(date::date) - MIN(date::date))) / 86400.0 / 365.25, 1) as years_available
+                FROM etf_unified
                 GROUP BY symbol
-            """, conn)
-
+            """)
+            
+            result = session.execute(query)
+            rows = result.fetchall()
+            
             metadata = {}
-            for _, row in metadata_df.iterrows():
-                metadata[row['symbol']] = {
-                    'start_date': row['start_date'],
-                    'end_date': row['end_date'],
-                    'years_available': row['years_available'],
-                    'total_records': row['total_records'],
+            for row in rows:
+                metadata[row.symbol] = {
+                    'start_date': row.start_date,
+                    'end_date': row.end_date,
+                    'years_available': float(row.years_available) if row.years_available else 0,
+                    'total_records': row.total_records,
                     'data_source': 'OHLCV'
                 }
 
@@ -399,7 +397,7 @@ class ETFRotationBacktester:
         return strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
 
     def load_data_from_sqlite(self, tickers: List[str], start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
-        """Load daily OHLCV data from central database for selected tickers with historical buffer for momentum calculations"""
+        """Load daily OHLCV data from PostgreSQL database for selected tickers with historical buffer for momentum calculations"""
         # Calculate buffer start date for cache key
         buffer_start_date = (pd.to_datetime(start_date) - timedelta(days=400)).strftime('%Y-%m-%d')
         
@@ -410,28 +408,10 @@ class ETFRotationBacktester:
                 print(f"📦 Using cached data for {len(tickers)} ETFs")
             return self._data_cache[cache_key]
         
+        session = None
         try:
-            conn = self._get_connection()
-            cursor = conn.cursor()
-
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-            tables = [row[0] for row in cursor.fetchall()]
-
-            # ETF-specific table priority
-            if 'etf_unified' in tables:
-                table_name = 'etf_unified'
-                query_columns = "date, symbol, open, high, low, close, volume"
-            elif 'etf_metadata' in tables:
-                table_name = 'etf_metadata'
-                query_columns = "date, symbol, open, high, low, close, volume"
-            elif 'etf_data' in tables:
-                table_name = 'etf_data'
-                query_columns = "date, symbol, open, high, low, close, volume"
-            elif 'ohlcv' in tables:
-                table_name = 'ohlcv'
-                query_columns = "date, symbol, open, high, low, close, volume"
-            else:
-                raise ValueError(f"No recognized ETF table found in database. Available tables: {tables}")
+            session = self._get_session()
+            from sqlalchemy import text
 
             if self._verbose:
                 print(f"📊 Loading data with historical buffer:")
@@ -439,16 +419,27 @@ class ETFRotationBacktester:
                 print(f"   Data loading period: {buffer_start_date} to {end_date}")
                 print(f"   Buffer: 400 calendar days (~252 trading days) for momentum calculations")
 
-            # Optimized query - get available symbols in one go (using buffer dates)
-            placeholders = ','.join(['?' for _ in tickers])
-            cursor.execute(f"""
-                SELECT DISTINCT symbol 
-                FROM {table_name} 
-                WHERE symbol IN ({placeholders})
-                AND date >= ? AND date <= ?
-            """, tickers + [buffer_start_date, end_date])
+            # Use etf_unified table - map column names
+            # PostgreSQL columns: date, symbol, open_price, high_price, low_price, close_price, volume
+            # Need to map to: date, symbol, open, high, low, close, volume
             
-            available_tickers = [row[0] for row in cursor.fetchall()]
+            # Get available symbols using proper parameterization
+            from sqlalchemy import bindparam
+            ticker_params = [bindparam(f'ticker_{i}', t) for i, t in enumerate(tickers)]
+            placeholders = ','.join([f':ticker_{i}' for i in range(len(tickers))])
+            
+            query = text(f"""
+                SELECT DISTINCT symbol 
+                FROM etf_unified 
+                WHERE symbol IN ({placeholders})
+                AND date >= :start_date AND date <= :end_date
+            """)
+            
+            params = {f'ticker_{i}': t for i, t in enumerate(tickers)}
+            params.update({"start_date": buffer_start_date, "end_date": end_date})
+            
+            result = session.execute(query, params)
+            available_tickers = [row[0] for row in result.fetchall()]
             missing_tickers = [t for t in tickers if t not in available_tickers]
 
             if missing_tickers and self._verbose:
@@ -457,17 +448,26 @@ class ETFRotationBacktester:
             if not available_tickers:
                 raise ValueError("No data available for any of the selected ETFs")
 
-            # Optimized data loading - single query with all columns (using buffer dates)
-            placeholders = ','.join(['?' for _ in available_tickers])
-            query = f"""
-                SELECT {query_columns}
-                FROM {table_name}
+            # Load data with column mapping
+            placeholders = ','.join([f':ticker_{i}' for i in range(len(available_tickers))])
+            query = text(f"""
+                SELECT 
+                    date,
+                    symbol,
+                    open_price as open,
+                    high_price as high,
+                    low_price as low,
+                    close_price as close,
+                    volume
+                FROM etf_unified
                 WHERE symbol IN ({placeholders})
-                AND date >= ? AND date <= ?
+                AND date >= :start_date AND date <= :end_date
                 ORDER BY date, symbol
-            """
+            """)
 
-            df = pd.read_sql_query(query, conn, params=available_tickers + [buffer_start_date, end_date])
+            params = {f'ticker_{i}': t for i, t in enumerate(available_tickers)}
+            params.update({"start_date": buffer_start_date, "end_date": end_date})
+            df = pd.read_sql(query, session.bind, params=params)
 
             if df.empty:
                 raise ValueError(f"No data found for the selected date range {start_date} to {end_date}")
@@ -491,6 +491,9 @@ class ETFRotationBacktester:
         except Exception as e:
             print(f"Error loading data: {e}")
             return {}
+        finally:
+            if session:
+                session.close()
 
     def get_last_trading_day(self, close_df: pd.DataFrame, target_date: datetime, day: str = 'Friday') -> Optional[datetime]:
         """Return the nearest available trading day (e.g., Friday or fallback Thursday)"""
@@ -1704,39 +1707,30 @@ class ETFRotationBacktester:
 
     def calculate_benchmark_buyhold(self, start_date: str, end_date: str, total_investment: float, brokerage_percent: float) -> pd.DataFrame:
         """Calculate benchmark buy-and-hold performance using available market index or large cap stock"""
+        session = None
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-            tables = [row[0] for row in cursor.fetchall()]
-
-            # ETF-specific table priority
-            if 'etf_unified' in tables:
-                table_name = 'etf_unified'
-            elif 'etf_metadata' in tables:
-                table_name = 'etf_metadata'
-            elif 'etf_data' in tables:
-                table_name = 'etf_data'
-            elif 'ohlcv' in tables:
-                table_name = 'ohlcv'
-            else:
-                return pd.DataFrame()
+            session = self._get_session()
+            from sqlalchemy import text
 
             # Try multiple potential benchmark symbols in order of preference
             benchmark_symbols = [
-                'NIFTYBEES',   # Nifty ETF
-                'NIFTY50',     # NSE Nifty 50 Index
-                'SENSEX',      # BSE Sensex
-                'BANKBEES',    # Banking ETF
-                'JUNIORBEES',  # Nifty Next 50 ETF
-                'ITBEES'       # IT Sector ETF
+                'NIFTYBEES.NS',   # Nifty ETF
+                'NIFTYBEES',      # Nifty ETF (without suffix)
+                'NIFTY50',        # NSE Nifty 50 Index
+                'SENSEX',         # BSE Sensex
+                'BANKBEES.NS',    # Banking ETF
+                'BANKBEES',       # Banking ETF (without suffix)
+                'JUNIORBEES.NS',  # Nifty Next 50 ETF
+                'JUNIORBEES',     # Nifty Next 50 ETF (without suffix)
+                'ITBEES.NS',      # IT Sector ETF
+                'ITBEES'          # IT Sector ETF (without suffix)
             ]
             
             benchmark_symbol = None
             for symbol in benchmark_symbols:
-                cursor.execute(f"SELECT DISTINCT symbol FROM {table_name} WHERE symbol = ?", (symbol,))
-                if cursor.fetchone():
+                query = text("SELECT DISTINCT symbol FROM etf_unified WHERE symbol = :symbol LIMIT 1")
+                result = session.execute(query, {"symbol": symbol})
+                if result.fetchone():
                     benchmark_symbol = symbol
                     print(f"✅ Using {benchmark_symbol} as market benchmark")
                     break
@@ -1745,17 +1739,16 @@ class ETFRotationBacktester:
                 print("⚠️ No suitable benchmark found in database. Benchmark comparison will be skipped.")
                 return pd.DataFrame()
 
-            query = f"""
-                SELECT date, close
-                FROM {table_name}
-                WHERE symbol = ?
-                AND date >= ?
-                AND date <= ?
+            query = text("""
+                SELECT date, close_price as close
+                FROM etf_unified
+                WHERE symbol = :symbol
+                AND date >= :start_date
+                AND date <= :end_date
                 ORDER BY date
-            """
+            """)
 
-            nifty_df = pd.read_sql_query(query, conn, params=[benchmark_symbol, start_date, end_date])
-            conn.close()
+            nifty_df = pd.read_sql(query, session.bind, params={"symbol": benchmark_symbol, "start_date": start_date, "end_date": end_date})
 
             if nifty_df.empty:
                 return pd.DataFrame()
@@ -1781,6 +1774,9 @@ class ETFRotationBacktester:
         except Exception as e:
             print(f"Error calculating Nifty50 buy-hold: {e}")
             return pd.DataFrame()
+        finally:
+            if session:
+                session.close()
 
     def calculate_xirr(self, capital_per_week: float, accumulation_weeks: int) -> float:
         """Calculate XIRR (Extended Internal Rate of Return) using cash flows"""

@@ -990,37 +990,40 @@ async def get_run_status(run_id: str, user_id: str):
         Run status information
     """
     try:
-        import sqlite3
-        db_path = "Strategies/rsStrategy/nifty500_data_with_metadata.sqlite"
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        from .database import SavedRSStrategy
+        from sqlalchemy import text
         
-        cursor.execute('''
-            SELECT strategy_name, status, stock_universe, webhook_url, client_information_json
-            FROM saved_rs_strategies
-            WHERE run_id = ? AND user_id = ?
-        ''', (run_id, user_id))
-        
-        row = cursor.fetchone()
-        conn.close()
-        
-        if not row:
-            return {
-                "success": False,
-                "run_id": run_id,
-                "user_id": user_id,
-                "status": "not_found",
-                "message": "Run not found"
+        db = SessionLocal()
+        try:
+            # Query using SQLAlchemy
+            query = text("""
+                SELECT strategy_name, status, stock_universe, webhook_url, client_information_json
+                FROM saved_rs_strategies
+                WHERE run_id = :run_id AND user_id = :user_id
+            """)
+            
+            result = db.execute(query, {"run_id": run_id, "user_id": user_id})
+            row = result.fetchone()
+            
+            if not row:
+                return {
+                    "success": False,
+                    "run_id": run_id,
+                    "user_id": user_id,
+                    "status": "not_found",
+                    "message": "Run not found"
+                }
+            
+            # Get run status from saved_rs_strategies table
+            strategy_data = {
+                'strategy_name': row[0],
+                'status': row[1],
+                'stock_universe': row[2] or 'NIFTY500',
+                'webhook_url': row[3],
+                'client_information': json.loads(row[4]) if row[4] else {}
             }
-        
-        # Get run status from saved_rs_strategies table
-        strategy_data = {
-            'strategy_name': row[0],
-            'status': row[1],
-            'stock_universe': row[2] or 'NIFTY500',
-            'webhook_url': row[3],
-            'client_information': json.loads(row[4]) if row[4] else {}
-        }
+        finally:
+            db.close()
         
         return {
             "success": True,

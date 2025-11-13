@@ -3,28 +3,37 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import os
+import sys
 import asyncio
 import time
 import logging
 from contextlib import contextmanager
 
-# Database URL - Using MarketData.sqlite
-DATABASE_URL = "sqlite:///./MarketData.sqlite"
+# Import market data database connection for market data tables
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(os.path.dirname(current_dir))
+databases_path = os.path.join(parent_dir, 'Databases')
+sys.path.insert(0, databases_path)
 
-# Enhanced SQLite configuration to prevent locking issues
-engine = create_engine(
-    DATABASE_URL, 
-    connect_args={
-        "check_same_thread": False,
-        "timeout": 30,  # 30 second timeout
-        "isolation_level": None  # Autocommit mode to reduce locking
-    },
-    pool_pre_ping=True,  # Verify connections before use
-    pool_recycle=3600,   # Recycle connections every hour
-    echo=False
+from market_data_db_connection import (
+    create_connection as create_market_data_connection,
+    get_session as get_market_data_session,
+    get_engine as get_market_data_engine,
+    init_database as init_market_data_database,
+    Base as MarketDataBase,
+    ETFData,
+    ETFMetadata,
+    IndexData
 )
+
+# Use market data connection for market data tables
+# Initialize connection
+if not create_market_data_connection():
+    raise RuntimeError("Failed to connect to MarketData database")
+
+engine = get_market_data_engine()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+Base = MarketDataBase  # Use the same Base for all models
 
 # Dependency to get database session with enhanced error handling
 def get_db():
@@ -44,33 +53,8 @@ def get_db():
             except Exception as e:
                 logging.error(f"Error closing database session: {e}")
 
-# ETF data model - using etf_data table
-class ETFData(Base):
-    __tablename__ = "etf_data"
-    
-    id = Column(Integer, primary_key=True)
-    symbol = Column(String, primary_key=True, index=True)
-    date = Column(DateTime, primary_key=True, index=True)
-    open = Column(Float)
-    high = Column(Float)
-    low = Column(Float)
-    close = Column(Float)
-    volume = Column(Integer)
-    adjusted_close = Column(Float)  # Column name in MarketData.sqlite
-    created_at = Column(DateTime)
-
-# Index data model (can use same index_data table or create separate)
-class IndexData(Base):
-    __tablename__ = "index_data"
-    
-    symbol = Column(String, primary_key=True, index=True)
-    date = Column(DateTime, primary_key=True, index=True)
-    open = Column(Float)
-    high = Column(Float)
-    low = Column(Float)
-    close = Column(Float)
-    adjusted_close = Column(Float)  # Column name in MarketData.sqlite
-    volume = Column(Integer)
+# ETF data model - using models from market_data_db_connection
+# ETFData, ETFMetadata, and IndexData are imported from market_data_db_connection
 
 # Strategy configuration
 class StrategyConfig(Base):
@@ -188,20 +172,10 @@ class SavedETFStrategy(Base):
     run_frequency = Column(String, default="daily")  # daily, weekly, monthly
     status = Column(String, default="deploy")   # deploy, paused, stopped
 
-# Backtest database setup
-BACKTEST_DATABASE_URL = "sqlite:///./MarketData.sqlite"
-backtest_engine = create_engine(
-    BACKTEST_DATABASE_URL, 
-    connect_args={
-        "check_same_thread": False,
-        "timeout": 30,
-        "isolation_level": None
-    },
-    pool_pre_ping=True,
-    pool_recycle=3600,
-    echo=False
-)
-BacktestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=backtest_engine)
+# Backtest database setup - use same PostgreSQL connection for market data
+# Strategy-specific tables (backtest_results, trade_logs, etc.) can use the same connection
+backtest_engine = engine  # Use the same engine
+BacktestSessionLocal = SessionLocal  # Use the same session maker
 
 # Utility functions
 async def execute_with_retry(func, max_retries=3, delay=0.5):
@@ -317,26 +291,14 @@ def reset_database_connections():
         logging.error(f"Failed to reset database connections: {e}")
 
 def force_unlock_database():
-    """Force unlock database by resetting connections and clearing lock files"""
+    """Force unlock database by resetting connections"""
     try:
+        # Reset all database connections
         reset_database_connections()
-        time.sleep(0.5)
-        
-        db_path = "./MarketData.sqlite"
-        lock_files = [f"{db_path}-wal", f"{db_path}-shm", f"{db_path}-journal"]
-        
-        for lock_file in lock_files:
-            try:
-                if os.path.exists(lock_file):
-                    os.remove(lock_file)
-                    logging.info(f"Removed lock file: {lock_file}")
-            except Exception as e:
-                logging.warning(f"Could not remove lock file {lock_file}: {e}")
-        
-        logging.info("Database unlocked successfully")
+        logging.info("Database connections reset successfully")
         return True
     except Exception as e:
-        logging.error(f"Failed to unlock database: {e}")
+        logging.error(f"Failed to reset database connections: {e}")
         return False
 
 @contextmanager

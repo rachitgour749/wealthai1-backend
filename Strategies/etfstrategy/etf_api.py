@@ -745,75 +745,28 @@ async def get_etf_costs_breakdown():
 # SAVED STRATEGY DATABASE FUNCTIONS
 # ============================================================================
 
-def init_saved_etf_strategies_table(db_path: str = "unified_etf_data.sqlite"):
-    """Initialize the etf_saved_strategy table if it doesn't exist"""
+def init_saved_etf_strategies_table(db_path: str = None):
+    """Initialize the etf_saved_strategy table in PostgreSQL (db_path parameter ignored, kept for compatibility)"""
     try:
-        import os
-        if db_path == "unified_etf_data.sqlite":
-            db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        # Import database connection and models
+        from Databases.neon_db_connection import create_connection, init_database
         
-        # Handle legacy table name with hyphen by renaming it to the new convention
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='etf_saved_strategy'")
-        new_table_exists = cursor.fetchone() is not None
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='etf-savedStrategy'")
-        legacy_table_exists = cursor.fetchone() is not None
-
-        if legacy_table_exists and not new_table_exists:
-            cursor.execute('ALTER TABLE "etf-savedStrategy" RENAME TO etf_saved_strategy')
-            conn.commit()
-            new_table_exists = True
-            print("ℹ️ Renamed legacy table etf-savedStrategy to etf_saved_strategy")
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS etf_saved_strategy (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                strategy_name TEXT NOT NULL,
-                strategy_type TEXT NOT NULL,
-                user_id TEXT NOT NULL,
-                tickers TEXT NOT NULL,
-                start_date TEXT NOT NULL,
-                end_date TEXT NOT NULL,
-                capital_per_week REAL NOT NULL,
-                accumulation_weeks INTEGER NOT NULL,
-                brokerage_percent REAL NOT NULL,
-                compounding_enabled BOOLEAN NOT NULL,
-                risk_free_rate REAL NOT NULL,
-                use_custom_dates BOOLEAN NOT NULL,
-                backtest_results TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                created_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                config_id INTEGER,
-                backtest_id INTEGER,
-                etf_universe TEXT DEFAULT 'NIFTY_ETFS',
-                strategy_config TEXT,
-                run_id TEXT UNIQUE,
-                client_information_json TEXT,
-                webhook_url TEXT,
-                status TEXT DEFAULT 'deploy',
-                execution_date TEXT,
-                ltp REAL,
-                reference_capital TEXT,
-                deployment_data TEXT,
-                etf_count INTEGER,
-                etf_names TEXT,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+        # Ensure connection is established
+        if not create_connection():
+            print("❌ Failed to connect to PostgreSQL database")
+            return False
         
-        # Create index on user_id for faster queries
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_etf_saved_strategy_user_id 
-            ON etf_saved_strategy(user_id)
-        ''')
+        # Initialize all tables (including etf_saved_strategy)
+        if not init_database():
+            print("❌ Failed to initialize database tables")
+            return False
         
-        conn.commit()
-        conn.close()
-        print("✅ etf_saved_strategy table initialized successfully")
+        print("✅ etf_saved_strategy table initialized successfully in PostgreSQL")
         return True
     except Exception as e:
         print(f"❌ Error initializing etf_saved_strategy table: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 # ============================================================================
@@ -861,11 +814,8 @@ async def save_etf_strategy(request: SaveETFStrategyRequest):
             raise HTTPException(status_code=500, detail=validation_result["error"])
         
         # Strategy doesn't exist, proceed with saving
-        import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
-        print(f"DEBUG: Using database path: {db_path}")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        # Import helper functions
+        from Databases.strategy_db_helpers import save_etf_strategy as save_strategy_db
         
         # Convert tickers list to JSON string
         tickers_json = json.dumps(request.tickers)
@@ -876,23 +826,27 @@ async def save_etf_strategy(request: SaveETFStrategyRequest):
         backtest_results_dict = {k: v for k, v in backtest_results_dict.items() if v is not None}
         backtest_results_json = json.dumps(backtest_results_dict)
         
-        # Insert the strategy into etf_saved_strategy table
-        cursor.execute('''
-            INSERT INTO etf_saved_strategy (
-                strategy_name, strategy_type, user_id, tickers, start_date, end_date,
-                capital_per_week, accumulation_weeks, brokerage_percent, compounding_enabled,
-                risk_free_rate, use_custom_dates, backtest_results, created_at, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            request.strategy_name, request.strategy_type, request.user_id, tickers_json,
-            request.start_date, request.end_date, request.capital_per_week, request.accumulation_weeks,
-            request.brokerage_percent, request.compounding_enabled, request.risk_free_rate,
-            request.use_custom_dates, backtest_results_json, request.created_at, 'deploy'
-        ))
+        # Prepare strategy data
+        strategy_data = {
+            'strategy_name': request.strategy_name,
+            'strategy_type': request.strategy_type,
+            'user_id': request.user_id,
+            'tickers': tickers_json,
+            'start_date': request.start_date,
+            'end_date': request.end_date,
+            'capital_per_week': request.capital_per_week,
+            'accumulation_weeks': request.accumulation_weeks,
+            'brokerage_percent': request.brokerage_percent,
+            'compounding_enabled': request.compounding_enabled,
+            'risk_free_rate': request.risk_free_rate,
+            'use_custom_dates': request.use_custom_dates,
+            'backtest_results': backtest_results_json,
+            'created_at': request.created_at,
+            'status': 'deploy'
+        }
         
-        strategy_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
+        # Save to PostgreSQL
+        strategy_id = save_strategy_db(strategy_data)
         
         return {
             "success": True,
@@ -916,57 +870,45 @@ async def get_saved_etf_strategies(user_id: str):
         if not init_saved_etf_strategies_table():
             raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
-        import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        # Import helper functions
+        from Databases.strategy_db_helpers import get_etf_strategies_by_user
         
-        # Get strategies for the user
-        cursor.execute('''
-            SELECT id, strategy_name, strategy_type, user_id, tickers, start_date, end_date,
-                   capital_per_week, accumulation_weeks, brokerage_percent, compounding_enabled,
-                   risk_free_rate, use_custom_dates, backtest_results, created_at, created_timestamp,
-                   status, run_id, webhook_url, client_information_json, execution_date
-            FROM etf_saved_strategy 
-            WHERE user_id = ?
-            ORDER BY created_timestamp DESC
-        ''', (user_id,))
+        # Get strategies from PostgreSQL
+        strategies_list = get_etf_strategies_by_user(user_id)
         
-        rows = cursor.fetchall()
-        conn.close()
-        
+        # Parse JSON fields and format response
         strategies = []
-        for row in rows:
+        for strategy in strategies_list:
             try:
                 # Parse JSON fields
-                tickers = json.loads(row[4]) if row[4] else []  # tickers
-                backtest_results = json.loads(row[13]) if row[13] else {}  # backtest_results
+                tickers = json.loads(strategy['tickers']) if strategy.get('tickers') else []
+                backtest_results = json.loads(strategy['backtest_results']) if strategy.get('backtest_results') else {}
                 
                 strategies.append({
-                    "id": row[0],
-                    "strategy_name": row[1],
-                    "strategy_type": row[2],
-                    "user_id": row[3],
+                    "id": strategy['id'],
+                    "strategy_name": strategy['strategy_name'],
+                    "strategy_type": strategy['strategy_type'],
+                    "user_id": strategy['user_id'],
                     "tickers": tickers,
-                    "start_date": row[5],
-                    "end_date": row[6],
-                    "capital_per_week": row[7],
-                    "accumulation_weeks": row[8],
-                    "brokerage_percent": row[9],
-                    "compounding_enabled": bool(row[10]),
-                    "risk_free_rate": row[11],
-                    "use_custom_dates": bool(row[12]),
+                    "start_date": strategy['start_date'],
+                    "end_date": strategy['end_date'],
+                    "capital_per_week": strategy['capital_per_week'],
+                    "accumulation_weeks": strategy['accumulation_weeks'],
+                    "brokerage_percent": strategy['brokerage_percent'],
+                    "compounding_enabled": strategy['compounding_enabled'],
+                    "risk_free_rate": strategy['risk_free_rate'],
+                    "use_custom_dates": strategy['use_custom_dates'],
                     "backtest_results": backtest_results,
-                    "created_at": row[14],
-                    "created_timestamp": row[15],
-                    "status": row[16],  # status field
-                    "run_id": row[17],  # run_id field
-                    "webhook_url": row[18],  # webhook_url field
-                    "client_information_json": row[19],  # client_information_json field
-                    "execution_date": row[20]  # execution_date field
+                    "created_at": strategy['created_at'],
+                    "created_timestamp": strategy.get('created_timestamp'),
+                    "status": strategy.get('status', 'deploy'),
+                    "run_id": strategy.get('run_id'),
+                    "webhook_url": strategy.get('webhook_url'),
+                    "client_information_json": strategy.get('client_information_json'),
+                    "execution_date": strategy.get('execution_date')
                 })
-            except json.JSONDecodeError as e:
-                print(f"Warning: Could not parse JSON for strategy ID {row[0]}: {e}")
+            except (json.JSONDecodeError, KeyError) as e:
+                print(f"Warning: Could not parse strategy ID {strategy.get('id')}: {e}")
                 continue
         
         # Ensure we always return a proper structure
@@ -977,6 +919,8 @@ async def get_saved_etf_strategies(user_id: str):
         
     except Exception as e:
         print(f"Error retrieving saved strategies: {str(e)}")
+        import traceback
+        traceback.print_exc()
         # Return empty array instead of throwing error to prevent frontend crashes
         return {"strategies": []}
 

@@ -31,19 +31,32 @@ class RSEODDataFetcher:
         Initialize the RS EOD data fetcher
         
         Args:
-            db_path (str): Path to SQLite database file
+            db_path: Deprecated - kept for compatibility. Now uses PostgreSQL MarketData database.
         """
-        if db_path is None:
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            self.db_path = os.path.join(current_dir, "nifty500_data_with_metadata.sqlite")
-        else:
-            self.db_path = os.path.abspath(db_path)
+        # Import market data database connection
+        import sys
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        parent_dir = os.path.dirname(os.path.dirname(current_dir))
+        databases_path = os.path.join(parent_dir, 'Databases')
+        sys.path.insert(0, databases_path)
         
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        from market_data_db_connection import (
+            create_connection as create_market_data_connection,
+            get_session as get_market_data_session,
+            init_database as init_market_data_database
+        )
+        
+        # Initialize PostgreSQL connection
+        if not create_market_data_connection():
+            raise RuntimeError("Failed to connect to MarketData database")
+        
+        # Initialize database tables
+        init_market_data_database()
+        
+        self.get_session = get_market_data_session
         
         # Create logs directory
-        logs_dir = os.path.join(os.path.dirname(os.path.dirname(self.db_path)), 'logs')
+        logs_dir = os.path.join(parent_dir, 'logs')
         os.makedirs(logs_dir, exist_ok=True)
         
         # Setup logging
@@ -113,7 +126,7 @@ class RSEODDataFetcher:
         self.setup_database()
         
         self.logger.info(f"RS EOD Data Fetcher initialized with {len(self.stock_symbols)} stocks")
-        self.logger.info(f"Database path: {self.db_path}")
+        self.logger.info("Using PostgreSQL MarketData database")
     
     def setup_logging(self, logs_dir):
         """Setup logging for the EOD data fetcher"""
@@ -143,55 +156,10 @@ class RSEODDataFetcher:
         self.logger.addHandler(console_handler)
     
     def setup_database(self):
-        """Setup database tables for stock and index data"""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
-                # Create stock_data table
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS stock_data (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        symbol TEXT NOT NULL,
-                        date DATE NOT NULL,
-                        open REAL,
-                        high REAL,
-                        low REAL,
-                        close REAL,
-                        volume INTEGER,
-                        adj_close REAL,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE(symbol, date)
-                    )
-                ''')
-                
-                # Create index_data table
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS index_data (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        symbol TEXT NOT NULL,
-                        date DATE NOT NULL,
-                        open REAL,
-                        high REAL,
-                        low REAL,
-                        close REAL,
-                        volume INTEGER,
-                        adj_close REAL,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE(symbol, date)
-                    )
-                ''')
-                
-                # Create indexes for better performance
-                cursor.execute('CREATE INDEX IF NOT EXISTS idx_stock_symbol_date ON stock_data(symbol, date)')
-                cursor.execute('CREATE INDEX IF NOT EXISTS idx_index_symbol_date ON index_data(symbol, date)')
-                
-                conn.commit()
-                self.logger.info("Database tables created successfully")
-                
-        except Exception as e:
-            self.logger.error(f"Error setting up database: {e}")
-            raise
+        """Setup database tables for stock and index data - tables are created via market_data_db_connection"""
+        # Tables are automatically created by init_database() in market_data_db_connection
+        # This method is kept for compatibility but does nothing
+        self.logger.info("Database tables are managed by market_data_db_connection")
     
     def is_market_open(self, check_date=None):
         """
@@ -298,69 +266,121 @@ class RSEODDataFetcher:
     
     def save_stock_data(self, records):
         """
-        Save stock data to database
+        Save stock data to PostgreSQL database
         
         Args:
             records (list): List of stock data records
         """
+        session = None
         try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+            from market_data_db_connection import StockData
+            from sqlalchemy.dialects.postgresql import insert
+            from datetime import datetime
+            
+            session = self.get_session()
+            
+            for record in records:
+                # Convert date string to datetime if needed
+                if isinstance(record['date'], str):
+                    record_date = datetime.strptime(record['date'], '%Y-%m-%d')
+                else:
+                    record_date = record['date']
                 
-                for record in records:
-                    cursor.execute('''
-                        INSERT OR REPLACE INTO stock_data 
-                        (symbol, date, open, high, low, close, volume, adj_close)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (
-                        record['symbol'],
-                        record['date'],
-                        record['open'],
-                        record['high'],
-                        record['low'],
-                        record['close'],
-                        record['volume'],
-                        record['adj_close']
-                    ))
+                # Use PostgreSQL UPSERT
+                stmt = insert(StockData).values(
+                    symbol=record['symbol'],
+                    date=record_date,
+                    open=record['open'],
+                    high=record['high'],
+                    low=record['low'],
+                    close=record['close'],
+                    volume=record['volume'],
+                    adj_close=record['adj_close']
+                )
                 
-                conn.commit()
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=['symbol', 'date'],
+                    set_=dict(
+                        open=stmt.excluded.open,
+                        high=stmt.excluded.high,
+                        low=stmt.excluded.low,
+                        close=stmt.excluded.close,
+                        volume=stmt.excluded.volume,
+                        adj_close=stmt.excluded.adj_close
+                    )
+                )
+                
+                session.execute(stmt)
+            
+            session.commit()
                 
         except Exception as e:
+            if session:
+                session.rollback()
             self.logger.error(f"Error saving stock data: {e}")
             raise
+        finally:
+            if session:
+                session.close()
     
     def save_index_data(self, records):
         """
-        Save index data to database
+        Save index data to PostgreSQL database
         
         Args:
             records (list): List of index data records
         """
+        session = None
         try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+            from market_data_db_connection import IndexData
+            from sqlalchemy.dialects.postgresql import insert
+            from datetime import datetime
+            
+            session = self.get_session()
+            
+            for record in records:
+                # Convert date string to datetime if needed
+                if isinstance(record['date'], str):
+                    record_date = datetime.strptime(record['date'], '%Y-%m-%d')
+                else:
+                    record_date = record['date']
                 
-                for record in records:
-                    cursor.execute('''
-                        INSERT OR REPLACE INTO index_data 
-                        (symbol, date, open, high, low, close, volume, adj_close)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (
-                        record['symbol'],
-                        record['date'],
-                        record['open'],
-                        record['high'],
-                        record['low'],
-                        record['close'],
-                        record['volume'],
-                        record['adj_close']
-                    ))
+                # Use PostgreSQL UPSERT
+                stmt = insert(IndexData).values(
+                    symbol=record['symbol'],
+                    date=record_date,
+                    open=record['open'],
+                    high=record['high'],
+                    low=record['low'],
+                    close=record['close'],
+                    volume=record['volume'],
+                    adj_close=record['adj_close']
+                )
                 
-                conn.commit()
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=['symbol', 'date'],
+                    set_=dict(
+                        open=stmt.excluded.open,
+                        high=stmt.excluded.high,
+                        low=stmt.excluded.low,
+                        close=stmt.excluded.close,
+                        volume=stmt.excluded.volume,
+                        adj_close=stmt.excluded.adj_close
+                    )
+                )
+                
+                session.execute(stmt)
+            
+            session.commit()
                 
         except Exception as e:
+            if session:
+                session.rollback()
             self.logger.error(f"Error saving index data: {e}")
             raise
+        finally:
+            if session:
+                session.close()
     
     def fetch_daily_data(self, days_back=1):
         """
@@ -538,32 +558,43 @@ class RSEODDataFetcher:
     
     def cleanup_old_data(self, days_to_keep=365):
         """
-        Cleanup old data from database
+        Cleanup old data from PostgreSQL database
         
         Args:
             days_to_keep (int): Number of days of data to keep
         """
+        session = None
         try:
-            cutoff_date = date.today() - pd.Timedelta(days=days_to_keep)
+            from sqlalchemy import text
+            from datetime import datetime
             
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
-                # Cleanup old stock data
-                cursor.execute('DELETE FROM stock_data WHERE date < ?', (cutoff_date,))
-                stock_deleted = cursor.rowcount
-                
-                # Cleanup old index data
-                cursor.execute('DELETE FROM index_data WHERE date < ?', (cutoff_date,))
-                index_deleted = cursor.rowcount
-                
-                conn.commit()
-                
-                self.logger.info(f"Cleanup completed: {stock_deleted} stock records and {index_deleted} index records deleted")
-                
+            cutoff_date = date.today() - pd.Timedelta(days=days_to_keep)
+            cutoff_date_str = cutoff_date.strftime('%Y-%m-%d')
+            
+            session = self.get_session()
+            
+            # Delete old stock data
+            query = text("DELETE FROM stock_data WHERE date < :cutoff_date")
+            result = session.execute(query, {"cutoff_date": cutoff_date_str})
+            stock_deleted = result.rowcount
+            
+            # Delete old index data
+            query = text("DELETE FROM index_data WHERE date < :cutoff_date")
+            result = session.execute(query, {"cutoff_date": cutoff_date_str})
+            index_deleted = result.rowcount
+            
+            session.commit()
+            
+            self.logger.info(f"Cleaned up {stock_deleted} stock records and {index_deleted} index records older than {cutoff_date_str}")
+            
         except Exception as e:
-            self.logger.error(f"Error in cleanup_old_data: {e}")
+            if session:
+                session.rollback()
+            self.logger.error(f"Error cleaning up old data: {e}")
             raise
+        finally:
+            if session:
+                session.close()
 
 def main():
     """Main function to test the EOD data fetcher"""

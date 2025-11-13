@@ -22,6 +22,10 @@ sys.path.insert(0, os.path.join(project_root, 'wealthai1-backend'))  # Add inner
 etf_strategy_path = os.path.join(project_root, 'wealthai1-backend', 'etf-strategy')
 sys.path.insert(0, etf_strategy_path)
 
+# Add Databases path for market data connection
+databases_path = os.path.join(project_root, 'Databases')
+sys.path.insert(0, databases_path)
+
 print(f"Project root: {project_root}")
 print(f"Inner project dir: {os.path.join(project_root, 'wealthai1-backend')}")
 print(f"ETF strategy path: {etf_strategy_path}")
@@ -73,32 +77,26 @@ class LiveSignalGenerator:
     """
     
     def __init__(self, db_path: str = None):
-        # Use the provided db_path or construct the absolute path from the root directory
+        """
+        Initialize Live Signal Generator
+        
+        Args:
+            db_path: Deprecated - kept for compatibility. Market data now uses PostgreSQL.
+                    If provided, will be used for live_signals table (SQLite).
+        """
+        # For live_signals table, use SQLite if db_path provided, otherwise use default
         if db_path is None:
             # Get the root directory (2 levels up from the current file)
             root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            # Try to find the database file
-            for path in [
-                root_dir,  # Try root directory first
-                os.path.join(root_dir, 'wealthai1-backend'),  # Then try inner directory
-                os.getcwd()  # Finally try current working directory
-            ]:
-                test_path = os.path.join(path, "unified_etf_data.sqlite")
-                if os.path.exists(test_path):
-                    self.db_path = test_path
-                    print(f"Found database at: {self.db_path}")
-                    break
-            else:
-                # If we haven't found it, use the first path and let it fail with a clear error
-                self.db_path = os.path.join(root_dir, "unified_etf_data.sqlite")
-                print(f"Warning: Database not found in any location. Will try: {self.db_path}")
+            self.db_path = os.path.join(root_dir, "unified_etf_data.sqlite")
         else:
-            self.db_path = os.path.abspath(db_path)
-            print(f"Using provided database at: {self.db_path}")
+            self.db_path = os.path.abspath(db_path) if db_path else None
             
-        self.backtester = ETFRotationBacktester(self.db_path)
+        # Initialize backtester (now uses PostgreSQL for market data)
+        self.backtester = ETFRotationBacktester(None)
         self.setup_logging()
-        self.create_tables()
+        if self.db_path:
+            self.create_tables()
         
     def setup_logging(self):
         """Setup logging for signal generation"""
@@ -125,59 +123,25 @@ class LiveSignalGenerator:
             console_handler.setFormatter(formatter)
         
     def create_tables(self):
-        """Create live_signals and live_runs tables if they don't exist"""
+        """Initialize live_signals and live_runs tables in PostgreSQL (db_path parameter ignored, kept for compatibility)"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            # Import database connection and models
+            from Databases.neon_db_connection import create_connection, init_database
             
-            # Create live_signals table with updated schema
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS live_signals (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    run_id TEXT NOT NULL,
-                    user_id TEXT,
-                    strategy_version TEXT NOT NULL,
-                    signal_date TEXT NOT NULL,
-                    signal_symbol TEXT NOT NULL,
-                    etf_name TEXT,
-                    side TEXT NOT NULL,  -- 'BUY' or 'SELL'
-                    score REAL NOT NULL,
-                    reason TEXT NOT NULL,
-                    payload_json TEXT,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(run_id, signal_symbol, side)
-                )
-            ''')
+            # Ensure connection is established
+            if not create_connection():
+                self.logger.error("Failed to connect to PostgreSQL database")
+                raise RuntimeError("Failed to connect to PostgreSQL database")
             
-            # Create live_runs table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS live_runs (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    run_id TEXT NOT NULL UNIQUE,
-                    strategy_version TEXT NOT NULL,
-                    signal_date TEXT NOT NULL,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    status TEXT DEFAULT 'generated',  -- 'generated', 'webhook_sent', 'failed'
-                    webhook_attempts INTEGER DEFAULT 0,
-                    last_error TEXT,
-                    summary_json TEXT
-                )
-            ''')
+            # Initialize all tables (including live_signals and live_runs)
+            if not init_database():
+                self.logger.error("Failed to initialize database tables")
+                raise RuntimeError("Failed to initialize database tables")
             
-            # Create indexes for better performance
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_live_signals_run_id ON live_signals(run_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_live_signals_date ON live_signals(signal_date)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_live_signals_user_id ON live_signals(user_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_live_runs_date ON live_runs(signal_date)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_live_runs_status ON live_runs(status)')
-            
-            conn.commit()
-            conn.close()
-            
-            self.logger.info("Live signals database tables created/verified successfully")
+            self.logger.info("Live signals database tables initialized successfully in PostgreSQL")
             
         except Exception as e:
-            self.logger.error(f"Error creating live signals tables: {e}")
+            self.logger.error(f"Error initializing live signals tables: {e}")
             raise
     
     def generate_run_id(self, strategy_type: str = "SurfTrend") -> str:
@@ -381,44 +345,48 @@ class LiveSignalGenerator:
                 clean_symbol = symbol.replace('.NS', '').replace('.BO', '')
                 symbol_mapping[clean_symbol] = clean_symbol
             
-            # Verify which ETFs exist in database
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            # Verify which ETFs exist in PostgreSQL database
+            from market_data_db_connection import get_session as get_market_data_session
+            from sqlalchemy import text
             
-            cursor.execute("SELECT DISTINCT symbol FROM etf_unified ORDER BY symbol")
-            available_symbols = [row[0] for row in cursor.fetchall()]
-            
-            # Filter to only include ETFs that exist in database
-            symbols = [s.replace('.NS', '').replace('.BO', '') for s in etf_symbols if s.replace('.NS', '').replace('.BO', '') in available_symbols]
-            
-            # Store the symbol mapping for later use
-            self.symbol_mapping = symbol_mapping
-            self.etf_symbols_for_signals = symbols
-            
-            if not symbols:
-                conn.close()
-                error_msg = f"No symbols found in database for run_id: {run_id}. Available symbols: {available_symbols[:10]}"
-                raise ValueError(error_msg)
-            
-            self.logger.info(f"Found {len(symbols)} ETF symbols in database: {symbols}")
-            
-            # Calculate the most recent Friday
-            today = datetime.now()
-            days_since_friday = (today.weekday() - 4) % 7  # 4 is Friday (0 is Monday)
-            last_friday = today - timedelta(days=days_since_friday)
-            test_date = last_friday
-            
-            end_date = test_date.strftime('%Y-%m-%d')
-            start_date = (test_date - timedelta(days=days_back)).strftime('%Y-%m-%d')
-            
-            self.logger.info(f"Using last Friday's date: {end_date} for signal generation")
-            
-            self.logger.info(f"Using test date: {end_date} (Friday) for signal generation")
-            
-            # Load data directly from database using created_at column
-            etf_data = self.load_etf_data_from_database(cursor, symbols, start_date, end_date)
-            
-            conn.close()
+            session = None
+            try:
+                session = get_market_data_session()
+                query = text("SELECT DISTINCT symbol FROM etf_unified ORDER BY symbol")
+                result = session.execute(query)
+                available_symbols = [row[0] for row in result.fetchall()]
+                
+                # Filter to only include ETFs that exist in database
+                symbols = [s.replace('.NS', '').replace('.BO', '') for s in etf_symbols if s.replace('.NS', '').replace('.BO', '') in available_symbols]
+                
+                # Store the symbol mapping for later use
+                self.symbol_mapping = symbol_mapping
+                self.etf_symbols_for_signals = symbols
+                
+                if not symbols:
+                    error_msg = f"No symbols found in database for run_id: {run_id}. Available symbols: {available_symbols[:10]}"
+                    raise ValueError(error_msg)
+                
+                self.logger.info(f"Found {len(symbols)} ETF symbols in database: {symbols}")
+                
+                # Calculate the most recent Friday
+                today = datetime.now()
+                days_since_friday = (today.weekday() - 4) % 7  # 4 is Friday (0 is Monday)
+                last_friday = today - timedelta(days=days_since_friday)
+                test_date = last_friday
+                
+                end_date = test_date.strftime('%Y-%m-%d')
+                start_date = (test_date - timedelta(days=days_back)).strftime('%Y-%m-%d')
+                
+                self.logger.info(f"Using last Friday's date: {end_date} for signal generation")
+                
+                self.logger.info(f"Using test date: {end_date} (Friday) for signal generation")
+                
+                # Load data directly from PostgreSQL database
+                etf_data = self.load_etf_data_from_database(session, symbols, start_date, end_date)
+            finally:
+                if session:
+                    session.close()
             
             self.logger.info(f"Loaded data for {len(etf_data)} ETFs from {start_date} to {end_date}")
             
@@ -426,16 +394,14 @@ class LiveSignalGenerator:
             
         except Exception as e:
             self.logger.error(f"Error getting ETF data: {e}")
-            if 'conn' in locals():
-                conn.close()
             raise
     
-    def load_etf_data_from_database(self, cursor, symbols: List[str], start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
+    def load_etf_data_from_database(self, session, symbols: List[str], start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
         """
-        Load ETF data directly from database using created_at column
+        Load ETF data directly from PostgreSQL database
         
         Args:
-            cursor: Database cursor
+            session: SQLAlchemy database session
             symbols: List of ETF symbols
             start_date: Start date (YYYY-MM-DD)
             end_date: End date (YYYY-MM-DD)
@@ -444,6 +410,9 @@ class LiveSignalGenerator:
             Dictionary with keys 'open', 'high', 'low', 'close', 'volume' containing DataFrames
         """
         try:
+            from sqlalchemy import text
+            import pandas as pd
+            
             # Initialize data containers
             data_dict = {
                 'open': {},
@@ -455,28 +424,31 @@ class LiveSignalGenerator:
             
             for symbol in symbols:
                 try:
-                    # Query data for this symbol
-                    cursor.execute('''
-                        SELECT date, open, high, low, close, volume
+                    # Query data for this symbol from PostgreSQL
+                    query = text("""
+                        SELECT date, open_price as open, high_price as high, 
+                               low_price as low, close_price as close, volume
                         FROM etf_unified
-                        WHERE symbol = ? AND date >= ? AND date <= ?
+                        WHERE symbol = :symbol AND date >= :start_date AND date <= :end_date
                         ORDER BY date
-                    ''', (symbol, start_date, end_date))
+                    """)
                     
-                    rows = cursor.fetchall()
+                    df = pd.read_sql(query, session.bind, params={"symbol": symbol, "start_date": start_date, "end_date": end_date})
                     
-                    if not rows:
+                    if df.empty:
                         self.logger.warning(f"No data found for {symbol}")
                         continue
                     
-                    # Convert to pandas series
-                    dates = [datetime.strptime(row[0], '%Y-%m-%d') for row in rows]
+                    # Convert date column to datetime
+                    df['date'] = pd.to_datetime(df['date'])
+                    df = df.set_index('date')
                     
-                    data_dict['open'][symbol] = pd.Series([row[1] for row in rows], index=dates)
-                    data_dict['high'][symbol] = pd.Series([row[2] for row in rows], index=dates)
-                    data_dict['low'][symbol] = pd.Series([row[3] for row in rows], index=dates)
-                    data_dict['close'][symbol] = pd.Series([row[4] for row in rows], index=dates)
-                    data_dict['volume'][symbol] = pd.Series([row[5] for row in rows], index=dates)
+                    # Convert to pandas series
+                    data_dict['open'][symbol] = df['open']
+                    data_dict['high'][symbol] = df['high']
+                    data_dict['low'][symbol] = df['low']
+                    data_dict['close'][symbol] = df['close']
+                    data_dict['volume'][symbol] = df['volume']
                     
                 except Exception as e:
                     self.logger.error(f"Error loading data for {symbol}: {e}")
@@ -785,7 +757,7 @@ class LiveSignalGenerator:
     
     def save_signals_to_database(self, run_id: str, signals: List[Dict[str, Any]], strategy_version: str = "SurfTrend-v1.2") -> bool:
         """
-        Save generated signals to database with updated schema
+        Save generated signals to database with updated schema (now using PostgreSQL)
         
         Args:
             run_id: Unique run identifier (format: run_etf_strategy_2025-10-15_1760544030144)
@@ -796,8 +768,10 @@ class LiveSignalGenerator:
             Boolean indicating success
         """
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            from Databases.strategy_db_helpers import save_live_signal, save_live_run
+            from Databases.neon_db_connection import get_session
+            from Databases.strategy_models import LiveRun, LiveSignal
+            from sqlalchemy.dialects.postgresql import insert
             
             # Calculate the most recent Friday (same as signal generation logic)
             today = datetime.now()
@@ -812,40 +786,74 @@ class LiveSignalGenerator:
                 'total_signals': len(signals)
             }
             
-            cursor.execute('''
-                INSERT OR REPLACE INTO live_runs 
-                (run_id, strategy_version, signal_date, status, summary_json)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (run_id, strategy_version, signal_date, 'generated', json.dumps(summary)))
-            
-            # Insert signals with new schema
-            for signal in signals:
-                cursor.execute('''
-                    INSERT OR REPLACE INTO live_signals 
-                    (run_id, user_id, strategy_version, signal_date, symbol, side, score, reason, payload_json, signal_symbol, etf_name)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    run_id,
-                    getattr(self, 'user_id', None),  # From get_symbols_from_deployment
-                    strategy_version,
-                    signal_date,
-                    signal['symbol'],  # This goes into the original symbol column
-                    signal['side'],
-                    signal['score'],
-                    signal['reason'],
-                    json.dumps(signal['payload']),
-                    signal['symbol'],  # Also store in signal_symbol for compatibility
-                    signal.get('etf_name', signal['symbol'])  # ETF name (same as symbol for ETFs)
-                ))
-            
-            conn.commit()
-            conn.close()
-            
-            self.logger.info(f"Saved {len(signals)} signals to database with run_id: {run_id}")
-            return True
+            session = get_session()
+            try:
+                # Upsert run record
+                run_data = {
+                    'run_id': run_id,
+                    'strategy_version': strategy_version,
+                    'signal_date': signal_date,
+                    'status': 'generated',
+                    'summary_json': json.dumps(summary)
+                }
+                
+                stmt = insert(LiveRun).values(**run_data)
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=['run_id'],
+                    set_=dict(
+                        strategy_version=stmt.excluded.strategy_version,
+                        signal_date=stmt.excluded.signal_date,
+                        status=stmt.excluded.status,
+                        summary_json=stmt.excluded.summary_json
+                    )
+                )
+                session.execute(stmt)
+                
+                # Insert/update signals
+                user_id = getattr(self, 'user_id', None)
+                for signal in signals:
+                    signal_data = {
+                        'run_id': run_id,
+                        'user_id': user_id,
+                        'strategy_version': strategy_version,
+                        'signal_date': signal_date,
+                        'signal_symbol': signal['symbol'],
+                        'etf_name': signal.get('etf_name', signal['symbol']),
+                        'side': signal['side'],
+                        'score': signal['score'],
+                        'reason': signal['reason'],
+                        'payload_json': json.dumps(signal['payload'])
+                    }
+                    
+                    stmt = insert(LiveSignal).values(**signal_data)
+                    stmt = stmt.on_conflict_do_update(
+                        index_elements=['run_id', 'signal_symbol', 'side'],
+                        set_=dict(
+                            user_id=stmt.excluded.user_id,
+                            strategy_version=stmt.excluded.strategy_version,
+                            signal_date=stmt.excluded.signal_date,
+                            etf_name=stmt.excluded.etf_name,
+                            score=stmt.excluded.score,
+                            reason=stmt.excluded.reason,
+                            payload_json=stmt.excluded.payload_json
+                        )
+                    )
+                    session.execute(stmt)
+                
+                session.commit()
+                self.logger.info(f"Saved {len(signals)} signals to PostgreSQL database with run_id: {run_id}")
+                return True
+                
+            except Exception as e:
+                session.rollback()
+                raise
+            finally:
+                session.close()
             
         except Exception as e:
             self.logger.error(f"Error saving signals to database: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
             return False
     
     def run_weekly_signal_generation(self, run_id: str = None, strategy_type: str = "SurfTrend", strategy_config: Dict[str, Any] = None) -> Dict[str, Any]:
