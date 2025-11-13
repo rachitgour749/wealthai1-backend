@@ -21,7 +21,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'rsETFStra
 sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'customStrategy'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'SuperTrend'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'chatAI'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Services', 'Payment'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'Services', 'cronjob'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'Services', 'webhook'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'Services', 'subscription'))
@@ -32,7 +31,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 from Strategies.stockstrategy.stock_api import stock_router, initialize_stock_backtester, cleanup_stock_backtester
 from chatAI.chat_api import chat_router, init_chat_ai, cleanup_chat_ai
 from chatAI.zoho_api import zoho_router, init_zoho_chat, cleanup_zoho_chat
-from Services.Payment.api import payment_router, init_payment_service, cleanup_payment_service
 from Services.webhook.webhook_api import router as webhook_router
 from Services.webhook.webhook_logic import init_db as init_webhook_db
 from Services.subscription.api import subscription_router
@@ -95,8 +93,6 @@ chat_ai_initialized = True
 # Initialize ZOHO Chat Integration
 zoho_chat_initialized = init_zoho_chat()
 
-# Initialize payment service
-payment_service_initialized = init_payment_service()
 
 # Initialize subscription service
 try:
@@ -189,7 +185,6 @@ async def shutdown_event():
     cleanup_etf_backtester()
     cleanup_chat_ai()
     cleanup_zoho_chat()
-    cleanup_payment_service()
 
 # Root endpoint
 @app.get("/")
@@ -208,7 +203,6 @@ async def health_check():
             "custom_strategy_initialized": custom_strategy_service_initialized,
             "chat_ai_initialized": chat_ai_initialized,
             "zoho_chat_initialized": zoho_chat_initialized,
-            "payment_service_initialized": payment_service_initialized,
             "subscription_service_initialized": subscription_service_initialized,
             "webhook_service_initialized": webhook_service_initialized,
             "scheduler_initialized": scheduler_manager_initialized,
@@ -218,7 +212,6 @@ async def health_check():
             "rs_strategy_database_available": True,
             "custom_strategy_database_available": custom_strategy_service_initialized,
             "chat_ai_database_available": chat_ai_initialized,
-            "payment_database_available": payment_service_initialized,
             "subscription_database_available": subscription_service_initialized,
             "webhook_database_available": True,
             "scheduler_database_available": scheduler_manager_initialized,
@@ -240,7 +233,6 @@ async def health_check():
             "custom_strategy_initialized": custom_strategy_service_initialized,
             "chat_ai_initialized": chat_ai_initialized,
             "zoho_chat_initialized": zoho_chat_initialized,
-            "payment_service_initialized": payment_service_initialized,
             "subscription_service_initialized": subscription_service_initialized,
             "webhook_service_initialized": webhook_service_initialized,
             "scheduler_initialized": scheduler_manager_initialized,
@@ -386,7 +378,6 @@ app.include_router(rs_etf_router, prefix="/api/rs-etf-strategy", tags=["RS ETF S
 app.include_router(custom_strategy_router)
 app.include_router(chat_router)
 app.include_router(zoho_router)
-app.include_router(payment_router)
 app.include_router(webhook_router)
 app.include_router(subscription_router)
 app.include_router(google_oauth_router)
@@ -1585,13 +1576,6 @@ if __name__ == "__main__":
     print("   GET  /api/custom-strategy/{strategy_id} - Get specific custom strategy")
     print("   PUT  /api/custom-strategy/{strategy_id}/status - Update strategy status")
     print("   GET  /api/custom-strategy/health - Custom strategy health check")
-    print("   GET  /api/payment/health - Payment service health check")
-    print("   POST /api/payment/order - Create payment order")
-    print("   GET  /api/payment/order/{order_id} - Get order details")
-    print("   POST /api/payment/verify - Verify payment")
-    print("   POST /api/payment/refund - Process refund")
-    print("   GET  /api/payment/history - Get payment history")
-    print("   GET  /api/payment/analytics - Get payment analytics")
     print("   GET  /api/strategies - Get all webhook strategies")
     print("   POST /api/strategies - Create webhook strategy")
     print("   GET  /api/strategies/{id} - Get specific webhook strategy")
