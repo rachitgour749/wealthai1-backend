@@ -352,7 +352,7 @@ class LiveSignalGenerator:
             session = None
             try:
                 session = get_market_data_session()
-                query = text("SELECT DISTINCT symbol FROM etf_unified ORDER BY symbol")
+                query = text("SELECT DISTINCT symbol FROM etf_data ORDER BY symbol")
                 result = session.execute(query)
                 available_symbols = [row[0] for row in result.fetchall()]
                 
@@ -426,10 +426,9 @@ class LiveSignalGenerator:
                 try:
                     # Query data for this symbol from PostgreSQL
                     query = text("""
-                        SELECT date, open_price as open, high_price as high, 
-                               low_price as low, close_price as close, volume
-                        FROM etf_unified
-                        WHERE symbol = :symbol AND date >= :start_date AND date <= :end_date
+                        SELECT date, open, high, low, close, volume, adjusted_close
+                        FROM etf_data
+                        WHERE symbol = :symbol AND date >= :start_date::date AND date <= :end_date::date
                         ORDER BY date
                     """)
                     

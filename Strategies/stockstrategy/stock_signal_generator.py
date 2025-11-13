@@ -26,7 +26,7 @@ except ImportError:
 class LiveStockSignalGenerator:
     """
     Live Stock Signal Generator using the same logic as ETF generator
-    but filtering for stocks (excluding the 20 specific ETF symbols)
+    Uses stock_data table for stock data (ETFs are in etf_data table)
     """
     
     def __init__(self, db_path: str = None):
@@ -176,7 +176,8 @@ class LiveStockSignalGenerator:
     
     def get_stock_data_for_signals(self, days_back: int = 365) -> List[str]:
         """
-        Get stock symbols for signal generation (exclude the 20 ETF symbols)
+        Get stock symbols for signal generation from stock_data table
+        Note: stock_data table should only contain stocks (ETFs are in etf_data table)
         """
         from market_data_db_connection import get_session as get_market_data_session
         from sqlalchemy import text
@@ -184,14 +185,6 @@ class LiveStockSignalGenerator:
         session = None
         try:
             session = get_market_data_session()
-            
-            # Define the 20 ETF symbols to exclude
-            etf_symbols = [
-                'BANKBEES', 'GOLDBEES', 'GOLDSHARE', 'HDFCGOLD', 'HNGSNGBEES', 
-                'ICICIGOLD', 'INFRABEES', 'ITBEES', 'JUNIORBEES', 'KOTAKGOLD', 
-                'LIQUIDBEES', 'MON100', 'NIFTY1', 'NIFTYBEES', 'SHARMBEES', 
-                'PSUBNKBEES', 'QNIFTY', 'SENSEX1', 'SETFGOLD', 'SHARIABEES'
-            ]
             
             # Calculate the most recent Friday (same logic as ETF signal generator)
             today = datetime.now()
@@ -203,19 +196,16 @@ class LiveStockSignalGenerator:
             start_date = (test_date - timedelta(days=days_back)).strftime('%Y-%m-%d')
             self.logger.info(f"Using last Friday's date: {end_date} for stock signal generation")
             
-            # Get all symbols from etf_unified table
-            query = text("SELECT DISTINCT symbol FROM etf_unified ORDER BY symbol")
+            # Get all symbols from stock_data table (should only contain stocks)
+            query = text("SELECT DISTINCT symbol FROM stock_data ORDER BY symbol")
             result = session.execute(query)
-            all_symbols = [row[0] for row in result.fetchall()]
-            
-            # Filter out ETF symbols to get only stocks
-            stock_symbols = [symbol for symbol in all_symbols if symbol not in etf_symbols]
+            stock_symbols = [row[0] for row in result.fetchall()]
             
             # Filter symbols that have data in the specified date range
             valid_stock_symbols = []
             for symbol in stock_symbols:
                 query = text("""
-                    SELECT COUNT(*) FROM etf_unified 
+                    SELECT COUNT(*) FROM stock_data 
                     WHERE symbol = :symbol AND date >= :start_date AND date <= :end_date
                 """)
                 result = session.execute(query, {"symbol": symbol, "start_date": start_date, "end_date": end_date})
@@ -243,10 +233,9 @@ class LiveStockSignalGenerator:
             session = get_market_data_session()
             
             query = text("""
-                SELECT date, open_price as open, high_price as high, 
-                       low_price as low, close_price as close, volume
-                FROM etf_unified
-                WHERE symbol = :symbol AND date >= :start_date AND date <= :end_date
+                SELECT date, open, high, low, close, volume, adj_close
+                FROM stock_data
+                WHERE symbol = :symbol AND date >= :start_date::date AND date <= :end_date::date
                 ORDER BY date
             """)
             

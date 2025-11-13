@@ -18,9 +18,9 @@ from market_data_db_connection import (
     create_connection as create_market_data_connection,
     get_session as get_market_data_session,
     init_database as init_market_data_database,
-    ETFUnified,
-    StockData,
-    StockMetadata
+    StockData,  # Stock data model (uses stock_data table)
+    Nifty500Metadata,  # Stock metadata model (uses nifty500_metadata table)
+    IndexData  # Index data for RS calculations (uses index_data table)
 )
 
 try:
@@ -55,8 +55,8 @@ class stockRotationBacktester:
         self.purchase_history = {}
         
         # Strategy-specific table configuration (must be set before method calls)
-        self.metadata_table = "stock_metadata"
-        self.data_table = "etf_unified"  # Stocks are stored in etf_unified table (same as ETFs)
+        self.metadata_table = "nifty500_metadata"  # Use nifty500_metadata for stock metadata
+        self.data_table = "stock_data"  # Stocks are stored in stock_data table
         
         self.available_databases = []  # Not needed for PostgreSQL
         self.stock_metadata = self.load_stock_metadata()
@@ -132,17 +132,17 @@ class stockRotationBacktester:
         try:
             session = self._get_session()
             
-            # Try to load from stock_metadata table first
+            # Try to load from nifty500_metadata table first
             from sqlalchemy import text
             result = session.execute(text("""
                 SELECT table_name 
                 FROM information_schema.tables 
-                WHERE table_schema = 'public' AND table_name = 'stock_metadata'
+                WHERE table_schema = 'public' AND table_name = 'nifty500_metadata'
             """))
             
             if result.fetchone():
-                # Load from metadata table
-                metadata_records = session.query(StockMetadata).all()
+                # Load from nifty500_metadata table
+                metadata_records = session.query(Nifty500Metadata).all()
                 metadata = {}
                 for record in metadata_records:
                     metadata[record.symbol] = {
@@ -170,15 +170,15 @@ class stockRotationBacktester:
         try:
             from sqlalchemy import text
             
-            # Use etf_unified table (stocks are stored there)
+            # Use stock_data table
             query = text("""
                 SELECT 
                     symbol,
-                    MIN(date) as start_date,
-                    MAX(date) as end_date,
+                    MIN(date::text) as start_date,
+                    MAX(date::text) as end_date,
                     COUNT(*) as total_records,
-                    ROUND(EXTRACT(EPOCH FROM (MAX(date::date) - MIN(date::date))) / 86400.0 / 365.25, 1) as years_available
-                FROM etf_unified
+                    ROUND(EXTRACT(EPOCH FROM (MAX(date) - MIN(date))) / 86400.0 / 365.25, 1) as years_available
+                FROM stock_data
                 GROUP BY symbol
             """)
             
@@ -424,19 +424,16 @@ class stockRotationBacktester:
                 print(f"   Data loading period: {buffer_start_date} to {end_date}")
                 print(f"   Buffer: 400 calendar days (~252 trading days) for momentum calculations")
 
-            # Use etf_unified table - map column names (stocks are stored in etf_unified)
-            # PostgreSQL columns: date, symbol, open_price, high_price, low_price, close_price, volume
-            # Need to map to: date, symbol, open, high, low, close, volume
-            
+            # Use stock_data table - column names match directly
             # Get available symbols using proper parameterization
             from sqlalchemy import bindparam
             placeholders = ','.join([f':ticker_{i}' for i in range(len(tickers))])
             
             query = text(f"""
                 SELECT DISTINCT symbol 
-                FROM etf_unified 
+                FROM stock_data 
                 WHERE symbol IN ({placeholders})
-                AND date >= :start_date AND date <= :end_date
+                AND date >= :start_date::date AND date <= :end_date::date
             """)
             
             params = {f'ticker_{i}': t for i, t in enumerate(tickers)}
@@ -452,20 +449,21 @@ class stockRotationBacktester:
             if not available_tickers:
                 raise ValueError("No data available for any of the selected stocks")
 
-            # Load data with column mapping
+            # Load data - column names match directly
             placeholders = ','.join([f':ticker_{i}' for i in range(len(available_tickers))])
             query = text(f"""
                 SELECT 
                     date,
                     symbol,
-                    open_price as open,
-                    high_price as high,
-                    low_price as low,
-                    close_price as close,
-                    volume
-                FROM etf_unified
+                    open,
+                    high,
+                    low,
+                    close,
+                    volume,
+                    adj_close
+                FROM stock_data
                 WHERE symbol IN ({placeholders})
-                AND date >= :start_date AND date <= :end_date
+                AND date >= :start_date::date AND date <= :end_date::date
                 ORDER BY date, symbol
             """)
 
@@ -1731,7 +1729,7 @@ class stockRotationBacktester:
             
             benchmark_symbol = None
             for symbol in benchmark_symbols:
-                query = text("SELECT DISTINCT symbol FROM etf_unified WHERE symbol = :symbol LIMIT 1")
+                query = text("SELECT DISTINCT symbol FROM stock_data WHERE symbol = :symbol LIMIT 1")
                 result = session.execute(query, {"symbol": symbol})
                 if result.fetchone():
                     benchmark_symbol = symbol
@@ -1743,11 +1741,11 @@ class stockRotationBacktester:
                 return pd.DataFrame()
 
             query = text("""
-                SELECT date, close_price as close
-                FROM etf_unified
+                SELECT date, close
+                FROM stock_data
                 WHERE symbol = :symbol
-                AND date >= :start_date
-                AND date <= :end_date
+                AND date >= :start_date::date
+                AND date <= :end_date::date
                 ORDER BY date
             """)
 

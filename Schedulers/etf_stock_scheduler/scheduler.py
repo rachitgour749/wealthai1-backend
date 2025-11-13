@@ -23,7 +23,7 @@ from market_data_db_connection import (
     create_connection as create_market_data_connection,
     get_session as get_market_data_session,
     init_database as init_market_data_database,
-    ETFUnified
+    ETFData  # Primary ETF data model (uses etf_data table)
 )
 
 # Setup enhanced logging with rotation
@@ -203,26 +203,33 @@ class IndianMarketDataFetcher:
             # Use PostgreSQL UPSERT (ON CONFLICT DO UPDATE)
             from sqlalchemy.dialects.postgresql import insert
             
-            stmt = insert(ETFUnified).values(
+            # Convert date string to datetime if needed
+            from datetime import datetime
+            if isinstance(data['date'], str):
+                date_obj = datetime.strptime(data['date'], '%Y-%m-%d')
+            else:
+                date_obj = data['date']
+            
+            stmt = insert(ETFData).values(
                 symbol=symbol_data['symbol'],
-                date=data['date'],
-                open_price=data['open'],
-                high_price=data['high'],
-                low_price=data['low'],
-                close_price=data['close'],
+                date=date_obj,
+                open=data['open'],
+                high=data['high'],
+                low=data['low'],
+                close=data['close'],
                 volume=data['volume'],
-                adj_close=data['adj_close']
+                adjusted_close=data['adj_close']
             )
             
             stmt = stmt.on_conflict_do_update(
                 index_elements=['symbol', 'date'],
                 set_=dict(
-                    open_price=stmt.excluded.open_price,
-                    high_price=stmt.excluded.high_price,
-                    low_price=stmt.excluded.low_price,
-                    close_price=stmt.excluded.close_price,
+                    open=stmt.excluded.open,
+                    high=stmt.excluded.high,
+                    low=stmt.excluded.low,
+                    close=stmt.excluded.close,
                     volume=stmt.excluded.volume,
-                    adj_close=stmt.excluded.adj_close
+                    adjusted_close=stmt.excluded.adjusted_close
                 )
             )
             

@@ -28417,3 +28417,6 @@
 2025-11-13 10:40:32,220 - rs_eod_fetcher - INFO - Database tables created successfully
 2025-11-13 10:40:32,222 - rs_eod_fetcher - INFO - RS EOD Data Fetcher initialized with 499 stocks
 2025-11-13 10:40:32,224 - rs_eod_fetcher - INFO - Database path: C:\Users\Lenovo\Desktop\newFolder\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-13 11:39:28,392 - rs_eod_fetcher - INFO - Database tables created successfully
+2025-11-13 11:39:28,394 - rs_eod_fetcher - INFO - RS EOD Data Fetcher initialized with 499 stocks
+2025-11-13 11:39:28,394 - rs_eod_fetcher - INFO - Database path: C:\Users\Lenovo\Desktop\newFolder\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite

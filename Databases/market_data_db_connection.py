@@ -24,9 +24,10 @@ MARKET_DATA_DATABASE_URL = "postgresql://neondb_owner:npg_WgVhOYtnP12l@ep-solita
 Base = declarative_base()
 
 
-# ETF Unified Data Model
+# ETF Unified Data Model (DEPRECATED - use ETFData instead)
+# Kept for backward compatibility during migration
 class ETFUnified(Base):
-    """Model for ETF unified market data"""
+    """Model for ETF unified market data (DEPRECATED - use ETFData)"""
     __tablename__ = "etf_unified"
     
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -96,21 +97,21 @@ class StockMetadata(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
-# ETF Data Model (for etf_data table used by RS ETF Strategy)
+# ETF Data Model (PRIMARY - use this for all ETF data operations)
 class ETFData(Base):
-    """Model for ETF data (alternative table name)"""
+    """Model for ETF market data - PRIMARY table for ETF data"""
     __tablename__ = "etf_data"
     
-    id = Column(Integer, primary_key=True)
-    symbol = Column(String, primary_key=True, nullable=False, index=True)
-    date = Column(DateTime, primary_key=True, nullable=False, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    symbol = Column(String, nullable=False, index=True)
+    date = Column(DateTime, nullable=False, index=True)
     open = Column(Float)
     high = Column(Float)
     low = Column(Float)
     close = Column(Float)
     volume = Column(Integer)
     adjusted_close = Column(Float)
-    created_at = Column(DateTime)
+    created_at = Column(DateTime, server_default=func.now())
     
     __table_args__ = (
         UniqueConstraint('symbol', 'date', name='uq_etf_data_symbol_date'),
