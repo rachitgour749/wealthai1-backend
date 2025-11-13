@@ -1,0 +1,1493 @@
+2025-10-26 00:38:25,390 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-26 00:38:25,396 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-26 00:38:25,398 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-26 00:38:25,400 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-26 00:38:25,414 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-26 00:38:25,418 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-26 00:38:25,419 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-26 00:38:25,424 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-26 00:38:25,427 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-26 00:38:25,428 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-26 00:44:05,806 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-26 00:44:21,254 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-26 00:44:21,265 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-26 00:44:21,268 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-26 00:44:21,269 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-26 00:44:21,282 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-26 00:44:21,284 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-26 00:44:21,285 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-26 00:44:21,286 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-26 00:44:21,288 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-26 00:44:21,291 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-27 10:06:42,484 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-27 10:06:42,499 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-27 10:06:42,501 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-27 10:06:42,502 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-27 10:06:42,530 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-27 10:06:42,534 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-27 10:06:42,543 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-27 10:06:42,544 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-27 10:06:42,550 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-27 10:06:42,558 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-27 12:43:59,933 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-27 16:00:50,896 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-27 16:00:50,907 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-27 16:00:50,909 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-27 16:00:50,911 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-27 16:00:50,920 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-27 16:00:50,921 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-27 16:00:50,923 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-27 16:00:50,926 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-27 16:00:50,928 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-27 16:00:50,932 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-27 20:49:58,919 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-27 20:49:58,930 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-27 20:49:58,937 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-27 20:49:58,942 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-27 20:49:58,962 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-27 20:49:59,017 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-27 20:49:59,026 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-27 20:49:59,061 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-27 20:49:59,204 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-27 20:49:59,232 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-27 22:00:10,514 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-27 22:00:10,520 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-27 22:00:10,522 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-27 22:00:10,525 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-27 22:00:10,544 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-27 22:00:10,547 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-27 22:00:10,550 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-27 22:00:10,552 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-27 22:00:10,554 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-27 22:00:10,556 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-27 22:32:24,983 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-27 22:32:24,990 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-27 22:32:24,992 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-27 22:32:24,996 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-27 22:32:25,004 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-27 22:32:25,008 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-27 22:32:25,010 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-27 22:32:25,011 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-27 22:32:25,014 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-27 22:32:25,015 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-27 22:32:25,146 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-27 22:37:12,337 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-27 22:37:12,340 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-27 22:37:12,341 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-27 22:37:12,341 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-27 22:37:12,353 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-27 22:37:12,354 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-27 22:37:12,355 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-27 22:37:12,355 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-27 22:37:12,356 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-27 22:37:12,356 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-27 22:40:08,464 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-27 22:40:08,469 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-27 22:40:08,471 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-27 22:40:08,471 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-27 22:40:08,481 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-27 22:40:08,482 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-27 22:40:08,482 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-27 22:40:08,484 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-27 22:40:08,484 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-27 22:40:08,485 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-27 23:07:46,518 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-27 23:07:59,743 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-27 23:07:59,749 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-27 23:07:59,751 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-27 23:07:59,755 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-27 23:07:59,762 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-27 23:07:59,762 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-27 23:07:59,763 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-27 23:07:59,766 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-27 23:07:59,768 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-27 23:07:59,773 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-27 23:26:43,175 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-27 23:26:43,183 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-27 23:26:43,191 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-27 23:26:43,192 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-27 23:26:43,212 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-27 23:26:43,216 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-27 23:26:43,233 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-27 23:26:43,236 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-27 23:26:43,242 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-27 23:26:43,245 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-27 23:33:10,359 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-28 00:20:38,053 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-28 00:20:38,061 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-28 00:20:38,063 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-28 00:20:38,073 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-28 00:20:38,084 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-28 00:20:38,084 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-28 00:20:38,088 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-28 00:20:38,091 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-28 00:20:38,091 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-28 00:20:38,091 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-28 00:26:50,044 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-28 00:27:08,994 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-28 00:27:09,001 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-28 00:27:09,001 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-28 00:27:09,009 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-28 00:27:09,018 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-28 00:27:09,025 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-28 00:27:09,030 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-28 00:27:09,030 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-28 00:27:09,030 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-28 00:27:09,030 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-29 09:46:24,640 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-29 09:46:24,645 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-29 09:46:24,646 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-29 09:46:24,651 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-29 09:46:24,662 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-29 09:46:24,666 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-29 09:46:24,670 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-29 09:46:24,674 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-29 09:46:24,680 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-29 09:46:24,682 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-29 10:23:41,703 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-29 10:35:02,938 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-29 10:35:02,938 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-29 10:35:02,948 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-29 10:35:02,953 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-29 10:35:02,962 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-29 10:35:02,971 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-29 10:35:02,975 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-29 10:35:02,976 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-29 10:35:02,989 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-29 10:35:02,991 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-29 12:26:10,766 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-29 22:03:33,583 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-29 22:03:33,595 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-29 22:03:33,599 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-29 22:03:33,603 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-29 22:03:33,619 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-29 22:03:33,620 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-29 22:03:33,626 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-29 22:03:33,628 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-29 22:03:33,635 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-29 22:03:33,638 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-30 11:38:15,019 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-30 11:39:55,174 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-30 11:39:55,178 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-30 11:39:55,179 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-30 11:39:55,180 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-30 11:39:55,193 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-30 11:39:55,198 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-30 11:39:55,200 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-30 11:39:55,201 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-30 11:39:55,203 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-30 11:39:55,205 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-30 11:48:22,512 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-30 11:48:35,973 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-30 11:48:35,980 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-30 11:48:35,980 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-30 11:48:35,982 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-30 11:48:35,986 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-30 11:48:35,987 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-30 11:48:35,988 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-30 11:48:35,991 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-30 11:48:35,993 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-30 11:48:35,997 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-30 12:09:09,102 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-30 12:09:28,691 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-30 12:09:28,710 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-30 12:09:28,714 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-30 12:09:28,724 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-30 12:09:28,768 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-30 12:09:28,782 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-30 12:09:28,792 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-30 12:09:28,795 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-30 12:09:28,800 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-30 12:09:28,807 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 09:47:23,601 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 09:47:23,605 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 09:47:23,607 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 09:47:23,608 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 09:47:23,625 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 09:47:23,629 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 09:47:23,632 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 09:47:23,634 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 09:47:23,635 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 09:47:23,639 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 10:06:38,639 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-31 10:21:39,290 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 10:21:39,298 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 10:21:39,298 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 10:21:39,302 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 10:21:39,314 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 10:21:39,316 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 10:21:39,319 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 10:21:39,321 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 10:21:39,327 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 10:21:39,331 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 11:27:08,478 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-31 11:37:18,295 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 11:37:18,299 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 11:37:18,301 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 11:37:18,303 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 11:37:18,311 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 11:37:18,313 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 11:37:18,313 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 11:37:18,316 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 11:37:18,317 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 11:37:18,320 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 11:51:21,905 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-31 11:51:36,819 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 11:51:36,824 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 11:51:36,825 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 11:51:36,828 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 11:51:36,837 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 11:51:36,838 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 11:51:36,841 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 11:51:36,843 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 11:51:36,844 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 11:51:36,847 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 12:15:45,970 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-31 12:16:02,673 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 12:16:02,679 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 12:16:02,679 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 12:16:02,682 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 12:16:02,691 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 12:16:02,691 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 12:16:02,691 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 12:16:02,691 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 12:16:02,701 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 12:16:02,702 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 13:29:44,373 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-31 13:30:10,983 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 13:30:10,990 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 13:30:10,991 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 13:30:10,993 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 13:30:10,996 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 13:30:11,001 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 13:30:11,006 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 13:30:11,008 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 13:30:11,013 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 13:30:11,014 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 14:27:25,572 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-31 14:27:45,830 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 14:27:45,837 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 14:27:45,840 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 14:27:45,842 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 14:27:45,852 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 14:27:45,854 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 14:27:45,856 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 14:27:45,858 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 14:27:45,860 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 14:27:45,862 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 14:36:46,180 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-31 14:37:10,621 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 14:37:10,625 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 14:37:10,627 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 14:37:10,629 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 14:37:10,636 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 14:37:10,675 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 14:37:10,679 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 14:37:10,681 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 14:37:10,683 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 14:37:10,684 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 18:44:08,563 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-31 18:45:35,607 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 18:45:35,614 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 18:45:35,618 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 18:45:35,620 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 18:45:35,630 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 18:45:35,633 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 18:45:35,635 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 18:45:35,639 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 18:45:35,645 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 18:45:35,647 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 19:12:01,104 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-31 19:12:26,682 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 19:12:26,692 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 19:12:26,696 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 19:12:26,698 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 19:12:26,720 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 19:12:26,722 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 19:12:26,723 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 19:12:26,726 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 19:12:26,729 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 19:12:26,735 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 21:53:20,721 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 21:53:20,743 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 21:53:20,749 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 21:53:20,761 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 21:53:20,831 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 21:53:20,851 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 21:53:20,859 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 21:53:20,867 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 21:53:20,868 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 21:53:20,877 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 22:08:27,931 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 22:08:27,936 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 22:08:27,938 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 22:08:27,939 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 22:08:27,947 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 22:08:27,950 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 22:08:27,953 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 22:08:27,954 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 22:08:27,958 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 22:08:27,962 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 23:22:41,552 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-31 23:23:57,431 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 23:23:57,441 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 23:23:57,442 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 23:23:57,444 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 23:23:57,452 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 23:23:57,453 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 23:23:57,457 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 23:23:57,459 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 23:23:57,462 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 23:23:57,465 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 23:26:51,468 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-31 23:27:09,993 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 23:27:10,005 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 23:27:10,006 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 23:27:10,008 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 23:27:10,016 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 23:27:10,022 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 23:27:10,025 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 23:27:10,027 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 23:27:10,027 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 23:27:10,032 - rs_scheduler - INFO - Scheduler will run in the background
+2025-10-31 23:36:36,574 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-10-31 23:36:56,595 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-10-31 23:36:56,601 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-10-31 23:36:56,602 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-31 23:36:56,602 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-10-31 23:36:56,602 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-10-31 23:36:56,602 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-10-31 23:36:56,618 - rs_scheduler - INFO -   - RS Strategy Signal Generation (ID: rs_signal_generation)
+2025-10-31 23:36:56,618 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-10-31 23:36:56,622 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-10-31 23:36:56,622 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 05:18:32,486 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 05:18:55,732 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 05:18:55,749 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 05:18:55,757 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 05:18:55,765 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 05:18:55,790 - rs_scheduler - INFO - Scheduled 3 jobs:
+2025-11-01 05:18:55,796 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 05:18:55,807 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 05:18:55,810 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 05:18:55,817 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 05:18:55,822 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 05:53:28,152 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 05:54:43,880 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 05:54:43,920 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 05:54:43,963 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 05:54:43,978 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 05:54:44,579 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 05:54:44,598 - rs_scheduler - INFO -    RS signals: 2025-11-01 05:55:00 IST
+2025-11-01 05:54:44,610 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 05:54:44,613 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 05:54:44,615 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 05:54:44,620 - rs_scheduler - INFO -   - One-time RS Signal Generation at 5:55 AM (Last Friday) (ID: rs_one_time_test_5_55)
+2025-11-01 05:54:44,624 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 05:54:44,626 - rs_scheduler - INFO - 
+2025-11-01 05:54:44,630 - rs_scheduler - INFO -   - One-time RS signals at 6:05 AM IST (Last Friday)
+2025-11-01 05:54:44,634 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 05:54:44,642 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 06:01:09,118 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 06:01:09,124 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 06:01:09,126 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 06:01:09,127 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 06:01:09,153 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 06:01:09,155 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:01:00 IST
+2025-11-01 06:01:09,163 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 06:01:09,165 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 06:01:09,168 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 06:01:09,171 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:01 AM (Last Friday) (ID: rs_one_time_test_6_01)
+2025-11-01 06:01:09,174 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 06:01:09,176 - rs_scheduler - INFO - 
+2025-11-01 06:01:09,178 - rs_scheduler - INFO -   - One-time RS signals at 6:11 AM IST (Last Friday)
+2025-11-01 06:01:09,180 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 06:01:09,183 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 06:01:09,345 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 06:05:00,049 - rs_scheduler - INFO - === One-time RS Signal Generation at 5:55 AM Started ===
+2025-11-01 06:05:00,067 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 06:05:00,098 - rs_scheduler - CRITICAL - Critical error in one-time RS signal generation: no such table: saved_rs_strategies
+2025-11-01 06:05:00,202 - rs_scheduler - ERROR - Job rs_one_time_test_5_55 failed: no such table: saved_rs_strategies
+2025-11-01 06:09:03,674 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 06:09:31,456 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 06:09:31,470 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 06:09:31,473 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\WealthAI1\Wealthai\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 06:09:31,473 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 06:09:31,526 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 06:09:31,529 - rs_scheduler - INFO -    RS signals: 2025-11-01 06:10:00 IST
+2025-11-01 06:09:31,542 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 06:09:31,545 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 06:09:31,548 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 06:09:31,552 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 06:09:31,554 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 06:09:31,563 - rs_scheduler - INFO - 
+2025-11-01 06:09:31,566 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 06:09:31,566 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 06:09:31,570 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 13:43:07,931 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 13:43:07,954 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 13:43:07,956 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 13:43:07,957 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 13:43:08,037 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 13:43:08,052 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:10:00 IST
+2025-11-01 13:43:08,063 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 13:43:08,064 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 13:43:08,066 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 13:43:08,073 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 13:43:08,079 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 13:43:08,082 - rs_scheduler - INFO - 
+2025-11-01 13:43:08,084 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 13:43:08,126 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 13:43:08,131 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 14:11:38,745 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 14:11:57,068 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 14:11:57,102 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 14:11:57,104 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 14:11:57,111 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 14:11:57,173 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 14:11:57,177 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:10:00 IST
+2025-11-01 14:11:57,218 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 14:11:57,223 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 14:11:57,228 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 14:11:57,237 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 14:11:57,240 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 14:11:57,244 - rs_scheduler - INFO - 
+2025-11-01 14:11:57,269 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 14:11:57,286 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 14:11:57,291 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 14:19:31,018 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 14:19:52,327 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 14:19:52,376 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 14:19:52,378 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 14:19:52,381 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 14:19:52,499 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 14:19:52,520 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:10:00 IST
+2025-11-01 14:19:52,564 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 14:19:52,576 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 14:19:52,582 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 14:19:52,585 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 14:19:52,591 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 14:19:52,615 - rs_scheduler - INFO - 
+2025-11-01 14:19:52,617 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 14:19:52,623 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 14:19:52,659 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 14:25:00,566 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 14:25:21,841 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 14:25:21,866 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 14:25:21,868 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 14:25:21,870 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 14:25:21,902 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 14:25:21,905 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:10:00 IST
+2025-11-01 14:25:21,931 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 14:25:21,935 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 14:25:21,941 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 14:25:21,948 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 14:25:21,953 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 14:25:21,955 - rs_scheduler - INFO - 
+2025-11-01 14:25:21,963 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 14:25:21,965 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 14:25:21,967 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 14:43:19,190 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 14:47:28,206 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 14:47:28,252 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 14:47:28,254 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 14:47:28,259 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 14:47:28,399 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 14:47:28,421 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:10:00 IST
+2025-11-01 14:47:28,445 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 14:47:28,449 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 14:47:28,452 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 14:47:28,477 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 14:47:28,485 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 14:47:28,507 - rs_scheduler - INFO - 
+2025-11-01 14:47:28,509 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 14:47:28,516 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 14:47:28,556 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 15:25:46,041 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 15:29:49,467 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 15:29:49,513 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 15:29:49,517 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 15:29:49,522 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 15:29:49,681 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 15:29:49,702 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:10:00 IST
+2025-11-01 15:29:49,712 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 15:29:49,716 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 15:29:49,742 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 15:29:49,748 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 15:29:49,775 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 15:29:49,797 - rs_scheduler - INFO - 
+2025-11-01 15:29:49,816 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 15:29:49,824 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 15:29:49,835 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 16:26:06,560 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 16:27:36,769 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 16:27:36,829 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 16:27:36,831 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 16:27:36,838 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 16:27:36,929 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 16:27:36,937 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:10:00 IST
+2025-11-01 16:27:36,955 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 16:27:36,962 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 16:27:36,971 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 16:27:36,973 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 16:27:37,006 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 16:27:37,033 - rs_scheduler - INFO - 
+2025-11-01 16:27:37,043 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 16:27:37,056 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 16:27:37,070 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 17:05:35,795 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 17:08:05,027 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 17:08:05,050 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 17:08:05,052 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 17:08:05,059 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 17:08:05,154 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 17:08:05,169 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:10:00 IST
+2025-11-01 17:08:05,206 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 17:08:05,243 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 17:08:05,254 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 17:08:05,258 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 17:08:05,260 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 17:08:05,268 - rs_scheduler - INFO - 
+2025-11-01 17:08:05,274 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 17:08:05,283 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 17:08:05,285 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 18:31:40,857 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 18:40:03,593 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 18:40:03,598 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 18:40:03,601 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 18:40:03,610 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 18:40:03,774 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 18:40:03,783 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:10:00 IST
+2025-11-01 18:40:03,811 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 18:40:03,813 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 18:40:03,814 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 18:40:03,816 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 18:40:03,831 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 18:40:03,836 - rs_scheduler - INFO - 
+2025-11-01 18:40:03,848 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 18:40:03,862 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 18:40:03,866 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 19:47:42,674 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 19:48:03,865 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 19:48:03,889 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 19:48:03,904 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 19:48:03,918 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 19:48:04,043 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 19:48:04,066 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:10:00 IST
+2025-11-01 19:48:04,137 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 19:48:04,152 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 19:48:04,165 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 19:48:04,172 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 19:48:04,203 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 19:48:04,236 - rs_scheduler - INFO - 
+2025-11-01 19:48:04,246 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 19:48:04,284 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 19:48:04,335 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 20:16:16,301 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 20:16:39,428 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 20:16:39,433 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 20:16:39,434 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 20:16:39,439 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 20:16:39,505 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 20:16:39,507 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:10:00 IST
+2025-11-01 20:16:39,534 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 20:16:39,536 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 20:16:39,579 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 20:16:39,591 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 20:16:39,598 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 20:16:39,601 - rs_scheduler - INFO - 
+2025-11-01 20:16:39,602 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 20:16:39,605 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 20:16:39,616 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 22:39:12,227 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 22:46:22,820 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 22:46:22,847 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 22:46:22,848 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 22:46:22,849 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 22:46:22,877 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 22:46:22,879 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:10:00 IST
+2025-11-01 22:46:22,885 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 22:46:22,887 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 22:46:22,891 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 22:46:22,894 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 22:46:22,898 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 22:46:22,900 - rs_scheduler - INFO - 
+2025-11-01 22:46:22,901 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 22:46:22,904 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 22:46:22,908 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 23:09:25,032 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-01 23:09:45,181 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-01 23:09:45,188 - rs_scheduler - INFO - Live signal generator initialized successfully
+2025-11-01 23:09:45,189 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-01 23:09:45,191 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-01 23:09:45,231 - rs_scheduler - INFO -    Target date (last Friday): 2025-10-31
+2025-11-01 23:09:45,251 - rs_scheduler - INFO -    RS signals: 2025-11-02 06:10:00 IST
+2025-11-01 23:09:45,270 - rs_scheduler - INFO - Scheduled 4 jobs:
+2025-11-01 23:09:45,274 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-01 23:09:45,287 - rs_scheduler - INFO -   - RS Strategy Signal Generation (Friday 4:30 PM) (ID: rs_signal_generation)
+2025-11-01 23:09:45,296 - rs_scheduler - INFO -   - One-time RS Signal Generation at 6:10 AM (Last Friday) (ID: rs_one_time_test_6_10)
+2025-11-01 23:09:45,304 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-01 23:09:45,312 - rs_scheduler - INFO - 
+2025-11-01 23:09:45,315 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-01 23:09:45,329 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-01 23:09:45,331 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-01 23:59:46,690 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-02 22:06:15,577 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-02 22:06:15,578 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-02 22:06:15,579 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-02 22:06:15,585 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-02 22:06:15,588 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-02 22:06:15,591 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-02 22:06:15,594 - rs_scheduler - INFO - 
+2025-11-02 22:06:15,597 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-02 22:06:15,598 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-02 22:06:15,599 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-02 22:06:15,765 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-02 22:14:03,218 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-02 22:14:03,218 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-02 22:14:03,218 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-02 22:14:03,234 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-02 22:14:03,234 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-02 22:14:03,234 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-02 22:14:03,234 - rs_scheduler - INFO - 
+2025-11-02 22:14:03,234 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-02 22:14:03,234 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-02 22:14:03,244 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-02 22:14:03,365 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-02 22:17:42,155 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-02 22:17:42,158 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-02 22:17:42,160 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-02 22:17:42,166 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-02 22:17:42,168 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-02 22:17:42,169 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-02 22:17:42,172 - rs_scheduler - INFO - 
+2025-11-02 22:17:42,175 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-02 22:17:42,177 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-02 22:17:42,177 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-02 22:17:42,305 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-02 22:20:11,681 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-02 22:20:11,683 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-02 22:20:11,685 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-02 22:20:11,694 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-02 22:20:11,695 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-02 22:20:11,697 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-02 22:20:11,702 - rs_scheduler - INFO - 
+2025-11-02 22:20:11,704 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-02 22:20:11,706 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-02 22:20:11,710 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-02 22:20:11,879 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-02 22:33:38,748 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-02 22:33:38,750 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-02 22:33:38,751 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-02 22:33:38,759 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-02 22:33:38,759 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-02 22:33:38,764 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-02 22:33:38,766 - rs_scheduler - INFO - 
+2025-11-02 22:33:38,767 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-02 22:33:38,768 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-02 22:33:38,770 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-02 22:52:01,944 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-02 22:52:22,480 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-02 22:52:22,482 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-02 22:52:22,485 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-02 22:52:22,493 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-02 22:52:22,493 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-02 22:52:22,496 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-02 22:52:22,497 - rs_scheduler - INFO - 
+2025-11-02 22:52:22,502 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-02 22:52:22,503 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-02 22:52:22,508 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-02 23:11:47,945 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-02 23:12:08,033 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-02 23:12:08,035 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-02 23:12:08,036 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-02 23:12:08,046 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-02 23:12:08,047 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-02 23:12:08,048 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-02 23:12:08,051 - rs_scheduler - INFO - 
+2025-11-02 23:12:08,055 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-02 23:12:08,056 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-02 23:12:08,057 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 00:02:21,635 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 00:03:03,692 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 00:03:03,693 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 00:03:03,695 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 00:03:03,704 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 00:03:03,705 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 00:03:03,707 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 00:03:03,710 - rs_scheduler - INFO - 
+2025-11-03 00:03:03,711 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 00:03:03,713 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 00:03:03,715 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 00:10:04,133 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 00:10:27,076 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 00:10:27,077 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 00:10:27,079 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 00:10:27,080 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 00:10:27,080 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 00:10:27,080 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 00:10:27,090 - rs_scheduler - INFO - 
+2025-11-03 00:10:27,090 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 00:10:27,094 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 00:10:27,096 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 00:11:32,575 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 00:11:58,539 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 00:11:58,541 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 00:11:58,542 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 00:11:58,549 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 00:11:58,552 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 00:11:58,554 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 00:11:58,556 - rs_scheduler - INFO - 
+2025-11-03 00:11:58,559 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 00:11:58,564 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 00:11:58,566 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 00:18:23,257 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 00:18:42,786 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 00:18:42,792 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 00:18:42,793 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 00:18:42,798 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 00:18:42,802 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 00:18:42,804 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 00:18:42,806 - rs_scheduler - INFO - 
+2025-11-03 00:18:42,808 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 00:18:42,811 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 00:18:42,815 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 00:26:16,978 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 00:26:37,894 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 00:26:37,896 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 00:26:37,898 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 00:26:37,904 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 00:26:37,906 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 00:26:37,908 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 00:26:37,910 - rs_scheduler - INFO - 
+2025-11-03 00:26:37,913 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 00:26:37,915 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 00:26:37,916 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 00:31:43,128 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 00:32:05,034 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 00:32:05,034 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 00:32:05,040 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 00:32:05,048 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 00:32:05,050 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 00:32:05,054 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 00:32:05,059 - rs_scheduler - INFO - 
+2025-11-03 00:32:05,062 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 00:32:05,062 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 00:32:05,065 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 00:35:40,484 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 00:36:02,009 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 00:36:02,009 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 00:36:02,016 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 00:36:02,022 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 00:36:02,023 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 00:36:02,025 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 00:36:02,028 - rs_scheduler - INFO - 
+2025-11-03 00:36:02,033 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 00:36:02,034 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 00:36:02,037 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 00:40:05,765 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 00:40:26,318 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 00:40:26,321 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 00:40:26,323 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 00:40:26,327 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 00:40:26,331 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 00:40:26,332 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 00:40:26,334 - rs_scheduler - INFO - 
+2025-11-03 00:40:26,337 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 00:40:26,341 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 00:40:26,343 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 00:41:56,978 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 00:42:15,164 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 00:42:15,166 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 00:42:15,168 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 00:42:15,175 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 00:42:15,178 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 00:42:15,179 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 00:42:15,179 - rs_scheduler - INFO - 
+2025-11-03 00:42:15,182 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 00:42:15,184 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 00:42:15,189 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 00:44:42,807 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 00:45:02,662 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 00:45:02,662 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 00:45:02,662 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 00:45:02,662 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 00:45:02,662 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 00:45:02,675 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 00:45:02,678 - rs_scheduler - INFO - 
+2025-11-03 00:45:02,681 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 00:45:02,683 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 00:45:02,686 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 00:45:33,032 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 00:45:51,080 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 00:45:51,082 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 00:45:51,085 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 00:45:51,090 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 00:45:51,091 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 00:45:51,093 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 00:45:51,094 - rs_scheduler - INFO - 
+2025-11-03 00:45:51,096 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 00:45:51,098 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 00:45:51,101 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 00:49:06,213 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 00:49:26,263 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 00:49:26,265 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 00:49:26,267 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 00:49:26,270 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 00:49:26,270 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 00:49:26,279 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 00:49:26,281 - rs_scheduler - INFO - 
+2025-11-03 00:49:26,282 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 00:49:26,284 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 00:49:26,286 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 00:55:14,461 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 01:06:25,276 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 01:06:25,277 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 01:06:25,279 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 01:06:25,287 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 01:06:25,289 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 01:06:25,292 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 01:06:25,294 - rs_scheduler - INFO - 
+2025-11-03 01:06:25,297 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 01:06:25,300 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 01:06:25,304 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 01:51:29,919 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 01:51:52,381 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 01:51:52,383 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 01:51:52,386 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 01:51:52,391 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 01:51:52,393 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 01:51:52,394 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 01:51:52,400 - rs_scheduler - INFO - 
+2025-11-03 01:51:52,404 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 01:51:52,405 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 01:51:52,408 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 03:01:26,192 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 03:01:49,012 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 03:01:49,015 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 03:01:49,018 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 03:01:49,023 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 03:01:49,025 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 03:01:49,026 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 03:01:49,028 - rs_scheduler - INFO - 
+2025-11-03 03:01:49,034 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 03:01:49,037 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 03:01:49,039 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 03:02:57,739 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 03:03:16,832 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 03:03:16,837 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 03:03:16,839 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 03:03:16,844 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 03:03:16,851 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 03:03:16,854 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 03:03:16,856 - rs_scheduler - INFO - 
+2025-11-03 03:03:16,859 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 03:03:16,861 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 03:03:16,864 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 03:04:19,599 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 03:04:37,846 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 03:04:37,849 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 03:04:37,850 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 03:04:37,866 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 03:04:37,868 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 03:04:37,875 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 03:04:37,881 - rs_scheduler - INFO - 
+2025-11-03 03:04:37,884 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 03:04:37,885 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 03:04:37,894 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 04:15:16,569 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 04:20:53,391 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 04:20:53,393 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 04:20:53,395 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 04:20:53,404 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 04:20:53,405 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 04:20:53,407 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 04:20:53,409 - rs_scheduler - INFO - 
+2025-11-03 04:20:53,411 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 04:20:53,414 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 04:20:53,418 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 09:46:43,574 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 09:47:31,578 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 09:47:31,583 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\WealthAI\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 09:47:31,585 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 09:47:31,589 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 09:47:31,594 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 09:47:31,597 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 09:47:31,600 - rs_scheduler - INFO - 
+2025-11-03 09:47:31,603 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 09:47:31,605 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 09:47:31,605 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 12:12:11,590 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 13:00:31,768 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 13:00:31,770 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 13:00:31,778 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 13:00:31,793 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 13:00:31,806 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 13:00:31,810 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 13:00:31,819 - rs_scheduler - INFO - 
+2025-11-03 13:00:31,825 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 13:00:31,853 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 13:00:31,880 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 13:09:32,573 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 13:09:53,788 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 13:09:53,789 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 13:09:53,791 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 13:09:53,796 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 13:09:53,797 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 13:09:53,798 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 13:09:53,799 - rs_scheduler - INFO - 
+2025-11-03 13:09:53,801 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 13:09:53,804 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 13:09:53,806 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 13:17:06,808 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 13:17:28,011 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 13:17:28,014 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 13:17:28,023 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 13:17:28,048 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 13:17:28,062 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 13:17:28,081 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 13:17:28,097 - rs_scheduler - INFO - 
+2025-11-03 13:17:28,110 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 13:17:28,113 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 13:17:28,129 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 14:13:43,199 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 14:14:29,519 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 14:14:29,521 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 14:14:29,522 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 14:14:29,528 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 14:14:29,529 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 14:14:29,530 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 14:14:29,532 - rs_scheduler - INFO - 
+2025-11-03 14:14:29,534 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 14:14:29,536 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 14:14:29,547 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 14:34:32,999 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 14:34:33,000 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 14:34:33,002 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 14:34:33,009 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 14:34:33,010 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 14:34:33,013 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 14:34:33,015 - rs_scheduler - INFO - 
+2025-11-03 14:34:33,018 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 14:34:33,020 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 14:34:33,056 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 14:40:51,448 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 14:41:12,276 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 14:41:12,279 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI-frontend 9\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 14:41:12,286 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 14:41:12,298 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 14:41:12,308 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 14:41:12,328 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 14:41:12,392 - rs_scheduler - INFO - 
+2025-11-03 14:41:12,397 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 14:41:12,400 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 14:41:12,414 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 15:12:35,513 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 15:12:35,515 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 15:12:35,519 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 15:12:35,524 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 15:12:35,538 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 15:12:35,539 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 15:12:35,541 - rs_scheduler - INFO - 
+2025-11-03 15:12:35,542 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 15:12:35,542 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 15:12:35,543 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 15:58:44,969 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 16:20:48,463 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 16:20:48,464 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 16:20:48,465 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 16:20:48,467 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 16:20:48,468 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 16:20:48,468 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 16:20:48,469 - rs_scheduler - INFO - 
+2025-11-03 16:20:48,469 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 16:20:48,470 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 16:20:48,470 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 21:57:43,465 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 21:58:48,585 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 21:58:48,585 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 21:58:48,586 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 21:58:48,589 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 21:58:48,594 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 21:58:48,599 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 21:58:48,600 - rs_scheduler - INFO - 
+2025-11-03 21:58:48,600 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 21:58:48,601 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 21:58:48,602 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 22:07:09,558 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 22:07:26,004 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 22:07:26,005 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 22:07:26,006 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 22:07:26,009 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 22:07:26,010 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 22:07:26,011 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 22:07:26,012 - rs_scheduler - INFO - 
+2025-11-03 22:07:26,012 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 22:07:26,012 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 22:07:26,013 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 22:14:26,944 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 22:32:38,941 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 22:32:38,943 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 22:32:38,945 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 22:32:38,949 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 22:32:38,954 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 22:32:38,955 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 22:32:38,957 - rs_scheduler - INFO - 
+2025-11-03 22:32:38,958 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 22:32:38,959 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 22:32:38,961 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 23:32:57,449 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 23:33:41,372 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 23:33:41,375 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 23:33:41,377 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 23:33:41,382 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 23:33:41,383 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 23:33:41,383 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 23:33:41,384 - rs_scheduler - INFO - 
+2025-11-03 23:33:41,384 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 23:33:41,385 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 23:33:41,385 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 23:42:21,547 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 23:42:36,214 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 23:42:36,215 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 23:42:36,216 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 23:42:36,219 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 23:42:36,219 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 23:42:36,221 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 23:42:36,223 - rs_scheduler - INFO - 
+2025-11-03 23:42:36,223 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 23:42:36,223 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 23:42:36,224 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-03 23:50:28,917 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-03 23:50:49,063 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-03 23:50:49,064 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-03 23:50:49,066 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-03 23:50:49,068 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-03 23:50:49,069 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-03 23:50:49,070 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-03 23:50:49,070 - rs_scheduler - INFO - 
+2025-11-03 23:50:49,070 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-03 23:50:49,071 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-03 23:50:49,071 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-04 00:00:19,318 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-04 00:00:37,732 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-04 00:00:37,733 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-04 00:00:37,734 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-04 00:00:37,742 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-04 00:00:37,743 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-04 00:00:37,744 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-04 00:00:37,744 - rs_scheduler - INFO - 
+2025-11-04 00:00:37,745 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-04 00:00:37,745 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-04 00:00:37,745 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-04 10:04:24,151 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-04 10:18:04,962 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-04 10:18:04,963 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-04 10:18:05,094 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-04 10:18:05,525 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-04 10:18:05,756 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-04 10:18:05,757 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-04 10:18:05,758 - rs_scheduler - INFO - 
+2025-11-04 10:18:05,760 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-04 10:18:05,760 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-04 10:18:05,761 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-04 12:33:59,402 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-04 12:36:26,314 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-04 12:36:26,314 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-04 12:36:26,316 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-04 12:36:26,318 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-04 12:36:26,320 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-04 12:36:26,320 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-04 12:36:26,321 - rs_scheduler - INFO - 
+2025-11-04 12:36:26,321 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-04 12:36:26,326 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-04 12:36:26,326 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-04 12:36:58,999 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-04 12:37:38,636 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-04 12:37:38,637 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-04 12:37:38,644 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-04 12:37:38,645 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-04 12:37:38,646 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-04 12:37:38,647 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-04 12:37:38,648 - rs_scheduler - INFO - 
+2025-11-04 12:37:38,648 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-04 12:37:38,648 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-04 12:37:38,648 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-04 16:04:17,712 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-04 16:04:17,714 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-04 16:04:17,717 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-04 16:04:17,741 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-04 16:04:17,745 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-04 16:04:17,750 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-04 16:04:17,755 - rs_scheduler - INFO - 
+2025-11-04 16:04:17,763 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-04 16:04:17,767 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-04 16:04:17,770 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-04 17:06:56,439 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-04 17:07:16,035 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-04 17:07:16,036 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-04 17:07:16,038 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-04 17:07:16,043 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-04 17:07:16,044 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-04 17:07:16,045 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-04 17:07:16,047 - rs_scheduler - INFO - 
+2025-11-04 17:07:16,051 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-04 17:07:16,058 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-04 17:07:16,065 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-04 19:04:55,655 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-04 19:05:15,084 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-04 19:05:15,087 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-04 19:05:15,097 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-04 19:05:15,122 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-04 19:05:15,133 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-04 19:05:15,136 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-04 19:05:15,206 - rs_scheduler - INFO - 
+2025-11-04 19:05:15,230 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-04 19:05:15,238 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-04 19:05:15,297 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-04 19:11:39,586 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-04 19:12:01,599 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-04 19:12:01,603 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-04 19:12:01,615 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-04 19:12:01,621 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-04 19:12:01,623 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-04 19:12:01,684 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-04 19:12:01,706 - rs_scheduler - INFO - 
+2025-11-04 19:12:01,752 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-04 19:12:01,756 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-04 19:12:01,790 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-04 19:22:03,911 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-04 19:22:22,057 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-04 19:22:22,064 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-04 19:22:22,079 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-04 19:22:22,098 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-04 19:22:22,100 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-04 19:22:22,105 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-04 19:22:22,123 - rs_scheduler - INFO - 
+2025-11-04 19:22:22,133 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-04 19:22:22,151 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-04 19:22:22,159 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 10:42:49,652 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-05 10:43:43,880 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-05 10:43:43,881 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-05 10:43:43,883 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-05 10:43:43,887 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-05 10:43:43,888 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-05 10:43:43,890 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-05 10:43:43,892 - rs_scheduler - INFO - 
+2025-11-05 10:43:43,894 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-05 10:43:43,898 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-05 10:43:43,906 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 10:49:52,022 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-05 10:50:08,600 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-05 10:50:08,603 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-05 10:50:08,612 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-05 10:50:08,616 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-05 10:50:08,619 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-05 10:50:08,624 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-05 10:50:08,627 - rs_scheduler - INFO - 
+2025-11-05 10:50:08,642 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-05 10:50:08,651 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-05 10:50:08,668 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 10:54:36,418 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-05 10:54:55,023 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-05 10:54:55,024 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-05 10:54:55,025 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-05 10:54:55,029 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-05 10:54:55,031 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-05 10:54:55,032 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-05 10:54:55,034 - rs_scheduler - INFO - 
+2025-11-05 10:54:55,043 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-05 10:54:55,054 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-05 10:54:55,070 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 10:57:03,316 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-05 10:57:19,143 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-05 10:57:19,147 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-05 10:57:19,149 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-05 10:57:19,167 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-05 10:57:19,169 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-05 10:57:19,174 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-05 10:57:19,194 - rs_scheduler - INFO - 
+2025-11-05 10:57:19,197 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-05 10:57:19,203 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-05 10:57:19,207 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 11:01:52,250 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-05 11:02:08,008 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-05 11:02:08,009 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-05 11:02:08,010 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-05 11:02:08,018 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-05 11:02:08,019 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-05 11:02:08,020 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-05 11:02:08,021 - rs_scheduler - INFO - 
+2025-11-05 11:02:08,022 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-05 11:02:08,026 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-05 11:02:08,028 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 12:01:34,769 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-05 12:01:52,166 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-05 12:01:52,170 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-05 12:01:52,173 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-05 12:01:52,182 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-05 12:01:52,183 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-05 12:01:52,185 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-05 12:01:52,185 - rs_scheduler - INFO - 
+2025-11-05 12:01:52,186 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-05 12:01:52,188 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-05 12:01:52,192 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 12:02:49,837 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-05 12:03:06,538 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-05 12:03:06,547 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-05 12:03:06,548 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-05 12:03:06,552 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-05 12:03:06,562 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-05 12:03:06,566 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-05 12:03:06,570 - rs_scheduler - INFO - 
+2025-11-05 12:03:06,577 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-05 12:03:06,580 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-05 12:03:06,587 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 12:08:21,605 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-05 12:08:39,086 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-05 12:08:39,087 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-05 12:08:39,089 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-05 12:08:39,106 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-05 12:08:39,114 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-05 12:08:39,119 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-05 12:08:39,120 - rs_scheduler - INFO - 
+2025-11-05 12:08:39,124 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-05 12:08:39,130 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-05 12:08:39,131 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 12:57:24,888 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-05 12:58:16,150 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-05 12:58:16,154 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-05 12:58:16,155 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-05 12:58:16,166 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-05 12:58:16,168 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-05 12:58:16,194 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-05 12:58:16,196 - rs_scheduler - INFO - 
+2025-11-05 12:58:16,200 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-05 12:58:16,213 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-05 12:58:16,231 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 13:02:10,983 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-05 13:02:10,984 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-05 13:02:10,986 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-05 13:02:10,991 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-05 13:02:10,996 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-05 13:02:11,002 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-05 13:02:11,007 - rs_scheduler - INFO - 
+2025-11-05 13:02:11,029 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-05 13:02:11,030 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-05 13:02:11,032 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 13:09:35,017 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-05 13:12:35,147 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-05 13:12:35,149 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-05 13:12:35,155 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-05 13:12:35,161 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-05 13:12:35,164 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-05 13:12:35,215 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-05 13:12:35,229 - rs_scheduler - INFO - 
+2025-11-05 13:12:35,234 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-05 13:12:35,237 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-05 13:12:35,239 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 13:55:48,616 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-05 13:56:09,104 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-05 13:56:09,107 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-05 13:56:09,137 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-05 13:56:09,190 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-05 13:56:09,206 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-05 13:56:09,222 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-05 13:56:09,223 - rs_scheduler - INFO - 
+2025-11-05 13:56:09,256 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-05 13:56:09,273 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-05 13:56:09,289 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 16:58:09,259 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-05 16:58:09,261 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-05 16:58:09,263 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-05 16:58:09,267 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-05 16:58:09,268 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-05 16:58:09,269 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-05 16:58:09,269 - rs_scheduler - INFO - 
+2025-11-05 16:58:09,271 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-05 16:58:09,276 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-05 16:58:09,279 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-05 18:00:00,048 - rs_scheduler - INFO - === RS Strategy EOD Data Fetch Started ===
+2025-11-05 18:00:00,141 - rs_scheduler - INFO - Job rs_eod_fetch completed successfully
+2025-11-06 10:20:33,325 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-06 10:21:43,615 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-06 10:21:43,618 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Dell\Downloads\WealthAI1_NEW\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-06 10:21:43,626 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-06 10:21:43,658 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-06 10:21:43,670 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-06 10:21:43,698 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-06 10:21:43,709 - rs_scheduler - INFO - 
+2025-11-06 10:21:43,712 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-06 10:21:43,717 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-06 10:21:43,728 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-06 23:24:33,229 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-06 23:24:33,231 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-06 23:24:33,233 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-06 23:24:33,237 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-06 23:24:33,239 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-06 23:24:33,240 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-06 23:24:33,242 - rs_scheduler - INFO - 
+2025-11-06 23:24:33,244 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-06 23:24:33,248 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-06 23:24:33,250 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-06 23:30:06,309 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-06 23:30:06,311 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-06 23:30:06,313 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-06 23:30:06,319 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-06 23:30:06,321 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-06 23:30:06,322 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-06 23:30:06,325 - rs_scheduler - INFO - 
+2025-11-06 23:30:06,327 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-06 23:30:06,329 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-06 23:30:06,331 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-07 00:22:02,478 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-07 00:22:33,442 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-07 00:22:33,445 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-07 00:22:33,447 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-07 00:22:33,460 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-07 00:22:33,461 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-07 00:22:33,463 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-07 00:22:33,472 - rs_scheduler - INFO - 
+2025-11-07 00:22:33,474 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-07 00:22:33,476 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-07 00:22:33,477 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-07 00:39:59,843 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-07 00:40:21,565 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-07 00:40:21,567 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-07 00:40:21,569 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-07 00:40:21,583 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-07 00:40:21,585 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-07 00:40:21,590 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-07 00:40:21,599 - rs_scheduler - INFO - 
+2025-11-07 00:40:21,602 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-07 00:40:21,604 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-07 00:40:21,606 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-07 00:47:20,075 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-07 00:47:40,002 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-07 00:47:40,007 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-07 00:47:40,010 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-07 00:47:40,022 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-07 00:47:40,025 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-07 00:47:40,032 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-07 00:47:40,034 - rs_scheduler - INFO - 
+2025-11-07 00:47:40,038 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-07 00:47:40,047 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-07 00:47:40,065 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-07 00:51:58,296 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-07 00:52:16,808 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-07 00:52:16,811 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Lenovo\Desktop\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-07 00:52:16,814 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-07 00:52:16,820 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-07 00:52:16,825 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-07 00:52:16,829 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-07 00:52:16,832 - rs_scheduler - INFO - 
+2025-11-07 00:52:16,839 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-07 00:52:16,841 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-07 00:52:16,845 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-07 12:06:10,181 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-10 11:02:13,959 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-10 11:02:13,960 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Windows\Desktop\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-10 11:02:13,961 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-10 11:02:13,964 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-10 11:02:13,965 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-10 11:02:13,966 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-10 11:02:13,967 - rs_scheduler - INFO - 
+2025-11-10 11:02:13,975 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-10 11:02:13,976 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-10 11:02:13,977 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-10 14:19:58,674 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-10 14:19:58,675 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Windows\Desktop\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-10 14:19:58,677 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-10 14:19:58,681 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-10 14:19:58,681 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-10 14:19:58,682 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-10 14:19:58,682 - rs_scheduler - INFO - 
+2025-11-10 14:19:58,683 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-10 14:19:58,684 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-10 14:19:58,685 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-10 21:44:15,710 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-10 21:44:15,713 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Asus\Downloads\Rachit\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-10 21:44:15,715 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-10 21:44:15,718 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-10 21:44:15,718 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-10 21:44:15,726 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-10 21:44:15,726 - rs_scheduler - INFO - 
+2025-11-10 21:44:15,728 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-10 21:44:15,728 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-10 21:44:15,728 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-10 22:58:37,570 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-10 23:00:14,537 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-10 23:00:14,586 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Asus\Downloads\Rachit\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-10 23:00:14,665 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-10 23:00:14,708 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-10 23:00:14,792 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-10 23:00:14,803 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-10 23:00:14,867 - rs_scheduler - INFO - 
+2025-11-10 23:00:14,868 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-10 23:00:14,868 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-10 23:00:14,869 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-11 01:18:01,786 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-11 01:18:01,789 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Asus\Downloads\Rachit\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-11 01:18:01,795 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-11 01:18:01,803 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-11 01:18:01,803 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-11 01:18:01,803 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-11 01:18:01,808 - rs_scheduler - INFO - 
+2025-11-11 01:18:01,814 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-11 01:18:01,820 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-11 01:18:01,820 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-11 09:31:39,675 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-11 09:31:39,677 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Asus\Downloads\Rachit\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-11 09:31:39,682 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-11 09:31:39,689 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-11 09:31:39,689 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-11 09:31:39,689 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-11 09:31:39,695 - rs_scheduler - INFO - 
+2025-11-11 09:31:39,695 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-11 09:31:39,697 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-11 09:31:39,699 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-11 11:13:36,905 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-11 11:14:21,146 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-11 11:14:21,146 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Asus\Downloads\Rachit\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-11 11:14:21,146 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-11 11:14:21,146 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-11 11:14:21,146 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-11 11:14:21,153 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-11 11:14:21,153 - rs_scheduler - INFO - 
+2025-11-11 11:14:21,153 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-11 11:14:21,153 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-11 11:14:21,153 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-11 11:16:17,826 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-11 11:16:33,459 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-11 11:16:33,459 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Asus\Downloads\Rachit\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-11 11:16:33,459 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-11 11:16:33,459 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-11 11:16:33,459 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-11 11:16:33,459 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-11 11:16:33,459 - rs_scheduler - INFO - 
+2025-11-11 11:16:33,459 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-11 11:16:33,459 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-11 11:16:33,466 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-11 13:05:54,418 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-11 13:05:54,418 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Asus\Downloads\Rachit\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-11 13:05:54,424 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-11 13:05:54,426 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-11 13:05:54,426 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-11 13:05:54,428 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-11 13:05:54,433 - rs_scheduler - INFO - 
+2025-11-11 13:05:54,433 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-11 13:05:54,433 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-11 13:05:54,438 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-11 16:10:40,253 - rs_scheduler - INFO - RS Strategy Scheduler stopped
+2025-11-11 16:27:11,154 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-11 16:27:11,157 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: C:\Users\Asus\Downloads\Rachit\Rachit\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-11 16:27:11,159 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-11 16:27:11,162 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-11 16:27:11,164 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-11 16:27:11,164 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-11 16:27:11,166 - rs_scheduler - INFO - 
+2025-11-11 16:27:11,169 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-11 16:27:11,170 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-11 16:27:11,171 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-11 19:59:23,079 - rs_scheduler - INFO - RS Strategy Scheduler stopped

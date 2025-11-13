@@ -1,0 +1,265 @@
+2025-09-20 17:26:40,425 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 17:26:40,454 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 17:26:40,459 - live_market_engine.metrics - ERROR - signal_generation failed after 5.147s - No valid metrics calculated for any ETF
+2025-09-20 17:26:40,459 - live_market_engine.metrics - ERROR - signal_generation failed after 5.147s - No valid metrics calculated for any ETF
+2025-09-20 17:27:13,815 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 17:27:13,832 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 17:27:13,834 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 2 (0 BUY, 2 SELL), Duration: 8.24s
+2025-09-20 17:27:13,983 - live_market_engine.metrics - INFO - signal_generation completed in 8.235s
+2025-09-20 17:27:13,983 - live_market_engine.metrics - INFO - signal_generation completed in 8.235s
+2025-09-20 17:29:33,193 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 17:29:33,236 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 17:29:33,244 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 3 (1 BUY, 2 SELL), Duration: 15.78s
+2025-09-20 17:29:33,994 - live_market_engine.metrics - INFO - signal_generation completed in 15.781s
+2025-09-20 17:29:33,994 - live_market_engine.metrics - INFO - signal_generation completed in 15.781s
+2025-09-20 17:34:41,822 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 17:34:41,893 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 17:34:41,925 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 3 (1 BUY, 2 SELL), Duration: 15.64s
+2025-09-20 17:34:42,232 - live_market_engine.metrics - INFO - signal_generation completed in 15.636s
+2025-09-20 17:34:42,232 - live_market_engine.metrics - INFO - signal_generation completed in 15.636s
+2025-09-20 17:35:18,244 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 17:35:18,267 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 17:35:18,273 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 3 (1 BUY, 2 SELL), Duration: 9.71s
+2025-09-20 17:35:18,415 - live_market_engine.metrics - INFO - signal_generation completed in 9.707s
+2025-09-20 17:35:18,415 - live_market_engine.metrics - INFO - signal_generation completed in 9.707s
+2025-09-20 17:38:52,459 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 17:38:52,477 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 17:38:52,479 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 3 (1 BUY, 2 SELL), Duration: 9.77s
+2025-09-20 17:38:52,604 - live_market_engine.metrics - INFO - signal_generation completed in 9.771s
+2025-09-20 17:38:52,604 - live_market_engine.metrics - INFO - signal_generation completed in 9.771s
+2025-09-20 17:40:32,624 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 17:40:33,090 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 17:40:33,299 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 3 (1 BUY, 2 SELL), Duration: 16.48s
+2025-09-20 17:40:33,635 - live_market_engine.metrics - INFO - signal_generation completed in 16.480s
+2025-09-20 17:40:33,635 - live_market_engine.metrics - INFO - signal_generation completed in 16.480s
+2025-09-20 17:42:16,831 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 17:42:16,850 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 17:42:16,851 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 3 (1 BUY, 2 SELL), Duration: 11.66s
+2025-09-20 17:42:16,954 - live_market_engine.metrics - INFO - signal_generation completed in 11.658s
+2025-09-20 17:42:16,954 - live_market_engine.metrics - INFO - signal_generation completed in 11.658s
+2025-09-20 17:44:18,544 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 17:44:18,570 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 17:44:18,571 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 3 (1 BUY, 2 SELL), Duration: 9.72s
+2025-09-20 17:44:18,692 - live_market_engine.metrics - INFO - signal_generation completed in 9.723s
+2025-09-20 17:44:18,692 - live_market_engine.metrics - INFO - signal_generation completed in 9.723s
+2025-09-20 17:47:19,036 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 17:47:19,061 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 17:47:19,063 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 3 (1 BUY, 2 SELL), Duration: 8.79s
+2025-09-20 17:47:19,182 - live_market_engine.metrics - INFO - signal_generation completed in 8.789s
+2025-09-20 17:47:19,182 - live_market_engine.metrics - INFO - signal_generation completed in 8.789s
+2025-09-20 17:53:27,187 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 17:53:27,223 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 17:53:27,234 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 3 (1 BUY, 2 SELL), Duration: 15.96s
+2025-09-20 17:53:27,372 - live_market_engine.metrics - INFO - signal_generation completed in 15.964s
+2025-09-20 17:53:27,372 - live_market_engine.metrics - INFO - signal_generation completed in 15.964s
+2025-09-20 18:01:21,010 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 18:01:21,039 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 18:01:21,047 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 6 (3 BUY, 3 SELL), Duration: 8.43s
+2025-09-20 18:01:21,189 - live_market_engine.metrics - INFO - signal_generation completed in 8.432s
+2025-09-20 18:01:21,189 - live_market_engine.metrics - INFO - signal_generation completed in 8.432s
+2025-09-20 18:06:04,400 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 18:06:04,423 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 18:06:04,434 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 6 (3 BUY, 3 SELL), Duration: 8.91s
+2025-09-20 18:06:04,574 - live_market_engine.metrics - INFO - signal_generation completed in 8.913s
+2025-09-20 18:06:04,574 - live_market_engine.metrics - INFO - signal_generation completed in 8.913s
+2025-09-20 18:10:48,537 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 18:10:48,560 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 18:10:48,565 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 9.03s
+2025-09-20 18:10:48,688 - live_market_engine.metrics - INFO - signal_generation completed in 9.030s
+2025-09-20 18:10:48,688 - live_market_engine.metrics - INFO - signal_generation completed in 9.030s
+2025-09-20 22:19:24,542 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 22:19:24,560 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 22:19:24,562 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 4.11s
+2025-09-20 22:19:24,644 - live_market_engine.metrics - INFO - signal_generation completed in 4.112s
+2025-09-20 22:19:24,644 - live_market_engine.metrics - INFO - signal_generation completed in 4.112s
+2025-09-20 23:06:32,377 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 23:06:32,454 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 23:06:32,457 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 3.11s
+2025-09-20 23:06:32,607 - live_market_engine.metrics - INFO - signal_generation completed in 3.107s
+2025-09-20 23:06:32,607 - live_market_engine.metrics - INFO - signal_generation completed in 3.107s
+2025-09-20 23:16:31,245 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 23:16:31,333 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 23:16:31,334 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 5.14s
+2025-09-20 23:16:31,435 - live_market_engine.metrics - INFO - signal_generation completed in 5.137s
+2025-09-20 23:16:31,435 - live_market_engine.metrics - INFO - signal_generation completed in 5.137s
+2025-09-20 23:17:31,741 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-20 23:17:31,797 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-20 23:17:31,799 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250920_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 3.24s
+2025-09-20 23:17:31,906 - live_market_engine.metrics - INFO - signal_generation completed in 3.240s
+2025-09-20 23:17:31,906 - live_market_engine.metrics - INFO - signal_generation completed in 3.240s
+2025-09-28 22:37:30,098 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 22:37:30,170 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 22:37:30,171 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250928_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.62s
+2025-09-28 22:37:30,232 - live_market_engine.metrics - INFO - signal_generation completed in 0.615s
+2025-09-28 22:37:30,232 - live_market_engine.metrics - INFO - signal_generation completed in 0.615s
+2025-09-28 22:38:06,095 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 22:38:06,102 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 22:38:06,102 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250928_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.46s
+2025-09-28 22:38:06,167 - live_market_engine.metrics - INFO - signal_generation completed in 0.461s
+2025-09-28 22:38:06,167 - live_market_engine.metrics - INFO - signal_generation completed in 0.461s
+2025-09-28 22:39:09,499 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 22:39:09,521 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 22:39:09,521 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250928_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.55s
+2025-09-28 22:39:09,576 - live_market_engine.metrics - INFO - signal_generation completed in 0.551s
+2025-09-28 22:39:09,576 - live_market_engine.metrics - INFO - signal_generation completed in 0.551s
+2025-09-28 22:40:20,345 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 22:40:20,351 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 22:40:20,352 - live_market_engine.metrics - ERROR - signal_generation failed after 0.358s - Failed to save signals to database
+2025-09-28 22:40:20,352 - live_market_engine.metrics - ERROR - signal_generation failed after 0.358s - Failed to save signals to database
+2025-09-28 22:40:25,791 - live_market_engine - ERROR - Error logging performance: database is locked
+2025-09-28 22:42:25,882 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 22:42:25,892 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 22:42:25,893 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250928_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.48s
+2025-09-28 22:42:25,948 - live_market_engine.metrics - INFO - signal_generation completed in 0.481s
+2025-09-28 22:42:25,948 - live_market_engine.metrics - INFO - signal_generation completed in 0.481s
+2025-09-28 23:11:37,817 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 23:11:37,824 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 23:11:37,825 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250928_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.34s
+2025-09-28 23:11:37,878 - live_market_engine.metrics - INFO - signal_generation completed in 0.344s
+2025-09-28 23:11:37,878 - live_market_engine.metrics - INFO - signal_generation completed in 0.344s
+2025-09-28 23:13:57,655 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 23:13:57,662 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 23:13:57,663 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250928_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.36s
+2025-09-28 23:13:57,718 - live_market_engine.metrics - INFO - signal_generation completed in 0.357s
+2025-09-28 23:13:57,718 - live_market_engine.metrics - INFO - signal_generation completed in 0.357s
+2025-09-28 23:15:06,508 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 23:15:06,513 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 23:15:06,514 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250928_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.31s
+2025-09-28 23:15:06,562 - live_market_engine.metrics - INFO - signal_generation completed in 0.311s
+2025-09-28 23:15:06,562 - live_market_engine.metrics - INFO - signal_generation completed in 0.311s
+2025-09-28 23:19:38,960 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 23:19:38,967 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 23:19:38,968 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250928_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.51s
+2025-09-28 23:19:39,023 - live_market_engine.metrics - INFO - signal_generation completed in 0.508s
+2025-09-28 23:19:39,023 - live_market_engine.metrics - INFO - signal_generation completed in 0.508s
+2025-09-28 23:19:49,870 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 23:19:49,877 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 23:19:49,878 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250928_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.33s
+2025-09-28 23:19:49,931 - live_market_engine.metrics - INFO - signal_generation completed in 0.334s
+2025-09-28 23:19:49,931 - live_market_engine.metrics - INFO - signal_generation completed in 0.334s
+2025-09-28 23:21:17,775 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 23:21:17,782 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 23:21:17,782 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250928_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.42s
+2025-09-28 23:21:17,838 - live_market_engine.metrics - INFO - signal_generation completed in 0.423s
+2025-09-28 23:21:17,838 - live_market_engine.metrics - INFO - signal_generation completed in 0.423s
+2025-09-28 23:22:32,696 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 23:22:32,704 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 23:22:32,706 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250928_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.33s
+2025-09-28 23:22:32,760 - live_market_engine.metrics - INFO - signal_generation completed in 0.333s
+2025-09-28 23:22:32,760 - live_market_engine.metrics - INFO - signal_generation completed in 0.333s
+2025-09-28 23:29:20,646 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 23:29:20,656 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 23:29:20,656 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250928_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.40s
+2025-09-28 23:29:20,710 - live_market_engine.metrics - INFO - signal_generation completed in 0.395s
+2025-09-28 23:29:20,710 - live_market_engine.metrics - INFO - signal_generation completed in 0.395s
+2025-09-28 23:32:14,398 - live_market_engine - INFO - Live market engine logging initialized
+2025-09-28 23:32:14,405 - live_market_engine - INFO - Monitoring tables created successfully
+2025-09-28 23:32:14,406 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20250928_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.40s
+2025-09-28 23:32:14,459 - live_market_engine.metrics - INFO - signal_generation completed in 0.400s
+2025-09-28 23:32:14,459 - live_market_engine.metrics - INFO - signal_generation completed in 0.400s
+2025-10-07 09:54:29,212 - live_market_engine - INFO - Live market engine logging initialized
+2025-10-07 09:54:29,239 - live_market_engine - INFO - Monitoring tables created successfully
+2025-10-07 09:54:29,241 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20251007_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.46s
+2025-10-07 09:54:29,331 - live_market_engine.metrics - INFO - signal_generation completed in 0.461s
+2025-10-07 09:54:29,331 - live_market_engine.metrics - INFO - signal_generation completed in 0.461s
+2025-10-07 10:00:47,183 - live_market_engine - INFO - Live market engine logging initialized
+2025-10-07 10:00:47,206 - live_market_engine - INFO - Monitoring tables created successfully
+2025-10-07 10:00:47,206 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20251007_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.31s
+2025-10-07 10:00:47,273 - live_market_engine.metrics - INFO - signal_generation completed in 0.306s
+2025-10-07 10:00:47,273 - live_market_engine.metrics - INFO - signal_generation completed in 0.306s
+2025-10-07 10:29:00,464 - live_market_engine - INFO - Live market engine logging initialized
+2025-10-07 10:29:00,487 - live_market_engine - INFO - Monitoring tables created successfully
+2025-10-07 10:29:00,487 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20251007_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.40s
+2025-10-07 10:29:00,667 - live_market_engine.metrics - INFO - signal_generation completed in 0.398s
+2025-10-07 10:29:00,667 - live_market_engine.metrics - INFO - signal_generation completed in 0.398s
+2025-10-07 10:44:04,648 - live_market_engine - INFO - Live market engine logging initialized
+2025-10-07 10:44:04,664 - live_market_engine - INFO - Monitoring tables created successfully
+2025-10-07 10:44:04,664 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20251007_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 0.29s
+2025-10-07 10:44:04,716 - live_market_engine.metrics - INFO - signal_generation completed in 0.291s
+2025-10-07 10:44:04,716 - live_market_engine.metrics - INFO - signal_generation completed in 0.291s
+2025-10-07 15:50:00,113 - live_market_engine - INFO - Live market engine logging initialized
+2025-10-07 15:50:00,118 - live_market_engine - INFO - Monitoring tables created successfully
+2025-10-07 15:50:00,119 - live_market_engine.metrics - INFO - webhook_queue_processing completed in 0.038s
+2025-10-07 15:50:00,119 - live_market_engine.metrics - INFO - webhook_queue_processing completed in 0.038s
+2025-10-07 15:50:00,209 - live_market_engine - INFO - Webhook queue processing: 0 processed, 0 sent, 0 failed, 0 retried
+2025-10-07 15:50:00,245 - live_market_engine.metrics - INFO - webhook_queue_processing completed in 0.173s
+2025-10-07 15:50:00,245 - live_market_engine.metrics - INFO - webhook_queue_processing completed in 0.173s
+2025-10-07 15:50:00,380 - live_market_engine.scheduler - INFO - Job webhook_queue_processing executed successfully at 2025-10-07 15:50:00+05:30
+2025-10-07 15:55:00,021 - live_market_engine.metrics - INFO - webhook_queue_processing completed in 0.009s
+2025-10-07 15:55:00,021 - live_market_engine.metrics - INFO - webhook_queue_processing completed in 0.009s
+2025-10-07 15:55:00,106 - live_market_engine - INFO - Webhook queue processing: 0 processed, 0 sent, 0 failed, 0 retried
+2025-10-07 15:55:00,134 - live_market_engine.metrics - INFO - webhook_queue_processing completed in 0.121s
+2025-10-07 15:55:00,134 - live_market_engine.metrics - INFO - webhook_queue_processing completed in 0.121s
+2025-10-07 15:55:00,215 - live_market_engine.scheduler - INFO - Job webhook_queue_processing executed successfully at 2025-10-07 15:55:00+05:30
+2025-10-07 16:00:00,024 - live_market_engine.scheduler - INFO - === Daily ETF Data Ingestion Started ===
+2025-10-07 16:00:00,033 - live_market_engine.scheduler - ERROR - Error in ingestion job: cannot import name 'IndianETFDataFetcher' from 'cronjob.scheduler' (C:\Users\Mohit Sharma\Downloads\WealthAI\WealthAI\wealthai1-backend\cronjob\scheduler.py)
+2025-10-07 16:00:00,042 - live_market_engine.metrics - INFO - webhook_queue_processing completed in 0.017s
+2025-10-07 16:00:00,042 - live_market_engine.metrics - INFO - webhook_queue_processing completed in 0.017s
+2025-10-07 16:00:00,046 - live_market_engine.metrics - ERROR - daily_ingestion failed after 0.000s - cannot import name 'IndianETFDataFetcher' from 'cronjob.scheduler' (C:\Users\Mohit Sharma\Downloads\WealthAI\WealthAI\wealthai1-backend\cronjob\scheduler.py)
+2025-10-07 16:00:00,046 - live_market_engine.metrics - ERROR - daily_ingestion failed after 0.000s - cannot import name 'IndianETFDataFetcher' from 'cronjob.scheduler' (C:\Users\Mohit Sharma\Downloads\WealthAI\WealthAI\wealthai1-backend\cronjob\scheduler.py)
+2025-10-07 16:00:00,137 - live_market_engine - INFO - Webhook queue processing: 0 processed, 0 sent, 0 failed, 0 retried
+2025-10-07 16:00:00,160 - live_market_engine.scheduler - INFO - Job daily_ingestion executed successfully at 2025-10-07 16:00:00+05:30
+2025-10-07 16:00:00,180 - live_market_engine.metrics - INFO - webhook_queue_processing completed in 0.156s
+2025-10-07 16:00:00,180 - live_market_engine.metrics - INFO - webhook_queue_processing completed in 0.156s
+2025-10-07 16:00:00,255 - live_market_engine.scheduler - INFO - Job webhook_queue_processing executed successfully at 2025-10-07 16:00:00+05:30
+2025-10-07 16:00:53,001 - live_market_engine.scheduler - INFO - Scheduler stopped
+2025-10-10 16:05:01,248 - live_market_engine - INFO - Live market engine logging initialized
+2025-10-10 16:05:01,265 - live_market_engine - INFO - Monitoring tables created successfully
+2025-10-10 16:05:01,269 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20251010_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 1.11s
+2025-10-10 16:05:01,361 - live_market_engine.metrics - INFO - signal_generation completed in 1.108s
+2025-10-10 16:05:01,361 - live_market_engine.metrics - INFO - signal_generation completed in 1.108s
+2025-10-10 16:05:01,428 - live_market_engine.scheduler - INFO - Signal generation completed successfully in 1.29s
+2025-10-10 16:05:01,485 - live_market_engine.scheduler - INFO - Generated 4 signals
+2025-10-10 16:05:01,488 - live_market_engine.metrics - INFO - signal_generation completed in 1.291s
+2025-10-10 16:05:01,488 - live_market_engine.metrics - INFO - signal_generation completed in 1.291s
+2025-10-10 16:05:01,570 - live_market_engine.scheduler - INFO - Job weekly_etf_signal_generation executed successfully at 2025-10-10 16:05:00+05:30
+2025-10-10 16:07:00,020 - live_market_engine.scheduler - INFO - === Weekly Stock Signal Generation Started ===
+2025-10-10 16:07:01,337 - live_market_engine.scheduler - INFO - Stock signal generation completed successfully in 1.30s
+2025-10-10 16:07:01,338 - live_market_engine.scheduler - INFO - Generated 4 stock signals
+2025-10-10 16:07:01,339 - live_market_engine.metrics - INFO - stock_signal_generation completed in 1.304s
+2025-10-10 16:07:01,339 - live_market_engine.metrics - INFO - stock_signal_generation completed in 1.304s
+2025-10-10 16:07:01,385 - live_market_engine.scheduler - INFO - Job weekly_stock_signal_generation executed successfully at 2025-10-10 16:07:00+05:30
+2025-10-10 16:30:01,857 - live_market_engine.signals - INFO - Signal generation completed - Run ID: 20251010_SurfTrend, Signals: 4 (1 BUY, 3 SELL), Duration: 1.78s
+2025-10-10 16:30:02,013 - live_market_engine.metrics - INFO - signal_generation completed in 1.778s
+2025-10-10 16:30:02,013 - live_market_engine.metrics - INFO - signal_generation completed in 1.778s
+2025-10-11 09:07:31,351 - live_market_engine.scheduler - INFO - Scheduler stopped
+2025-10-16 00:40:02,106 - live_market_engine - INFO - Live market engine logging initialized
+2025-10-16 00:40:02,121 - live_market_engine - INFO - Monitoring tables created successfully
+2025-10-16 00:40:02,122 - live_market_engine.signals - INFO - Signal generation completed - Run ID: run_etfs_rotation_strategy_-_7_etfs_2025-10-15_1760551664383, Signals: 4 (1 BUY, 3 SELL), Duration: 0.32s
+2025-10-16 00:40:02,202 - live_market_engine.metrics - INFO - signal_generation completed in 0.323s
+2025-10-16 00:40:02,202 - live_market_engine.metrics - INFO - signal_generation completed in 0.323s
+2025-10-16 00:40:02,544 - live_market_engine.signals - INFO - Signal generation completed - Run ID: run_etf_strategy_2025-10-15_1760548591424, Signals: 4 (1 BUY, 3 SELL), Duration: 0.26s
+2025-10-16 00:40:02,655 - live_market_engine.metrics - INFO - signal_generation completed in 0.259s
+2025-10-16 00:40:02,655 - live_market_engine.metrics - INFO - signal_generation completed in 0.259s
+2025-10-16 00:40:03,117 - live_market_engine.signals - INFO - Signal generation completed - Run ID: run_etf_strategy_20251015_1760544961473, Signals: 4 (1 BUY, 3 SELL), Duration: 0.32s
+2025-10-16 00:40:03,215 - live_market_engine.metrics - INFO - signal_generation completed in 0.323s
+2025-10-16 00:40:03,215 - live_market_engine.metrics - INFO - signal_generation completed in 0.323s
+2025-10-16 00:40:03,693 - live_market_engine.signals - INFO - Signal generation completed - Run ID: run_etf_strategy_2025-10-15_1760544030144, Signals: 4 (1 BUY, 3 SELL), Duration: 0.36s
+2025-10-16 00:40:03,790 - live_market_engine.metrics - INFO - signal_generation completed in 0.364s
+2025-10-16 00:40:03,790 - live_market_engine.metrics - INFO - signal_generation completed in 0.364s
+2025-10-18 09:23:14,982 - live_market_engine - INFO - Live market engine logging initialized
+2025-10-18 09:23:14,989 - live_market_engine - INFO - Monitoring tables created successfully
+2025-10-18 09:23:14,990 - live_market_engine.metrics - ERROR - signal_generation failed after 0.231s - Failed to save signals to database
+2025-10-18 09:23:14,990 - live_market_engine.metrics - ERROR - signal_generation failed after 0.231s - Failed to save signals to database
+2025-10-18 09:23:20,475 - live_market_engine - ERROR - Error logging performance: database is locked
+2025-10-18 09:23:43,422 - live_market_engine - INFO - Live market engine logging initialized
+2025-10-18 09:23:43,445 - live_market_engine - INFO - Monitoring tables created successfully
+2025-10-18 09:23:43,449 - live_market_engine.signals - INFO - Signal generation completed - Run ID: run_rachit_strategy_2025-10-18_1760758881466, Signals: 4 (1 BUY, 3 SELL), Duration: 0.32s
+2025-10-18 09:23:43,528 - live_market_engine.metrics - INFO - signal_generation completed in 0.318s
+2025-10-18 09:23:43,528 - live_market_engine.metrics - INFO - signal_generation completed in 0.318s
+2025-10-18 09:47:56,651 - live_market_engine - INFO - Live market engine logging initialized
+2025-10-18 09:47:56,702 - live_market_engine - INFO - Monitoring tables created successfully
+2025-10-18 09:47:56,702 - live_market_engine.signals - INFO - Signal generation completed - Run ID: run_rachit_strategy_2025-10-18_1760758881466, Signals: 4 (1 BUY, 3 SELL), Duration: 0.50s
+2025-10-18 09:47:56,813 - live_market_engine.metrics - INFO - signal_generation completed in 0.502s
+2025-10-18 09:47:56,813 - live_market_engine.metrics - INFO - signal_generation completed in 0.502s
+2025-10-18 09:47:57,379 - live_market_engine.signals - INFO - Signal generation completed - Run ID: run_etfs_rotation_strategy_2025-10-18_1760758794954, Signals: 4 (1 BUY, 3 SELL), Duration: 0.37s
+2025-10-18 09:47:57,491 - live_market_engine.metrics - INFO - signal_generation completed in 0.366s
+2025-10-18 09:47:57,491 - live_market_engine.metrics - INFO - signal_generation completed in 0.366s
+2025-10-18 10:59:18,531 - live_market_engine - INFO - Live market engine logging initialized
+2025-10-18 10:59:18,546 - live_market_engine - INFO - Monitoring tables created successfully
+2025-10-18 10:59:18,547 - live_market_engine.signals - INFO - Signal generation completed - Run ID: run_etfs_rotation_strategy_2025-10-18_1760758794954, Signals: 4 (1 BUY, 3 SELL), Duration: 0.15s
+2025-10-18 10:59:18,589 - live_market_engine.metrics - INFO - signal_generation completed in 0.154s
+2025-10-18 10:59:18,589 - live_market_engine.metrics - INFO - signal_generation completed in 0.154s
+2025-10-18 10:59:18,803 - live_market_engine.signals - INFO - Signal generation completed - Run ID: run_rachit_strategy_2025-10-18_1760758881466, Signals: 4 (1 BUY, 3 SELL), Duration: 0.13s
+2025-10-18 10:59:18,858 - live_market_engine.metrics - INFO - signal_generation completed in 0.135s
+2025-10-18 10:59:18,858 - live_market_engine.metrics - INFO - signal_generation completed in 0.135s

@@ -1,0 +1,27 @@
+[Unit]
+Description=WealthAI Backend FastAPI Server
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/wealthai-backend2
+Environment="PATH=/home/ubuntu/wealthai-backend2/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+
+# Start the server
+ExecStart=/home/ubuntu/wealthai-backend2/.venv/bin/python -m uvicorn server:app --host 0.0.0.0 --port 8000
+
+# Restart on failure
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=append:/home/ubuntu/wealthai-backend2/logs/server.log
+StandardError=append:/home/ubuntu/wealthai-backend2/logs/server_error.log
+
+# Security
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
+

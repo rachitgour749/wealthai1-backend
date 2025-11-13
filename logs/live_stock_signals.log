@@ -1,0 +1,24 @@
+2025-10-07 10:44:15,083 - INFO - Live stock signals database tables created/verified successfully
+2025-10-07 10:44:15,083 - INFO - Starting weekly stock signal generation...
+2025-10-07 10:44:15,084 - INFO - Generated run_id: 20251007_StockStockSurfTrend
+2025-10-07 10:44:15,084 - INFO - Using last Friday's date: 2025-10-03 for stock signal generation
+2025-10-07 10:44:15,156 - INFO - Found 58 stock symbols for signal generation
+2025-10-07 10:44:15,532 - INFO - Calculated metrics for 58 stocks
+2025-10-07 10:44:15,542 - ERROR - Error in detailed momentum calculation: 'charmap' codec can't encode character '\U0001f4ca' in position 2: character maps to <undefined>
+2025-10-07 10:44:15,547 - INFO - Generated 4 stock signals: 1 BUY, 3 SELL
+2025-10-07 10:44:15,547 - ERROR - Error in stock signal details: 'charmap' codec can't encode character '\U0001f4ca' in position 2: character maps to <undefined>
+2025-10-07 10:44:15,550 - INFO - Saved 4 stock signals to database with run_id: 20251007_StockStockSurfTrend
+2025-10-07 10:44:15,551 - INFO - Stock signal generation completed successfully in 0.47s
+2025-10-07 10:44:15,551 - INFO - Generated 1 BUY and 3 SELL signals
+2025-10-07 11:00:27,308 - INFO - Live stock signals database tables created/verified successfully
+2025-10-07 11:00:27,308 - INFO - Starting weekly stock signal generation...
+2025-10-07 11:00:27,309 - INFO - Generated run_id: 20251007_StockStockSurfTrend
+2025-10-07 11:00:27,310 - INFO - Using last Friday's date: 2025-10-03 for stock signal generation
+2025-10-07 11:00:27,424 - INFO - Found 58 stock symbols for signal generation
+2025-10-07 11:00:28,162 - INFO - Calculated metrics for 58 stocks
+2025-10-07 11:00:28,171 - ERROR - Error in detailed momentum calculation: 'charmap' codec can't encode character '\U0001f4ca' in position 2: character maps to <undefined>
+2025-10-07 11:00:28,179 - INFO - Generated 4 stock signals: 1 BUY, 3 SELL
+2025-10-07 11:00:28,179 - ERROR - Error in stock signal details: 'charmap' codec can't encode character '\U0001f4ca' in position 2: character maps to <undefined>
+2025-10-07 11:00:28,543 - INFO - Saved 4 stock signals to database with run_id: 20251007_StockStockSurfTrend
+2025-10-07 11:00:28,544 - INFO - Stock signal generation completed successfully in 1.24s
+2025-10-07 11:00:28,544 - INFO - Generated 1 BUY and 3 SELL signals

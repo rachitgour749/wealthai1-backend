@@ -1,0 +1,1279 @@
+2025-10-06 23:45:42,970 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-06 23:45:42,971 - INFO - Scheduler configured to run daily at 5:50 PM IST for ETFs and Stocks
+2025-10-06 23:45:42,974 - INFO - Database tables created successfully
+2025-10-06 23:45:42,975 - INFO - RS EOD Data Fetcher initialized with 499 stocks
+2025-10-06 23:45:42,975 - INFO - Database path: C:\Users\Mohit Sharma\Downloads\WealthAI\WealthAI\wealthai1-backend\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-06 23:45:42,982 - INFO - EOD data fetcher initialized successfully
+2025-10-06 23:45:42,987 - INFO - RS live signal tables created successfully
+2025-10-06 23:45:42,987 - INFO - Live signal generator initialized successfully
+2025-10-06 23:45:42,989 - INFO - RS Strategy Scheduler initialized with database: C:\Users\Mohit Sharma\Downloads\WealthAI\WealthAI\wealthai1-backend\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-06 23:45:42,989 - INFO - Setting up RS Strategy Scheduler...
+2025-10-06 23:45:43,147 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-06 23:45:43,148 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-06 23:45:43,148 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-06 23:45:43,148 - INFO - Scheduled 3 jobs:
+2025-10-06 23:45:43,148 - INFO -   - rs_eod_fetch: RS Strategy EOD Data Fetch (Next: Not scheduled)
+2025-10-06 23:45:43,153 - INFO -   - rs_signal_generation: RS Strategy Signal Generation (Next: Not scheduled)
+2025-10-06 23:45:43,153 - INFO -   - rs_cleanup: RS Strategy Cleanup (Next: Not scheduled)
+2025-10-06 23:45:43,154 - INFO - RS Strategy Scheduler setup completed successfully
+2025-10-15 09:40:23,313 - INFO - === Starting daily Indian market data fetch (ETFs + Stocks) ===
+2025-10-15 09:40:23,321 - INFO - Market is still open. Waiting for market close to fetch EOD data.
+2025-10-15 09:40:23,322 - INFO - All market data fetches completed successfully
+2025-10-15 09:41:23,603 - INFO - === Starting daily Indian market data fetch for 2025-10-14 ===
+2025-10-15 09:41:23,617 - INFO - Database table created/verified successfully
+2025-10-15 09:41:32,570 - INFO - Successfully fetched data for BANKBEES.NS
+2025-10-15 09:41:32,585 - INFO - Successfully saved BANKBEES.NS (ETF) data to database
+2025-10-15 09:41:33,327 - INFO - Successfully fetched data for GOLDBEES.NS
+2025-10-15 09:41:33,358 - INFO - Successfully saved GOLDBEES.NS (ETF) data to database
+2025-10-15 09:41:34,034 - INFO - Successfully fetched data for HNGSNGBEES.NS
+2025-10-15 09:41:34,054 - INFO - Successfully saved HNGSNGBEES.NS (ETF) data to database
+2025-10-15 09:41:34,704 - INFO - Successfully fetched data for INFRABEES.NS
+2025-10-15 09:41:34,724 - INFO - Successfully saved INFRABEES.NS (ETF) data to database
+2025-10-15 09:41:35,369 - INFO - Successfully fetched data for ITBEES.NS
+2025-10-15 09:41:35,390 - INFO - Successfully saved ITBEES.NS (ETF) data to database
+2025-10-15 09:41:36,031 - INFO - Successfully fetched data for JUNIORBEES.NS
+2025-10-15 09:41:36,047 - INFO - Successfully saved JUNIORBEES.NS (ETF) data to database
+2025-10-15 09:41:36,749 - INFO - Successfully fetched data for LIQUIDBEES.NS
+2025-10-15 09:41:36,768 - INFO - Successfully saved LIQUIDBEES.NS (ETF) data to database
+2025-10-15 09:41:37,415 - INFO - Successfully fetched data for MON100.NS
+2025-10-15 09:41:37,434 - INFO - Successfully saved MON100.NS (ETF) data to database
+2025-10-15 09:41:38,110 - INFO - Successfully fetched data for NIFTYBEES.NS
+2025-10-15 09:41:38,131 - INFO - Successfully saved NIFTYBEES.NS (ETF) data to database
+2025-10-15 09:41:38,812 - INFO - Successfully fetched data for PHARMABEES.NS
+2025-10-15 09:41:38,879 - INFO - Successfully saved PHARMABEES.NS (ETF) data to database
+2025-10-15 09:41:39,535 - INFO - Successfully fetched data for PSUBNKBEES.NS
+2025-10-15 09:41:39,558 - INFO - Successfully saved PSUBNKBEES.NS (ETF) data to database
+2025-10-15 09:41:40,212 - INFO - Successfully fetched data for SENSEX1.BO
+2025-10-15 09:41:40,249 - INFO - Successfully saved SENSEX1.BO (ETF) data to database
+2025-10-15 09:41:41,063 - INFO - Successfully fetched data for ADANIENT.NS
+2025-10-15 09:41:41,106 - INFO - Successfully saved ADANIENT.NS (STOCK) data to database
+2025-10-15 09:41:41,792 - INFO - Successfully fetched data for ADANIGREEN.NS
+2025-10-15 09:41:41,880 - INFO - Successfully saved ADANIGREEN.NS (STOCK) data to database
+2025-10-15 09:41:42,639 - INFO - Successfully fetched data for ADANIPORTS.NS
+2025-10-15 09:41:42,657 - INFO - Successfully saved ADANIPORTS.NS (STOCK) data to database
+2025-10-15 09:41:43,337 - INFO - Successfully fetched data for APOLLOHOSP.NS
+2025-10-15 09:41:43,356 - INFO - Successfully saved APOLLOHOSP.NS (STOCK) data to database
+2025-10-15 09:41:44,075 - INFO - Successfully fetched data for ASIANPAINT.NS
+2025-10-15 09:41:44,095 - INFO - Successfully saved ASIANPAINT.NS (STOCK) data to database
+2025-10-15 09:41:44,797 - INFO - Successfully fetched data for AXISBANK.NS
+2025-10-15 09:41:44,819 - INFO - Successfully saved AXISBANK.NS (STOCK) data to database
+2025-10-15 09:41:45,503 - INFO - Successfully fetched data for BAJAJ-AUTO.NS
+2025-10-15 09:41:45,521 - INFO - Successfully saved BAJAJ-AUTO.NS (STOCK) data to database
+2025-10-15 09:41:46,192 - INFO - Successfully fetched data for BAJAJFINSV.NS
+2025-10-15 09:41:46,211 - INFO - Successfully saved BAJAJFINSV.NS (STOCK) data to database
+2025-10-15 09:41:46,901 - INFO - Successfully fetched data for BAJFINANCE.NS
+2025-10-15 09:41:46,920 - INFO - Successfully saved BAJFINANCE.NS (STOCK) data to database
+2025-10-15 09:41:47,594 - INFO - Successfully fetched data for BHARTIARTL.NS
+2025-10-15 09:41:47,611 - INFO - Successfully saved BHARTIARTL.NS (STOCK) data to database
+2025-10-15 09:41:48,296 - INFO - Successfully fetched data for BPCL.NS
+2025-10-15 09:41:48,312 - INFO - Successfully saved BPCL.NS (STOCK) data to database
+2025-10-15 09:41:48,987 - INFO - Successfully fetched data for BRITANNIA.NS
+2025-10-15 09:41:49,004 - INFO - Successfully saved BRITANNIA.NS (STOCK) data to database
+2025-10-15 09:41:49,704 - INFO - Successfully fetched data for CIPLA.NS
+2025-10-15 09:41:49,725 - INFO - Successfully saved CIPLA.NS (STOCK) data to database
+2025-10-15 09:41:50,382 - INFO - Successfully fetched data for COALINDIA.NS
+2025-10-15 09:41:50,403 - INFO - Successfully saved COALINDIA.NS (STOCK) data to database
+2025-10-15 09:41:51,357 - INFO - Successfully fetched data for DIVISLAB.NS
+2025-10-15 09:41:51,383 - INFO - Successfully saved DIVISLAB.NS (STOCK) data to database
+2025-10-15 09:41:52,056 - INFO - Successfully fetched data for DRREDDY.NS
+2025-10-15 09:41:52,077 - INFO - Successfully saved DRREDDY.NS (STOCK) data to database
+2025-10-15 09:41:52,763 - INFO - Successfully fetched data for EICHERMOT.NS
+2025-10-15 09:41:52,781 - INFO - Successfully saved EICHERMOT.NS (STOCK) data to database
+2025-10-15 09:41:53,482 - INFO - Successfully fetched data for GRASIM.NS
+2025-10-15 09:41:53,498 - INFO - Successfully saved GRASIM.NS (STOCK) data to database
+2025-10-15 09:41:54,210 - INFO - Successfully fetched data for HCLTECH.NS
+2025-10-15 09:41:54,228 - INFO - Successfully saved HCLTECH.NS (STOCK) data to database
+2025-10-15 09:41:54,932 - INFO - Successfully fetched data for HDFCBANK.NS
+2025-10-15 09:41:54,955 - INFO - Successfully saved HDFCBANK.NS (STOCK) data to database
+2025-10-15 09:41:55,620 - INFO - Successfully fetched data for HDFCLIFE.NS
+2025-10-15 09:41:55,642 - INFO - Successfully saved HDFCLIFE.NS (STOCK) data to database
+2025-10-15 09:41:56,471 - INFO - Successfully fetched data for HEROMOTOCO.NS
+2025-10-15 09:41:56,504 - INFO - Successfully saved HEROMOTOCO.NS (STOCK) data to database
+2025-10-15 09:41:57,194 - INFO - Successfully fetched data for HINDALCO.NS
+2025-10-15 09:41:57,223 - INFO - Successfully saved HINDALCO.NS (STOCK) data to database
+2025-10-15 09:41:57,947 - INFO - Successfully fetched data for HINDUNILVR.NS
+2025-10-15 09:41:57,977 - INFO - Successfully saved HINDUNILVR.NS (STOCK) data to database
+2025-10-15 09:41:58,700 - INFO - Successfully fetched data for ICICIBANK.NS
+2025-10-15 09:41:58,740 - INFO - Successfully saved ICICIBANK.NS (STOCK) data to database
+2025-10-15 09:41:59,473 - INFO - Successfully fetched data for INDUSINDBK.NS
+2025-10-15 09:41:59,493 - INFO - Successfully saved INDUSINDBK.NS (STOCK) data to database
+2025-10-15 09:42:00,206 - INFO - Successfully fetched data for ITC.NS
+2025-10-15 09:42:00,235 - INFO - Successfully saved ITC.NS (STOCK) data to database
+2025-10-15 09:42:00,988 - INFO - Successfully fetched data for JSWSTEEL.NS
+2025-10-15 09:42:01,017 - INFO - Successfully saved JSWSTEEL.NS (STOCK) data to database
+2025-10-15 09:42:01,723 - INFO - Successfully fetched data for KOTAKBANK.NS
+2025-10-15 09:42:01,750 - INFO - Successfully saved KOTAKBANK.NS (STOCK) data to database
+2025-10-15 09:42:02,590 - INFO - Successfully fetched data for LT.NS
+2025-10-15 09:42:02,638 - INFO - Successfully saved LT.NS (STOCK) data to database
+2025-10-15 09:42:03,362 - INFO - Successfully fetched data for LTIM.NS
+2025-10-15 09:42:03,488 - INFO - Successfully saved LTIM.NS (STOCK) data to database
+2025-10-15 09:42:04,195 - INFO - Successfully fetched data for M&M.NS
+2025-10-15 09:42:04,225 - INFO - Successfully saved M&M.NS (STOCK) data to database
+2025-10-15 09:42:05,164 - INFO - Successfully fetched data for MARUTI.NS
+2025-10-15 09:42:05,400 - INFO - Successfully saved MARUTI.NS (STOCK) data to database
+2025-10-15 09:42:06,197 - INFO - Successfully fetched data for NESTLEIND.NS
+2025-10-15 09:42:06,576 - INFO - Successfully saved NESTLEIND.NS (STOCK) data to database
+2025-10-15 09:42:07,321 - INFO - Successfully fetched data for NTPC.NS
+2025-10-15 09:42:07,352 - INFO - Successfully saved NTPC.NS (STOCK) data to database
+2025-10-15 09:42:08,091 - INFO - Successfully fetched data for ONGC.NS
+2025-10-15 09:42:08,126 - INFO - Successfully saved ONGC.NS (STOCK) data to database
+2025-10-15 09:42:08,834 - INFO - Successfully fetched data for POWERGRID.NS
+2025-10-15 09:42:08,860 - INFO - Successfully saved POWERGRID.NS (STOCK) data to database
+2025-10-15 09:42:09,564 - INFO - Successfully fetched data for RELIANCE.NS
+2025-10-15 09:42:09,588 - INFO - Successfully saved RELIANCE.NS (STOCK) data to database
+2025-10-15 09:42:10,271 - INFO - Successfully fetched data for SBILIFE.NS
+2025-10-15 09:42:10,298 - INFO - Successfully saved SBILIFE.NS (STOCK) data to database
+2025-10-15 09:42:11,018 - INFO - Successfully fetched data for SBIN.NS
+2025-10-15 09:42:11,044 - INFO - Successfully saved SBIN.NS (STOCK) data to database
+2025-10-15 09:42:11,765 - INFO - Successfully fetched data for SUNPHARMA.NS
+2025-10-15 09:42:11,791 - INFO - Successfully saved SUNPHARMA.NS (STOCK) data to database
+2025-10-15 09:42:12,545 - INFO - Successfully fetched data for TATACONSUM.NS
+2025-10-15 09:42:12,575 - INFO - Successfully saved TATACONSUM.NS (STOCK) data to database
+2025-10-15 09:42:13,315 - INFO - Successfully fetched data for TATAMOTORS.NS
+2025-10-15 09:42:13,348 - INFO - Successfully saved TATAMOTORS.NS (STOCK) data to database
+2025-10-15 09:42:14,046 - INFO - Successfully fetched data for TATASTEEL.NS
+2025-10-15 09:42:14,073 - INFO - Successfully saved TATASTEEL.NS (STOCK) data to database
+2025-10-15 09:42:14,848 - INFO - Successfully fetched data for TCS.NS
+2025-10-15 09:42:14,889 - INFO - Successfully saved TCS.NS (STOCK) data to database
+2025-10-15 09:42:15,641 - INFO - Successfully fetched data for TECHM.NS
+2025-10-15 09:42:15,689 - INFO - Successfully saved TECHM.NS (STOCK) data to database
+2025-10-15 09:42:16,413 - INFO - Successfully fetched data for TITAN.NS
+2025-10-15 09:42:16,448 - INFO - Successfully saved TITAN.NS (STOCK) data to database
+2025-10-15 09:42:17,167 - INFO - Successfully fetched data for ULTRACEMCO.NS
+2025-10-15 09:42:17,199 - INFO - Successfully saved ULTRACEMCO.NS (STOCK) data to database
+2025-10-15 09:42:17,880 - INFO - Successfully fetched data for UPL.NS
+2025-10-15 09:42:17,905 - INFO - Successfully saved UPL.NS (STOCK) data to database
+2025-10-15 09:42:18,641 - INFO - Successfully fetched data for WIPRO.NS
+2025-10-15 09:42:18,668 - INFO - Successfully saved WIPRO.NS (STOCK) data to database
+2025-10-15 09:42:19,484 - INFO - Database tables created successfully
+2025-10-15 09:42:19,488 - INFO - RS EOD Data Fetcher initialized with 499 stocks
+2025-10-15 09:42:19,489 - INFO - Database path: C:\Users\Lenovo\Desktop\WealthAI\wealthai1-backend\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-15 09:42:19,504 - INFO - === Starting Nifty 500 stock data fetch for 2025-10-14 ===
+2025-10-15 09:42:19,514 - INFO - Database tables created successfully
+2025-10-15 09:42:19,723 - INFO - Successfully fetched data for 360ONE.NS
+2025-10-15 09:42:19,798 - INFO - Successfully saved 360ONE.NS (STOCK) data to database
+2025-10-15 09:42:19,985 - INFO - Successfully fetched data for 3MINDIA.NS
+2025-10-15 09:42:20,043 - INFO - Successfully saved 3MINDIA.NS (STOCK) data to database
+2025-10-15 09:42:20,240 - INFO - Successfully fetched data for AADHARHFC.NS
+2025-10-15 09:42:20,348 - INFO - Successfully saved AADHARHFC.NS (STOCK) data to database
+2025-10-15 09:42:20,579 - INFO - Successfully fetched data for AARTIIND.NS
+2025-10-15 09:42:20,620 - INFO - Successfully saved AARTIIND.NS (STOCK) data to database
+2025-10-15 09:42:20,891 - INFO - Successfully fetched data for AAVAS.NS
+2025-10-15 09:42:21,042 - INFO - Successfully saved AAVAS.NS (STOCK) data to database
+2025-10-15 09:42:21,271 - INFO - Successfully fetched data for ABB.NS
+2025-10-15 09:42:21,321 - INFO - Successfully saved ABB.NS (STOCK) data to database
+2025-10-15 09:42:21,528 - INFO - Successfully fetched data for ABBOTINDIA.NS
+2025-10-15 09:42:21,550 - INFO - Successfully saved ABBOTINDIA.NS (STOCK) data to database
+2025-10-15 09:42:21,715 - INFO - Successfully fetched data for ABCAPITAL.NS
+2025-10-15 09:42:21,738 - INFO - Successfully saved ABCAPITAL.NS (STOCK) data to database
+2025-10-15 09:42:21,913 - INFO - Successfully fetched data for ABFRL.NS
+2025-10-15 09:42:21,940 - INFO - Successfully saved ABFRL.NS (STOCK) data to database
+2025-10-15 09:42:22,349 - INFO - Successfully fetched data for ABREL.NS
+2025-10-15 09:42:22,385 - INFO - Successfully saved ABREL.NS (STOCK) data to database
+2025-10-15 09:42:22,589 - INFO - Successfully fetched data for ABSLAMC.NS
+2025-10-15 09:42:22,613 - INFO - Successfully saved ABSLAMC.NS (STOCK) data to database
+2025-10-15 09:42:22,844 - INFO - Successfully fetched data for ACC.NS
+2025-10-15 09:42:22,858 - INFO - Successfully saved ACC.NS (STOCK) data to database
+2025-10-15 09:42:23,053 - INFO - Successfully fetched data for ACE.NS
+2025-10-15 09:42:23,074 - INFO - Successfully saved ACE.NS (STOCK) data to database
+2025-10-15 09:42:23,233 - INFO - Successfully fetched data for ACMESOLAR.NS
+2025-10-15 09:42:23,252 - INFO - Successfully saved ACMESOLAR.NS (STOCK) data to database
+2025-10-15 09:42:23,410 - INFO - Successfully fetched data for ADANIENSOL.NS
+2025-10-15 09:42:23,434 - INFO - Successfully saved ADANIENSOL.NS (STOCK) data to database
+2025-10-15 09:42:23,793 - INFO - Successfully fetched data for ADANIENT.NS
+2025-10-15 09:42:23,864 - INFO - Successfully saved ADANIENT.NS (STOCK) data to database
+2025-10-15 09:42:24,052 - INFO - Successfully fetched data for ADANIGREEN.NS
+2025-10-15 09:42:24,076 - INFO - Successfully saved ADANIGREEN.NS (STOCK) data to database
+2025-10-15 09:42:24,294 - INFO - Successfully fetched data for ADANIPORTS.NS
+2025-10-15 09:42:24,317 - INFO - Successfully saved ADANIPORTS.NS (STOCK) data to database
+2025-10-15 09:42:24,603 - INFO - Successfully fetched data for ADANIPOWER.NS
+2025-10-15 09:42:24,622 - INFO - Successfully saved ADANIPOWER.NS (STOCK) data to database
+2025-10-15 09:42:24,782 - INFO - Successfully fetched data for AEGISLOG.NS
+2025-10-15 09:42:24,797 - INFO - Successfully saved AEGISLOG.NS (STOCK) data to database
+2025-10-15 09:42:24,950 - INFO - Successfully fetched data for AFCONS.NS
+2025-10-15 09:42:24,966 - INFO - Successfully saved AFCONS.NS (STOCK) data to database
+2025-10-15 09:42:25,126 - INFO - Successfully fetched data for AFFLE.NS
+2025-10-15 09:42:25,144 - INFO - Successfully saved AFFLE.NS (STOCK) data to database
+2025-10-15 09:42:25,341 - INFO - Successfully fetched data for AIAENG.NS
+2025-10-15 09:42:25,385 - INFO - Successfully saved AIAENG.NS (STOCK) data to database
+2025-10-15 09:42:25,548 - INFO - Successfully fetched data for AIIL.NS
+2025-10-15 09:42:25,559 - INFO - Successfully saved AIIL.NS (STOCK) data to database
+2025-10-15 09:42:25,743 - INFO - Successfully fetched data for AJANTPHARM.NS
+2025-10-15 09:42:25,758 - INFO - Successfully saved AJANTPHARM.NS (STOCK) data to database
+2025-10-15 09:42:25,902 - INFO - Successfully fetched data for AKUMS.NS
+2025-10-15 09:42:25,917 - INFO - Successfully saved AKUMS.NS (STOCK) data to database
+2025-10-15 09:42:26,136 - INFO - Successfully fetched data for ALIVUS.NS
+2025-10-15 09:42:26,164 - INFO - Successfully saved ALIVUS.NS (STOCK) data to database
+2025-10-15 09:42:26,388 - INFO - Successfully fetched data for ALKEM.NS
+2025-10-15 09:42:26,410 - INFO - Successfully saved ALKEM.NS (STOCK) data to database
+2025-10-15 09:42:26,601 - INFO - Successfully fetched data for ALKYLAMINE.NS
+2025-10-15 09:42:26,619 - INFO - Successfully saved ALKYLAMINE.NS (STOCK) data to database
+2025-10-15 09:42:26,825 - INFO - Successfully fetched data for ALOKINDS.NS
+2025-10-15 09:42:26,841 - INFO - Successfully saved ALOKINDS.NS (STOCK) data to database
+2025-10-15 09:42:27,002 - INFO - Successfully fetched data for AMBER.NS
+2025-10-15 09:42:27,018 - INFO - Successfully saved AMBER.NS (STOCK) data to database
+2025-10-15 09:42:27,183 - INFO - Successfully fetched data for AMBUJACEM.NS
+2025-10-15 09:42:27,223 - INFO - Successfully saved AMBUJACEM.NS (STOCK) data to database
+2025-10-15 09:42:27,387 - INFO - Successfully fetched data for ANANDRATHI.NS
+2025-10-15 09:42:27,401 - INFO - Successfully saved ANANDRATHI.NS (STOCK) data to database
+2025-10-15 09:42:27,634 - INFO - Successfully fetched data for ANANTRAJ.NS
+2025-10-15 09:42:27,648 - INFO - Successfully saved ANANTRAJ.NS (STOCK) data to database
+2025-10-15 09:42:27,833 - INFO - Successfully fetched data for ANGELONE.NS
+2025-10-15 09:42:27,866 - INFO - Successfully saved ANGELONE.NS (STOCK) data to database
+2025-10-15 09:42:28,165 - INFO - Successfully fetched data for APARINDS.NS
+2025-10-15 09:42:28,254 - INFO - Successfully saved APARINDS.NS (STOCK) data to database
+2025-10-15 09:42:28,441 - INFO - Successfully fetched data for APLAPOLLO.NS
+2025-10-15 09:42:28,468 - INFO - Successfully saved APLAPOLLO.NS (STOCK) data to database
+2025-10-15 09:42:28,680 - INFO - Successfully fetched data for APLLTD.NS
+2025-10-15 09:42:28,713 - INFO - Successfully saved APLLTD.NS (STOCK) data to database
+2025-10-15 09:42:28,961 - INFO - Successfully fetched data for APOLLOHOSP.NS
+2025-10-15 09:42:28,989 - INFO - Successfully saved APOLLOHOSP.NS (STOCK) data to database
+2025-10-15 09:42:29,230 - INFO - Successfully fetched data for APOLLOTYRE.NS
+2025-10-15 09:42:29,249 - INFO - Successfully saved APOLLOTYRE.NS (STOCK) data to database
+2025-10-15 09:42:29,423 - INFO - Successfully fetched data for APTUS.NS
+2025-10-15 09:42:29,442 - INFO - Successfully saved APTUS.NS (STOCK) data to database
+2025-10-15 09:42:29,631 - INFO - Successfully fetched data for ARE&M.NS
+2025-10-15 09:42:29,649 - INFO - Successfully saved ARE&M.NS (STOCK) data to database
+2025-10-15 09:42:29,830 - INFO - Successfully fetched data for ASAHIINDIA.NS
+2025-10-15 09:42:29,845 - INFO - Successfully saved ASAHIINDIA.NS (STOCK) data to database
+2025-10-15 09:42:30,081 - INFO - Successfully fetched data for ASHOKLEY.NS
+2025-10-15 09:42:30,111 - INFO - Successfully saved ASHOKLEY.NS (STOCK) data to database
+2025-10-15 09:42:30,303 - INFO - Successfully fetched data for ASIANPAINT.NS
+2025-10-15 09:42:30,321 - INFO - Successfully saved ASIANPAINT.NS (STOCK) data to database
+2025-10-15 09:42:30,495 - INFO - Successfully fetched data for ASTERDM.NS
+2025-10-15 09:42:30,510 - INFO - Successfully saved ASTERDM.NS (STOCK) data to database
+2025-10-15 09:42:30,680 - INFO - Successfully fetched data for ASTRAL.NS
+2025-10-15 09:42:30,695 - INFO - Successfully saved ASTRAL.NS (STOCK) data to database
+2025-10-15 09:42:30,937 - INFO - Successfully fetched data for ASTRAZEN.NS
+2025-10-15 09:42:30,955 - INFO - Successfully saved ASTRAZEN.NS (STOCK) data to database
+2025-10-15 09:42:31,130 - INFO - Successfully fetched data for ATGL.NS
+2025-10-15 09:42:31,144 - INFO - Successfully saved ATGL.NS (STOCK) data to database
+2025-10-15 09:42:31,344 - INFO - Successfully fetched data for ATUL.NS
+2025-10-15 09:42:31,362 - INFO - Successfully saved ATUL.NS (STOCK) data to database
+2025-10-15 09:42:31,565 - INFO - Successfully fetched data for AUBANK.NS
+2025-10-15 09:42:31,580 - INFO - Successfully saved AUBANK.NS (STOCK) data to database
+2025-10-15 09:42:31,805 - INFO - Successfully fetched data for AUROPHARMA.NS
+2025-10-15 09:42:31,837 - INFO - Successfully saved AUROPHARMA.NS (STOCK) data to database
+2025-10-15 09:42:32,026 - INFO - Successfully fetched data for AWL.NS
+2025-10-15 09:42:32,038 - INFO - Successfully saved AWL.NS (STOCK) data to database
+2025-10-15 09:42:32,224 - INFO - Successfully fetched data for AXISBANK.NS
+2025-10-15 09:42:32,238 - INFO - Successfully saved AXISBANK.NS (STOCK) data to database
+2025-10-15 09:42:32,500 - INFO - Successfully fetched data for BAJAJ-AUTO.NS
+2025-10-15 09:42:32,513 - INFO - Successfully saved BAJAJ-AUTO.NS (STOCK) data to database
+2025-10-15 09:42:32,690 - INFO - Successfully fetched data for BAJAJFINSV.NS
+2025-10-15 09:42:32,703 - INFO - Successfully saved BAJAJFINSV.NS (STOCK) data to database
+2025-10-15 09:42:32,859 - INFO - Successfully fetched data for BAJAJHFL.NS
+2025-10-15 09:42:32,878 - INFO - Successfully saved BAJAJHFL.NS (STOCK) data to database
+2025-10-15 09:42:33,075 - INFO - Successfully fetched data for BAJAJHLDNG.NS
+2025-10-15 09:42:33,094 - INFO - Successfully saved BAJAJHLDNG.NS (STOCK) data to database
+2025-10-15 09:42:33,302 - INFO - Successfully fetched data for BAJFINANCE.NS
+2025-10-15 09:42:33,318 - INFO - Successfully saved BAJFINANCE.NS (STOCK) data to database
+2025-10-15 09:42:33,494 - INFO - Successfully fetched data for BALKRISIND.NS
+2025-10-15 09:42:33,512 - INFO - Successfully saved BALKRISIND.NS (STOCK) data to database
+2025-10-15 09:42:33,699 - INFO - Successfully fetched data for BALRAMCHIN.NS
+2025-10-15 09:42:33,714 - INFO - Successfully saved BALRAMCHIN.NS (STOCK) data to database
+2025-10-15 09:42:33,897 - INFO - Successfully fetched data for BANDHANBNK.NS
+2025-10-15 09:42:33,914 - INFO - Successfully saved BANDHANBNK.NS (STOCK) data to database
+2025-10-15 09:42:34,131 - INFO - Successfully fetched data for BANKBARODA.NS
+2025-10-15 09:42:34,149 - INFO - Successfully saved BANKBARODA.NS (STOCK) data to database
+2025-10-15 09:42:34,355 - INFO - Successfully fetched data for BANKINDIA.NS
+2025-10-15 09:42:34,378 - INFO - Successfully saved BANKINDIA.NS (STOCK) data to database
+2025-10-15 09:42:34,580 - INFO - Successfully fetched data for BASF.NS
+2025-10-15 09:42:34,597 - INFO - Successfully saved BASF.NS (STOCK) data to database
+2025-10-15 09:42:34,782 - INFO - Successfully fetched data for BATAINDIA.NS
+2025-10-15 09:42:34,798 - INFO - Successfully saved BATAINDIA.NS (STOCK) data to database
+2025-10-15 09:42:34,971 - INFO - Successfully fetched data for BAYERCROP.NS
+2025-10-15 09:42:34,984 - INFO - Successfully saved BAYERCROP.NS (STOCK) data to database
+2025-10-15 09:42:35,192 - INFO - Successfully fetched data for BBTC.NS
+2025-10-15 09:42:35,209 - INFO - Successfully saved BBTC.NS (STOCK) data to database
+2025-10-15 09:42:35,349 - INFO - Successfully fetched data for BDL.NS
+2025-10-15 09:42:35,365 - INFO - Successfully saved BDL.NS (STOCK) data to database
+2025-10-15 09:42:35,559 - INFO - Successfully fetched data for BEL.NS
+2025-10-15 09:42:35,575 - INFO - Successfully saved BEL.NS (STOCK) data to database
+2025-10-15 09:42:35,749 - INFO - Successfully fetched data for BEML.NS
+2025-10-15 09:42:35,770 - INFO - Successfully saved BEML.NS (STOCK) data to database
+2025-10-15 09:42:35,947 - INFO - Successfully fetched data for BERGEPAINT.NS
+2025-10-15 09:42:35,964 - INFO - Successfully saved BERGEPAINT.NS (STOCK) data to database
+2025-10-15 09:42:36,179 - INFO - Successfully fetched data for BHARATFORG.NS
+2025-10-15 09:42:36,197 - INFO - Successfully saved BHARATFORG.NS (STOCK) data to database
+2025-10-15 09:42:36,389 - INFO - Successfully fetched data for BHARTIARTL.NS
+2025-10-15 09:42:36,405 - INFO - Successfully saved BHARTIARTL.NS (STOCK) data to database
+2025-10-15 09:42:36,608 - INFO - Successfully fetched data for BHARTIHEXA.NS
+2025-10-15 09:42:36,624 - INFO - Successfully saved BHARTIHEXA.NS (STOCK) data to database
+2025-10-15 09:42:36,841 - INFO - Successfully fetched data for BHEL.NS
+2025-10-15 09:42:36,856 - INFO - Successfully saved BHEL.NS (STOCK) data to database
+2025-10-15 09:42:37,107 - INFO - Successfully fetched data for BIKAJI.NS
+2025-10-15 09:42:37,124 - INFO - Successfully saved BIKAJI.NS (STOCK) data to database
+2025-10-15 09:42:37,326 - INFO - Successfully fetched data for BIOCON.NS
+2025-10-15 09:42:37,342 - INFO - Successfully saved BIOCON.NS (STOCK) data to database
+2025-10-15 09:42:37,501 - INFO - Successfully fetched data for BLS.NS
+2025-10-15 09:42:37,512 - INFO - Successfully saved BLS.NS (STOCK) data to database
+2025-10-15 09:42:37,704 - INFO - Successfully fetched data for BLUEDART.NS
+2025-10-15 09:42:37,719 - INFO - Successfully saved BLUEDART.NS (STOCK) data to database
+2025-10-15 09:42:37,889 - INFO - Successfully fetched data for BLUESTARCO.NS
+2025-10-15 09:42:37,903 - INFO - Successfully saved BLUESTARCO.NS (STOCK) data to database
+2025-10-15 09:42:38,128 - INFO - Successfully fetched data for BOSCHLTD.NS
+2025-10-15 09:42:38,144 - INFO - Successfully saved BOSCHLTD.NS (STOCK) data to database
+2025-10-15 09:42:38,325 - INFO - Successfully fetched data for BPCL.NS
+2025-10-15 09:42:38,341 - INFO - Successfully saved BPCL.NS (STOCK) data to database
+2025-10-15 09:42:38,555 - INFO - Successfully fetched data for BRIGADE.NS
+2025-10-15 09:42:38,573 - INFO - Successfully saved BRIGADE.NS (STOCK) data to database
+2025-10-15 09:42:38,774 - INFO - Successfully fetched data for BRITANNIA.NS
+2025-10-15 09:42:38,874 - INFO - Successfully saved BRITANNIA.NS (STOCK) data to database
+2025-10-15 09:42:39,066 - INFO - Successfully fetched data for BSE.NS
+2025-10-15 09:42:39,140 - INFO - Successfully saved BSE.NS (STOCK) data to database
+2025-10-15 09:42:39,482 - INFO - Successfully fetched data for BSOFT.NS
+2025-10-15 09:42:39,503 - INFO - Successfully saved BSOFT.NS (STOCK) data to database
+2025-10-15 09:42:39,672 - INFO - Successfully fetched data for CAMPUS.NS
+2025-10-15 09:42:39,689 - INFO - Successfully saved CAMPUS.NS (STOCK) data to database
+2025-10-15 09:42:39,874 - INFO - Successfully fetched data for CAMS.NS
+2025-10-15 09:42:39,894 - INFO - Successfully saved CAMS.NS (STOCK) data to database
+2025-10-15 09:42:40,073 - INFO - Successfully fetched data for CANBK.NS
+2025-10-15 09:42:40,090 - INFO - Successfully saved CANBK.NS (STOCK) data to database
+2025-10-15 09:42:40,289 - INFO - Successfully fetched data for CANFINHOME.NS
+2025-10-15 09:42:40,315 - INFO - Successfully saved CANFINHOME.NS (STOCK) data to database
+2025-10-15 09:42:40,708 - INFO - Successfully fetched data for CAPLIPOINT.NS
+2025-10-15 09:42:40,762 - INFO - Successfully saved CAPLIPOINT.NS (STOCK) data to database
+2025-10-15 09:42:41,001 - INFO - Successfully fetched data for CARBORUNIV.NS
+2025-10-15 09:42:41,017 - INFO - Successfully saved CARBORUNIV.NS (STOCK) data to database
+2025-10-15 09:42:41,203 - INFO - Successfully fetched data for CASTROLIND.NS
+2025-10-15 09:42:41,217 - INFO - Successfully saved CASTROLIND.NS (STOCK) data to database
+2025-10-15 09:42:41,401 - INFO - Successfully fetched data for CCL.NS
+2025-10-15 09:42:41,418 - INFO - Successfully saved CCL.NS (STOCK) data to database
+2025-10-15 09:42:41,583 - INFO - Successfully fetched data for CDSL.NS
+2025-10-15 09:42:41,598 - INFO - Successfully saved CDSL.NS (STOCK) data to database
+2025-10-15 09:42:41,776 - INFO - Successfully fetched data for CEATLTD.NS
+2025-10-15 09:42:41,792 - INFO - Successfully saved CEATLTD.NS (STOCK) data to database
+2025-10-15 09:42:41,964 - INFO - Successfully fetched data for CENTRALBK.NS
+2025-10-15 09:42:41,982 - INFO - Successfully saved CENTRALBK.NS (STOCK) data to database
+2025-10-15 09:42:42,202 - INFO - Successfully fetched data for CENTURYPLY.NS
+2025-10-15 09:42:42,217 - INFO - Successfully saved CENTURYPLY.NS (STOCK) data to database
+2025-10-15 09:42:42,394 - INFO - Successfully fetched data for CERA.NS
+2025-10-15 09:42:42,409 - INFO - Successfully saved CERA.NS (STOCK) data to database
+2025-10-15 09:42:42,595 - INFO - Successfully fetched data for CESC.NS
+2025-10-15 09:42:42,617 - INFO - Successfully saved CESC.NS (STOCK) data to database
+2025-10-15 09:42:42,819 - INFO - Successfully fetched data for CGCL.NS
+2025-10-15 09:42:42,835 - INFO - Successfully saved CGCL.NS (STOCK) data to database
+2025-10-15 09:42:43,050 - INFO - Successfully fetched data for CGPOWER.NS
+2025-10-15 09:42:43,061 - INFO - Successfully saved CGPOWER.NS (STOCK) data to database
+2025-10-15 09:42:43,269 - INFO - Successfully fetched data for CHALET.NS
+2025-10-15 09:42:43,283 - INFO - Successfully saved CHALET.NS (STOCK) data to database
+2025-10-15 09:42:43,460 - INFO - Successfully fetched data for CHAMBLFERT.NS
+2025-10-15 09:42:43,475 - INFO - Successfully saved CHAMBLFERT.NS (STOCK) data to database
+2025-10-15 09:42:43,688 - INFO - Successfully fetched data for CHENNPETRO.NS
+2025-10-15 09:42:43,703 - INFO - Successfully saved CHENNPETRO.NS (STOCK) data to database
+2025-10-15 09:42:43,965 - INFO - Successfully fetched data for CHOLAFIN.NS
+2025-10-15 09:42:43,979 - INFO - Successfully saved CHOLAFIN.NS (STOCK) data to database
+2025-10-15 09:42:44,149 - INFO - Successfully fetched data for CHOLAHLDNG.NS
+2025-10-15 09:42:44,162 - INFO - Successfully saved CHOLAHLDNG.NS (STOCK) data to database
+2025-10-15 09:42:44,325 - INFO - Successfully fetched data for CIPLA.NS
+2025-10-15 09:42:44,340 - INFO - Successfully saved CIPLA.NS (STOCK) data to database
+2025-10-15 09:42:44,583 - INFO - Successfully fetched data for CLEAN.NS
+2025-10-15 09:42:44,599 - INFO - Successfully saved CLEAN.NS (STOCK) data to database
+2025-10-15 09:42:44,771 - INFO - Successfully fetched data for COALINDIA.NS
+2025-10-15 09:42:44,786 - INFO - Successfully saved COALINDIA.NS (STOCK) data to database
+2025-10-15 09:42:44,947 - INFO - Successfully fetched data for COCHINSHIP.NS
+2025-10-15 09:42:44,961 - INFO - Successfully saved COCHINSHIP.NS (STOCK) data to database
+2025-10-15 09:42:45,151 - INFO - Successfully fetched data for COFORGE.NS
+2025-10-15 09:42:45,167 - INFO - Successfully saved COFORGE.NS (STOCK) data to database
+2025-10-15 09:42:45,338 - INFO - Successfully fetched data for COLPAL.NS
+2025-10-15 09:42:45,355 - INFO - Successfully saved COLPAL.NS (STOCK) data to database
+2025-10-15 09:42:45,541 - INFO - Successfully fetched data for CONCOR.NS
+2025-10-15 09:42:45,558 - INFO - Successfully saved CONCOR.NS (STOCK) data to database
+2025-10-15 09:42:45,745 - INFO - Successfully fetched data for CONCORDBIO.NS
+2025-10-15 09:42:45,765 - INFO - Successfully saved CONCORDBIO.NS (STOCK) data to database
+2025-10-15 09:42:45,960 - INFO - Successfully fetched data for COROMANDEL.NS
+2025-10-15 09:42:45,981 - INFO - Successfully saved COROMANDEL.NS (STOCK) data to database
+2025-10-15 09:42:46,139 - INFO - Successfully fetched data for CRAFTSMAN.NS
+2025-10-15 09:42:46,156 - INFO - Successfully saved CRAFTSMAN.NS (STOCK) data to database
+2025-10-15 09:42:46,397 - INFO - Successfully fetched data for CREDITACC.NS
+2025-10-15 09:42:46,412 - INFO - Successfully saved CREDITACC.NS (STOCK) data to database
+2025-10-15 09:42:46,626 - INFO - Successfully fetched data for CRISIL.NS
+2025-10-15 09:42:46,648 - INFO - Successfully saved CRISIL.NS (STOCK) data to database
+2025-10-15 09:42:46,813 - INFO - Successfully fetched data for CROMPTON.NS
+2025-10-15 09:42:46,831 - INFO - Successfully saved CROMPTON.NS (STOCK) data to database
+2025-10-15 09:42:47,137 - INFO - Successfully fetched data for CUB.NS
+2025-10-15 09:42:47,151 - INFO - Successfully saved CUB.NS (STOCK) data to database
+2025-10-15 09:42:47,337 - INFO - Successfully fetched data for CUMMINSIND.NS
+2025-10-15 09:42:47,354 - INFO - Successfully saved CUMMINSIND.NS (STOCK) data to database
+2025-10-15 09:42:47,616 - INFO - Successfully fetched data for CYIENT.NS
+2025-10-15 09:42:47,633 - INFO - Successfully saved CYIENT.NS (STOCK) data to database
+2025-10-15 09:42:47,804 - INFO - Successfully fetched data for DABUR.NS
+2025-10-15 09:42:47,821 - INFO - Successfully saved DABUR.NS (STOCK) data to database
+2025-10-15 09:42:47,984 - INFO - Successfully fetched data for DALBHARAT.NS
+2025-10-15 09:42:47,999 - INFO - Successfully saved DALBHARAT.NS (STOCK) data to database
+2025-10-15 09:42:48,168 - INFO - Successfully fetched data for DATAPATTNS.NS
+2025-10-15 09:42:48,242 - INFO - Successfully saved DATAPATTNS.NS (STOCK) data to database
+2025-10-15 09:42:48,426 - INFO - Successfully fetched data for DBREALTY.NS
+2025-10-15 09:42:48,447 - INFO - Successfully saved DBREALTY.NS (STOCK) data to database
+2025-10-15 09:42:48,659 - INFO - Successfully fetched data for DCMSHRIRAM.NS
+2025-10-15 09:42:48,672 - INFO - Successfully saved DCMSHRIRAM.NS (STOCK) data to database
+2025-10-15 09:42:48,878 - INFO - Successfully fetched data for DEEPAKFERT.NS
+2025-10-15 09:42:48,894 - INFO - Successfully saved DEEPAKFERT.NS (STOCK) data to database
+2025-10-15 09:42:49,104 - INFO - Successfully fetched data for DEEPAKNTR.NS
+2025-10-15 09:42:49,118 - INFO - Successfully saved DEEPAKNTR.NS (STOCK) data to database
+2025-10-15 09:42:49,252 - INFO - Successfully fetched data for DELHIVERY.NS
+2025-10-15 09:42:49,265 - INFO - Successfully saved DELHIVERY.NS (STOCK) data to database
+2025-10-15 09:42:49,416 - INFO - Successfully fetched data for DEVYANI.NS
+2025-10-15 09:42:49,439 - INFO - Successfully saved DEVYANI.NS (STOCK) data to database
+2025-10-15 09:42:49,634 - INFO - Successfully fetched data for DIVISLAB.NS
+2025-10-15 09:42:49,648 - INFO - Successfully saved DIVISLAB.NS (STOCK) data to database
+2025-10-15 09:42:49,822 - INFO - Successfully fetched data for DIXON.NS
+2025-10-15 09:42:49,835 - INFO - Successfully saved DIXON.NS (STOCK) data to database
+2025-10-15 09:42:50,027 - INFO - Successfully fetched data for DLF.NS
+2025-10-15 09:42:50,045 - INFO - Successfully saved DLF.NS (STOCK) data to database
+2025-10-15 09:42:50,179 - INFO - Successfully fetched data for DMART.NS
+2025-10-15 09:42:50,194 - INFO - Successfully saved DMART.NS (STOCK) data to database
+2025-10-15 09:42:50,438 - INFO - Successfully fetched data for DOMS.NS
+2025-10-15 09:42:50,455 - INFO - Successfully saved DOMS.NS (STOCK) data to database
+2025-10-15 09:42:50,763 - INFO - Successfully fetched data for DRREDDY.NS
+2025-10-15 09:42:50,780 - INFO - Successfully saved DRREDDY.NS (STOCK) data to database
+2025-10-15 09:42:50,958 - INFO - Successfully fetched data for ECLERX.NS
+2025-10-15 09:42:50,969 - INFO - Successfully saved ECLERX.NS (STOCK) data to database
+2025-10-15 09:42:51,182 - INFO - Successfully fetched data for EICHERMOT.NS
+2025-10-15 09:42:51,221 - INFO - Successfully saved EICHERMOT.NS (STOCK) data to database
+2025-10-15 09:42:51,403 - INFO - Successfully fetched data for EIDPARRY.NS
+2025-10-15 09:42:51,425 - INFO - Successfully saved EIDPARRY.NS (STOCK) data to database
+2025-10-15 09:42:51,634 - INFO - Successfully fetched data for EIHOTEL.NS
+2025-10-15 09:42:51,668 - INFO - Successfully saved EIHOTEL.NS (STOCK) data to database
+2025-10-15 09:42:51,927 - INFO - Successfully fetched data for ELECON.NS
+2025-10-15 09:42:51,945 - INFO - Successfully saved ELECON.NS (STOCK) data to database
+2025-10-15 09:42:52,149 - INFO - Successfully fetched data for ELGIEQUIP.NS
+2025-10-15 09:42:52,174 - INFO - Successfully saved ELGIEQUIP.NS (STOCK) data to database
+2025-10-15 09:42:52,358 - INFO - Successfully fetched data for EMAMILTD.NS
+2025-10-15 09:42:52,375 - INFO - Successfully saved EMAMILTD.NS (STOCK) data to database
+2025-10-15 09:42:52,547 - INFO - Successfully fetched data for EMCURE.NS
+2025-10-15 09:42:52,565 - INFO - Successfully saved EMCURE.NS (STOCK) data to database
+2025-10-15 09:42:52,735 - INFO - Successfully fetched data for ENDURANCE.NS
+2025-10-15 09:42:52,801 - INFO - Successfully saved ENDURANCE.NS (STOCK) data to database
+2025-10-15 09:42:53,001 - INFO - Successfully fetched data for ENGINERSIN.NS
+2025-10-15 09:42:53,017 - INFO - Successfully saved ENGINERSIN.NS (STOCK) data to database
+2025-10-15 09:42:53,175 - INFO - Successfully fetched data for ERIS.NS
+2025-10-15 09:42:53,191 - INFO - Successfully saved ERIS.NS (STOCK) data to database
+2025-10-15 09:42:53,364 - INFO - Successfully fetched data for ESCORTS.NS
+2025-10-15 09:42:53,380 - INFO - Successfully saved ESCORTS.NS (STOCK) data to database
+2025-10-15 09:42:53,545 - INFO - Successfully fetched data for ETERNAL.NS
+2025-10-15 09:42:53,560 - INFO - Successfully saved ETERNAL.NS (STOCK) data to database
+2025-10-15 09:42:53,941 - INFO - Successfully fetched data for EXIDEIND.NS
+2025-10-15 09:42:53,959 - INFO - Successfully saved EXIDEIND.NS (STOCK) data to database
+2025-10-15 09:42:54,163 - INFO - Successfully fetched data for FACT.NS
+2025-10-15 09:42:54,176 - INFO - Successfully saved FACT.NS (STOCK) data to database
+2025-10-15 09:42:54,404 - INFO - Successfully fetched data for FEDERALBNK.NS
+2025-10-15 09:42:54,419 - INFO - Successfully saved FEDERALBNK.NS (STOCK) data to database
+2025-10-15 09:42:54,589 - INFO - Successfully fetched data for FINCABLES.NS
+2025-10-15 09:42:54,603 - INFO - Successfully saved FINCABLES.NS (STOCK) data to database
+2025-10-15 09:42:54,814 - INFO - Successfully fetched data for FINPIPE.NS
+2025-10-15 09:42:54,832 - INFO - Successfully saved FINPIPE.NS (STOCK) data to database
+2025-10-15 09:42:55,116 - INFO - Successfully fetched data for FIRSTCRY.NS
+2025-10-15 09:42:55,137 - INFO - Successfully saved FIRSTCRY.NS (STOCK) data to database
+2025-10-15 09:42:55,445 - INFO - Successfully fetched data for FIVESTAR.NS
+2025-10-15 09:42:55,460 - INFO - Successfully saved FIVESTAR.NS (STOCK) data to database
+2025-10-15 09:42:55,639 - INFO - Successfully fetched data for FLUOROCHEM.NS
+2025-10-15 09:42:55,654 - INFO - Successfully saved FLUOROCHEM.NS (STOCK) data to database
+2025-10-15 09:42:55,875 - INFO - Successfully fetched data for FORTIS.NS
+2025-10-15 09:42:55,890 - INFO - Successfully saved FORTIS.NS (STOCK) data to database
+2025-10-15 09:42:56,041 - INFO - Successfully fetched data for FSL.NS
+2025-10-15 09:42:56,054 - INFO - Successfully saved FSL.NS (STOCK) data to database
+2025-10-15 09:42:56,435 - INFO - Successfully fetched data for GAIL.NS
+2025-10-15 09:42:56,452 - INFO - Successfully saved GAIL.NS (STOCK) data to database
+2025-10-15 09:42:56,638 - INFO - Successfully fetched data for GESHIP.NS
+2025-10-15 09:42:56,653 - INFO - Successfully saved GESHIP.NS (STOCK) data to database
+2025-10-15 09:42:56,829 - INFO - Successfully fetched data for GICRE.NS
+2025-10-15 09:42:56,844 - INFO - Successfully saved GICRE.NS (STOCK) data to database
+2025-10-15 09:42:57,031 - INFO - Successfully fetched data for GILLETTE.NS
+2025-10-15 09:42:57,052 - INFO - Successfully saved GILLETTE.NS (STOCK) data to database
+2025-10-15 09:42:57,233 - INFO - Successfully fetched data for GLAND.NS
+2025-10-15 09:42:57,322 - INFO - Successfully saved GLAND.NS (STOCK) data to database
+2025-10-15 09:42:57,509 - INFO - Successfully fetched data for GLAXO.NS
+2025-10-15 09:42:57,523 - INFO - Successfully saved GLAXO.NS (STOCK) data to database
+2025-10-15 09:42:57,706 - INFO - Successfully fetched data for GLENMARK.NS
+2025-10-15 09:42:57,720 - INFO - Successfully saved GLENMARK.NS (STOCK) data to database
+2025-10-15 09:42:57,956 - INFO - Successfully fetched data for GMDCLTD.NS
+2025-10-15 09:42:57,973 - INFO - Successfully saved GMDCLTD.NS (STOCK) data to database
+2025-10-15 09:42:58,145 - INFO - Successfully fetched data for GMRAIRPORT.NS
+2025-10-15 09:42:58,166 - INFO - Successfully saved GMRAIRPORT.NS (STOCK) data to database
+2025-10-15 09:42:58,343 - INFO - Successfully fetched data for GNFC.NS
+2025-10-15 09:42:58,360 - INFO - Successfully saved GNFC.NS (STOCK) data to database
+2025-10-15 09:42:58,662 - INFO - Successfully fetched data for GODFRYPHLP.NS
+2025-10-15 09:42:58,677 - INFO - Successfully saved GODFRYPHLP.NS (STOCK) data to database
+2025-10-15 09:42:58,839 - INFO - Successfully fetched data for GODIGIT.NS
+2025-10-15 09:42:58,853 - INFO - Successfully saved GODIGIT.NS (STOCK) data to database
+2025-10-15 09:42:59,012 - INFO - Successfully fetched data for GODREJAGRO.NS
+2025-10-15 09:42:59,027 - INFO - Successfully saved GODREJAGRO.NS (STOCK) data to database
+2025-10-15 09:42:59,218 - INFO - Successfully fetched data for GODREJCP.NS
+2025-10-15 09:42:59,235 - INFO - Successfully saved GODREJCP.NS (STOCK) data to database
+2025-10-15 09:42:59,443 - INFO - Successfully fetched data for GODREJIND.NS
+2025-10-15 09:42:59,588 - INFO - Successfully saved GODREJIND.NS (STOCK) data to database
+2025-10-15 09:42:59,753 - INFO - Successfully fetched data for GODREJPROP.NS
+2025-10-15 09:42:59,770 - INFO - Successfully saved GODREJPROP.NS (STOCK) data to database
+2025-10-15 09:43:00,115 - INFO - Successfully fetched data for GPIL.NS
+2025-10-15 09:43:00,130 - INFO - Successfully saved GPIL.NS (STOCK) data to database
+2025-10-15 09:43:00,282 - INFO - Successfully fetched data for GPPL.NS
+2025-10-15 09:43:00,293 - INFO - Successfully saved GPPL.NS (STOCK) data to database
+2025-10-15 09:43:00,486 - INFO - Successfully fetched data for GRANULES.NS
+2025-10-15 09:43:00,502 - INFO - Successfully saved GRANULES.NS (STOCK) data to database
+2025-10-15 09:43:00,701 - INFO - Successfully fetched data for GRAPHITE.NS
+2025-10-15 09:43:00,726 - INFO - Successfully saved GRAPHITE.NS (STOCK) data to database
+2025-10-15 09:43:00,906 - INFO - Successfully fetched data for GRASIM.NS
+2025-10-15 09:43:00,923 - INFO - Successfully saved GRASIM.NS (STOCK) data to database
+2025-10-15 09:43:01,222 - INFO - Successfully fetched data for GRAVITA.NS
+2025-10-15 09:43:01,237 - INFO - Successfully saved GRAVITA.NS (STOCK) data to database
+2025-10-15 09:43:01,425 - INFO - Successfully fetched data for GRSE.NS
+2025-10-15 09:43:01,442 - INFO - Successfully saved GRSE.NS (STOCK) data to database
+2025-10-15 09:43:01,622 - INFO - Successfully fetched data for GSPL.NS
+2025-10-15 09:43:01,636 - INFO - Successfully saved GSPL.NS (STOCK) data to database
+2025-10-15 09:43:01,788 - INFO - Successfully fetched data for GUJGASLTD.NS
+2025-10-15 09:43:01,804 - INFO - Successfully saved GUJGASLTD.NS (STOCK) data to database
+2025-10-15 09:43:01,979 - INFO - Successfully fetched data for GVT&D.NS
+2025-10-15 09:43:01,991 - INFO - Successfully saved GVT&D.NS (STOCK) data to database
+2025-10-15 09:43:02,170 - INFO - Successfully fetched data for HAL.NS
+2025-10-15 09:43:02,183 - INFO - Successfully saved HAL.NS (STOCK) data to database
+2025-10-15 09:43:02,353 - INFO - Successfully fetched data for HAPPSTMNDS.NS
+2025-10-15 09:43:02,366 - INFO - Successfully saved HAPPSTMNDS.NS (STOCK) data to database
+2025-10-15 09:43:02,558 - INFO - Successfully fetched data for HAVELLS.NS
+2025-10-15 09:43:02,577 - INFO - Successfully saved HAVELLS.NS (STOCK) data to database
+2025-10-15 09:43:02,817 - INFO - Successfully fetched data for HBLENGINE.NS
+2025-10-15 09:43:02,832 - INFO - Successfully saved HBLENGINE.NS (STOCK) data to database
+2025-10-15 09:43:03,036 - INFO - Successfully fetched data for HCLTECH.NS
+2025-10-15 09:43:03,059 - INFO - Successfully saved HCLTECH.NS (STOCK) data to database
+2025-10-15 09:43:03,246 - INFO - Successfully fetched data for HDFCAMC.NS
+2025-10-15 09:43:03,273 - INFO - Successfully saved HDFCAMC.NS (STOCK) data to database
+2025-10-15 09:43:03,467 - INFO - Successfully fetched data for HDFCBANK.NS
+2025-10-15 09:43:03,482 - INFO - Successfully saved HDFCBANK.NS (STOCK) data to database
+2025-10-15 09:43:03,651 - INFO - Successfully fetched data for HDFCLIFE.NS
+2025-10-15 09:43:03,666 - INFO - Successfully saved HDFCLIFE.NS (STOCK) data to database
+2025-10-15 09:43:03,881 - INFO - Successfully fetched data for HEG.NS
+2025-10-15 09:43:03,896 - INFO - Successfully saved HEG.NS (STOCK) data to database
+2025-10-15 09:43:04,076 - INFO - Successfully fetched data for HEROMOTOCO.NS
+2025-10-15 09:43:04,091 - INFO - Successfully saved HEROMOTOCO.NS (STOCK) data to database
+2025-10-15 09:43:04,264 - INFO - Successfully fetched data for HFCL.NS
+2025-10-15 09:43:04,288 - INFO - Successfully saved HFCL.NS (STOCK) data to database
+2025-10-15 09:43:04,581 - INFO - Successfully fetched data for HINDALCO.NS
+2025-10-15 09:43:04,598 - INFO - Successfully saved HINDALCO.NS (STOCK) data to database
+2025-10-15 09:43:04,784 - INFO - Successfully fetched data for HINDCOPPER.NS
+2025-10-15 09:43:04,799 - INFO - Successfully saved HINDCOPPER.NS (STOCK) data to database
+2025-10-15 09:43:04,980 - INFO - Successfully fetched data for HINDPETRO.NS
+2025-10-15 09:43:04,996 - INFO - Successfully saved HINDPETRO.NS (STOCK) data to database
+2025-10-15 09:43:05,231 - INFO - Successfully fetched data for HINDUNILVR.NS
+2025-10-15 09:43:05,252 - INFO - Successfully saved HINDUNILVR.NS (STOCK) data to database
+2025-10-15 09:43:05,437 - INFO - Successfully fetched data for HINDZINC.NS
+2025-10-15 09:43:05,450 - INFO - Successfully saved HINDZINC.NS (STOCK) data to database
+2025-10-15 09:43:05,604 - INFO - Successfully fetched data for HOMEFIRST.NS
+2025-10-15 09:43:05,622 - INFO - Successfully saved HOMEFIRST.NS (STOCK) data to database
+2025-10-15 09:43:05,795 - INFO - Successfully fetched data for HONASA.NS
+2025-10-15 09:43:05,812 - INFO - Successfully saved HONASA.NS (STOCK) data to database
+2025-10-15 09:43:06,005 - INFO - Successfully fetched data for HONAUT.NS
+2025-10-15 09:43:06,023 - INFO - Successfully saved HONAUT.NS (STOCK) data to database
+2025-10-15 09:43:06,217 - INFO - Successfully fetched data for HSCL.NS
+2025-10-15 09:43:06,232 - INFO - Successfully saved HSCL.NS (STOCK) data to database
+2025-10-15 09:43:06,467 - INFO - Successfully fetched data for HUDCO.NS
+2025-10-15 09:43:06,483 - INFO - Successfully saved HUDCO.NS (STOCK) data to database
+2025-10-15 09:43:06,652 - INFO - Successfully fetched data for HYUNDAI.NS
+2025-10-15 09:43:06,667 - INFO - Successfully saved HYUNDAI.NS (STOCK) data to database
+2025-10-15 09:43:06,865 - INFO - Successfully fetched data for ICICIBANK.NS
+2025-10-15 09:43:06,888 - INFO - Successfully saved ICICIBANK.NS (STOCK) data to database
+2025-10-15 09:43:07,041 - INFO - Successfully fetched data for ICICIGI.NS
+2025-10-15 09:43:07,061 - INFO - Successfully saved ICICIGI.NS (STOCK) data to database
+2025-10-15 09:43:07,235 - INFO - Successfully fetched data for ICICIPRULI.NS
+2025-10-15 09:43:07,253 - INFO - Successfully saved ICICIPRULI.NS (STOCK) data to database
+2025-10-15 09:43:07,525 - INFO - Successfully fetched data for IDBI.NS
+2025-10-15 09:43:07,537 - INFO - Successfully saved IDBI.NS (STOCK) data to database
+2025-10-15 09:43:07,764 - INFO - Successfully fetched data for IDEA.NS
+2025-10-15 09:43:07,779 - INFO - Successfully saved IDEA.NS (STOCK) data to database
+2025-10-15 09:43:07,935 - INFO - Successfully fetched data for IDFCFIRSTB.NS
+2025-10-15 09:43:07,951 - INFO - Successfully saved IDFCFIRSTB.NS (STOCK) data to database
+2025-10-15 09:43:08,134 - INFO - Successfully fetched data for IEX.NS
+2025-10-15 09:43:08,149 - INFO - Successfully saved IEX.NS (STOCK) data to database
+2025-10-15 09:43:08,324 - INFO - Successfully fetched data for IFCI.NS
+2025-10-15 09:43:08,337 - INFO - Successfully saved IFCI.NS (STOCK) data to database
+2025-10-15 09:43:08,485 - INFO - Successfully fetched data for IGIL.NS
+2025-10-15 09:43:08,500 - INFO - Successfully saved IGIL.NS (STOCK) data to database
+2025-10-15 09:43:08,683 - INFO - Successfully fetched data for IGL.NS
+2025-10-15 09:43:08,699 - INFO - Successfully saved IGL.NS (STOCK) data to database
+2025-10-15 09:43:08,893 - INFO - Successfully fetched data for IIFL.NS
+2025-10-15 09:43:09,029 - INFO - Successfully saved IIFL.NS (STOCK) data to database
+2025-10-15 09:43:09,241 - INFO - Successfully fetched data for IKS.NS
+2025-10-15 09:43:09,253 - INFO - Successfully saved IKS.NS (STOCK) data to database
+2025-10-15 09:43:09,451 - INFO - Successfully fetched data for INDGN.NS
+2025-10-15 09:43:09,598 - INFO - Successfully saved INDGN.NS (STOCK) data to database
+2025-10-15 09:43:09,816 - INFO - Successfully fetched data for INDHOTEL.NS
+2025-10-15 09:43:09,832 - INFO - Successfully saved INDHOTEL.NS (STOCK) data to database
+2025-10-15 09:43:10,066 - INFO - Successfully fetched data for INDIACEM.NS
+2025-10-15 09:43:10,088 - INFO - Successfully saved INDIACEM.NS (STOCK) data to database
+2025-10-15 09:43:10,261 - INFO - Successfully fetched data for INDIAMART.NS
+2025-10-15 09:43:10,276 - INFO - Successfully saved INDIAMART.NS (STOCK) data to database
+2025-10-15 09:43:10,534 - INFO - Successfully fetched data for INDIANB.NS
+2025-10-15 09:43:10,554 - INFO - Successfully saved INDIANB.NS (STOCK) data to database
+2025-10-15 09:43:10,712 - INFO - Successfully fetched data for INDIGO.NS
+2025-10-15 09:43:10,730 - INFO - Successfully saved INDIGO.NS (STOCK) data to database
+2025-10-15 09:43:10,949 - INFO - Successfully fetched data for INDUSINDBK.NS
+2025-10-15 09:43:10,976 - INFO - Successfully saved INDUSINDBK.NS (STOCK) data to database
+2025-10-15 09:43:11,159 - INFO - Successfully fetched data for INDUSTOWER.NS
+2025-10-15 09:43:11,174 - INFO - Successfully saved INDUSTOWER.NS (STOCK) data to database
+2025-10-15 09:43:11,449 - INFO - Successfully fetched data for INFY.NS
+2025-10-15 09:43:11,465 - INFO - Successfully saved INFY.NS (STOCK) data to database
+2025-10-15 09:43:11,634 - INFO - Successfully fetched data for INOXINDIA.NS
+2025-10-15 09:43:11,663 - INFO - Successfully saved INOXINDIA.NS (STOCK) data to database
+2025-10-15 09:43:11,831 - INFO - Successfully fetched data for INOXWIND.NS
+2025-10-15 09:43:11,857 - INFO - Successfully saved INOXWIND.NS (STOCK) data to database
+2025-10-15 09:43:12,014 - INFO - Successfully fetched data for INTELLECT.NS
+2025-10-15 09:43:12,031 - INFO - Successfully saved INTELLECT.NS (STOCK) data to database
+2025-10-15 09:43:12,191 - INFO - Successfully fetched data for IOB.NS
+2025-10-15 09:43:12,210 - INFO - Successfully saved IOB.NS (STOCK) data to database
+2025-10-15 09:43:12,395 - INFO - Successfully fetched data for IOC.NS
+2025-10-15 09:43:12,411 - INFO - Successfully saved IOC.NS (STOCK) data to database
+2025-10-15 09:43:12,658 - INFO - Successfully fetched data for IPCALAB.NS
+2025-10-15 09:43:12,672 - INFO - Successfully saved IPCALAB.NS (STOCK) data to database
+2025-10-15 09:43:12,839 - INFO - Successfully fetched data for IRB.NS
+2025-10-15 09:43:12,858 - INFO - Successfully saved IRB.NS (STOCK) data to database
+2025-10-15 09:43:13,104 - INFO - Successfully fetched data for IRCON.NS
+2025-10-15 09:43:13,124 - INFO - Successfully saved IRCON.NS (STOCK) data to database
+2025-10-15 09:43:13,394 - INFO - Successfully fetched data for IRCTC.NS
+2025-10-15 09:43:13,431 - INFO - Successfully saved IRCTC.NS (STOCK) data to database
+2025-10-15 09:43:13,613 - INFO - Successfully fetched data for IREDA.NS
+2025-10-15 09:43:13,645 - INFO - Successfully saved IREDA.NS (STOCK) data to database
+2025-10-15 09:43:13,849 - INFO - Successfully fetched data for IRFC.NS
+2025-10-15 09:43:14,100 - INFO - Successfully saved IRFC.NS (STOCK) data to database
+2025-10-15 09:43:14,290 - INFO - Successfully fetched data for ITC.NS
+2025-10-15 09:43:14,311 - INFO - Successfully saved ITC.NS (STOCK) data to database
+2025-10-15 09:43:14,463 - INFO - Successfully fetched data for ITI.NS
+2025-10-15 09:43:14,479 - INFO - Successfully saved ITI.NS (STOCK) data to database
+2025-10-15 09:43:14,684 - INFO - Successfully fetched data for J&KBANK.NS
+2025-10-15 09:43:14,862 - INFO - Successfully saved J&KBANK.NS (STOCK) data to database
+2025-10-15 09:43:15,096 - INFO - Successfully fetched data for JBCHEPHARM.NS
+2025-10-15 09:43:15,135 - INFO - Successfully saved JBCHEPHARM.NS (STOCK) data to database
+2025-10-15 09:43:15,341 - INFO - Successfully fetched data for JBMA.NS
+2025-10-15 09:43:15,353 - INFO - Successfully saved JBMA.NS (STOCK) data to database
+2025-10-15 09:43:15,521 - INFO - Successfully fetched data for JINDALSAW.NS
+2025-10-15 09:43:15,538 - INFO - Successfully saved JINDALSAW.NS (STOCK) data to database
+2025-10-15 09:43:15,746 - INFO - Successfully fetched data for JINDALSTEL.NS
+2025-10-15 09:43:15,771 - INFO - Successfully saved JINDALSTEL.NS (STOCK) data to database
+2025-10-15 09:43:15,952 - INFO - Successfully fetched data for JIOFIN.NS
+2025-10-15 09:43:15,975 - INFO - Successfully saved JIOFIN.NS (STOCK) data to database
+2025-10-15 09:43:16,192 - INFO - Successfully fetched data for JKCEMENT.NS
+2025-10-15 09:43:16,212 - INFO - Successfully saved JKCEMENT.NS (STOCK) data to database
+2025-10-15 09:43:16,414 - INFO - Successfully fetched data for JKTYRE.NS
+2025-10-15 09:43:16,439 - INFO - Successfully saved JKTYRE.NS (STOCK) data to database
+2025-10-15 09:43:16,631 - INFO - Successfully fetched data for JMFINANCIL.NS
+2025-10-15 09:43:16,647 - INFO - Successfully saved JMFINANCIL.NS (STOCK) data to database
+2025-10-15 09:43:16,817 - INFO - Successfully fetched data for JPPOWER.NS
+2025-10-15 09:43:16,830 - INFO - Successfully saved JPPOWER.NS (STOCK) data to database
+2025-10-15 09:43:17,030 - INFO - Successfully fetched data for JSL.NS
+2025-10-15 09:43:17,046 - INFO - Successfully saved JSL.NS (STOCK) data to database
+2025-10-15 09:43:17,245 - INFO - Successfully fetched data for JSWENERGY.NS
+2025-10-15 09:43:17,270 - INFO - Successfully saved JSWENERGY.NS (STOCK) data to database
+2025-10-15 09:43:17,460 - INFO - Successfully fetched data for JSWHL.NS
+2025-10-15 09:43:17,486 - INFO - Successfully saved JSWHL.NS (STOCK) data to database
+2025-10-15 09:43:17,700 - INFO - Successfully fetched data for JSWINFRA.NS
+2025-10-15 09:43:17,724 - INFO - Successfully saved JSWINFRA.NS (STOCK) data to database
+2025-10-15 09:43:17,943 - INFO - Successfully fetched data for JSWSTEEL.NS
+2025-10-15 09:43:17,972 - INFO - Successfully saved JSWSTEEL.NS (STOCK) data to database
+2025-10-15 09:43:18,175 - INFO - Successfully fetched data for JUBLFOOD.NS
+2025-10-15 09:43:18,577 - INFO - Successfully saved JUBLFOOD.NS (STOCK) data to database
+2025-10-15 09:43:19,230 - INFO - Successfully fetched data for JUBLINGREA.NS
+2025-10-15 09:43:19,485 - INFO - Successfully saved JUBLINGREA.NS (STOCK) data to database
+2025-10-15 09:43:19,750 - INFO - Successfully fetched data for JUBLPHARMA.NS
+2025-10-15 09:43:19,801 - INFO - Successfully saved JUBLPHARMA.NS (STOCK) data to database
+2025-10-15 09:43:19,992 - INFO - Successfully fetched data for JUSTDIAL.NS
+2025-10-15 09:43:20,031 - INFO - Successfully saved JUSTDIAL.NS (STOCK) data to database
+2025-10-15 09:43:20,318 - INFO - Successfully fetched data for JWL.NS
+2025-10-15 09:43:20,341 - INFO - Successfully saved JWL.NS (STOCK) data to database
+2025-10-15 09:43:20,581 - INFO - Successfully fetched data for JYOTHYLAB.NS
+2025-10-15 09:43:20,604 - INFO - Successfully saved JYOTHYLAB.NS (STOCK) data to database
+2025-10-15 09:43:20,788 - INFO - Successfully fetched data for JYOTICNC.NS
+2025-10-15 09:43:20,835 - INFO - Successfully saved JYOTICNC.NS (STOCK) data to database
+2025-10-15 09:43:21,076 - INFO - Successfully fetched data for KAJARIACER.NS
+2025-10-15 09:43:21,185 - INFO - Successfully saved KAJARIACER.NS (STOCK) data to database
+2025-10-15 09:43:21,375 - INFO - Successfully fetched data for KALYANKJIL.NS
+2025-10-15 09:43:21,397 - INFO - Successfully saved KALYANKJIL.NS (STOCK) data to database
+2025-10-15 09:43:21,608 - INFO - Successfully fetched data for KANSAINER.NS
+2025-10-15 09:43:21,635 - INFO - Successfully saved KANSAINER.NS (STOCK) data to database
+2025-10-15 09:43:21,930 - INFO - Successfully fetched data for KARURVYSYA.NS
+2025-10-15 09:43:21,952 - INFO - Successfully saved KARURVYSYA.NS (STOCK) data to database
+2025-10-15 09:43:22,122 - INFO - Successfully fetched data for KAYNES.NS
+2025-10-15 09:43:22,148 - INFO - Successfully saved KAYNES.NS (STOCK) data to database
+2025-10-15 09:43:22,341 - INFO - Successfully fetched data for KEC.NS
+2025-10-15 09:43:22,364 - INFO - Successfully saved KEC.NS (STOCK) data to database
+2025-10-15 09:43:22,577 - INFO - Successfully fetched data for KEI.NS
+2025-10-15 09:43:22,609 - INFO - Successfully saved KEI.NS (STOCK) data to database
+2025-10-15 09:43:22,778 - INFO - Successfully fetched data for KFINTECH.NS
+2025-10-15 09:43:22,798 - INFO - Successfully saved KFINTECH.NS (STOCK) data to database
+2025-10-15 09:43:23,033 - INFO - Successfully fetched data for KIMS.NS
+2025-10-15 09:43:23,058 - INFO - Successfully saved KIMS.NS (STOCK) data to database
+2025-10-15 09:43:23,251 - INFO - Successfully fetched data for KIRLOSBROS.NS
+2025-10-15 09:43:23,272 - INFO - Successfully saved KIRLOSBROS.NS (STOCK) data to database
+2025-10-15 09:43:23,460 - INFO - Successfully fetched data for KIRLOSENG.NS
+2025-10-15 09:43:23,482 - INFO - Successfully saved KIRLOSENG.NS (STOCK) data to database
+2025-10-15 09:43:23,760 - INFO - Successfully fetched data for KNRCON.NS
+2025-10-15 09:43:23,800 - INFO - Successfully saved KNRCON.NS (STOCK) data to database
+2025-10-15 09:43:24,012 - INFO - Successfully fetched data for KOTAKBANK.NS
+2025-10-15 09:43:24,033 - INFO - Successfully saved KOTAKBANK.NS (STOCK) data to database
+2025-10-15 09:43:24,244 - INFO - Successfully fetched data for KPIL.NS
+2025-10-15 09:43:24,273 - INFO - Successfully saved KPIL.NS (STOCK) data to database
+2025-10-15 09:43:24,811 - INFO - Successfully fetched data for KPITTECH.NS
+2025-10-15 09:43:24,834 - INFO - Successfully saved KPITTECH.NS (STOCK) data to database
+2025-10-15 09:43:25,015 - INFO - Successfully fetched data for KPRMILL.NS
+2025-10-15 09:43:25,028 - INFO - Successfully saved KPRMILL.NS (STOCK) data to database
+2025-10-15 09:43:25,198 - INFO - Successfully fetched data for LALPATHLAB.NS
+2025-10-15 09:43:25,215 - INFO - Successfully saved LALPATHLAB.NS (STOCK) data to database
+2025-10-15 09:43:25,380 - INFO - Successfully fetched data for LATENTVIEW.NS
+2025-10-15 09:43:25,407 - INFO - Successfully saved LATENTVIEW.NS (STOCK) data to database
+2025-10-15 09:43:25,664 - INFO - Successfully fetched data for LAURUSLABS.NS
+2025-10-15 09:43:25,695 - INFO - Successfully saved LAURUSLABS.NS (STOCK) data to database
+2025-10-15 09:43:25,964 - INFO - Successfully fetched data for LEMONTREE.NS
+2025-10-15 09:43:25,984 - INFO - Successfully saved LEMONTREE.NS (STOCK) data to database
+2025-10-15 09:43:26,625 - INFO - Successfully fetched data for LICHSGFIN.NS
+2025-10-15 09:43:26,647 - INFO - Successfully saved LICHSGFIN.NS (STOCK) data to database
+2025-10-15 09:43:26,830 - INFO - Successfully fetched data for LICI.NS
+2025-10-15 09:43:26,852 - INFO - Successfully saved LICI.NS (STOCK) data to database
+2025-10-15 09:43:27,337 - INFO - Successfully fetched data for LINDEINDIA.NS
+2025-10-15 09:43:27,377 - INFO - Successfully saved LINDEINDIA.NS (STOCK) data to database
+2025-10-15 09:43:27,563 - INFO - Successfully fetched data for LLOYDSME.NS
+2025-10-15 09:43:27,587 - INFO - Successfully saved LLOYDSME.NS (STOCK) data to database
+2025-10-15 09:43:28,393 - INFO - Successfully fetched data for LODHA.NS
+2025-10-15 09:43:28,435 - INFO - Successfully saved LODHA.NS (STOCK) data to database
+2025-10-15 09:43:28,660 - INFO - Successfully fetched data for LT.NS
+2025-10-15 09:43:28,688 - INFO - Successfully saved LT.NS (STOCK) data to database
+2025-10-15 09:43:28,886 - INFO - Successfully fetched data for LTF.NS
+2025-10-15 09:43:28,923 - INFO - Successfully saved LTF.NS (STOCK) data to database
+2025-10-15 09:43:29,129 - INFO - Successfully fetched data for LTFOODS.NS
+2025-10-15 09:43:29,147 - INFO - Successfully saved LTFOODS.NS (STOCK) data to database
+2025-10-15 09:43:29,354 - INFO - Successfully fetched data for LTIM.NS
+2025-10-15 09:43:29,380 - INFO - Successfully saved LTIM.NS (STOCK) data to database
+2025-10-15 09:43:29,620 - INFO - Successfully fetched data for LTTS.NS
+2025-10-15 09:43:29,652 - INFO - Successfully saved LTTS.NS (STOCK) data to database
+2025-10-15 09:43:29,849 - INFO - Successfully fetched data for LUPIN.NS
+2025-10-15 09:43:29,866 - INFO - Successfully saved LUPIN.NS (STOCK) data to database
+2025-10-15 09:43:30,082 - INFO - Successfully fetched data for M&M.NS
+2025-10-15 09:43:30,109 - INFO - Successfully saved M&M.NS (STOCK) data to database
+2025-10-15 09:43:30,371 - INFO - Successfully fetched data for M&MFIN.NS
+2025-10-15 09:43:30,385 - INFO - Successfully saved M&MFIN.NS (STOCK) data to database
+2025-10-15 09:43:30,559 - INFO - Successfully fetched data for MAHABANK.NS
+2025-10-15 09:43:30,574 - INFO - Successfully saved MAHABANK.NS (STOCK) data to database
+2025-10-15 09:43:30,758 - INFO - Successfully fetched data for MAHSEAMLES.NS
+2025-10-15 09:43:30,772 - INFO - Successfully saved MAHSEAMLES.NS (STOCK) data to database
+2025-10-15 09:43:30,942 - INFO - Successfully fetched data for MANAPPURAM.NS
+2025-10-15 09:43:30,957 - INFO - Successfully saved MANAPPURAM.NS (STOCK) data to database
+2025-10-15 09:43:31,103 - INFO - Successfully fetched data for MANKIND.NS
+2025-10-15 09:43:31,117 - INFO - Successfully saved MANKIND.NS (STOCK) data to database
+2025-10-15 09:43:31,285 - INFO - Successfully fetched data for MANYAVAR.NS
+2025-10-15 09:43:31,411 - INFO - Successfully saved MANYAVAR.NS (STOCK) data to database
+2025-10-15 09:43:31,593 - INFO - Successfully fetched data for MAPMYINDIA.NS
+2025-10-15 09:43:31,616 - INFO - Successfully saved MAPMYINDIA.NS (STOCK) data to database
+2025-10-15 09:43:31,884 - INFO - Successfully fetched data for MARICO.NS
+2025-10-15 09:43:31,907 - INFO - Successfully saved MARICO.NS (STOCK) data to database
+2025-10-15 09:43:32,115 - INFO - Successfully fetched data for MARUTI.NS
+2025-10-15 09:43:32,136 - INFO - Successfully saved MARUTI.NS (STOCK) data to database
+2025-10-15 09:43:32,366 - INFO - Successfully fetched data for MASTEK.NS
+2025-10-15 09:43:32,380 - INFO - Successfully saved MASTEK.NS (STOCK) data to database
+2025-10-15 09:43:32,557 - INFO - Successfully fetched data for MAXHEALTH.NS
+2025-10-15 09:43:32,579 - INFO - Successfully saved MAXHEALTH.NS (STOCK) data to database
+2025-10-15 09:43:32,763 - INFO - Successfully fetched data for MAZDOCK.NS
+2025-10-15 09:43:32,786 - INFO - Successfully saved MAZDOCK.NS (STOCK) data to database
+2025-10-15 09:43:32,968 - INFO - Successfully fetched data for MCX.NS
+2025-10-15 09:43:32,988 - INFO - Successfully saved MCX.NS (STOCK) data to database
+2025-10-15 09:43:33,180 - INFO - Successfully fetched data for MEDANTA.NS
+2025-10-15 09:43:33,202 - INFO - Successfully saved MEDANTA.NS (STOCK) data to database
+2025-10-15 09:43:33,408 - INFO - Successfully fetched data for METROPOLIS.NS
+2025-10-15 09:43:33,466 - INFO - Successfully saved METROPOLIS.NS (STOCK) data to database
+2025-10-15 09:43:33,697 - INFO - Successfully fetched data for MFSL.NS
+2025-10-15 09:43:33,729 - INFO - Successfully saved MFSL.NS (STOCK) data to database
+2025-10-15 09:43:33,934 - INFO - Successfully fetched data for MGL.NS
+2025-10-15 09:43:33,966 - INFO - Successfully saved MGL.NS (STOCK) data to database
+2025-10-15 09:43:34,289 - INFO - Successfully fetched data for MINDACORP.NS
+2025-10-15 09:43:34,312 - INFO - Successfully saved MINDACORP.NS (STOCK) data to database
+2025-10-15 09:43:34,535 - INFO - Successfully fetched data for MMTC.NS
+2025-10-15 09:43:34,586 - INFO - Successfully saved MMTC.NS (STOCK) data to database
+2025-10-15 09:43:34,916 - INFO - Successfully fetched data for MOTHERSON.NS
+2025-10-15 09:43:34,992 - INFO - Successfully saved MOTHERSON.NS (STOCK) data to database
+2025-10-15 09:43:35,434 - INFO - Successfully fetched data for MOTILALOFS.NS
+2025-10-15 09:43:35,711 - INFO - Successfully saved MOTILALOFS.NS (STOCK) data to database
+2025-10-15 09:43:36,043 - INFO - Successfully fetched data for MPHASIS.NS
+2025-10-15 09:43:36,075 - INFO - Successfully saved MPHASIS.NS (STOCK) data to database
+2025-10-15 09:43:36,416 - INFO - Successfully fetched data for MRF.NS
+2025-10-15 09:43:36,442 - INFO - Successfully saved MRF.NS (STOCK) data to database
+2025-10-15 09:43:36,723 - INFO - Successfully fetched data for MRPL.NS
+2025-10-15 09:43:36,745 - INFO - Successfully saved MRPL.NS (STOCK) data to database
+2025-10-15 09:43:36,930 - INFO - Successfully fetched data for MSUMI.NS
+2025-10-15 09:43:36,949 - INFO - Successfully saved MSUMI.NS (STOCK) data to database
+2025-10-15 09:43:37,150 - INFO - Successfully fetched data for MUTHOOTFIN.NS
+2025-10-15 09:43:37,168 - INFO - Successfully saved MUTHOOTFIN.NS (STOCK) data to database
+2025-10-15 09:43:37,416 - INFO - Successfully fetched data for NAM-INDIA.NS
+2025-10-15 09:43:37,617 - INFO - Successfully saved NAM-INDIA.NS (STOCK) data to database
+2025-10-15 09:43:37,858 - INFO - Successfully fetched data for NATCOPHARM.NS
+2025-10-15 09:43:37,883 - INFO - Successfully saved NATCOPHARM.NS (STOCK) data to database
+2025-10-15 09:43:38,180 - INFO - Successfully fetched data for NATIONALUM.NS
+2025-10-15 09:43:38,204 - INFO - Successfully saved NATIONALUM.NS (STOCK) data to database
+2025-10-15 09:43:38,471 - INFO - Successfully fetched data for NAUKRI.NS
+2025-10-15 09:43:38,497 - INFO - Successfully saved NAUKRI.NS (STOCK) data to database
+2025-10-15 09:43:38,748 - INFO - Successfully fetched data for NAVA.NS
+2025-10-15 09:43:39,050 - INFO - Successfully saved NAVA.NS (STOCK) data to database
+2025-10-15 09:43:39,251 - INFO - Successfully fetched data for NAVINFLUOR.NS
+2025-10-15 09:43:39,278 - INFO - Successfully saved NAVINFLUOR.NS (STOCK) data to database
+2025-10-15 09:43:39,463 - INFO - Successfully fetched data for NBCC.NS
+2025-10-15 09:43:39,482 - INFO - Successfully saved NBCC.NS (STOCK) data to database
+2025-10-15 09:43:39,709 - INFO - Successfully fetched data for NCC.NS
+2025-10-15 09:43:39,734 - INFO - Successfully saved NCC.NS (STOCK) data to database
+2025-10-15 09:43:39,954 - INFO - Successfully fetched data for NESTLEIND.NS
+2025-10-15 09:43:39,972 - INFO - Successfully saved NESTLEIND.NS (STOCK) data to database
+2025-10-15 09:43:40,145 - INFO - Successfully fetched data for NETWEB.NS
+2025-10-15 09:43:40,157 - INFO - Successfully saved NETWEB.NS (STOCK) data to database
+2025-10-15 09:43:40,320 - INFO - Successfully fetched data for NETWORK18.NS
+2025-10-15 09:43:40,336 - INFO - Successfully saved NETWORK18.NS (STOCK) data to database
+2025-10-15 09:43:40,555 - INFO - Successfully fetched data for NEULANDLAB.NS
+2025-10-15 09:43:40,573 - INFO - Successfully saved NEULANDLAB.NS (STOCK) data to database
+2025-10-15 09:43:40,761 - INFO - Successfully fetched data for NEWGEN.NS
+2025-10-15 09:43:40,783 - INFO - Successfully saved NEWGEN.NS (STOCK) data to database
+2025-10-15 09:43:40,958 - INFO - Successfully fetched data for NH.NS
+2025-10-15 09:43:40,977 - INFO - Successfully saved NH.NS (STOCK) data to database
+2025-10-15 09:43:41,162 - INFO - Successfully fetched data for NHPC.NS
+2025-10-15 09:43:41,182 - INFO - Successfully saved NHPC.NS (STOCK) data to database
+2025-10-15 09:43:41,346 - INFO - Successfully fetched data for NIACL.NS
+2025-10-15 09:43:41,365 - INFO - Successfully saved NIACL.NS (STOCK) data to database
+2025-10-15 09:43:41,553 - INFO - Successfully fetched data for NIVABUPA.NS
+2025-10-15 09:43:41,634 - INFO - Successfully saved NIVABUPA.NS (STOCK) data to database
+2025-10-15 09:43:41,846 - INFO - Successfully fetched data for NLCINDIA.NS
+2025-10-15 09:43:41,868 - INFO - Successfully saved NLCINDIA.NS (STOCK) data to database
+2025-10-15 09:43:42,056 - INFO - Successfully fetched data for NMDC.NS
+2025-10-15 09:43:42,074 - INFO - Successfully saved NMDC.NS (STOCK) data to database
+2025-10-15 09:43:42,293 - INFO - Successfully fetched data for NSLNISP.NS
+2025-10-15 09:43:42,330 - INFO - Successfully saved NSLNISP.NS (STOCK) data to database
+2025-10-15 09:43:42,654 - INFO - Successfully fetched data for NTPC.NS
+2025-10-15 09:43:42,691 - INFO - Successfully saved NTPC.NS (STOCK) data to database
+2025-10-15 09:43:42,974 - INFO - Successfully fetched data for NTPCGREEN.NS
+2025-10-15 09:43:43,047 - INFO - Successfully saved NTPCGREEN.NS (STOCK) data to database
+2025-10-15 09:43:43,277 - INFO - Successfully fetched data for NUVAMA.NS
+2025-10-15 09:43:43,314 - INFO - Successfully saved NUVAMA.NS (STOCK) data to database
+2025-10-15 09:43:43,499 - INFO - Successfully fetched data for NYKAA.NS
+2025-10-15 09:43:43,527 - INFO - Successfully saved NYKAA.NS (STOCK) data to database
+2025-10-15 09:43:43,728 - INFO - Successfully fetched data for OBEROIRLTY.NS
+2025-10-15 09:43:43,750 - INFO - Successfully saved OBEROIRLTY.NS (STOCK) data to database
+2025-10-15 09:43:43,947 - INFO - Successfully fetched data for OFSS.NS
+2025-10-15 09:43:43,970 - INFO - Successfully saved OFSS.NS (STOCK) data to database
+2025-10-15 09:43:44,212 - INFO - Successfully fetched data for OIL.NS
+2025-10-15 09:43:44,233 - INFO - Successfully saved OIL.NS (STOCK) data to database
+2025-10-15 09:43:44,405 - INFO - Successfully fetched data for OLAELEC.NS
+2025-10-15 09:43:44,424 - INFO - Successfully saved OLAELEC.NS (STOCK) data to database
+2025-10-15 09:43:44,624 - INFO - Successfully fetched data for OLECTRA.NS
+2025-10-15 09:43:44,653 - INFO - Successfully saved OLECTRA.NS (STOCK) data to database
+2025-10-15 09:43:44,887 - INFO - Successfully fetched data for ONGC.NS
+2025-10-15 09:43:44,909 - INFO - Successfully saved ONGC.NS (STOCK) data to database
+2025-10-15 09:43:45,109 - INFO - Successfully fetched data for PAGEIND.NS
+2025-10-15 09:43:45,127 - INFO - Successfully saved PAGEIND.NS (STOCK) data to database
+2025-10-15 09:43:45,328 - INFO - Successfully fetched data for PATANJALI.NS
+2025-10-15 09:43:45,351 - INFO - Successfully saved PATANJALI.NS (STOCK) data to database
+2025-10-15 09:43:45,540 - INFO - Successfully fetched data for PAYTM.NS
+2025-10-15 09:43:45,561 - INFO - Successfully saved PAYTM.NS (STOCK) data to database
+2025-10-15 09:43:45,747 - INFO - Successfully fetched data for PCBL.NS
+2025-10-15 09:43:45,765 - INFO - Successfully saved PCBL.NS (STOCK) data to database
+2025-10-15 09:43:46,014 - INFO - Successfully fetched data for PEL.NS
+2025-10-15 09:43:46,035 - INFO - Successfully saved PEL.NS (STOCK) data to database
+2025-10-15 09:43:46,258 - INFO - Successfully fetched data for PERSISTENT.NS
+2025-10-15 09:43:46,288 - INFO - Successfully saved PERSISTENT.NS (STOCK) data to database
+2025-10-15 09:43:46,482 - INFO - Successfully fetched data for PETRONET.NS
+2025-10-15 09:43:46,504 - INFO - Successfully saved PETRONET.NS (STOCK) data to database
+2025-10-15 09:43:46,727 - INFO - Successfully fetched data for PFC.NS
+2025-10-15 09:43:46,753 - INFO - Successfully saved PFC.NS (STOCK) data to database
+2025-10-15 09:43:46,951 - INFO - Successfully fetched data for PFIZER.NS
+2025-10-15 09:43:46,973 - INFO - Successfully saved PFIZER.NS (STOCK) data to database
+2025-10-15 09:43:47,309 - INFO - Successfully fetched data for PGEL.NS
+2025-10-15 09:43:47,378 - INFO - Successfully saved PGEL.NS (STOCK) data to database
+2025-10-15 09:43:47,562 - INFO - Successfully fetched data for PHOENIXLTD.NS
+2025-10-15 09:43:47,584 - INFO - Successfully saved PHOENIXLTD.NS (STOCK) data to database
+2025-10-15 09:43:47,805 - INFO - Successfully fetched data for PIDILITIND.NS
+2025-10-15 09:43:47,822 - INFO - Successfully saved PIDILITIND.NS (STOCK) data to database
+2025-10-15 09:43:48,024 - INFO - Successfully fetched data for PIIND.NS
+2025-10-15 09:43:48,041 - INFO - Successfully saved PIIND.NS (STOCK) data to database
+2025-10-15 09:43:48,235 - INFO - Successfully fetched data for PNB.NS
+2025-10-15 09:43:48,259 - INFO - Successfully saved PNB.NS (STOCK) data to database
+2025-10-15 09:43:48,418 - INFO - Successfully fetched data for PNBHOUSING.NS
+2025-10-15 09:43:48,434 - INFO - Successfully saved PNBHOUSING.NS (STOCK) data to database
+2025-10-15 09:43:48,599 - INFO - Successfully fetched data for PNCINFRA.NS
+2025-10-15 09:43:48,616 - INFO - Successfully saved PNCINFRA.NS (STOCK) data to database
+2025-10-15 09:43:48,870 - INFO - Successfully fetched data for POLICYBZR.NS
+2025-10-15 09:43:48,890 - INFO - Successfully saved POLICYBZR.NS (STOCK) data to database
+2025-10-15 09:43:49,064 - INFO - Successfully fetched data for POLYCAB.NS
+2025-10-15 09:43:49,086 - INFO - Successfully saved POLYCAB.NS (STOCK) data to database
+2025-10-15 09:43:49,273 - INFO - Successfully fetched data for POLYMED.NS
+2025-10-15 09:43:49,292 - INFO - Successfully saved POLYMED.NS (STOCK) data to database
+2025-10-15 09:43:49,518 - INFO - Successfully fetched data for POONAWALLA.NS
+2025-10-15 09:43:49,540 - INFO - Successfully saved POONAWALLA.NS (STOCK) data to database
+2025-10-15 09:43:49,751 - INFO - Successfully fetched data for POWERGRID.NS
+2025-10-15 09:43:49,780 - INFO - Successfully saved POWERGRID.NS (STOCK) data to database
+2025-10-15 09:43:49,965 - INFO - Successfully fetched data for POWERINDIA.NS
+2025-10-15 09:43:49,987 - INFO - Successfully saved POWERINDIA.NS (STOCK) data to database
+2025-10-15 09:43:50,164 - INFO - Successfully fetched data for PPLPHARMA.NS
+2025-10-15 09:43:50,185 - INFO - Successfully saved PPLPHARMA.NS (STOCK) data to database
+2025-10-15 09:43:50,388 - INFO - Successfully fetched data for PRAJIND.NS
+2025-10-15 09:43:50,410 - INFO - Successfully saved PRAJIND.NS (STOCK) data to database
+2025-10-15 09:43:50,582 - INFO - Successfully fetched data for PREMIERENE.NS
+2025-10-15 09:43:50,604 - INFO - Successfully saved PREMIERENE.NS (STOCK) data to database
+2025-10-15 09:43:50,787 - INFO - Successfully fetched data for PRESTIGE.NS
+2025-10-15 09:43:50,806 - INFO - Successfully saved PRESTIGE.NS (STOCK) data to database
+2025-10-15 09:43:51,051 - INFO - Successfully fetched data for PTCIL.NS
+2025-10-15 09:43:51,071 - INFO - Successfully saved PTCIL.NS (STOCK) data to database
+2025-10-15 09:43:51,247 - INFO - Successfully fetched data for PVRINOX.NS
+2025-10-15 09:43:51,267 - INFO - Successfully saved PVRINOX.NS (STOCK) data to database
+2025-10-15 09:43:51,550 - INFO - Successfully fetched data for RADICO.NS
+2025-10-15 09:43:51,573 - INFO - Successfully saved RADICO.NS (STOCK) data to database
+2025-10-15 09:43:51,745 - INFO - Successfully fetched data for RAILTEL.NS
+2025-10-15 09:43:51,786 - INFO - Successfully saved RAILTEL.NS (STOCK) data to database
+2025-10-15 09:43:51,954 - INFO - Successfully fetched data for RAINBOW.NS
+2025-10-15 09:43:51,977 - INFO - Successfully saved RAINBOW.NS (STOCK) data to database
+2025-10-15 09:43:52,185 - INFO - Successfully fetched data for RAMCOCEM.NS
+2025-10-15 09:43:52,237 - INFO - Successfully saved RAMCOCEM.NS (STOCK) data to database
+2025-10-15 09:43:52,483 - INFO - Successfully fetched data for RAYMOND.NS
+2025-10-15 09:43:52,651 - INFO - Successfully saved RAYMOND.NS (STOCK) data to database
+2025-10-15 09:43:52,841 - INFO - Successfully fetched data for RAYMONDLSL.NS
+2025-10-15 09:43:52,861 - INFO - Successfully saved RAYMONDLSL.NS (STOCK) data to database
+2025-10-15 09:43:53,057 - INFO - Successfully fetched data for RBLBANK.NS
+2025-10-15 09:43:53,083 - INFO - Successfully saved RBLBANK.NS (STOCK) data to database
+2025-10-15 09:43:53,309 - INFO - Successfully fetched data for RCF.NS
+2025-10-15 09:43:53,329 - INFO - Successfully saved RCF.NS (STOCK) data to database
+2025-10-15 09:43:53,566 - INFO - Successfully fetched data for RECLTD.NS
+2025-10-15 09:43:53,592 - INFO - Successfully saved RECLTD.NS (STOCK) data to database
+2025-10-15 09:43:53,791 - INFO - Successfully fetched data for REDINGTON.NS
+2025-10-15 09:43:53,812 - INFO - Successfully saved REDINGTON.NS (STOCK) data to database
+2025-10-15 09:43:54,131 - INFO - Successfully fetched data for RELIANCE.NS
+2025-10-15 09:43:54,155 - INFO - Successfully saved RELIANCE.NS (STOCK) data to database
+2025-10-15 09:43:54,415 - INFO - Successfully fetched data for RENUKA.NS
+2025-10-15 09:43:54,438 - INFO - Successfully saved RENUKA.NS (STOCK) data to database
+2025-10-15 09:43:54,705 - INFO - Successfully fetched data for RHIM.NS
+2025-10-15 09:43:54,726 - INFO - Successfully saved RHIM.NS (STOCK) data to database
+2025-10-15 09:43:54,907 - INFO - Successfully fetched data for RITES.NS
+2025-10-15 09:43:54,927 - INFO - Successfully saved RITES.NS (STOCK) data to database
+2025-10-15 09:43:55,134 - INFO - Successfully fetched data for RKFORGE.NS
+2025-10-15 09:43:55,164 - INFO - Successfully saved RKFORGE.NS (STOCK) data to database
+2025-10-15 09:43:55,365 - INFO - Successfully fetched data for ROUTE.NS
+2025-10-15 09:43:55,388 - INFO - Successfully saved ROUTE.NS (STOCK) data to database
+2025-10-15 09:43:55,577 - INFO - Successfully fetched data for RPOWER.NS
+2025-10-15 09:43:55,593 - INFO - Successfully saved RPOWER.NS (STOCK) data to database
+2025-10-15 09:43:55,896 - INFO - Successfully fetched data for RRKABEL.NS
+2025-10-15 09:43:55,919 - INFO - Successfully saved RRKABEL.NS (STOCK) data to database
+2025-10-15 09:43:56,104 - INFO - Successfully fetched data for RTNINDIA.NS
+2025-10-15 09:43:56,128 - INFO - Successfully saved RTNINDIA.NS (STOCK) data to database
+2025-10-15 09:43:56,321 - INFO - Successfully fetched data for RVNL.NS
+2025-10-15 09:43:56,350 - INFO - Successfully saved RVNL.NS (STOCK) data to database
+2025-10-15 09:43:56,555 - INFO - Successfully fetched data for SAGILITY.NS
+2025-10-15 09:43:56,587 - INFO - Successfully saved SAGILITY.NS (STOCK) data to database
+2025-10-15 09:43:56,798 - INFO - Successfully fetched data for SAIL.NS
+2025-10-15 09:43:56,825 - INFO - Successfully saved SAIL.NS (STOCK) data to database
+2025-10-15 09:43:57,059 - INFO - Successfully fetched data for SAILIFE.NS
+2025-10-15 09:43:57,097 - INFO - Successfully saved SAILIFE.NS (STOCK) data to database
+2025-10-15 09:43:57,339 - INFO - Successfully fetched data for SAMMAANCAP.NS
+2025-10-15 09:43:57,454 - INFO - Successfully saved SAMMAANCAP.NS (STOCK) data to database
+2025-10-15 09:43:57,667 - INFO - Successfully fetched data for SAPPHIRE.NS
+2025-10-15 09:43:57,705 - INFO - Successfully saved SAPPHIRE.NS (STOCK) data to database
+2025-10-15 09:43:57,979 - INFO - Successfully fetched data for SARDAEN.NS
+2025-10-15 09:43:58,012 - INFO - Successfully saved SARDAEN.NS (STOCK) data to database
+2025-10-15 09:43:58,224 - INFO - Successfully fetched data for SAREGAMA.NS
+2025-10-15 09:43:58,246 - INFO - Successfully saved SAREGAMA.NS (STOCK) data to database
+2025-10-15 09:43:58,436 - INFO - Successfully fetched data for SBFC.NS
+2025-10-15 09:43:58,457 - INFO - Successfully saved SBFC.NS (STOCK) data to database
+2025-10-15 09:43:58,633 - INFO - Successfully fetched data for SBICARD.NS
+2025-10-15 09:43:58,654 - INFO - Successfully saved SBICARD.NS (STOCK) data to database
+2025-10-15 09:43:58,984 - INFO - Successfully fetched data for SBILIFE.NS
+2025-10-15 09:43:59,036 - INFO - Successfully saved SBILIFE.NS (STOCK) data to database
+2025-10-15 09:43:59,479 - INFO - Successfully fetched data for SBIN.NS
+2025-10-15 09:43:59,518 - INFO - Successfully saved SBIN.NS (STOCK) data to database
+2025-10-15 09:43:59,737 - INFO - Successfully fetched data for SCHAEFFLER.NS
+2025-10-15 09:43:59,797 - INFO - Successfully saved SCHAEFFLER.NS (STOCK) data to database
+2025-10-15 09:44:00,012 - INFO - Successfully fetched data for SCHNEIDER.NS
+2025-10-15 09:44:00,059 - INFO - Successfully saved SCHNEIDER.NS (STOCK) data to database
+2025-10-15 09:44:00,330 - INFO - Successfully fetched data for SCI.NS
+2025-10-15 09:44:00,389 - INFO - Successfully saved SCI.NS (STOCK) data to database
+2025-10-15 09:44:01,219 - INFO - Successfully fetched data for SHREECEM.NS
+2025-10-15 09:44:01,248 - INFO - Successfully saved SHREECEM.NS (STOCK) data to database
+2025-10-15 09:44:01,610 - INFO - Successfully fetched data for SHRIRAMFIN.NS
+2025-10-15 09:44:01,645 - INFO - Successfully saved SHRIRAMFIN.NS (STOCK) data to database
+2025-10-15 09:44:01,860 - INFO - Successfully fetched data for SHYAMMETL.NS
+2025-10-15 09:44:01,891 - INFO - Successfully saved SHYAMMETL.NS (STOCK) data to database
+2025-10-15 09:44:02,099 - INFO - Successfully fetched data for SIEMENS.NS
+2025-10-15 09:44:02,127 - INFO - Successfully saved SIEMENS.NS (STOCK) data to database
+2025-10-15 09:44:02,334 - INFO - Successfully fetched data for SIGNATURE.NS
+2025-10-15 09:44:02,362 - INFO - Successfully saved SIGNATURE.NS (STOCK) data to database
+2025-10-15 09:44:02,557 - INFO - Successfully fetched data for SJVN.NS
+2025-10-15 09:44:02,594 - INFO - Successfully saved SJVN.NS (STOCK) data to database
+2025-10-15 09:44:02,808 - INFO - Successfully fetched data for SKFINDIA.NS
+2025-10-15 09:44:02,844 - INFO - Successfully saved SKFINDIA.NS (STOCK) data to database
+2025-10-15 09:44:03,277 - INFO - Successfully fetched data for SOBHA.NS
+2025-10-15 09:44:03,521 - INFO - Successfully saved SOBHA.NS (STOCK) data to database
+2025-10-15 09:44:04,171 - INFO - Successfully fetched data for SOLARINDS.NS
+2025-10-15 09:44:04,369 - INFO - Successfully saved SOLARINDS.NS (STOCK) data to database
+2025-10-15 09:44:04,605 - INFO - Successfully fetched data for SONACOMS.NS
+2025-10-15 09:44:04,624 - INFO - Successfully saved SONACOMS.NS (STOCK) data to database
+2025-10-15 09:44:04,833 - INFO - Successfully fetched data for SONATSOFTW.NS
+2025-10-15 09:44:04,848 - INFO - Successfully saved SONATSOFTW.NS (STOCK) data to database
+2025-10-15 09:44:05,039 - INFO - Successfully fetched data for SRF.NS
+2025-10-15 09:44:05,064 - INFO - Successfully saved SRF.NS (STOCK) data to database
+2025-10-15 09:44:05,318 - INFO - Successfully fetched data for STARHEALTH.NS
+2025-10-15 09:44:05,342 - INFO - Successfully saved STARHEALTH.NS (STOCK) data to database
+2025-10-15 09:44:05,531 - INFO - Successfully fetched data for SUMICHEM.NS
+2025-10-15 09:44:05,553 - INFO - Successfully saved SUMICHEM.NS (STOCK) data to database
+2025-10-15 09:44:05,749 - INFO - Successfully fetched data for SUNDARMFIN.NS
+2025-10-15 09:44:05,766 - INFO - Successfully saved SUNDARMFIN.NS (STOCK) data to database
+2025-10-15 09:44:05,964 - INFO - Successfully fetched data for SUNDRMFAST.NS
+2025-10-15 09:44:05,982 - INFO - Successfully saved SUNDRMFAST.NS (STOCK) data to database
+2025-10-15 09:44:06,242 - INFO - Successfully fetched data for SUNPHARMA.NS
+2025-10-15 09:44:06,281 - INFO - Successfully saved SUNPHARMA.NS (STOCK) data to database
+2025-10-15 09:44:06,492 - INFO - Successfully fetched data for SUNTV.NS
+2025-10-15 09:44:06,517 - INFO - Successfully saved SUNTV.NS (STOCK) data to database
+2025-10-15 09:44:06,725 - INFO - Successfully fetched data for SUPREMEIND.NS
+2025-10-15 09:44:06,743 - INFO - Successfully saved SUPREMEIND.NS (STOCK) data to database
+2025-10-15 09:44:06,928 - INFO - Successfully fetched data for SUZLON.NS
+2025-10-15 09:44:06,953 - INFO - Successfully saved SUZLON.NS (STOCK) data to database
+2025-10-15 09:44:07,154 - INFO - Successfully fetched data for SWANCORP.NS
+2025-10-15 09:44:07,190 - INFO - Successfully saved SWANCORP.NS (STOCK) data to database
+2025-10-15 09:44:07,369 - INFO - Successfully fetched data for SWIGGY.NS
+2025-10-15 09:44:07,397 - INFO - Successfully saved SWIGGY.NS (STOCK) data to database
+2025-10-15 09:44:07,584 - INFO - Successfully fetched data for SWSOLAR.NS
+2025-10-15 09:44:07,653 - INFO - Successfully saved SWSOLAR.NS (STOCK) data to database
+2025-10-15 09:44:07,869 - INFO - Successfully fetched data for SYNGENE.NS
+2025-10-15 09:44:07,903 - INFO - Successfully saved SYNGENE.NS (STOCK) data to database
+2025-10-15 09:44:08,106 - INFO - Successfully fetched data for SYRMA.NS
+2025-10-15 09:44:08,154 - INFO - Successfully saved SYRMA.NS (STOCK) data to database
+2025-10-15 09:44:08,373 - INFO - Successfully fetched data for TANLA.NS
+2025-10-15 09:44:08,429 - INFO - Successfully saved TANLA.NS (STOCK) data to database
+2025-10-15 09:44:08,600 - INFO - Successfully fetched data for TARIL.NS
+2025-10-15 09:44:08,623 - INFO - Successfully saved TARIL.NS (STOCK) data to database
+2025-10-15 09:44:08,821 - INFO - Successfully fetched data for TATACHEM.NS
+2025-10-15 09:44:08,843 - INFO - Successfully saved TATACHEM.NS (STOCK) data to database
+2025-10-15 09:44:09,079 - INFO - Successfully fetched data for TATACOMM.NS
+2025-10-15 09:44:09,116 - INFO - Successfully saved TATACOMM.NS (STOCK) data to database
+2025-10-15 09:44:09,323 - INFO - Successfully fetched data for TATACONSUM.NS
+2025-10-15 09:44:09,347 - INFO - Successfully saved TATACONSUM.NS (STOCK) data to database
+2025-10-15 09:44:09,547 - INFO - Successfully fetched data for TATAELXSI.NS
+2025-10-15 09:44:09,571 - INFO - Successfully saved TATAELXSI.NS (STOCK) data to database
+2025-10-15 09:44:09,803 - INFO - Successfully fetched data for TATAINVEST.NS
+2025-10-15 09:44:09,820 - INFO - Successfully saved TATAINVEST.NS (STOCK) data to database
+2025-10-15 09:44:10,046 - INFO - Successfully fetched data for TATAMOTORS.NS
+2025-10-15 09:44:10,065 - INFO - Successfully saved TATAMOTORS.NS (STOCK) data to database
+2025-10-15 09:44:10,267 - INFO - Successfully fetched data for TATAPOWER.NS
+2025-10-15 09:44:10,287 - INFO - Successfully saved TATAPOWER.NS (STOCK) data to database
+2025-10-15 09:44:10,502 - INFO - Successfully fetched data for TATASTEEL.NS
+2025-10-15 09:44:10,528 - INFO - Successfully saved TATASTEEL.NS (STOCK) data to database
+2025-10-15 09:44:10,774 - INFO - Successfully fetched data for TATATECH.NS
+2025-10-15 09:44:11,080 - INFO - Successfully saved TATATECH.NS (STOCK) data to database
+2025-10-15 09:44:11,304 - INFO - Successfully fetched data for TBOTEK.NS
+2025-10-15 09:44:11,332 - INFO - Successfully saved TBOTEK.NS (STOCK) data to database
+2025-10-15 09:44:11,584 - INFO - Successfully fetched data for TCS.NS
+2025-10-15 09:44:11,608 - INFO - Successfully saved TCS.NS (STOCK) data to database
+2025-10-15 09:44:11,835 - INFO - Successfully fetched data for TECHM.NS
+2025-10-15 09:44:11,887 - INFO - Successfully saved TECHM.NS (STOCK) data to database
+2025-10-15 09:44:12,118 - INFO - Successfully fetched data for TECHNOE.NS
+2025-10-15 09:44:12,137 - INFO - Successfully saved TECHNOE.NS (STOCK) data to database
+2025-10-15 09:44:12,314 - INFO - Successfully fetched data for TEJASNET.NS
+2025-10-15 09:44:12,335 - INFO - Successfully saved TEJASNET.NS (STOCK) data to database
+2025-10-15 09:44:12,561 - INFO - Successfully fetched data for THERMAX.NS
+2025-10-15 09:44:12,616 - INFO - Successfully saved THERMAX.NS (STOCK) data to database
+2025-10-15 09:44:12,848 - INFO - Successfully fetched data for TIINDIA.NS
+2025-10-15 09:44:12,934 - INFO - Successfully saved TIINDIA.NS (STOCK) data to database
+2025-10-15 09:44:13,146 - INFO - Successfully fetched data for TIMKEN.NS
+2025-10-15 09:44:13,216 - INFO - Successfully saved TIMKEN.NS (STOCK) data to database
+2025-10-15 09:44:13,523 - INFO - Successfully fetched data for TITAGARH.NS
+2025-10-15 09:44:13,548 - INFO - Successfully saved TITAGARH.NS (STOCK) data to database
+2025-10-15 09:44:13,826 - INFO - Successfully fetched data for TITAN.NS
+2025-10-15 09:44:13,850 - INFO - Successfully saved TITAN.NS (STOCK) data to database
+2025-10-15 09:44:14,048 - INFO - Successfully fetched data for TORNTPHARM.NS
+2025-10-15 09:44:14,077 - INFO - Successfully saved TORNTPHARM.NS (STOCK) data to database
+2025-10-15 09:44:14,305 - INFO - Successfully fetched data for TORNTPOWER.NS
+2025-10-15 09:44:14,331 - INFO - Successfully saved TORNTPOWER.NS (STOCK) data to database
+2025-10-15 09:44:14,560 - INFO - Successfully fetched data for TRENT.NS
+2025-10-15 09:44:14,595 - INFO - Successfully saved TRENT.NS (STOCK) data to database
+2025-10-15 09:44:14,826 - INFO - Successfully fetched data for TRIDENT.NS
+2025-10-15 09:44:14,857 - INFO - Successfully saved TRIDENT.NS (STOCK) data to database
+2025-10-15 09:44:15,068 - INFO - Successfully fetched data for TRITURBINE.NS
+2025-10-15 09:44:15,088 - INFO - Successfully saved TRITURBINE.NS (STOCK) data to database
+2025-10-15 09:44:15,278 - INFO - Successfully fetched data for TRIVENI.NS
+2025-10-15 09:44:15,300 - INFO - Successfully saved TRIVENI.NS (STOCK) data to database
+2025-10-15 09:44:15,494 - INFO - Successfully fetched data for TTML.NS
+2025-10-15 09:44:15,516 - INFO - Successfully saved TTML.NS (STOCK) data to database
+2025-10-15 09:44:15,782 - INFO - Successfully fetched data for TVSMOTOR.NS
+2025-10-15 09:44:15,813 - INFO - Successfully saved TVSMOTOR.NS (STOCK) data to database
+2025-10-15 09:44:16,020 - INFO - Successfully fetched data for UBL.NS
+2025-10-15 09:44:16,058 - INFO - Successfully saved UBL.NS (STOCK) data to database
+2025-10-15 09:44:16,307 - INFO - Successfully fetched data for UCOBANK.NS
+2025-10-15 09:44:16,345 - INFO - Successfully saved UCOBANK.NS (STOCK) data to database
+2025-10-15 09:44:16,568 - INFO - Successfully fetched data for ULTRACEMCO.NS
+2025-10-15 09:44:16,591 - INFO - Successfully saved ULTRACEMCO.NS (STOCK) data to database
+2025-10-15 09:44:16,787 - INFO - Successfully fetched data for UNIONBANK.NS
+2025-10-15 09:44:16,809 - INFO - Successfully saved UNIONBANK.NS (STOCK) data to database
+2025-10-15 09:44:16,995 - INFO - Successfully fetched data for UNITDSPR.NS
+2025-10-15 09:44:17,020 - INFO - Successfully saved UNITDSPR.NS (STOCK) data to database
+2025-10-15 09:44:17,307 - INFO - Successfully fetched data for UNOMINDA.NS
+2025-10-15 09:44:17,330 - INFO - Successfully saved UNOMINDA.NS (STOCK) data to database
+2025-10-15 09:44:17,561 - INFO - Successfully fetched data for UPL.NS
+2025-10-15 09:44:17,593 - INFO - Successfully saved UPL.NS (STOCK) data to database
+2025-10-15 09:44:17,819 - INFO - Successfully fetched data for USHAMART.NS
+2025-10-15 09:44:17,849 - INFO - Successfully saved USHAMART.NS (STOCK) data to database
+2025-10-15 09:44:18,102 - INFO - Successfully fetched data for UTIAMC.NS
+2025-10-15 09:44:18,128 - INFO - Successfully saved UTIAMC.NS (STOCK) data to database
+2025-10-15 09:44:18,334 - INFO - Successfully fetched data for VBL.NS
+2025-10-15 09:44:18,363 - INFO - Successfully saved VBL.NS (STOCK) data to database
+2025-10-15 09:44:18,587 - INFO - Successfully fetched data for VEDL.NS
+2025-10-15 09:44:18,606 - INFO - Successfully saved VEDL.NS (STOCK) data to database
+2025-10-15 09:44:18,813 - INFO - Successfully fetched data for VGUARD.NS
+2025-10-15 09:44:18,834 - INFO - Successfully saved VGUARD.NS (STOCK) data to database
+2025-10-15 09:44:19,005 - INFO - Successfully fetched data for VIJAYA.NS
+2025-10-15 09:44:19,026 - INFO - Successfully saved VIJAYA.NS (STOCK) data to database
+2025-10-15 09:44:19,217 - INFO - Successfully fetched data for VMM.NS
+2025-10-15 09:44:19,353 - INFO - Successfully saved VMM.NS (STOCK) data to database
+2025-10-15 09:44:19,597 - INFO - Successfully fetched data for VOLTAS.NS
+2025-10-15 09:44:19,622 - INFO - Successfully saved VOLTAS.NS (STOCK) data to database
+2025-10-15 09:44:19,834 - INFO - Successfully fetched data for VTL.NS
+2025-10-15 09:44:19,868 - INFO - Successfully saved VTL.NS (STOCK) data to database
+2025-10-15 09:44:20,130 - INFO - Successfully fetched data for WAAREEENER.NS
+2025-10-15 09:44:20,162 - INFO - Successfully saved WAAREEENER.NS (STOCK) data to database
+2025-10-15 09:44:20,381 - INFO - Successfully fetched data for WELCORP.NS
+2025-10-15 09:44:20,423 - INFO - Successfully saved WELCORP.NS (STOCK) data to database
+2025-10-15 09:44:20,691 - INFO - Successfully fetched data for WELSPUNLIV.NS
+2025-10-15 09:44:20,712 - INFO - Successfully saved WELSPUNLIV.NS (STOCK) data to database
+2025-10-15 09:44:20,896 - INFO - Successfully fetched data for WESTLIFE.NS
+2025-10-15 09:44:20,933 - INFO - Successfully saved WESTLIFE.NS (STOCK) data to database
+2025-10-15 09:44:21,120 - INFO - Successfully fetched data for WHIRLPOOL.NS
+2025-10-15 09:44:21,141 - INFO - Successfully saved WHIRLPOOL.NS (STOCK) data to database
+2025-10-15 09:44:21,349 - INFO - Successfully fetched data for WIPRO.NS
+2025-10-15 09:44:21,456 - INFO - Successfully saved WIPRO.NS (STOCK) data to database
+2025-10-15 09:44:21,682 - INFO - Successfully fetched data for WOCKPHARMA.NS
+2025-10-15 09:44:21,744 - INFO - Successfully saved WOCKPHARMA.NS (STOCK) data to database
+2025-10-15 09:44:21,932 - INFO - Successfully fetched data for YESBANK.NS
+2025-10-15 09:44:21,957 - INFO - Successfully saved YESBANK.NS (STOCK) data to database
+2025-10-15 09:44:22,195 - INFO - Successfully fetched data for ZEEL.NS
+2025-10-15 09:44:22,238 - INFO - Successfully saved ZEEL.NS (STOCK) data to database
+2025-10-15 09:44:22,514 - INFO - Successfully fetched data for ZENSARTECH.NS
+2025-10-15 09:44:22,618 - INFO - Successfully saved ZENSARTECH.NS (STOCK) data to database
+2025-10-15 09:44:22,892 - INFO - Successfully fetched data for ZENTEC.NS
+2025-10-15 09:44:22,930 - INFO - Successfully saved ZENTEC.NS (STOCK) data to database
+2025-10-15 09:44:23,203 - INFO - Successfully fetched data for ZFCVINDIA.NS
+2025-10-15 09:44:23,365 - INFO - Successfully saved ZFCVINDIA.NS (STOCK) data to database
+2025-10-15 09:44:24,814 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: ZYDUSLIF.NS"}}}
+2025-10-15 09:44:25,677 - ERROR - $ZYDUSLIF.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+2025-10-15 09:44:25,680 - WARNING - No data returned for ZYDUSLIF.NS on attempt 1
+2025-10-15 09:44:27,333 - ERROR - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: ZYDUSLIF.NS"}}}
+2025-10-15 09:44:28,063 - ERROR - $ZYDUSLIF.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+2025-10-15 09:44:28,067 - WARNING - No data returned for ZYDUSLIF.NS on attempt 2
+2025-10-15 09:44:31,010 - ERROR - $ZYDUSLIF.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+2025-10-15 09:44:31,012 - WARNING - No data returned for ZYDUSLIF.NS on attempt 3
+2025-10-15 09:44:31,250 - INFO - Successfully fetched data for ^NSEI
+2025-10-15 09:44:31,279 - INFO - Successfully saved ^NSEI (INDEX) data to database
+2025-10-16 00:38:35,253 - ERROR - Error creating live signals tables: no such column: user_id
+2025-10-16 00:38:35,254 - ERROR - Failed to initialize ETF signal generator: no such column: user_id
+2025-10-16 00:38:35,282 - INFO - Live stock signals database tables created/verified successfully
+2025-10-16 00:38:35,284 - INFO - Stock signal generator initialized successfully
+2025-10-16 00:38:35,286 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-16 00:38:35,299 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-16 00:38:35,301 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-16 00:38:35,303 - INFO - Scheduler configured:
+2025-10-16 00:38:35,303 - INFO -   - Daily EOD fetch: 4:00 PM IST (ETFs + Stocks)
+2025-10-16 00:38:35,304 - INFO -   - Friday ETF signals: 4:30 PM IST
+2025-10-16 00:38:35,304 - INFO -   - Friday Stock signals: 4:35 PM IST
+2025-10-16 00:38:35,314 - INFO - === Scheduled ETF signal generation started (Friday) ===
+2025-10-16 00:38:35,316 - ERROR - ETF signal generator not available
+2025-10-16 00:40:01,728 - INFO - Live signals database tables created/verified successfully
+2025-10-16 00:40:01,730 - INFO - ETF signal generator initialized successfully
+2025-10-16 00:40:01,759 - INFO - Live stock signals database tables created/verified successfully
+2025-10-16 00:40:01,763 - INFO - Stock signal generator initialized successfully
+2025-10-16 00:40:01,765 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-16 00:40:01,766 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-16 00:40:01,766 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-16 00:40:01,767 - INFO - Scheduler configured:
+2025-10-16 00:40:01,769 - INFO -   - Daily EOD fetch: 4:00 PM IST (ETFs + Stocks)
+2025-10-16 00:40:01,770 - INFO -   - Friday ETF signals: 4:30 PM IST
+2025-10-16 00:40:01,770 - INFO -   - Friday Stock signals: 4:35 PM IST
+2025-10-16 00:40:01,772 - INFO - === Scheduled ETF signal generation started (Friday) ===
+2025-10-16 00:40:01,776 - INFO - Found 4 active deployment(s)
+2025-10-16 00:40:01,777 - INFO - 
+============================================================
+2025-10-16 00:40:01,778 - INFO - Processing deployment: run_etfs_rotation_strategy_-_7_etfs_2025-10-15_1760551664383
+2025-10-16 00:40:01,779 - INFO - User: mohitsharma7258@gmail.com, ETF Count: 7
+2025-10-16 00:40:01,780 - INFO - ============================================================
+2025-10-16 00:40:01,781 - INFO - Starting weekly signal generation...
+2025-10-16 00:40:01,782 - INFO - Using run_id: run_etfs_rotation_strategy_-_7_etfs_2025-10-15_1760551664383
+2025-10-16 00:40:01,785 - INFO - Found 7 ETF symbols for run_id run_etfs_rotation_strategy_-_7_etfs_2025-10-15_1760551664383: ['BANKBEES', 'MODEFENCE', 'GOLDBEES', 'JUNIORBEES', 'ITBEES', 'CPSEETF', 'PSUBNKBEES']
+2025-10-16 00:40:01,786 - INFO - Using 7 ETFs from deployment: ['BANKBEES', 'MODEFENCE', 'GOLDBEES', 'JUNIORBEES', 'ITBEES', 'CPSEETF', 'PSUBNKBEES']
+2025-10-16 00:40:01,920 - INFO - Found 5 ETF symbols in database: ['BANKBEES', 'GOLDBEES', 'JUNIORBEES', 'ITBEES', 'PSUBNKBEES']
+2025-10-16 00:40:01,920 - INFO - Using last Friday's date: 2025-10-10 for signal generation
+2025-10-16 00:40:01,921 - INFO - Using test date: 2025-10-10 (Friday) for signal generation
+2025-10-16 00:40:02,032 - INFO - Loaded data for 5 ETFs from 2024-09-05 to 2025-10-10
+2025-10-16 00:40:02,033 - INFO - Processing 5 symbols: ['BANKBEES', 'GOLDBEES', 'JUNIORBEES', 'ITBEES', 'PSUBNKBEES']...
+2025-10-16 00:40:02,052 - INFO - Calculated metrics for 5 ETFs
+2025-10-16 00:40:02,074 - INFO - Generated 4 signals: 1 BUY, 3 SELL
+2025-10-16 00:40:02,103 - INFO - Saved 4 signals to database with run_id: run_etfs_rotation_strategy_-_7_etfs_2025-10-15_1760551664383
+2025-10-16 00:40:02,104 - INFO - Signal generation completed successfully in 0.32s
+2025-10-16 00:40:02,105 - INFO - Generated 1 BUY and 3 SELL signals
+2025-10-16 00:40:02,106 - INFO - Live market engine logging initialized
+2025-10-16 00:40:02,121 - INFO - Monitoring tables created successfully
+2025-10-16 00:40:02,122 - INFO - Signal generation completed - Run ID: run_etfs_rotation_strategy_-_7_etfs_2025-10-15_1760551664383, Signals: 4 (1 BUY, 3 SELL), Duration: 0.32s
+2025-10-16 00:40:02,202 - INFO - signal_generation completed in 0.323s
+2025-10-16 00:40:02,281 - INFO - 
+============================================================
+2025-10-16 00:40:02,282 - INFO - Processing deployment: run_etf_strategy_2025-10-15_1760548591424
+2025-10-16 00:40:02,282 - INFO - User: mohitsharma7258@gmail.com, ETF Count: 7
+2025-10-16 00:40:02,283 - INFO - ============================================================
+2025-10-16 00:40:02,284 - INFO - Starting weekly signal generation...
+2025-10-16 00:40:02,284 - INFO - Using run_id: run_etf_strategy_2025-10-15_1760548591424
+2025-10-16 00:40:02,307 - INFO - Found 7 ETF symbols for run_id run_etf_strategy_2025-10-15_1760548591424: ['BANKBEES', 'MODEFENCE', 'GOLDBEES', 'JUNIORBEES', 'ITBEES', 'CPSEETF', 'PSUBNKBEES']
+2025-10-16 00:40:02,308 - INFO - Using 7 ETFs from deployment: ['BANKBEES', 'MODEFENCE', 'GOLDBEES', 'JUNIORBEES', 'ITBEES', 'CPSEETF', 'PSUBNKBEES']
+2025-10-16 00:40:02,384 - INFO - Found 5 ETF symbols in database: ['BANKBEES', 'GOLDBEES', 'JUNIORBEES', 'ITBEES', 'PSUBNKBEES']
+2025-10-16 00:40:02,385 - INFO - Using last Friday's date: 2025-10-10 for signal generation
+2025-10-16 00:40:02,385 - INFO - Using test date: 2025-10-10 (Friday) for signal generation
+2025-10-16 00:40:02,478 - INFO - Loaded data for 5 ETFs from 2024-09-05 to 2025-10-10
+2025-10-16 00:40:02,478 - INFO - Processing 5 symbols: ['BANKBEES', 'GOLDBEES', 'JUNIORBEES', 'ITBEES', 'PSUBNKBEES']...
+2025-10-16 00:40:02,494 - INFO - Calculated metrics for 5 ETFs
+2025-10-16 00:40:02,531 - INFO - Generated 4 signals: 1 BUY, 3 SELL
+2025-10-16 00:40:02,542 - INFO - Saved 4 signals to database with run_id: run_etf_strategy_2025-10-15_1760548591424
+2025-10-16 00:40:02,543 - INFO - Signal generation completed successfully in 0.26s
+2025-10-16 00:40:02,543 - INFO - Generated 1 BUY and 3 SELL signals
+2025-10-16 00:40:02,544 - INFO - Signal generation completed - Run ID: run_etf_strategy_2025-10-15_1760548591424, Signals: 4 (1 BUY, 3 SELL), Duration: 0.26s
+2025-10-16 00:40:02,655 - INFO - signal_generation completed in 0.259s
+2025-10-16 00:40:02,781 - INFO - 
+============================================================
+2025-10-16 00:40:02,785 - INFO - Processing deployment: run_etf_strategy_20251015_1760544961473
+2025-10-16 00:40:02,786 - INFO - User: mohitsharma7258@gmail.com, ETF Count: 4
+2025-10-16 00:40:02,788 - INFO - ============================================================
+2025-10-16 00:40:02,788 - INFO - Starting weekly signal generation...
+2025-10-16 00:40:02,789 - INFO - Using run_id: run_etf_strategy_20251015_1760544961473
+2025-10-16 00:40:02,851 - INFO - Found 4 ETF symbols for run_id run_etf_strategy_20251015_1760544961473: ['NIFTYBEES', 'JUNIORBEES', 'BANKBEES', 'GOLDBEES']
+2025-10-16 00:40:02,852 - INFO - Using 4 ETFs from deployment: ['NIFTYBEES', 'JUNIORBEES', 'BANKBEES', 'GOLDBEES']
+2025-10-16 00:40:02,954 - INFO - Found 4 ETF symbols in database: ['NIFTYBEES', 'JUNIORBEES', 'BANKBEES', 'GOLDBEES']
+2025-10-16 00:40:02,955 - INFO - Using last Friday's date: 2025-10-10 for signal generation
+2025-10-16 00:40:02,958 - INFO - Using test date: 2025-10-10 (Friday) for signal generation
+2025-10-16 00:40:03,046 - INFO - Loaded data for 5 ETFs from 2024-09-05 to 2025-10-10
+2025-10-16 00:40:03,047 - INFO - Processing 4 symbols: ['NIFTYBEES', 'JUNIORBEES', 'BANKBEES', 'GOLDBEES']...
+2025-10-16 00:40:03,065 - INFO - Calculated metrics for 4 ETFs
+2025-10-16 00:40:03,087 - INFO - Generated 4 signals: 1 BUY, 3 SELL
+2025-10-16 00:40:03,110 - INFO - Saved 4 signals to database with run_id: run_etf_strategy_20251015_1760544961473
+2025-10-16 00:40:03,112 - INFO - Signal generation completed successfully in 0.32s
+2025-10-16 00:40:03,117 - INFO - Generated 1 BUY and 3 SELL signals
+2025-10-16 00:40:03,117 - INFO - Signal generation completed - Run ID: run_etf_strategy_20251015_1760544961473, Signals: 4 (1 BUY, 3 SELL), Duration: 0.32s
+2025-10-16 00:40:03,215 - INFO - signal_generation completed in 0.323s
+2025-10-16 00:40:03,321 - INFO - 
+============================================================
+2025-10-16 00:40:03,324 - INFO - Processing deployment: run_etf_strategy_2025-10-15_1760544030144
+2025-10-16 00:40:03,327 - INFO - User: mohitsharma7258@gmail.com, ETF Count: 4
+2025-10-16 00:40:03,328 - INFO - ============================================================
+2025-10-16 00:40:03,328 - INFO - Starting weekly signal generation...
+2025-10-16 00:40:03,329 - INFO - Using run_id: run_etf_strategy_2025-10-15_1760544030144
+2025-10-16 00:40:03,362 - INFO - Found 4 ETF symbols for run_id run_etf_strategy_2025-10-15_1760544030144: ['NIFTYBEES', 'JUNIORBEES', 'BANKBEES', 'GOLDBEES']
+2025-10-16 00:40:03,363 - INFO - Using 4 ETFs from deployment: ['NIFTYBEES', 'JUNIORBEES', 'BANKBEES', 'GOLDBEES']
+2025-10-16 00:40:03,522 - INFO - Found 4 ETF symbols in database: ['NIFTYBEES', 'JUNIORBEES', 'BANKBEES', 'GOLDBEES']
+2025-10-16 00:40:03,524 - INFO - Using last Friday's date: 2025-10-10 for signal generation
+2025-10-16 00:40:03,525 - INFO - Using test date: 2025-10-10 (Friday) for signal generation
+2025-10-16 00:40:03,609 - INFO - Loaded data for 5 ETFs from 2024-09-05 to 2025-10-10
+2025-10-16 00:40:03,615 - INFO - Processing 4 symbols: ['NIFTYBEES', 'JUNIORBEES', 'BANKBEES', 'GOLDBEES']...
+2025-10-16 00:40:03,635 - INFO - Calculated metrics for 4 ETFs
+2025-10-16 00:40:03,667 - INFO - Generated 4 signals: 1 BUY, 3 SELL
+2025-10-16 00:40:03,692 - INFO - Saved 4 signals to database with run_id: run_etf_strategy_2025-10-15_1760544030144
+2025-10-16 00:40:03,692 - INFO - Signal generation completed successfully in 0.36s
+2025-10-16 00:40:03,693 - INFO - Generated 1 BUY and 3 SELL signals
+2025-10-16 00:40:03,693 - INFO - Signal generation completed - Run ID: run_etf_strategy_2025-10-15_1760544030144, Signals: 4 (1 BUY, 3 SELL), Duration: 0.36s
+2025-10-16 00:40:03,790 - INFO - signal_generation completed in 0.364s
+2025-10-16 00:40:03,858 - INFO - 
+============================================================
+2025-10-16 00:40:03,859 - INFO - ETF Signal Generation Summary:
+2025-10-16 00:40:03,859 - INFO -   Total Deployments: 4
+2025-10-16 00:40:03,860 - INFO -   Successful: 4
+2025-10-16 00:40:03,860 - INFO -   Failed: 0
+2025-10-16 00:40:03,860 - INFO -   Total Signals Generated: 16
+2025-10-16 00:40:03,861 - INFO - ============================================================
+

@@ -1,0 +1,750 @@
+2025-09-22 14:35:52,523 - INFO - === Starting daily Indian market data fetch (ETFs + Stocks) ===
+2025-09-22 14:35:52,537 - INFO - Market is still open. Waiting for market close to fetch EOD data.
+2025-09-22 14:35:52,538 - INFO - All market data fetches completed successfully
+2025-09-22 17:46:55,299 - INFO - === Starting daily Indian market data fetch (ETFs + Stocks) ===
+2025-09-22 17:46:55,320 - INFO - Added asset_type column to existing table
+2025-09-22 17:46:55,322 - INFO - Database table created/verified successfully
+2025-09-22 17:46:55,324 - INFO - Fetching data for BANKBEES.NS (ETF)...
+2025-09-22 17:46:57,681 - INFO - Successfully fetched data for BANKBEES.NS
+2025-09-22 17:46:57,769 - ERROR - Database error saving BANKBEES.NS: table etf_unified has no column named adj_close
+2025-09-22 17:46:57,802 - ERROR - Failed to save BANKBEES.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:46:58,882 - INFO - Fetching data for GOLDBEES.NS (ETF)...
+2025-09-22 17:46:59,376 - INFO - Successfully fetched data for GOLDBEES.NS
+2025-09-22 17:46:59,379 - ERROR - Database error saving GOLDBEES.NS: table etf_unified has no column named adj_close
+2025-09-22 17:46:59,380 - ERROR - Failed to save GOLDBEES.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:00,380 - INFO - Fetching data for HNGSNGBEES.NS (ETF)...
+2025-09-22 17:47:00,921 - INFO - Successfully fetched data for HNGSNGBEES.NS
+2025-09-22 17:47:00,925 - ERROR - Database error saving HNGSNGBEES.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:00,926 - ERROR - Failed to save HNGSNGBEES.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:01,927 - INFO - Fetching data for INFRABEES.NS (ETF)...
+2025-09-22 17:47:02,262 - INFO - Successfully fetched data for INFRABEES.NS
+2025-09-22 17:47:02,264 - ERROR - Database error saving INFRABEES.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:02,266 - ERROR - Failed to save INFRABEES.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:03,269 - INFO - Fetching data for ITBEES.NS (ETF)...
+2025-09-22 17:47:03,873 - INFO - Successfully fetched data for ITBEES.NS
+2025-09-22 17:47:03,876 - ERROR - Database error saving ITBEES.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:03,877 - ERROR - Failed to save ITBEES.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:04,878 - INFO - Fetching data for JUNIORBEES.NS (ETF)...
+2025-09-22 17:47:05,510 - INFO - Successfully fetched data for JUNIORBEES.NS
+2025-09-22 17:47:05,517 - ERROR - Database error saving JUNIORBEES.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:05,518 - ERROR - Failed to save JUNIORBEES.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:06,519 - INFO - Fetching data for LIQUIDBEES.NS (ETF)...
+2025-09-22 17:47:07,158 - INFO - Successfully fetched data for LIQUIDBEES.NS
+2025-09-22 17:47:07,162 - ERROR - Database error saving LIQUIDBEES.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:07,164 - ERROR - Failed to save LIQUIDBEES.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:08,166 - INFO - Fetching data for MON100.NS (ETF)...
+2025-09-22 17:47:08,702 - INFO - Successfully fetched data for MON100.NS
+2025-09-22 17:47:08,705 - ERROR - Database error saving MON100.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:08,705 - ERROR - Failed to save MON100.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:09,707 - INFO - Fetching data for NIFTYBEES.NS (ETF)...
+2025-09-22 17:47:10,668 - INFO - Successfully fetched data for NIFTYBEES.NS
+2025-09-22 17:47:10,670 - ERROR - Database error saving NIFTYBEES.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:10,671 - ERROR - Failed to save NIFTYBEES.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:11,672 - INFO - Fetching data for PHARMABEES.NS (ETF)...
+2025-09-22 17:47:12,148 - INFO - Successfully fetched data for PHARMABEES.NS
+2025-09-22 17:47:12,151 - ERROR - Database error saving PHARMABEES.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:12,151 - ERROR - Failed to save PHARMABEES.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:13,152 - INFO - Fetching data for PSUBNKBEES.NS (ETF)...
+2025-09-22 17:47:13,960 - INFO - Successfully fetched data for PSUBNKBEES.NS
+2025-09-22 17:47:13,964 - ERROR - Database error saving PSUBNKBEES.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:13,965 - ERROR - Failed to save PSUBNKBEES.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:14,966 - INFO - Fetching data for SENSEX1.NS (ETF)...
+2025-09-22 17:47:18,559 - ERROR - HTTP Error 404: 
+2025-09-22 17:47:22,225 - ERROR - $SENSEX1.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-22 17:47:22,226 - WARNING - No data returned for SENSEX1.NS on attempt 1
+2025-09-22 17:47:24,473 - ERROR - HTTP Error 404: 
+2025-09-22 17:47:27,423 - ERROR - $SENSEX1.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-22 17:47:27,424 - WARNING - No data returned for SENSEX1.NS on attempt 2
+2025-09-22 17:47:31,381 - ERROR - $SENSEX1.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-22 17:47:31,382 - WARNING - No data returned for SENSEX1.NS on attempt 3
+2025-09-22 17:47:31,383 - ERROR - Failed to fetch data for SENSEX1.NS
+2025-09-22 17:47:32,383 - INFO - Fetching data for ADANIENT.NS (STOCK)...
+2025-09-22 17:47:33,781 - INFO - Successfully fetched data for ADANIENT.NS
+2025-09-22 17:47:33,784 - ERROR - Database error saving ADANIENT.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:33,785 - ERROR - Failed to save ADANIENT.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:34,786 - INFO - Fetching data for ADANIGREEN.NS (STOCK)...
+2025-09-22 17:47:35,425 - INFO - Successfully fetched data for ADANIGREEN.NS
+2025-09-22 17:47:35,428 - ERROR - Database error saving ADANIGREEN.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:35,429 - ERROR - Failed to save ADANIGREEN.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:36,430 - INFO - Fetching data for ADANIPORTS.NS (STOCK)...
+2025-09-22 17:47:36,979 - INFO - Successfully fetched data for ADANIPORTS.NS
+2025-09-22 17:47:36,984 - ERROR - Database error saving ADANIPORTS.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:36,986 - ERROR - Failed to save ADANIPORTS.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:37,988 - INFO - Fetching data for APOLLOHOSP.NS (STOCK)...
+2025-09-22 17:47:38,479 - INFO - Successfully fetched data for APOLLOHOSP.NS
+2025-09-22 17:47:38,486 - ERROR - Database error saving APOLLOHOSP.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:38,487 - ERROR - Failed to save APOLLOHOSP.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:39,488 - INFO - Fetching data for ASIANPAINT.NS (STOCK)...
+2025-09-22 17:47:40,561 - INFO - Successfully fetched data for ASIANPAINT.NS
+2025-09-22 17:47:40,568 - ERROR - Database error saving ASIANPAINT.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:40,568 - ERROR - Failed to save ASIANPAINT.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:41,569 - INFO - Fetching data for AXISBANK.NS (STOCK)...
+2025-09-22 17:47:42,125 - INFO - Successfully fetched data for AXISBANK.NS
+2025-09-22 17:47:42,128 - ERROR - Database error saving AXISBANK.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:42,131 - ERROR - Failed to save AXISBANK.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:43,133 - INFO - Fetching data for BAJAJ-AUTO.NS (STOCK)...
+2025-09-22 17:47:43,433 - INFO - Successfully fetched data for BAJAJ-AUTO.NS
+2025-09-22 17:47:43,437 - ERROR - Database error saving BAJAJ-AUTO.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:43,437 - ERROR - Failed to save BAJAJ-AUTO.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:44,438 - INFO - Fetching data for BAJAJFINSV.NS (STOCK)...
+2025-09-22 17:47:45,172 - INFO - Successfully fetched data for BAJAJFINSV.NS
+2025-09-22 17:47:45,174 - ERROR - Database error saving BAJAJFINSV.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:45,176 - ERROR - Failed to save BAJAJFINSV.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:46,178 - INFO - Fetching data for BAJFINANCE.NS (STOCK)...
+2025-09-22 17:47:46,589 - INFO - Successfully fetched data for BAJFINANCE.NS
+2025-09-22 17:47:46,596 - ERROR - Database error saving BAJFINANCE.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:46,597 - ERROR - Failed to save BAJFINANCE.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:47,599 - INFO - Fetching data for BHARTIARTL.NS (STOCK)...
+2025-09-22 17:47:48,167 - INFO - Successfully fetched data for BHARTIARTL.NS
+2025-09-22 17:47:48,170 - ERROR - Database error saving BHARTIARTL.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:48,170 - ERROR - Failed to save BHARTIARTL.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:49,171 - INFO - Fetching data for BPCL.NS (STOCK)...
+2025-09-22 17:47:49,470 - INFO - Successfully fetched data for BPCL.NS
+2025-09-22 17:47:49,476 - ERROR - Database error saving BPCL.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:49,477 - ERROR - Failed to save BPCL.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:50,479 - INFO - Fetching data for BRITANNIA.NS (STOCK)...
+2025-09-22 17:47:52,350 - INFO - Successfully fetched data for BRITANNIA.NS
+2025-09-22 17:47:52,357 - ERROR - Database error saving BRITANNIA.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:52,358 - ERROR - Failed to save BRITANNIA.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:53,359 - INFO - Fetching data for CIPLA.NS (STOCK)...
+2025-09-22 17:47:53,963 - INFO - Successfully fetched data for CIPLA.NS
+2025-09-22 17:47:53,967 - ERROR - Database error saving CIPLA.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:53,969 - ERROR - Failed to save CIPLA.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:54,971 - INFO - Fetching data for COALINDIA.NS (STOCK)...
+2025-09-22 17:47:55,778 - INFO - Successfully fetched data for COALINDIA.NS
+2025-09-22 17:47:55,782 - ERROR - Database error saving COALINDIA.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:55,784 - ERROR - Failed to save COALINDIA.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:56,786 - INFO - Fetching data for DIVISLAB.NS (STOCK)...
+2025-09-22 17:47:57,151 - INFO - Successfully fetched data for DIVISLAB.NS
+2025-09-22 17:47:57,156 - ERROR - Database error saving DIVISLAB.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:57,156 - ERROR - Failed to save DIVISLAB.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:58,157 - INFO - Fetching data for DRREDDY.NS (STOCK)...
+2025-09-22 17:47:58,740 - INFO - Successfully fetched data for DRREDDY.NS
+2025-09-22 17:47:58,744 - ERROR - Database error saving DRREDDY.NS: table etf_unified has no column named adj_close
+2025-09-22 17:47:58,745 - ERROR - Failed to save DRREDDY.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:47:59,747 - INFO - Fetching data for EICHERMOT.NS (STOCK)...
+2025-09-22 17:48:00,109 - INFO - Successfully fetched data for EICHERMOT.NS
+2025-09-22 17:48:00,117 - ERROR - Database error saving EICHERMOT.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:00,118 - ERROR - Failed to save EICHERMOT.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:01,119 - INFO - Fetching data for GRASIM.NS (STOCK)...
+2025-09-22 17:48:01,481 - INFO - Successfully fetched data for GRASIM.NS
+2025-09-22 17:48:01,487 - ERROR - Database error saving GRASIM.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:01,487 - ERROR - Failed to save GRASIM.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:02,488 - INFO - Fetching data for HCLTECH.NS (STOCK)...
+2025-09-22 17:48:02,823 - INFO - Successfully fetched data for HCLTECH.NS
+2025-09-22 17:48:02,831 - ERROR - Database error saving HCLTECH.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:02,831 - ERROR - Failed to save HCLTECH.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:03,833 - INFO - Fetching data for HDFCBANK.NS (STOCK)...
+2025-09-22 17:48:04,249 - INFO - Successfully fetched data for HDFCBANK.NS
+2025-09-22 17:48:04,252 - ERROR - Database error saving HDFCBANK.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:04,252 - ERROR - Failed to save HDFCBANK.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:05,253 - INFO - Fetching data for HDFCLIFE.NS (STOCK)...
+2025-09-22 17:48:06,568 - INFO - Successfully fetched data for HDFCLIFE.NS
+2025-09-22 17:48:06,570 - ERROR - Database error saving HDFCLIFE.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:06,571 - ERROR - Failed to save HDFCLIFE.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:07,574 - INFO - Fetching data for HEROMOTOCO.NS (STOCK)...
+2025-09-22 17:48:07,926 - INFO - Successfully fetched data for HEROMOTOCO.NS
+2025-09-22 17:48:07,930 - ERROR - Database error saving HEROMOTOCO.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:07,930 - ERROR - Failed to save HEROMOTOCO.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:08,931 - INFO - Fetching data for HINDALCO.NS (STOCK)...
+2025-09-22 17:48:09,500 - INFO - Successfully fetched data for HINDALCO.NS
+2025-09-22 17:48:09,507 - ERROR - Database error saving HINDALCO.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:09,508 - ERROR - Failed to save HINDALCO.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:10,510 - INFO - Fetching data for HINDUNILVR.NS (STOCK)...
+2025-09-22 17:48:11,200 - INFO - Successfully fetched data for HINDUNILVR.NS
+2025-09-22 17:48:11,208 - ERROR - Database error saving HINDUNILVR.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:11,208 - ERROR - Failed to save HINDUNILVR.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:12,209 - INFO - Fetching data for ICICIBANK.NS (STOCK)...
+2025-09-22 17:48:15,009 - INFO - Successfully fetched data for ICICIBANK.NS
+2025-09-22 17:48:15,012 - ERROR - Database error saving ICICIBANK.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:15,013 - ERROR - Failed to save ICICIBANK.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:16,016 - INFO - Fetching data for INDUSINDBK.NS (STOCK)...
+2025-09-22 17:48:16,324 - INFO - Successfully fetched data for INDUSINDBK.NS
+2025-09-22 17:48:16,327 - ERROR - Database error saving INDUSINDBK.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:16,327 - ERROR - Failed to save INDUSINDBK.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:17,328 - INFO - Fetching data for ITC.NS (STOCK)...
+2025-09-22 17:48:18,892 - INFO - Successfully fetched data for ITC.NS
+2025-09-22 17:48:18,899 - ERROR - Database error saving ITC.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:18,900 - ERROR - Failed to save ITC.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:19,902 - INFO - Fetching data for JSWSTEEL.NS (STOCK)...
+2025-09-22 17:48:20,462 - INFO - Successfully fetched data for JSWSTEEL.NS
+2025-09-22 17:48:20,467 - ERROR - Database error saving JSWSTEEL.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:20,467 - ERROR - Failed to save JSWSTEEL.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:21,468 - INFO - Fetching data for KOTAKBANK.NS (STOCK)...
+2025-09-22 17:48:21,791 - INFO - Successfully fetched data for KOTAKBANK.NS
+2025-09-22 17:48:21,798 - ERROR - Database error saving KOTAKBANK.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:21,799 - ERROR - Failed to save KOTAKBANK.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:22,800 - INFO - Fetching data for LT.NS (STOCK)...
+2025-09-22 17:48:24,559 - INFO - Successfully fetched data for LT.NS
+2025-09-22 17:48:24,563 - ERROR - Database error saving LT.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:24,564 - ERROR - Failed to save LT.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:25,565 - INFO - Fetching data for LTIM.NS (STOCK)...
+2025-09-22 17:48:25,980 - INFO - Successfully fetched data for LTIM.NS
+2025-09-22 17:48:25,983 - ERROR - Database error saving LTIM.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:25,983 - ERROR - Failed to save LTIM.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:27,008 - INFO - Fetching data for M&M.NS (STOCK)...
+2025-09-22 17:48:27,408 - INFO - Successfully fetched data for M&M.NS
+2025-09-22 17:48:27,413 - ERROR - Database error saving M&M.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:27,413 - ERROR - Failed to save M&M.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:28,414 - INFO - Fetching data for MARUTI.NS (STOCK)...
+2025-09-22 17:48:29,041 - INFO - Successfully fetched data for MARUTI.NS
+2025-09-22 17:48:29,045 - ERROR - Database error saving MARUTI.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:29,045 - ERROR - Failed to save MARUTI.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:30,046 - INFO - Fetching data for NESTLEIND.NS (STOCK)...
+2025-09-22 17:48:30,917 - INFO - Successfully fetched data for NESTLEIND.NS
+2025-09-22 17:48:30,923 - ERROR - Database error saving NESTLEIND.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:30,924 - ERROR - Failed to save NESTLEIND.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:31,925 - INFO - Fetching data for NTPC.NS (STOCK)...
+2025-09-22 17:48:32,808 - INFO - Successfully fetched data for NTPC.NS
+2025-09-22 17:48:32,811 - ERROR - Database error saving NTPC.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:32,812 - ERROR - Failed to save NTPC.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:33,813 - INFO - Fetching data for ONGC.NS (STOCK)...
+2025-09-22 17:48:34,436 - INFO - Successfully fetched data for ONGC.NS
+2025-09-22 17:48:34,439 - ERROR - Database error saving ONGC.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:34,440 - ERROR - Failed to save ONGC.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:35,441 - INFO - Fetching data for POWERGRID.NS (STOCK)...
+2025-09-22 17:48:35,791 - INFO - Successfully fetched data for POWERGRID.NS
+2025-09-22 17:48:35,795 - ERROR - Database error saving POWERGRID.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:35,797 - ERROR - Failed to save POWERGRID.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:36,799 - INFO - Fetching data for RELIANCE.NS (STOCK)...
+2025-09-22 17:48:37,438 - INFO - Successfully fetched data for RELIANCE.NS
+2025-09-22 17:48:37,441 - ERROR - Database error saving RELIANCE.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:37,441 - ERROR - Failed to save RELIANCE.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:38,443 - INFO - Fetching data for SBILIFE.NS (STOCK)...
+2025-09-22 17:48:39,278 - INFO - Successfully fetched data for SBILIFE.NS
+2025-09-22 17:48:39,283 - ERROR - Database error saving SBILIFE.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:39,283 - ERROR - Failed to save SBILIFE.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:40,284 - INFO - Fetching data for SBIN.NS (STOCK)...
+2025-09-22 17:48:41,189 - INFO - Successfully fetched data for SBIN.NS
+2025-09-22 17:48:41,196 - ERROR - Database error saving SBIN.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:41,197 - ERROR - Failed to save SBIN.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:42,198 - INFO - Fetching data for SUNPHARMA.NS (STOCK)...
+2025-09-22 17:48:42,919 - INFO - Successfully fetched data for SUNPHARMA.NS
+2025-09-22 17:48:42,926 - ERROR - Database error saving SUNPHARMA.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:42,927 - ERROR - Failed to save SUNPHARMA.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:43,928 - INFO - Fetching data for TATACONSUM.NS (STOCK)...
+2025-09-22 17:48:44,666 - INFO - Successfully fetched data for TATACONSUM.NS
+2025-09-22 17:48:44,673 - ERROR - Database error saving TATACONSUM.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:44,675 - ERROR - Failed to save TATACONSUM.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:45,676 - INFO - Fetching data for TATAMOTORS.NS (STOCK)...
+2025-09-22 17:48:46,099 - INFO - Successfully fetched data for TATAMOTORS.NS
+2025-09-22 17:48:46,107 - ERROR - Database error saving TATAMOTORS.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:46,108 - ERROR - Failed to save TATAMOTORS.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:47,109 - INFO - Fetching data for TATASTEEL.NS (STOCK)...
+2025-09-22 17:48:48,029 - INFO - Successfully fetched data for TATASTEEL.NS
+2025-09-22 17:48:48,033 - ERROR - Database error saving TATASTEEL.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:48,036 - ERROR - Failed to save TATASTEEL.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:49,038 - INFO - Fetching data for TCS.NS (STOCK)...
+2025-09-22 17:48:49,546 - INFO - Successfully fetched data for TCS.NS
+2025-09-22 17:48:49,555 - ERROR - Database error saving TCS.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:49,556 - ERROR - Failed to save TCS.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:50,557 - INFO - Fetching data for TECHM.NS (STOCK)...
+2025-09-22 17:48:51,602 - INFO - Successfully fetched data for TECHM.NS
+2025-09-22 17:48:51,606 - ERROR - Database error saving TECHM.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:51,606 - ERROR - Failed to save TECHM.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:52,607 - INFO - Fetching data for TITAN.NS (STOCK)...
+2025-09-22 17:48:53,292 - INFO - Successfully fetched data for TITAN.NS
+2025-09-22 17:48:53,299 - ERROR - Database error saving TITAN.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:53,299 - ERROR - Failed to save TITAN.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:54,302 - INFO - Fetching data for ULTRACEMCO.NS (STOCK)...
+2025-09-22 17:48:56,631 - INFO - Successfully fetched data for ULTRACEMCO.NS
+2025-09-22 17:48:56,635 - ERROR - Database error saving ULTRACEMCO.NS: table etf_unified has no column named adj_close
+2025-09-22 17:48:56,636 - ERROR - Failed to save ULTRACEMCO.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:48:57,636 - INFO - Fetching data for UPL.NS (STOCK)...
+2025-09-22 17:49:00,681 - INFO - Successfully fetched data for UPL.NS
+2025-09-22 17:49:00,684 - ERROR - Database error saving UPL.NS: table etf_unified has no column named adj_close
+2025-09-22 17:49:00,684 - ERROR - Failed to save UPL.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:49:01,685 - INFO - Fetching data for WIPRO.NS (STOCK)...
+2025-09-22 17:49:02,146 - INFO - Successfully fetched data for WIPRO.NS
+2025-09-22 17:49:02,149 - ERROR - Database error saving WIPRO.NS: table etf_unified has no column named adj_close
+2025-09-22 17:49:02,150 - ERROR - Failed to save WIPRO.NS to database: table etf_unified has no column named adj_close
+2025-09-22 17:49:03,151 - INFO - === Daily market data fetch completed ===
+2025-09-22 17:49:03,152 - INFO - Successful fetches: 0 (0 ETFs, 0 Stocks)
+2025-09-22 17:49:03,154 - INFO - Failed fetches: 62
+2025-09-22 17:49:03,156 - INFO - Total duration: 127.85 seconds
+2025-09-22 17:49:03,157 - WARNING - Some fetches failed. Success: 0, Failed: 62
+2025-09-22 17:49:41,396 - INFO - === Starting daily Indian market data fetch (ETFs + Stocks) ===
+2025-09-22 17:49:41,440 - INFO - Database table created/verified successfully
+2025-09-22 17:49:41,441 - INFO - Fetching data for BANKBEES.NS (ETF)...
+2025-09-22 17:49:43,702 - INFO - Successfully fetched data for BANKBEES.NS
+2025-09-22 17:49:43,781 - INFO - Successfully saved BANKBEES.NS (ETF) data to database
+2025-09-22 17:49:44,801 - INFO - Fetching data for GOLDBEES.NS (ETF)...
+2025-09-22 17:49:45,419 - INFO - Successfully fetched data for GOLDBEES.NS
+2025-09-22 17:49:45,476 - INFO - Successfully saved GOLDBEES.NS (ETF) data to database
+2025-09-22 17:49:46,478 - INFO - Fetching data for HNGSNGBEES.NS (ETF)...
+2025-09-22 17:49:47,149 - INFO - Successfully fetched data for HNGSNGBEES.NS
+2025-09-22 17:49:47,182 - INFO - Successfully saved HNGSNGBEES.NS (ETF) data to database
+2025-09-22 17:49:48,183 - INFO - Fetching data for INFRABEES.NS (ETF)...
+2025-09-22 17:49:48,905 - INFO - Successfully fetched data for INFRABEES.NS
+2025-09-22 17:49:48,952 - INFO - Successfully saved INFRABEES.NS (ETF) data to database
+2025-09-22 17:49:49,954 - INFO - Fetching data for ITBEES.NS (ETF)...
+2025-09-22 17:49:50,548 - INFO - Successfully fetched data for ITBEES.NS
+2025-09-22 17:49:50,601 - INFO - Successfully saved ITBEES.NS (ETF) data to database
+2025-09-22 17:49:51,602 - INFO - Fetching data for JUNIORBEES.NS (ETF)...
+2025-09-22 17:49:52,150 - INFO - Successfully fetched data for JUNIORBEES.NS
+2025-09-22 17:49:52,193 - INFO - Successfully saved JUNIORBEES.NS (ETF) data to database
+2025-09-22 17:49:53,194 - INFO - Fetching data for LIQUIDBEES.NS (ETF)...
+2025-09-22 17:49:53,739 - INFO - Successfully fetched data for LIQUIDBEES.NS
+2025-09-22 17:49:53,804 - INFO - Successfully saved LIQUIDBEES.NS (ETF) data to database
+2025-09-22 17:49:54,808 - INFO - Fetching data for MON100.NS (ETF)...
+2025-09-22 17:49:55,418 - INFO - Successfully fetched data for MON100.NS
+2025-09-22 17:49:55,473 - INFO - Successfully saved MON100.NS (ETF) data to database
+2025-09-22 17:49:56,476 - INFO - Fetching data for NIFTYBEES.NS (ETF)...
+2025-09-22 17:49:57,109 - INFO - Successfully fetched data for NIFTYBEES.NS
+2025-09-22 17:49:57,146 - INFO - Successfully saved NIFTYBEES.NS (ETF) data to database
+2025-09-22 17:49:58,147 - INFO - Fetching data for PHARMABEES.NS (ETF)...
+2025-09-22 17:49:58,941 - INFO - Successfully fetched data for PHARMABEES.NS
+2025-09-22 17:49:59,077 - INFO - Successfully saved PHARMABEES.NS (ETF) data to database
+2025-09-22 17:50:00,094 - INFO - Fetching data for PSUBNKBEES.NS (ETF)...
+2025-09-22 17:50:00,785 - INFO - Successfully fetched data for PSUBNKBEES.NS
+2025-09-22 17:50:00,820 - INFO - Successfully saved PSUBNKBEES.NS (ETF) data to database
+2025-09-22 17:50:01,822 - INFO - Fetching data for SENSEX1.NS (ETF)...
+2025-09-22 17:50:05,664 - ERROR - HTTP Error 404: 
+2025-09-22 17:50:08,453 - ERROR - $SENSEX1.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-22 17:50:08,454 - WARNING - No data returned for SENSEX1.NS on attempt 1
+2025-09-22 17:50:10,925 - ERROR - HTTP Error 404: 
+2025-09-22 17:50:13,250 - ERROR - $SENSEX1.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-22 17:50:13,251 - WARNING - No data returned for SENSEX1.NS on attempt 2
+2025-09-22 17:50:17,712 - ERROR - $SENSEX1.NS: possibly delisted; no price data found  (period=2d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-22 17:50:17,713 - WARNING - No data returned for SENSEX1.NS on attempt 3
+2025-09-22 17:50:17,714 - ERROR - Failed to fetch data for SENSEX1.NS
+2025-09-22 17:50:18,716 - INFO - Fetching data for ADANIENT.NS (STOCK)...
+2025-09-22 17:50:20,642 - INFO - Successfully fetched data for ADANIENT.NS
+2025-09-22 17:50:20,679 - INFO - Successfully saved ADANIENT.NS (STOCK) data to database
+2025-09-22 17:50:21,680 - INFO - Fetching data for ADANIGREEN.NS (STOCK)...
+2025-09-22 17:50:21,853 - INFO - Successfully fetched data for ADANIGREEN.NS
+2025-09-22 17:50:21,908 - INFO - Successfully saved ADANIGREEN.NS (STOCK) data to database
+2025-09-22 17:50:22,909 - INFO - Fetching data for ADANIPORTS.NS (STOCK)...
+2025-09-22 17:50:23,206 - INFO - Successfully fetched data for ADANIPORTS.NS
+2025-09-22 17:50:23,242 - INFO - Successfully saved ADANIPORTS.NS (STOCK) data to database
+2025-09-22 17:50:24,244 - INFO - Fetching data for APOLLOHOSP.NS (STOCK)...
+2025-09-22 17:50:24,929 - INFO - Successfully fetched data for APOLLOHOSP.NS
+2025-09-22 17:50:24,990 - INFO - Successfully saved APOLLOHOSP.NS (STOCK) data to database
+2025-09-22 17:50:25,999 - INFO - Fetching data for ASIANPAINT.NS (STOCK)...
+2025-09-22 17:50:26,284 - INFO - Successfully fetched data for ASIANPAINT.NS
+2025-09-22 17:50:26,331 - INFO - Successfully saved ASIANPAINT.NS (STOCK) data to database
+2025-09-22 17:50:27,420 - INFO - Fetching data for AXISBANK.NS (STOCK)...
+2025-09-22 17:50:28,153 - INFO - Successfully fetched data for AXISBANK.NS
+2025-09-22 17:50:28,208 - INFO - Successfully saved AXISBANK.NS (STOCK) data to database
+2025-09-22 17:50:29,211 - INFO - Fetching data for BAJAJ-AUTO.NS (STOCK)...
+2025-09-22 17:50:29,852 - INFO - Successfully fetched data for BAJAJ-AUTO.NS
+2025-09-22 17:50:29,896 - INFO - Successfully saved BAJAJ-AUTO.NS (STOCK) data to database
+2025-09-22 17:50:30,897 - INFO - Fetching data for BAJAJFINSV.NS (STOCK)...
+2025-09-22 17:50:31,494 - INFO - Successfully fetched data for BAJAJFINSV.NS
+2025-09-22 17:50:31,532 - INFO - Successfully saved BAJAJFINSV.NS (STOCK) data to database
+2025-09-22 17:50:32,533 - INFO - Fetching data for BAJFINANCE.NS (STOCK)...
+2025-09-22 17:50:33,192 - INFO - Successfully fetched data for BAJFINANCE.NS
+2025-09-22 17:50:33,232 - INFO - Successfully saved BAJFINANCE.NS (STOCK) data to database
+2025-09-22 17:50:34,234 - INFO - Fetching data for BHARTIARTL.NS (STOCK)...
+2025-09-22 17:50:34,763 - INFO - Successfully fetched data for BHARTIARTL.NS
+2025-09-22 17:50:34,815 - INFO - Successfully saved BHARTIARTL.NS (STOCK) data to database
+2025-09-22 17:50:35,818 - INFO - Fetching data for BPCL.NS (STOCK)...
+2025-09-22 17:50:37,204 - INFO - Successfully fetched data for BPCL.NS
+2025-09-22 17:50:37,248 - INFO - Successfully saved BPCL.NS (STOCK) data to database
+2025-09-22 17:50:38,255 - INFO - Fetching data for BRITANNIA.NS (STOCK)...
+2025-09-22 17:50:38,732 - INFO - Successfully fetched data for BRITANNIA.NS
+2025-09-22 17:50:38,772 - INFO - Successfully saved BRITANNIA.NS (STOCK) data to database
+2025-09-22 17:50:39,773 - INFO - Fetching data for CIPLA.NS (STOCK)...
+2025-09-22 17:50:40,425 - INFO - Successfully fetched data for CIPLA.NS
+2025-09-22 17:50:40,460 - INFO - Successfully saved CIPLA.NS (STOCK) data to database
+2025-09-22 17:50:41,463 - INFO - Fetching data for COALINDIA.NS (STOCK)...
+2025-09-22 17:50:42,055 - INFO - Successfully fetched data for COALINDIA.NS
+2025-09-22 17:50:42,094 - INFO - Successfully saved COALINDIA.NS (STOCK) data to database
+2025-09-22 17:50:43,096 - INFO - Fetching data for DIVISLAB.NS (STOCK)...
+2025-09-22 17:50:43,753 - INFO - Successfully fetched data for DIVISLAB.NS
+2025-09-22 17:50:43,801 - INFO - Successfully saved DIVISLAB.NS (STOCK) data to database
+2025-09-22 17:50:44,802 - INFO - Fetching data for DRREDDY.NS (STOCK)...
+2025-09-22 17:50:45,420 - INFO - Successfully fetched data for DRREDDY.NS
+2025-09-22 17:50:45,465 - INFO - Successfully saved DRREDDY.NS (STOCK) data to database
+2025-09-22 17:50:46,466 - INFO - Fetching data for EICHERMOT.NS (STOCK)...
+2025-09-22 17:50:46,998 - INFO - Successfully fetched data for EICHERMOT.NS
+2025-09-22 17:50:47,042 - INFO - Successfully saved EICHERMOT.NS (STOCK) data to database
+2025-09-22 17:50:48,043 - INFO - Fetching data for GRASIM.NS (STOCK)...
+2025-09-22 17:50:48,756 - INFO - Successfully fetched data for GRASIM.NS
+2025-09-22 17:50:48,792 - INFO - Successfully saved GRASIM.NS (STOCK) data to database
+2025-09-22 17:50:49,794 - INFO - Fetching data for HCLTECH.NS (STOCK)...
+2025-09-22 17:50:50,279 - INFO - Successfully fetched data for HCLTECH.NS
+2025-09-22 17:50:50,329 - INFO - Successfully saved HCLTECH.NS (STOCK) data to database
+2025-09-22 17:50:51,331 - INFO - Fetching data for HDFCBANK.NS (STOCK)...
+2025-09-22 17:50:52,725 - INFO - Successfully fetched data for HDFCBANK.NS
+2025-09-22 17:50:52,764 - INFO - Successfully saved HDFCBANK.NS (STOCK) data to database
+2025-09-22 17:50:53,766 - INFO - Fetching data for HDFCLIFE.NS (STOCK)...
+2025-09-22 17:50:54,318 - INFO - Successfully fetched data for HDFCLIFE.NS
+2025-09-22 17:50:54,358 - INFO - Successfully saved HDFCLIFE.NS (STOCK) data to database
+2025-09-22 17:50:55,359 - INFO - Fetching data for HEROMOTOCO.NS (STOCK)...
+2025-09-22 17:50:57,458 - INFO - Successfully fetched data for HEROMOTOCO.NS
+2025-09-22 17:50:57,500 - INFO - Successfully saved HEROMOTOCO.NS (STOCK) data to database
+2025-09-22 17:50:58,501 - INFO - Fetching data for HINDALCO.NS (STOCK)...
+2025-09-22 17:50:59,011 - INFO - Successfully fetched data for HINDALCO.NS
+2025-09-22 17:50:59,067 - INFO - Successfully saved HINDALCO.NS (STOCK) data to database
+2025-09-22 17:51:00,068 - INFO - Fetching data for HINDUNILVR.NS (STOCK)...
+2025-09-22 17:51:00,592 - INFO - Successfully fetched data for HINDUNILVR.NS
+2025-09-22 17:51:00,620 - INFO - Successfully saved HINDUNILVR.NS (STOCK) data to database
+2025-09-22 17:51:01,622 - INFO - Fetching data for ICICIBANK.NS (STOCK)...
+2025-09-22 17:51:02,326 - INFO - Successfully fetched data for ICICIBANK.NS
+2025-09-22 17:51:02,353 - INFO - Successfully saved ICICIBANK.NS (STOCK) data to database
+2025-09-22 17:51:03,354 - INFO - Fetching data for INDUSINDBK.NS (STOCK)...
+2025-09-22 17:51:04,149 - INFO - Successfully fetched data for INDUSINDBK.NS
+2025-09-22 17:51:04,176 - INFO - Successfully saved INDUSINDBK.NS (STOCK) data to database
+2025-09-22 17:51:05,177 - INFO - Fetching data for ITC.NS (STOCK)...
+2025-09-22 17:51:05,898 - INFO - Successfully fetched data for ITC.NS
+2025-09-22 17:51:05,940 - INFO - Successfully saved ITC.NS (STOCK) data to database
+2025-09-22 17:51:06,941 - INFO - Fetching data for JSWSTEEL.NS (STOCK)...
+2025-09-22 17:51:07,466 - INFO - Successfully fetched data for JSWSTEEL.NS
+2025-09-22 17:51:07,524 - INFO - Successfully saved JSWSTEEL.NS (STOCK) data to database
+2025-09-22 17:51:08,528 - INFO - Fetching data for KOTAKBANK.NS (STOCK)...
+2025-09-22 17:51:09,197 - INFO - Successfully fetched data for KOTAKBANK.NS
+2025-09-22 17:51:09,236 - INFO - Successfully saved KOTAKBANK.NS (STOCK) data to database
+2025-09-22 17:51:10,238 - INFO - Fetching data for LT.NS (STOCK)...
+2025-09-22 17:51:10,981 - INFO - Successfully fetched data for LT.NS
+2025-09-22 17:51:11,016 - INFO - Successfully saved LT.NS (STOCK) data to database
+2025-09-22 17:51:12,017 - INFO - Fetching data for LTIM.NS (STOCK)...
+2025-09-22 17:51:12,491 - INFO - Successfully fetched data for LTIM.NS
+2025-09-22 17:51:12,524 - INFO - Successfully saved LTIM.NS (STOCK) data to database
+2025-09-22 17:51:13,525 - INFO - Fetching data for M&M.NS (STOCK)...
+2025-09-22 17:51:14,322 - INFO - Successfully fetched data for M&M.NS
+2025-09-22 17:51:14,360 - INFO - Successfully saved M&M.NS (STOCK) data to database
+2025-09-22 17:51:15,361 - INFO - Fetching data for MARUTI.NS (STOCK)...
+2025-09-22 17:51:16,076 - INFO - Successfully fetched data for MARUTI.NS
+2025-09-22 17:51:16,123 - INFO - Successfully saved MARUTI.NS (STOCK) data to database
+2025-09-22 17:51:17,124 - INFO - Fetching data for NESTLEIND.NS (STOCK)...
+2025-09-22 17:51:17,843 - INFO - Successfully fetched data for NESTLEIND.NS
+2025-09-22 17:51:17,884 - INFO - Successfully saved NESTLEIND.NS (STOCK) data to database
+2025-09-22 17:51:18,903 - INFO - Fetching data for NTPC.NS (STOCK)...
+2025-09-22 17:51:19,803 - INFO - Successfully fetched data for NTPC.NS
+2025-09-22 17:51:19,860 - INFO - Successfully saved NTPC.NS (STOCK) data to database
+2025-09-22 17:51:20,861 - INFO - Fetching data for ONGC.NS (STOCK)...
+2025-09-22 17:51:21,545 - INFO - Successfully fetched data for ONGC.NS
+2025-09-22 17:51:21,582 - INFO - Successfully saved ONGC.NS (STOCK) data to database
+2025-09-22 17:51:22,583 - INFO - Fetching data for POWERGRID.NS (STOCK)...
+2025-09-22 17:51:22,914 - INFO - Successfully fetched data for POWERGRID.NS
+2025-09-22 17:51:22,953 - INFO - Successfully saved POWERGRID.NS (STOCK) data to database
+2025-09-22 17:51:23,954 - INFO - Fetching data for RELIANCE.NS (STOCK)...
+2025-09-22 17:51:24,666 - INFO - Successfully fetched data for RELIANCE.NS
+2025-09-22 17:51:24,716 - INFO - Successfully saved RELIANCE.NS (STOCK) data to database
+2025-09-22 17:51:25,717 - INFO - Fetching data for SBILIFE.NS (STOCK)...
+2025-09-22 17:51:26,316 - INFO - Successfully fetched data for SBILIFE.NS
+2025-09-22 17:51:26,360 - INFO - Successfully saved SBILIFE.NS (STOCK) data to database
+2025-09-22 17:51:27,361 - INFO - Fetching data for SBIN.NS (STOCK)...
+2025-09-22 17:51:27,825 - INFO - Successfully fetched data for SBIN.NS
+2025-09-22 17:51:27,869 - INFO - Successfully saved SBIN.NS (STOCK) data to database
+2025-09-22 17:51:28,870 - INFO - Fetching data for SUNPHARMA.NS (STOCK)...
+2025-09-22 17:51:29,520 - INFO - Successfully fetched data for SUNPHARMA.NS
+2025-09-22 17:51:29,575 - INFO - Successfully saved SUNPHARMA.NS (STOCK) data to database
+2025-09-22 17:51:30,576 - INFO - Fetching data for TATACONSUM.NS (STOCK)...
+2025-09-22 17:51:31,277 - INFO - Successfully fetched data for TATACONSUM.NS
+2025-09-22 17:51:31,317 - INFO - Successfully saved TATACONSUM.NS (STOCK) data to database
+2025-09-22 17:51:32,319 - INFO - Fetching data for TATAMOTORS.NS (STOCK)...
+2025-09-22 17:51:33,882 - INFO - Successfully fetched data for TATAMOTORS.NS
+2025-09-22 17:51:33,926 - INFO - Successfully saved TATAMOTORS.NS (STOCK) data to database
+2025-09-22 17:51:34,928 - INFO - Fetching data for TATASTEEL.NS (STOCK)...
+2025-09-22 17:51:35,869 - INFO - Successfully fetched data for TATASTEEL.NS
+2025-09-22 17:51:35,913 - INFO - Successfully saved TATASTEEL.NS (STOCK) data to database
+2025-09-22 17:51:36,914 - INFO - Fetching data for TCS.NS (STOCK)...
+2025-09-22 17:51:37,547 - INFO - Successfully fetched data for TCS.NS
+2025-09-22 17:51:37,586 - INFO - Successfully saved TCS.NS (STOCK) data to database
+2025-09-22 17:51:38,587 - INFO - Fetching data for TECHM.NS (STOCK)...
+2025-09-22 17:51:39,199 - INFO - Successfully fetched data for TECHM.NS
+2025-09-22 17:51:39,237 - INFO - Successfully saved TECHM.NS (STOCK) data to database
+2025-09-22 17:51:40,240 - INFO - Fetching data for TITAN.NS (STOCK)...
+2025-09-22 17:51:40,918 - INFO - Successfully fetched data for TITAN.NS
+2025-09-22 17:51:40,965 - INFO - Successfully saved TITAN.NS (STOCK) data to database
+2025-09-22 17:51:41,966 - INFO - Fetching data for ULTRACEMCO.NS (STOCK)...
+2025-09-22 17:51:42,529 - INFO - Successfully fetched data for ULTRACEMCO.NS
+2025-09-22 17:51:42,569 - INFO - Successfully saved ULTRACEMCO.NS (STOCK) data to database
+2025-09-22 17:51:43,571 - INFO - Fetching data for UPL.NS (STOCK)...
+2025-09-22 17:51:44,027 - INFO - Successfully fetched data for UPL.NS
+2025-09-22 17:51:44,082 - INFO - Successfully saved UPL.NS (STOCK) data to database
+2025-09-22 17:51:45,083 - INFO - Fetching data for WIPRO.NS (STOCK)...
+2025-09-22 17:51:45,515 - INFO - Successfully fetched data for WIPRO.NS
+2025-09-22 17:51:45,565 - INFO - Successfully saved WIPRO.NS (STOCK) data to database
+2025-09-22 17:51:46,568 - INFO - === Daily market data fetch completed ===
+2025-09-22 17:51:46,569 - INFO - Successful fetches: 61 (11 ETFs, 50 Stocks)
+2025-09-22 17:51:46,570 - INFO - Failed fetches: 1
+2025-09-22 17:51:46,571 - INFO - Total duration: 125.17 seconds
+2025-09-22 17:51:46,572 - WARNING - Some fetches failed. Success: 61, Failed: 1
+2025-09-22 18:14:05,350 - INFO - === Starting daily Indian market data fetch (ETFs + Stocks) ===
+2025-09-22 18:14:05,363 - INFO - Database table created/verified successfully
+2025-09-22 18:14:05,364 - INFO - Fetching data for BANKBEES.NS (ETF)...
+2025-09-22 18:14:07,004 - INFO - Successfully fetched data for BANKBEES.NS
+2025-09-22 18:14:07,016 - INFO - Successfully saved BANKBEES.NS (ETF) data to database
+2025-09-22 18:14:08,038 - INFO - Fetching data for GOLDBEES.NS (ETF)...
+2025-09-22 18:14:08,432 - INFO - Successfully fetched data for GOLDBEES.NS
+2025-09-22 18:14:08,488 - INFO - Successfully saved GOLDBEES.NS (ETF) data to database
+2025-09-22 18:14:09,490 - INFO - Fetching data for HNGSNGBEES.NS (ETF)...
+2025-09-22 18:14:10,960 - INFO - Successfully fetched data for HNGSNGBEES.NS
+2025-09-22 18:14:10,996 - INFO - Successfully saved HNGSNGBEES.NS (ETF) data to database
+2025-09-22 18:14:11,997 - INFO - Fetching data for INFRABEES.NS (ETF)...
+2025-09-22 18:14:12,365 - INFO - Successfully fetched data for INFRABEES.NS
+2025-09-22 18:14:12,405 - INFO - Successfully saved INFRABEES.NS (ETF) data to database
+2025-09-22 18:14:13,406 - INFO - Fetching data for ITBEES.NS (ETF)...
+2025-09-22 18:14:13,747 - INFO - Successfully fetched data for ITBEES.NS
+2025-09-22 18:14:13,786 - INFO - Successfully saved ITBEES.NS (ETF) data to database
+2025-09-22 18:14:14,789 - INFO - Fetching data for JUNIORBEES.NS (ETF)...
+2025-09-22 18:14:15,143 - INFO - Successfully fetched data for JUNIORBEES.NS
+2025-09-22 18:14:15,182 - INFO - Successfully saved JUNIORBEES.NS (ETF) data to database
+2025-09-22 18:14:16,184 - INFO - Fetching data for LIQUIDBEES.NS (ETF)...
+2025-09-22 18:14:19,314 - INFO - Successfully fetched data for LIQUIDBEES.NS
+2025-09-22 18:14:19,352 - INFO - Successfully saved LIQUIDBEES.NS (ETF) data to database
+2025-09-22 18:14:20,353 - INFO - Fetching data for MON100.NS (ETF)...
+2025-09-22 18:14:22,354 - INFO - Successfully fetched data for MON100.NS
+2025-09-22 18:14:22,389 - INFO - Successfully saved MON100.NS (ETF) data to database
+2025-09-22 18:14:23,390 - INFO - Fetching data for NIFTYBEES.NS (ETF)...
+2025-09-22 18:14:23,814 - INFO - Successfully fetched data for NIFTYBEES.NS
+2025-09-22 18:14:23,848 - INFO - Successfully saved NIFTYBEES.NS (ETF) data to database
+2025-09-22 18:14:24,849 - INFO - Fetching data for PHARMABEES.NS (ETF)...
+2025-09-22 18:14:25,234 - INFO - Successfully fetched data for PHARMABEES.NS
+2025-09-22 18:14:25,280 - INFO - Successfully saved PHARMABEES.NS (ETF) data to database
+2025-09-22 18:14:26,281 - INFO - Fetching data for PSUBNKBEES.NS (ETF)...
+2025-09-22 18:14:26,635 - INFO - Successfully fetched data for PSUBNKBEES.NS
+2025-09-22 18:14:26,674 - INFO - Successfully saved PSUBNKBEES.NS (ETF) data to database
+2025-09-22 18:14:27,676 - INFO - Fetching data for SENSEX1.BO (ETF)...
+2025-09-22 18:14:28,034 - INFO - Successfully fetched data for SENSEX1.BO
+2025-09-22 18:14:28,069 - INFO - Successfully saved SENSEX1.BO (ETF) data to database
+2025-09-22 18:14:29,071 - INFO - Fetching data for ADANIENT.NS (STOCK)...
+2025-09-22 18:14:29,450 - INFO - Successfully fetched data for ADANIENT.NS
+2025-09-22 18:14:29,488 - INFO - Successfully saved ADANIENT.NS (STOCK) data to database
+2025-09-22 18:14:30,490 - INFO - Fetching data for ADANIGREEN.NS (STOCK)...
+2025-09-22 18:14:30,864 - INFO - Successfully fetched data for ADANIGREEN.NS
+2025-09-22 18:14:30,912 - INFO - Successfully saved ADANIGREEN.NS (STOCK) data to database
+2025-09-22 18:14:31,913 - INFO - Fetching data for ADANIPORTS.NS (STOCK)...
+2025-09-22 18:14:32,343 - INFO - Successfully fetched data for ADANIPORTS.NS
+2025-09-22 18:14:32,382 - INFO - Successfully saved ADANIPORTS.NS (STOCK) data to database
+2025-09-22 18:14:33,384 - INFO - Fetching data for APOLLOHOSP.NS (STOCK)...
+2025-09-22 18:14:33,760 - INFO - Successfully fetched data for APOLLOHOSP.NS
+2025-09-22 18:14:33,796 - INFO - Successfully saved APOLLOHOSP.NS (STOCK) data to database
+2025-09-22 18:14:34,798 - INFO - Fetching data for ASIANPAINT.NS (STOCK)...
+2025-09-22 18:14:35,187 - INFO - Successfully fetched data for ASIANPAINT.NS
+2025-09-22 18:14:35,235 - INFO - Successfully saved ASIANPAINT.NS (STOCK) data to database
+2025-09-22 18:14:36,236 - INFO - Fetching data for AXISBANK.NS (STOCK)...
+2025-09-22 18:14:36,637 - INFO - Successfully fetched data for AXISBANK.NS
+2025-09-22 18:14:36,680 - INFO - Successfully saved AXISBANK.NS (STOCK) data to database
+2025-09-22 18:14:37,682 - INFO - Fetching data for BAJAJ-AUTO.NS (STOCK)...
+2025-09-22 18:14:38,067 - INFO - Successfully fetched data for BAJAJ-AUTO.NS
+2025-09-22 18:14:38,104 - INFO - Successfully saved BAJAJ-AUTO.NS (STOCK) data to database
+2025-09-22 18:14:39,105 - INFO - Fetching data for BAJAJFINSV.NS (STOCK)...
+2025-09-22 18:14:39,502 - INFO - Successfully fetched data for BAJAJFINSV.NS
+2025-09-22 18:14:39,538 - INFO - Successfully saved BAJAJFINSV.NS (STOCK) data to database
+2025-09-22 18:14:40,539 - INFO - Fetching data for BAJFINANCE.NS (STOCK)...
+2025-09-22 18:14:40,919 - INFO - Successfully fetched data for BAJFINANCE.NS
+2025-09-22 18:14:40,952 - INFO - Successfully saved BAJFINANCE.NS (STOCK) data to database
+2025-09-22 18:14:41,953 - INFO - Fetching data for BHARTIARTL.NS (STOCK)...
+2025-09-22 18:14:42,351 - INFO - Successfully fetched data for BHARTIARTL.NS
+2025-09-22 18:14:42,405 - INFO - Successfully saved BHARTIARTL.NS (STOCK) data to database
+2025-09-22 18:14:43,410 - INFO - Fetching data for BPCL.NS (STOCK)...
+2025-09-22 18:14:43,816 - INFO - Successfully fetched data for BPCL.NS
+2025-09-22 18:14:43,855 - INFO - Successfully saved BPCL.NS (STOCK) data to database
+2025-09-22 18:14:44,856 - INFO - Fetching data for BRITANNIA.NS (STOCK)...
+2025-09-22 18:14:45,227 - INFO - Successfully fetched data for BRITANNIA.NS
+2025-09-22 18:14:45,268 - INFO - Successfully saved BRITANNIA.NS (STOCK) data to database
+2025-09-22 18:14:46,269 - INFO - Fetching data for CIPLA.NS (STOCK)...
+2025-09-22 18:14:46,665 - INFO - Successfully fetched data for CIPLA.NS
+2025-09-22 18:14:46,705 - INFO - Successfully saved CIPLA.NS (STOCK) data to database
+2025-09-22 18:14:47,707 - INFO - Fetching data for COALINDIA.NS (STOCK)...
+2025-09-22 18:14:48,092 - INFO - Successfully fetched data for COALINDIA.NS
+2025-09-22 18:14:48,143 - INFO - Successfully saved COALINDIA.NS (STOCK) data to database
+2025-09-22 18:14:49,144 - INFO - Fetching data for DIVISLAB.NS (STOCK)...
+2025-09-22 18:14:49,514 - INFO - Successfully fetched data for DIVISLAB.NS
+2025-09-22 18:14:49,563 - INFO - Successfully saved DIVISLAB.NS (STOCK) data to database
+2025-09-22 18:14:50,564 - INFO - Fetching data for DRREDDY.NS (STOCK)...
+2025-09-22 18:14:50,944 - INFO - Successfully fetched data for DRREDDY.NS
+2025-09-22 18:14:50,984 - INFO - Successfully saved DRREDDY.NS (STOCK) data to database
+2025-09-22 18:14:51,986 - INFO - Fetching data for EICHERMOT.NS (STOCK)...
+2025-09-22 18:14:52,386 - INFO - Successfully fetched data for EICHERMOT.NS
+2025-09-22 18:14:52,424 - INFO - Successfully saved EICHERMOT.NS (STOCK) data to database
+2025-09-22 18:14:53,425 - INFO - Fetching data for GRASIM.NS (STOCK)...
+2025-09-22 18:14:53,819 - INFO - Successfully fetched data for GRASIM.NS
+2025-09-22 18:14:53,934 - INFO - Successfully saved GRASIM.NS (STOCK) data to database
+2025-09-22 18:14:54,935 - INFO - Fetching data for HCLTECH.NS (STOCK)...
+2025-09-22 18:14:55,326 - INFO - Successfully fetched data for HCLTECH.NS
+2025-09-22 18:14:55,372 - INFO - Successfully saved HCLTECH.NS (STOCK) data to database
+2025-09-22 18:14:56,373 - INFO - Fetching data for HDFCBANK.NS (STOCK)...
+2025-09-22 18:14:56,793 - INFO - Successfully fetched data for HDFCBANK.NS
+2025-09-22 18:14:57,109 - INFO - Successfully saved HDFCBANK.NS (STOCK) data to database
+2025-09-22 18:14:58,112 - INFO - Fetching data for HDFCLIFE.NS (STOCK)...
+2025-09-22 18:14:58,506 - INFO - Successfully fetched data for HDFCLIFE.NS
+2025-09-22 18:14:58,686 - INFO - Successfully saved HDFCLIFE.NS (STOCK) data to database
+2025-09-22 18:14:59,795 - INFO - Fetching data for HEROMOTOCO.NS (STOCK)...
+2025-09-22 18:15:00,230 - INFO - Successfully fetched data for HEROMOTOCO.NS
+2025-09-22 18:15:00,405 - INFO - Successfully saved HEROMOTOCO.NS (STOCK) data to database
+2025-09-22 18:15:01,408 - INFO - Fetching data for HINDALCO.NS (STOCK)...
+2025-09-22 18:15:01,813 - INFO - Successfully fetched data for HINDALCO.NS
+2025-09-22 18:15:01,997 - INFO - Successfully saved HINDALCO.NS (STOCK) data to database
+2025-09-22 18:15:02,998 - INFO - Fetching data for HINDUNILVR.NS (STOCK)...
+2025-09-22 18:15:03,406 - INFO - Successfully fetched data for HINDUNILVR.NS
+2025-09-22 18:15:03,673 - INFO - Successfully saved HINDUNILVR.NS (STOCK) data to database
+2025-09-22 18:15:04,675 - INFO - Fetching data for ICICIBANK.NS (STOCK)...
+2025-09-22 18:15:05,109 - INFO - Successfully fetched data for ICICIBANK.NS
+2025-09-22 18:15:05,160 - INFO - Successfully saved ICICIBANK.NS (STOCK) data to database
+2025-09-22 18:15:06,161 - INFO - Fetching data for INDUSINDBK.NS (STOCK)...
+2025-09-22 18:15:06,559 - INFO - Successfully fetched data for INDUSINDBK.NS
+2025-09-22 18:15:06,599 - INFO - Successfully saved INDUSINDBK.NS (STOCK) data to database
+2025-09-22 18:15:07,601 - INFO - Fetching data for ITC.NS (STOCK)...
+2025-09-22 18:15:07,978 - INFO - Successfully fetched data for ITC.NS
+2025-09-22 18:15:08,017 - INFO - Successfully saved ITC.NS (STOCK) data to database
+2025-09-22 18:15:09,018 - INFO - Fetching data for JSWSTEEL.NS (STOCK)...
+2025-09-22 18:15:09,469 - INFO - Successfully fetched data for JSWSTEEL.NS
+2025-09-22 18:15:09,514 - INFO - Successfully saved JSWSTEEL.NS (STOCK) data to database
+2025-09-22 18:15:10,515 - INFO - Fetching data for KOTAKBANK.NS (STOCK)...
+2025-09-22 18:15:10,980 - INFO - Successfully fetched data for KOTAKBANK.NS
+2025-09-22 18:15:11,031 - INFO - Successfully saved KOTAKBANK.NS (STOCK) data to database
+2025-09-22 18:15:12,033 - INFO - Fetching data for LT.NS (STOCK)...
+2025-09-22 18:15:12,448 - INFO - Successfully fetched data for LT.NS
+2025-09-22 18:15:12,496 - INFO - Successfully saved LT.NS (STOCK) data to database
+2025-09-22 18:15:13,497 - INFO - Fetching data for LTIM.NS (STOCK)...
+2025-09-22 18:15:13,900 - INFO - Successfully fetched data for LTIM.NS
+2025-09-22 18:15:13,937 - INFO - Successfully saved LTIM.NS (STOCK) data to database
+2025-09-22 18:15:14,939 - INFO - Fetching data for M&M.NS (STOCK)...
+2025-09-22 18:15:15,328 - INFO - Successfully fetched data for M&M.NS
+2025-09-22 18:15:15,365 - INFO - Successfully saved M&M.NS (STOCK) data to database
+2025-09-22 18:15:16,366 - INFO - Fetching data for MARUTI.NS (STOCK)...
+2025-09-22 18:15:16,771 - INFO - Successfully fetched data for MARUTI.NS
+2025-09-22 18:15:16,822 - INFO - Successfully saved MARUTI.NS (STOCK) data to database
+2025-09-22 18:15:17,826 - INFO - Fetching data for NESTLEIND.NS (STOCK)...
+2025-09-22 18:15:18,195 - INFO - Successfully fetched data for NESTLEIND.NS
+2025-09-22 18:15:18,236 - INFO - Successfully saved NESTLEIND.NS (STOCK) data to database
+2025-09-22 18:15:19,238 - INFO - Fetching data for NTPC.NS (STOCK)...
+2025-09-22 18:15:19,628 - INFO - Successfully fetched data for NTPC.NS
+2025-09-22 18:15:19,669 - INFO - Successfully saved NTPC.NS (STOCK) data to database
+2025-09-22 18:15:20,673 - INFO - Fetching data for ONGC.NS (STOCK)...
+2025-09-22 18:15:21,064 - INFO - Successfully fetched data for ONGC.NS
+2025-09-22 18:15:21,102 - INFO - Successfully saved ONGC.NS (STOCK) data to database
+2025-09-22 18:15:22,103 - INFO - Fetching data for POWERGRID.NS (STOCK)...
+2025-09-22 18:15:22,487 - INFO - Successfully fetched data for POWERGRID.NS
+2025-09-22 18:15:22,527 - INFO - Successfully saved POWERGRID.NS (STOCK) data to database
+2025-09-22 18:15:23,528 - INFO - Fetching data for RELIANCE.NS (STOCK)...
+2025-09-22 18:15:23,912 - INFO - Successfully fetched data for RELIANCE.NS
+2025-09-22 18:15:23,951 - INFO - Successfully saved RELIANCE.NS (STOCK) data to database
+2025-09-22 18:15:24,953 - INFO - Fetching data for SBILIFE.NS (STOCK)...
+2025-09-22 18:15:25,327 - INFO - Successfully fetched data for SBILIFE.NS
+2025-09-22 18:15:25,366 - INFO - Successfully saved SBILIFE.NS (STOCK) data to database
+2025-09-22 18:15:26,367 - INFO - Fetching data for SBIN.NS (STOCK)...
+2025-09-22 18:15:26,775 - INFO - Successfully fetched data for SBIN.NS
+2025-09-22 18:15:26,814 - INFO - Successfully saved SBIN.NS (STOCK) data to database
+2025-09-22 18:15:27,815 - INFO - Fetching data for SUNPHARMA.NS (STOCK)...
+2025-09-22 18:15:28,225 - INFO - Successfully fetched data for SUNPHARMA.NS
+2025-09-22 18:15:28,270 - INFO - Successfully saved SUNPHARMA.NS (STOCK) data to database
+2025-09-22 18:15:29,271 - INFO - Fetching data for TATACONSUM.NS (STOCK)...
+2025-09-22 18:15:29,688 - INFO - Successfully fetched data for TATACONSUM.NS
+2025-09-22 18:15:29,739 - INFO - Successfully saved TATACONSUM.NS (STOCK) data to database
+2025-09-22 18:15:30,741 - INFO - Fetching data for TATAMOTORS.NS (STOCK)...
+2025-09-22 18:15:31,137 - INFO - Successfully fetched data for TATAMOTORS.NS
+2025-09-22 18:15:31,175 - INFO - Successfully saved TATAMOTORS.NS (STOCK) data to database
+2025-09-22 18:15:32,177 - INFO - Fetching data for TATASTEEL.NS (STOCK)...
+2025-09-22 18:15:32,579 - INFO - Successfully fetched data for TATASTEEL.NS
+2025-09-22 18:15:32,619 - INFO - Successfully saved TATASTEEL.NS (STOCK) data to database
+2025-09-22 18:15:33,621 - INFO - Fetching data for TCS.NS (STOCK)...
+2025-09-22 18:15:34,010 - INFO - Successfully fetched data for TCS.NS
+2025-09-22 18:15:34,057 - INFO - Successfully saved TCS.NS (STOCK) data to database
+2025-09-22 18:15:35,058 - INFO - Fetching data for TECHM.NS (STOCK)...
+2025-09-22 18:15:35,441 - INFO - Successfully fetched data for TECHM.NS
+2025-09-22 18:15:35,479 - INFO - Successfully saved TECHM.NS (STOCK) data to database
+2025-09-22 18:15:36,479 - INFO - Fetching data for TITAN.NS (STOCK)...
+2025-09-22 18:15:36,884 - INFO - Successfully fetched data for TITAN.NS
+2025-09-22 18:15:36,921 - INFO - Successfully saved TITAN.NS (STOCK) data to database
+2025-09-22 18:15:37,923 - INFO - Fetching data for ULTRACEMCO.NS (STOCK)...
+2025-09-22 18:15:38,338 - INFO - Successfully fetched data for ULTRACEMCO.NS
+2025-09-22 18:15:38,373 - INFO - Successfully saved ULTRACEMCO.NS (STOCK) data to database
+2025-09-22 18:15:39,374 - INFO - Fetching data for UPL.NS (STOCK)...
+2025-09-22 18:15:39,755 - INFO - Successfully fetched data for UPL.NS
+2025-09-22 18:15:39,796 - INFO - Successfully saved UPL.NS (STOCK) data to database
+2025-09-22 18:15:40,798 - INFO - Fetching data for WIPRO.NS (STOCK)...
+2025-09-22 18:15:41,195 - INFO - Successfully fetched data for WIPRO.NS
+2025-09-22 18:15:41,229 - INFO - Successfully saved WIPRO.NS (STOCK) data to database
+2025-09-22 18:15:42,230 - INFO - === Daily market data fetch completed ===
+2025-09-22 18:15:42,233 - INFO - Successful fetches: 62 (12 ETFs, 50 Stocks)
+2025-09-22 18:15:42,234 - INFO - Failed fetches: 0
+2025-09-22 18:15:42,235 - INFO - Total duration: 96.88 seconds
+2025-09-22 18:15:42,236 - INFO - All market data fetches completed successfully
+2025-09-22 18:40:30,878 - INFO - === Starting daily Indian market data fetch (ETFs + Stocks) ===
+2025-09-22 18:40:30,894 - INFO - Database table created/verified successfully
+2025-09-22 18:40:30,898 - INFO - Fetching data for BANKBEES.NS (ETF)...
+2025-09-22 18:40:32,254 - INFO - Successfully fetched data for BANKBEES.NS
+2025-09-22 18:40:32,266 - INFO - Successfully saved BANKBEES.NS (ETF) data to database
+2025-09-22 18:40:33,271 - INFO - Fetching data for GOLDBEES.NS (ETF)...
+2025-09-22 18:40:33,587 - INFO - Successfully fetched data for GOLDBEES.NS
+2025-09-22 18:40:33,804 - INFO - Successfully saved GOLDBEES.NS (ETF) data to database
+2025-09-22 18:40:34,808 - INFO - Fetching data for HNGSNGBEES.NS (ETF)...
+2025-09-22 18:40:35,003 - INFO - Successfully fetched data for HNGSNGBEES.NS
+2025-09-22 18:40:35,045 - INFO - Successfully saved HNGSNGBEES.NS (ETF) data to database
+2025-09-22 18:40:36,046 - INFO - Fetching data for INFRABEES.NS (ETF)...
+2025-09-22 18:40:36,219 - INFO - Successfully fetched data for INFRABEES.NS
+2025-09-22 18:40:36,261 - INFO - Successfully saved INFRABEES.NS (ETF) data to database
+2025-09-22 18:40:37,262 - INFO - Fetching data for ITBEES.NS (ETF)...
+2025-09-22 18:40:37,445 - INFO - Successfully fetched data for ITBEES.NS
+2025-09-22 18:40:37,486 - INFO - Successfully saved ITBEES.NS (ETF) data to database
+2025-09-22 18:40:38,490 - INFO - Fetching data for JUNIORBEES.NS (ETF)...
+2025-09-22 18:40:38,698 - INFO - Successfully fetched data for JUNIORBEES.NS
+2025-09-22 18:40:38,825 - INFO - Successfully saved JUNIORBEES.NS (ETF) data to database
+2025-09-22 18:40:39,829 - INFO - Fetching data for LIQUIDBEES.NS (ETF)...
+2025-09-22 18:40:40,058 - INFO - Successfully fetched data for LIQUIDBEES.NS
+2025-09-22 18:40:40,115 - INFO - Successfully saved LIQUIDBEES.NS (ETF) data to database
+2025-09-22 18:40:41,116 - INFO - Fetching data for MON100.NS (ETF)...
+2025-09-22 18:40:41,291 - INFO - Successfully fetched data for MON100.NS
+2025-09-22 18:40:41,341 - INFO - Successfully saved MON100.NS (ETF) data to database
+2025-09-22 18:40:42,342 - INFO - Fetching data for NIFTYBEES.NS (ETF)...
+2025-09-22 18:40:42,525 - INFO - Successfully fetched data for NIFTYBEES.NS
+2025-09-22 18:40:42,563 - INFO - Successfully saved NIFTYBEES.NS (ETF) data to database
+2025-09-22 18:40:43,564 - INFO - Fetching data for PHARMABEES.NS (ETF)...
+2025-09-22 18:40:43,739 - INFO - Successfully fetched data for PHARMABEES.NS
+2025-09-22 18:40:43,782 - INFO - Successfully saved PHARMABEES.NS (ETF) data to database
+2025-09-22 18:40:44,784 - INFO - Fetching data for PSUBNKBEES.NS (ETF)...
+2025-09-22 18:40:44,981 - INFO - Successfully fetched data for PSUBNKBEES.NS
+2025-09-22 18:40:45,030 - INFO - Successfully saved PSUBNKBEES.NS (ETF) data to database
+2025-09-22 18:40:46,033 - INFO - Fetching data for SENSEX1.BO (ETF)...
+2025-09-22 18:40:46,198 - INFO - Successfully fetched data for SENSEX1.BO
+2025-09-22 18:40:46,239 - INFO - Successfully saved SENSEX1.BO (ETF) data to database
+2025-09-22 18:40:47,240 - INFO - Fetching data for ADANIENT.NS (STOCK)...
+2025-09-22 18:40:47,434 - INFO - Successfully fetched data for ADANIENT.NS
+2025-09-22 18:40:47,471 - INFO - Successfully saved ADANIENT.NS (STOCK) data to database
+2025-09-22 18:40:48,472 - INFO - Fetching data for ADANIGREEN.NS (STOCK)...
+2025-09-22 18:40:48,644 - INFO - Successfully fetched data for ADANIGREEN.NS
+2025-09-22 18:40:48,693 - INFO - Successfully saved ADANIGREEN.NS (STOCK) data to database
+2025-09-22 18:40:49,696 - INFO - Fetching data for ADANIPORTS.NS (STOCK)...
+2025-09-22 18:40:49,881 - INFO - Successfully fetched data for ADANIPORTS.NS
+2025-09-22 18:40:49,923 - INFO - Successfully saved ADANIPORTS.NS (STOCK) data to database
+2025-09-22 18:40:50,924 - INFO - Fetching data for APOLLOHOSP.NS (STOCK)...
+2025-09-22 18:40:51,149 - INFO - Successfully fetched data for APOLLOHOSP.NS
+2025-09-22 18:40:51,197 - INFO - Successfully saved APOLLOHOSP.NS (STOCK) data to database
+2025-09-22 18:40:52,198 - INFO - Fetching data for ASIANPAINT.NS (STOCK)...
+2025-09-22 18:40:52,406 - INFO - Successfully fetched data for ASIANPAINT.NS
+2025-09-22 18:40:52,451 - INFO - Successfully saved ASIANPAINT.NS (STOCK) data to database
+2025-09-22 18:40:53,452 - INFO - Fetching data for AXISBANK.NS (STOCK)...
+2025-09-22 18:40:53,638 - INFO - Successfully fetched data for AXISBANK.NS
+2025-09-22 18:40:53,687 - INFO - Successfully saved AXISBANK.NS (STOCK) data to database
+2025-09-22 18:40:54,688 - INFO - Fetching data for BAJAJ-AUTO.NS (STOCK)...
+2025-09-22 18:40:54,887 - INFO - Successfully fetched data for BAJAJ-AUTO.NS
+2025-09-22 18:40:54,933 - INFO - Successfully saved BAJAJ-AUTO.NS (STOCK) data to database
+2025-09-22 18:40:55,934 - INFO - Fetching data for BAJAJFINSV.NS (STOCK)...
+2025-09-22 18:40:56,111 - INFO - Successfully fetched data for BAJAJFINSV.NS
+2025-09-22 18:40:56,151 - INFO - Successfully saved BAJAJFINSV.NS (STOCK) data to database
+2025-09-22 18:40:57,153 - INFO - Fetching data for BAJFINANCE.NS (STOCK)...
+2025-09-22 18:40:57,350 - INFO - Successfully fetched data for BAJFINANCE.NS
+2025-09-22 18:40:57,392 - INFO - Successfully saved BAJFINANCE.NS (STOCK) data to database
+2025-09-22 18:40:58,393 - INFO - Fetching data for BHARTIARTL.NS (STOCK)...
+2025-09-22 18:40:58,591 - INFO - Successfully fetched data for BHARTIARTL.NS
+2025-09-22 18:40:58,633 - INFO - Successfully saved BHARTIARTL.NS (STOCK) data to database
+2025-09-22 18:40:59,634 - INFO - Fetching data for BPCL.NS (STOCK)...
+2025-09-22 18:40:59,843 - INFO - Successfully fetched data for BPCL.NS
+2025-09-22 18:40:59,889 - INFO - Successfully saved BPCL.NS (STOCK) data to database
+2025-09-22 18:41:00,890 - INFO - Fetching data for BRITANNIA.NS (STOCK)...
+2025-09-22 18:41:01,103 - INFO - Successfully fetched data for BRITANNIA.NS
+2025-09-22 18:41:01,147 - INFO - Successfully saved BRITANNIA.NS (STOCK) data to database
+2025-09-22 18:41:02,147 - INFO - Fetching data for CIPLA.NS (STOCK)...
+2025-09-22 18:41:02,391 - INFO - Successfully fetched data for CIPLA.NS
+2025-09-22 18:41:02,451 - INFO - Successfully saved CIPLA.NS (STOCK) data to database
+2025-09-22 18:41:03,454 - INFO - Fetching data for COALINDIA.NS (STOCK)...
+2025-09-22 18:41:03,637 - INFO - Successfully fetched data for COALINDIA.NS
+2025-09-22 18:41:03,680 - INFO - Successfully saved COALINDIA.NS (STOCK) data to database
+2025-09-22 18:41:04,685 - INFO - Fetching data for DIVISLAB.NS (STOCK)...
+2025-09-22 18:41:04,894 - INFO - Successfully fetched data for DIVISLAB.NS
+2025-09-22 18:41:04,939 - INFO - Successfully saved DIVISLAB.NS (STOCK) data to database
+2025-09-22 18:41:05,940 - INFO - Fetching data for DRREDDY.NS (STOCK)...
+2025-09-22 18:41:06,154 - INFO - Successfully fetched data for DRREDDY.NS
+2025-09-22 18:41:06,193 - INFO - Successfully saved DRREDDY.NS (STOCK) data to database
+2025-09-22 18:41:07,194 - INFO - Fetching data for EICHERMOT.NS (STOCK)...
+2025-09-22 18:41:07,416 - INFO - Successfully fetched data for EICHERMOT.NS
+2025-09-22 18:41:07,456 - INFO - Successfully saved EICHERMOT.NS (STOCK) data to database
+2025-09-22 18:41:08,458 - INFO - Fetching data for GRASIM.NS (STOCK)...
+2025-09-22 18:41:08,685 - INFO - Successfully fetched data for GRASIM.NS
+2025-09-22 18:41:08,738 - INFO - Successfully saved GRASIM.NS (STOCK) data to database

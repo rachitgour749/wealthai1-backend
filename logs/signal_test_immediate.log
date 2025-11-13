@@ -1,0 +1,75 @@
+2025-10-26 00:31:54,021 - INFO - STARTING SIGNAL GENERATION TEST
+2025-10-26 00:31:54,021 - INFO - ================================================================================
+2025-10-26 00:31:54,021 - INFO - Test Date: 2025-10-24 (Friday)
+2025-10-26 00:31:54,023 - INFO - Current Time: 2025-10-26 00:31:54
+2025-10-26 00:31:54,023 - INFO - ================================================================================
+2025-10-26 00:31:54,023 - INFO - SUCCESS: It's Friday - Signal generation day!
+2025-10-26 00:31:54,024 - INFO - 
+============================================================
+2025-10-26 00:31:54,024 - INFO - TESTING ETF SIGNAL GENERATION
+2025-10-26 00:31:54,024 - INFO - ============================================================
+2025-10-26 00:31:54,026 - INFO - SUCCESS: ETF Database found: D:\WealthAI1\wealthai-backend2\unified_etf_data.sqlite
+2025-10-26 00:31:54,444 - INFO - ETF Data Records: 12
+2025-10-26 00:31:54,444 - INFO - Stock Data Records: 50
+2025-10-26 00:31:54,445 - INFO - SUCCESS: ETF/Stock data available for signal generation
+2025-10-26 00:31:54,445 - INFO - TARGET: ETF Signal Generation: READY
+2025-10-26 00:31:54,445 - INFO - TARGET: Stock Signal Generation: READY
+2025-10-26 00:31:54,445 - INFO - 
+============================================================
+2025-10-26 00:31:54,445 - INFO - TESTING RS SIGNAL GENERATION
+2025-10-26 00:31:54,445 - INFO - ============================================================
+2025-10-26 00:31:54,445 - INFO - SUCCESS: RS Database found: D:\WealthAI1\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-26 00:31:54,451 - INFO - RS Stock Data Records: 0
+2025-10-26 00:31:54,451 - INFO - RS Index Data Records: 0
+2025-10-26 00:31:54,452 - WARNING - WARNING: Limited RS data available for signal generation
+2025-10-26 00:31:54,452 - INFO - 
+================================================================================
+2025-10-26 00:31:54,452 - INFO - SIGNAL GENERATION TEST SUMMARY
+2025-10-26 00:31:54,454 - INFO - ================================================================================
+2025-10-26 00:31:54,454 - INFO - Test Date: 2025-10-24 (Friday)
+2025-10-26 00:31:54,454 - INFO - Current Time: 2025-10-26 00:31:54
+2025-10-26 00:31:54,455 - INFO - ================================================================================
+2025-10-26 00:31:54,455 - INFO - ETF/Stock Signals: SUCCESS
+2025-10-26 00:31:54,455 - INFO - RS Signals: FAILED
+2025-10-26 00:31:54,457 - INFO - Total Ready: 1/2 signal types
+2025-10-26 00:31:54,457 - INFO - WARNING: Some signal generation systems are not ready
+2025-10-26 00:31:54,457 - INFO - ================================================================================
+2025-10-26 00:33:43,520 - INFO - STARTING SIGNAL GENERATION TEST
+2025-10-26 00:33:43,520 - INFO - ================================================================================
+2025-10-26 00:33:43,521 - INFO - Test Date: 2025-10-24 (Friday)
+2025-10-26 00:33:43,521 - INFO - Current Time: 2025-10-26 00:33:43
+2025-10-26 00:33:43,522 - INFO - ================================================================================
+2025-10-26 00:33:43,522 - INFO - SUCCESS: It's Friday - Signal generation day!
+2025-10-26 00:33:43,523 - INFO - 
+============================================================
+2025-10-26 00:33:43,523 - INFO - TESTING ETF SIGNAL GENERATION
+2025-10-26 00:33:43,523 - INFO - ============================================================
+2025-10-26 00:33:43,524 - INFO - SUCCESS: ETF Database found: D:\WealthAI1\wealthai-backend2\unified_etf_data.sqlite
+2025-10-26 00:33:44,027 - INFO - ETF Data Records: 12
+2025-10-26 00:33:44,027 - INFO - Stock Data Records: 50
+2025-10-26 00:33:44,027 - INFO - SUCCESS: ETF/Stock data available for signal generation
+2025-10-26 00:33:44,027 - INFO - TARGET: ETF Signal Generation: READY
+2025-10-26 00:33:44,027 - INFO - TARGET: Stock Signal Generation: READY
+2025-10-26 00:33:44,028 - INFO - 
+============================================================
+2025-10-26 00:33:44,029 - INFO - TESTING RS SIGNAL GENERATION
+2025-10-26 00:33:44,029 - INFO - ============================================================
+2025-10-26 00:33:44,031 - INFO - SUCCESS: RS Database found: D:\WealthAI1\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-26 00:33:44,072 - INFO - RS Stock Data Records: 10
+2025-10-26 00:33:44,074 - INFO - RS Index Data Records: 1
+2025-10-26 00:33:44,074 - INFO - SUCCESS: RS data available for signal generation
+2025-10-26 00:33:44,074 - INFO - TARGET: RS Signal Generation: READY
+2025-10-26 00:33:44,075 - INFO - 
+================================================================================
+2025-10-26 00:33:44,075 - INFO - SIGNAL GENERATION TEST SUMMARY
+2025-10-26 00:33:44,075 - INFO - ================================================================================
+2025-10-26 00:33:44,075 - INFO - Test Date: 2025-10-24 (Friday)
+2025-10-26 00:33:44,076 - INFO - Current Time: 2025-10-26 00:33:44
+2025-10-26 00:33:44,076 - INFO - ================================================================================
+2025-10-26 00:33:44,076 - INFO - ETF/Stock Signals: SUCCESS
+2025-10-26 00:33:44,076 - INFO - RS Signals: SUCCESS
+2025-10-26 00:33:44,077 - INFO - Total Ready: 2/2 signal types
+2025-10-26 00:33:44,077 - INFO - SUCCESS: All signal generation systems are ready!
+2025-10-26 00:33:44,079 - INFO - TARGET: ETF/Stock Signal Generation: READY
+2025-10-26 00:33:44,079 - INFO - TARGET: RS Signal Generation: READY
+2025-10-26 00:33:44,079 - INFO - ================================================================================

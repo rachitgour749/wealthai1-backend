@@ -1,0 +1,29 @@
+[Unit]
+Description=WealthAI RS Strategy Scheduler
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/wealthai-backend2/Schedulers/rs_scheduler
+Environment="PATH=/home/ubuntu/wealthai-backend2/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/home/ubuntu/wealthai-backend2"
+
+# Start the RS strategy scheduler
+ExecStart=/home/ubuntu/wealthai-backend2/.venv/bin/python rs_scheduler.py
+
+# Restart on failure
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=append:/home/ubuntu/wealthai-backend2/Schedulers/logs/rs_scheduler.log
+StandardError=append:/home/ubuntu/wealthai-backend2/Schedulers/logs/rs_scheduler_error.log
+
+# Security
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,32 @@
+2025-10-26 00:42:48,946 - INFO - STARTING COMPREHENSIVE SIGNAL GENERATION TEST
+2025-10-26 00:42:48,947 - INFO - ================================================================================
+2025-10-26 00:42:48,948 - INFO - Test Date: 2025-10-24 (Friday)
+2025-10-26 00:42:48,948 - INFO - Current Time: 2025-10-26 00:42:48
+2025-10-26 00:42:48,953 - INFO - ================================================================================
+2025-10-26 00:42:48,956 - INFO - ============================================================
+2025-10-26 00:42:48,956 - INFO - TESTING ETF SIGNAL GENERATION
+2025-10-26 00:42:48,957 - INFO - ============================================================
+2025-10-26 00:42:48,958 - INFO - Test Date: 2025-10-24 (Friday)
+2025-10-26 00:42:48,959 - INFO - SUCCESS: ETF Database found: D:\WealthAI1\wealthai-backend2\unified_etf_data.sqlite
+2025-10-26 00:42:49,496 - INFO - ETF Data Records: 12
+2025-10-26 00:42:49,496 - INFO - Stock Data Records: 50
+2025-10-26 00:42:49,496 - INFO - SUCCESS: ETF/Stock data available for signal generation
+2025-10-26 00:42:49,497 - INFO - TARGET: ETF Signal Generation: READY
+2025-10-26 00:42:49,497 - INFO - TARGET: Stock Signal Generation: READY
+2025-10-26 00:42:49,497 - INFO - ============================================================
+2025-10-26 00:42:49,502 - INFO - TESTING RS SIGNAL GENERATION
+2025-10-26 00:42:49,503 - INFO - ============================================================
+2025-10-26 00:42:49,503 - INFO - Test Date: 2025-10-24 (Friday)
+2025-10-26 00:42:49,504 - INFO - SUCCESS: RS Database found: D:\WealthAI1\wealthai-backend2\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-10-26 00:42:49,511 - INFO - RS Stock Data Records: 10
+2025-10-26 00:42:49,512 - INFO - RS Index Data Records: 1
+2025-10-26 00:42:49,512 - INFO - SUCCESS: RS data available for signal generation
+2025-10-26 00:42:49,513 - INFO - TARGET: RS Signal Generation: READY
+2025-10-26 00:42:49,513 - INFO - ================================================================================
+2025-10-26 00:42:49,513 - INFO - SIGNAL GENERATION TEST SUMMARY
+2025-10-26 00:42:49,513 - INFO - ================================================================================
+2025-10-26 00:42:49,514 - INFO - ETF Signals: SUCCESS
+2025-10-26 00:42:49,515 - INFO - RS Signals: SUCCESS
+2025-10-26 00:42:49,517 - INFO - Total Success: 2/2 signal types
+2025-10-26 00:42:49,518 - INFO - ALL SIGNAL GENERATION TESTS PASSED!
+2025-10-26 00:42:49,518 - INFO - ================================================================================

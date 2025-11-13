@@ -1,0 +1,139 @@
+2025-10-18 09:47:41,575 - INFO - ================================================================================
+2025-10-18 09:47:41,579 - INFO - MANUAL SIGNAL GENERATION - ALL STRATEGIES
+2025-10-18 09:47:41,580 - INFO - Started at: 2025-10-18 09:47:41
+2025-10-18 09:47:41,581 - INFO - ================================================================================
+2025-10-18 09:47:41,582 - INFO - ================================================================================
+2025-10-18 09:47:41,582 - INFO - ETF SIGNAL GENERATION - ALL DEPLOYMENTS
+2025-10-18 09:47:41,582 - INFO - ================================================================================
+2025-10-18 09:47:55,867 - INFO - 
+Found 2 deployment(s)
+2025-10-18 09:47:55,868 - INFO - --------------------------------------------------------------------------------
+2025-10-18 09:47:55,904 - INFO -      User: mohitsharma7258@gmail.com
+2025-10-18 09:47:55,904 - INFO -      ETF Count: 2
+2025-10-18 09:47:55,905 - INFO -      Status: running
+2025-10-18 09:47:55,911 - INFO -      Created: 2025-10-18T03:41:21.467Z
+2025-10-18 09:47:55,917 - INFO - 
+2025-10-18 09:47:56,037 - INFO -      User: mohitsharma7258@gmail.com
+2025-10-18 09:47:56,052 - INFO -      ETF Count: 2
+2025-10-18 09:47:56,053 - INFO -      Status: running
+2025-10-18 09:47:56,066 - INFO -      Created: 2025-10-18T03:39:54.962Z
+2025-10-18 09:47:56,068 - INFO - 
+2025-10-18 09:47:56,132 - INFO - Live signals database tables created/verified successfully
+2025-10-18 09:47:56,133 - INFO - 
+============================================================
+2025-10-18 09:47:56,134 - INFO - Processing: run_rachit_strategy_2025-10-18_1760758881466
+2025-10-18 09:47:56,134 - INFO - User: mohitsharma7258@gmail.com
+2025-10-18 09:47:56,135 - INFO - Status: running
+2025-10-18 09:47:56,135 - INFO - ============================================================
+2025-10-18 09:47:56,136 - INFO - Starting weekly signal generation...
+2025-10-18 09:47:56,136 - INFO - Using run_id: run_rachit_strategy_2025-10-18_1760758881466
+2025-10-18 09:47:56,141 - INFO - Found 5 ETF symbols for run_id run_rachit_strategy_2025-10-18_1760758881466: ['NIFTYBEES', 'MON100', 'ITBEES', 'CPSEETF', 'JUNIORBEES']
+2025-10-18 09:47:56,149 - INFO - Using 5 ETFs from deployment: ['NIFTYBEES', 'MON100', 'ITBEES', 'CPSEETF', 'JUNIORBEES']
+2025-10-18 09:47:56,292 - INFO - Found 4 ETF symbols in database: ['NIFTYBEES', 'MON100', 'ITBEES', 'JUNIORBEES']
+2025-10-18 09:47:56,297 - INFO - Using last Friday's date: 2025-10-17 for signal generation
+2025-10-18 09:47:56,299 - INFO - Using test date: 2025-10-17 (Friday) for signal generation
+2025-10-18 09:47:56,453 - INFO - Loaded data for 5 ETFs from 2024-09-12 to 2025-10-17
+2025-10-18 09:47:56,453 - INFO - Processing 4 symbols: ['NIFTYBEES', 'MON100', 'ITBEES', 'JUNIORBEES']...
+2025-10-18 09:47:56,484 - INFO - Calculated metrics for 4 ETFs
+2025-10-18 09:47:56,560 - INFO - Generated 4 signals: 1 BUY, 3 SELL
+2025-10-18 09:47:56,637 - INFO - Saved 4 signals to database with run_id: run_rachit_strategy_2025-10-18_1760758881466
+2025-10-18 09:47:56,638 - INFO - Signal generation completed successfully in 0.50s
+2025-10-18 09:47:56,649 - INFO - Generated 1 BUY and 3 SELL signals
+2025-10-18 09:47:56,651 - INFO - Live market engine logging initialized
+2025-10-18 09:47:56,702 - INFO - Monitoring tables created successfully
+2025-10-18 09:47:56,702 - INFO - Signal generation completed - Run ID: run_rachit_strategy_2025-10-18_1760758881466, Signals: 4 (1 BUY, 3 SELL), Duration: 0.50s
+2025-10-18 09:47:56,813 - INFO - signal_generation completed in 0.502s
+2025-10-18 09:47:56,954 - INFO - 
+Generated signals:
+2025-10-18 09:47:56,967 - INFO -   BUY  ITBEES       Score: 91.390 - Rank 1 closest to 52-week min close: 8.61% from min close
+2025-10-18 09:47:56,969 - INFO -   SELL NIFTYBEES    Score: 100.000 - Rank 1 closest to 52-week max close: 0.00% from max close
+2025-10-18 09:47:56,970 - INFO -   SELL MON100       Score: 94.390 - Rank 2 closest to 52-week max close: 5.61% from max close
+2025-10-18 09:47:56,986 - INFO -   SELL JUNIORBEES   Score: 92.100 - Rank 3 closest to 52-week max close: 7.90% from max close
+2025-10-18 09:47:56,986 - INFO - 
+============================================================
+2025-10-18 09:47:56,987 - INFO - Processing: run_etfs_rotation_strategy_2025-10-18_1760758794954
+2025-10-18 09:47:56,999 - INFO - User: mohitsharma7258@gmail.com
+2025-10-18 09:47:57,001 - INFO - Status: running
+2025-10-18 09:47:57,003 - INFO - ============================================================
+2025-10-18 09:47:57,004 - INFO - Starting weekly signal generation...
+2025-10-18 09:47:57,016 - INFO - Using run_id: run_etfs_rotation_strategy_2025-10-18_1760758794954
+2025-10-18 09:47:57,070 - INFO - Found 5 ETF symbols for run_id run_etfs_rotation_strategy_2025-10-18_1760758794954: ['NIFTYBEES', 'MON100', 'CPSEETF', 'HNGSNGBEES', 'PHARMABEES']
+2025-10-18 09:47:57,082 - INFO - Using 5 ETFs from deployment: ['NIFTYBEES', 'MON100', 'CPSEETF', 'HNGSNGBEES', 'PHARMABEES']
+2025-10-18 09:47:57,169 - INFO - Found 4 ETF symbols in database: ['NIFTYBEES', 'MON100', 'HNGSNGBEES', 'PHARMABEES']
+2025-10-18 09:47:57,169 - INFO - Using last Friday's date: 2025-10-17 for signal generation
+2025-10-18 09:47:57,170 - INFO - Using test date: 2025-10-17 (Friday) for signal generation
+2025-10-18 09:47:57,249 - INFO - Loaded data for 5 ETFs from 2024-09-12 to 2025-10-17
+2025-10-18 09:47:57,249 - INFO - Processing 4 symbols: ['NIFTYBEES', 'MON100', 'HNGSNGBEES', 'PHARMABEES']...
+2025-10-18 09:47:57,267 - INFO - Calculated metrics for 4 ETFs
+2025-10-18 09:47:57,316 - INFO - Generated 4 signals: 1 BUY, 3 SELL
+2025-10-18 09:47:57,370 - INFO - Saved 4 signals to database with run_id: run_etfs_rotation_strategy_2025-10-18_1760758794954
+2025-10-18 09:47:57,370 - INFO - Signal generation completed successfully in 0.37s
+2025-10-18 09:47:57,377 - INFO - Generated 1 BUY and 3 SELL signals
+2025-10-18 09:47:57,379 - INFO - Signal generation completed - Run ID: run_etfs_rotation_strategy_2025-10-18_1760758794954, Signals: 4 (1 BUY, 3 SELL), Duration: 0.37s
+2025-10-18 09:47:57,491 - INFO - signal_generation completed in 0.366s
+2025-10-18 09:47:57,570 - INFO - 
+Generated signals:
+2025-10-18 09:47:57,570 - INFO -   BUY  PHARMABEES   Score: 87.280 - Rank 1 closest to 52-week min close: 12.72% from min close
+2025-10-18 09:47:57,580 - INFO -   SELL NIFTYBEES    Score: 100.000 - Rank 1 closest to 52-week max close: 0.00% from max close
+2025-10-18 09:47:57,582 - INFO -   SELL MON100       Score: 94.390 - Rank 2 closest to 52-week max close: 5.61% from max close
+2025-10-18 09:47:57,582 - INFO -   SELL PHARMABEES   Score: 94.170 - Rank 3 closest to 52-week max close: 5.83% from max close
+2025-10-18 09:47:57,583 - INFO - 
+================================================================================
+2025-10-18 09:47:57,583 - INFO - ETF SIGNAL GENERATION SUMMARY
+2025-10-18 09:47:57,584 - INFO - ================================================================================
+2025-10-18 09:47:57,584 - INFO - Total Deployments: 2
+2025-10-18 09:47:57,585 - INFO - Successful: 2
+2025-10-18 09:47:57,585 - INFO - Failed: 0
+2025-10-18 09:47:57,585 - INFO - Total Signals Generated: 8
+2025-10-18 09:47:57,587 - INFO - 
+2025-10-18 09:47:57,597 - INFO - ================================================================================
+2025-10-18 09:47:57,599 - INFO - RS STRATEGY SIGNAL GENERATION - ALL CONFIGURATIONS
+2025-10-18 09:47:57,601 - INFO - ================================================================================
+2025-10-18 09:48:01,711 - ERROR - Critical error in RS signal generation: no such table: rs_strategy_configs
+2025-10-18 09:48:01,713 - INFO - ================================================================================
+2025-10-18 09:48:01,714 - INFO - STOCK STRATEGY SIGNAL GENERATION
+2025-10-18 09:48:01,714 - INFO - ================================================================================
+2025-10-18 09:48:01,758 - INFO - Live stock signals database tables created/verified successfully
+2025-10-18 09:48:01,764 - INFO - Generating signals...
+2025-10-18 09:48:01,766 - INFO - Configuration: {'max_positions': 5, 'min_rs_score': 0.4, 'min_momentum': 0.01, 'min_volume_ratio': 0.8, 'sell_threshold': 0.4}
+2025-10-18 09:48:01,779 - INFO - --------------------------------------------------------------------------------
+2025-10-18 09:48:01,781 - INFO - Starting weekly stock signal generation...
+2025-10-18 09:48:01,783 - INFO - Generated run_id: 20251018_StockStockSurfTrend
+2025-10-18 09:48:01,797 - INFO - Using last Friday's date: 2025-10-17 for stock signal generation
+2025-10-18 09:48:01,960 - INFO - Found 58 stock symbols for signal generation
+2025-10-18 09:48:02,863 - INFO - Calculated metrics for 58 stocks
+2025-10-18 09:48:02,931 - INFO - Generated 4 stock signals: 1 BUY, 3 SELL
+2025-10-18 09:48:06,157 - INFO - Saved 4 stock signals to database with run_id: 20251018_StockStockSurfTrend
+2025-10-18 09:48:06,158 - INFO - Stock signal generation completed successfully in 4.38s
+2025-10-18 09:48:06,159 - INFO - Generated 1 BUY and 3 SELL signals
+2025-10-18 09:48:06,170 - INFO - 
+Generated signals:
+2025-10-18 09:48:06,173 - INFO -   BUY  TATAMOTORS   Score: 98.530 - Rank 1 closest to 52-week min close: 1.47% from min close
+2025-10-18 09:48:06,174 - INFO -   SELL BAJFINANCE   Score: 100.000 - Rank 1 closest to 52-week max close: 0.00% from max close
+2025-10-18 09:48:06,175 - INFO -   SELL SBIN         Score: 100.000 - Rank 2 closest to 52-week max close: 0.00% from max close
+2025-10-18 09:48:06,175 - INFO -   SELL NESTLEIND    Score: 100.000 - Rank 3 closest to 52-week max close: 0.00% from max close
+2025-10-18 09:48:06,176 - INFO - 
+Run ID: 20251018_StockStockSurfTrend
+2025-10-18 09:48:06,177 - INFO - Duration: 4.38s
+2025-10-18 09:48:06,177 - INFO - 
+================================================================================
+2025-10-18 09:48:06,177 - INFO - FINAL SUMMARY - ALL STRATEGIES
+2025-10-18 09:48:06,179 - INFO - ================================================================================
+2025-10-18 09:48:06,184 - INFO - 
+ETF Strategy:
+2025-10-18 09:48:06,188 - INFO -   Deployments Processed: 2
+2025-10-18 09:48:06,190 - INFO -   Successful: 2
+2025-10-18 09:48:06,191 - INFO -   Failed: 0
+2025-10-18 09:48:06,191 - INFO -   Total Signals: 8
+2025-10-18 09:48:06,192 - INFO - 
+Stock Strategy:
+2025-10-18 09:48:06,192 - INFO -   Successful: 1
+2025-10-18 09:48:06,193 - INFO -   Failed: 0
+2025-10-18 09:48:06,193 - INFO -   Total Signals: 4
+2025-10-18 09:48:06,194 - INFO - 
+================================================================================
+2025-10-18 09:48:06,194 - INFO - OVERALL:
+2025-10-18 09:48:06,195 - INFO -   Total Successful: 3
+2025-10-18 09:48:06,198 - INFO -   Total Failed: 0
+2025-10-18 09:48:06,199 - INFO - ================================================================================
+
