@@ -196,7 +196,7 @@ async def shutdown_event():
 async def root():
     return {"message": "Unified Rotation Backtester API", "strategies": ["stock", "etf", "rs-strategy", "custom-strategy", "chat"]}
 
-@app.get("/health")
+@app.get("/health_check")
 async def health_check():
     """Health check endpoint to verify API and database status"""
     try:
