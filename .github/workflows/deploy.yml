@@ -3,7 +3,7 @@ name: Build & Deploy to ECR (App Runner auto)
 on:
   push:
     branches:
-      - production   # change if your production branch has a different name
+      - prod   # change if your production branch has a different name
   workflow_dispatch:  # allow manual trigger from GitHub UI
     inputs:
       image_tag:
