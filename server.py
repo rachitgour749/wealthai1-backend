@@ -1369,12 +1369,12 @@ async def save_strategy_unified(request: dict):
         # Handle different strategy type formats from frontend
         if strategy_type in ["stock", "stock_rotation"]:
             # Route to stock strategy endpoint
-            from stock_api import save_stock_strategy, SaveStockStrategyRequest
+            from Strategies.stockstrategy.stock_api import save_stock_strategy, SaveStockStrategyRequest
             stock_request = SaveStockStrategyRequest(**request)
             return await save_stock_strategy(stock_request)
         elif strategy_type in ["etf", "etf_rotation"]:
             # Route to ETF strategy endpoint
-            from etf_api import save_etf_strategy, SaveETFStrategyRequest
+            from Strategies.etfstrategy.etf_api import save_etf_strategy, SaveETFStrategyRequest
             etf_request = SaveETFStrategyRequest(**request)
             return await save_etf_strategy(etf_request)
         elif strategy_type in ["rs_strategy", "rs"]:
@@ -1404,7 +1404,7 @@ async def get_saved_strategies_unified(user_id: str):
         
         # Get stock strategies
         try:
-            from stock_api import get_saved_stock_strategies
+            from Strategies.stockstrategy.stock_api import get_saved_stock_strategies
             stock_result = await get_saved_stock_strategies(user_id)
             if "strategies" in stock_result:
                 all_strategies.extend(stock_result["strategies"])
@@ -1413,7 +1413,7 @@ async def get_saved_strategies_unified(user_id: str):
         
         # Get ETF strategies
         try:
-            from etf_api import get_saved_etf_strategies
+            from Strategies.etfstrategy.etf_api import get_saved_etf_strategies
             etf_result = await get_saved_etf_strategies(user_id)
             if "strategies" in etf_result:
                 all_strategies.extend(etf_result["strategies"])
