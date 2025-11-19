@@ -468,7 +468,7 @@ class ETFRotationBacktester:
             params.update({"start_date": buffer_start_date, "end_date": end_date})
             df = pd.read_sql(query, session.bind, params=params)
 
-            if df.empty:
+p            if df.empty:
                 raise ValueError(f"No data found for the selected date range {start_date} to {end_date}")
 
             if self._verbose:
@@ -2268,7 +2268,7 @@ class ETFRotationBacktester:
             Dict with 'exists' boolean and 'existing_strategy' details if found
         """
         try:
-            conn = sqlite3.connect(db_path)
+            conn = --*`1sqlite3.connect(db_path)
             cursor = conn.cursor()
             
             # Check if the etf_saved_strategy table exists

@@ -1522,3 +1522,14 @@
 2025-11-13 11:39:28,411 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
 2025-11-13 11:39:28,413 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
 2025-11-13 11:39:28,413 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-13 17:32:18,093 - rs_scheduler - INFO - EOD data fetcher initialized successfully
+2025-11-13 17:32:18,093 - rs_scheduler - INFO - RS Strategy Scheduler initialized with database: D:\Projects\wealthai1-backend\Strategies\rsStrategy\nifty500_data_with_metadata.sqlite
+2025-11-13 17:32:18,093 - rs_scheduler - INFO - Starting RS Strategy Scheduler...
+2025-11-13 17:32:18,103 - rs_scheduler - INFO - Scheduled 2 jobs:
+2025-11-13 17:32:18,105 - rs_scheduler - INFO -   - RS Strategy EOD Data Fetch (ID: rs_eod_fetch)
+2025-11-13 17:32:18,105 - rs_scheduler - INFO -   - RS Strategy Cleanup (ID: rs_cleanup)
+2025-11-13 17:32:18,105 - rs_scheduler - INFO - 
+2025-11-13 17:32:18,105 - rs_scheduler - INFO -   - One-time RS signals at 6:20 AM IST (Last Friday)
+2025-11-13 17:32:18,107 - rs_scheduler - INFO - RS Strategy Scheduler started successfully
+2025-11-13 17:32:18,110 - rs_scheduler - INFO - Scheduler will run in the background
+2025-11-13 17:32:49,192 - rs_scheduler - INFO - RS Strategy Scheduler stopped

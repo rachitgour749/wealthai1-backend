@@ -1,4 +1,4 @@
-# app/prompts.py
+# app/chatai1_new_prompts.py
 """System prompts for LLM calls - loaded from files or environment"""
 import os
 from pathlib import Path

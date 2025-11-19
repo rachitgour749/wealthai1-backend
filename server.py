@@ -10,6 +10,12 @@ import atexit
 import time
 import logging
 import re
+from contextlib import asynccontextmanager
+
+from contextlib import asynccontextmanager
+from ChatAI1_NEW.chatai1_new_config import settings as chatai1_new_settings
+from ChatAI1_NEW.database import init_db, close_db
+from ChatAI1_NEW.api import chat as chatai1_new
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +35,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 
 # Import the separate API modules
 from Strategies.stockstrategy.stock_api import stock_router, initialize_stock_backtester, cleanup_stock_backtester
-from chatAI.chat_api import chat_router, init_chat_ai, cleanup_chat_ai
-from chatAI.zoho_api import zoho_router, init_zoho_chat, cleanup_zoho_chat
 from Services.webhook.webhook_api import router as webhook_router
 from Services.webhook.webhook_logic import init_db as init_webhook_db
 from Services.subscription.api import subscription_router
@@ -66,8 +70,29 @@ except ImportError as e:
     get_scheduler_status = None
     scheduler_manager_available = False
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup/shutdown events"""
+    # Startup
+    logger.info(f"Starting {chatai1_new_settings.APP_NAME} v{chatai1_new_settings.APP_VERSION}")
+    logger.info(f"Router model: {chatai1_new_settings.ROUTER_MODEL_NAME}")
+    logger.info(f"Answer model: {chatai1_new_settings.ANSWER_MODEL_NAME}")
+    logger.info(f"RAG service: {chatai1_new_settings.RAG_SERVICE_BASE_URL}")
+
+    # Initialize database
+    await init_db()
+    logger.info("Database initialized")
+
+    yield
+
+    # Shutdown
+    logger.info(f"Shutting down {chatai1_new_settings.APP_NAME}")
+    await close_db()
+
+
 # Create main FastAPI app
-app = FastAPI(title="Unified Rotation Backtester API", version="1.0.0")
+app = FastAPI(title="WealthAI1 API", version="1.0.0", lifespan=lifespan)
 
 # Add CORS middleware
 app.add_middleware(
@@ -87,11 +112,7 @@ app.add_middleware(
 # Initialize backtesters and ChatAI
 stock_backtester_initialized = initialize_stock_backtester("unified_etf_data.sqlite")
 etf_backtester_initialized = initialize_etf_backtester("unified_etf_data.sqlite")
-init_chat_ai()
-chat_ai_initialized = True
 
-# Initialize ZOHO Chat Integration
-zoho_chat_initialized = init_zoho_chat()
 
 
 # Initialize subscription service
@@ -151,16 +172,23 @@ def start_all_schedulers():
         scheduler_manager_initialized = False
 
 # Add startup event
-@app.on_event("startup")
-async def startup_event():
-    """Initialize services on startup"""
-    print("🚀 Server starting up...")
-    try:
-        init_supertrend_database()
-        print("[SUCCESS] SuperTrend database initialized successfully")
-    except Exception as e:
-        print(f"[ERROR] Failed to initialize SuperTrend database: {e}")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager"""
+    # Startup
+    logger.info("Application starting up...")
+
+    init_supertrend_database()
     start_all_schedulers()
+
+    await init_db()  # Initialize ChatAI1 database
+
+    yield
+
+    # Shutdown
+    logger.info("Application shutting down...")
+    await close_db()  # Close ChatAI1 database connections
+
 
 # Add cleanup on shutdown
 @app.on_event("shutdown")
@@ -183,8 +211,7 @@ async def shutdown_event():
     # Cleanup other services
     cleanup_stock_backtester()
     cleanup_etf_backtester()
-    cleanup_chat_ai()
-    cleanup_zoho_chat()
+
 
 # Root endpoint
 @app.get("/")
@@ -201,8 +228,6 @@ async def health_check():
             "etf_backtester_initialized": etf_backtester_initialized,
             "rs_strategy_initialized": True,  # RS strategy is always available
             "custom_strategy_initialized": custom_strategy_service_initialized,
-            "chat_ai_initialized": chat_ai_initialized,
-            "zoho_chat_initialized": zoho_chat_initialized,
             "subscription_service_initialized": subscription_service_initialized,
             "webhook_service_initialized": webhook_service_initialized,
             "scheduler_initialized": scheduler_manager_initialized,
@@ -211,7 +236,6 @@ async def health_check():
             "etf_database_available": etf_backtester_initialized,
             "rs_strategy_database_available": True,
             "custom_strategy_database_available": custom_strategy_service_initialized,
-            "chat_ai_database_available": chat_ai_initialized,
             "subscription_database_available": subscription_service_initialized,
             "webhook_database_available": True,
             "scheduler_database_available": scheduler_manager_initialized,
@@ -231,8 +255,6 @@ async def health_check():
             "etf_backtester_initialized": etf_backtester_initialized,
             "rs_strategy_initialized": True,
             "custom_strategy_initialized": custom_strategy_service_initialized,
-            "chat_ai_initialized": chat_ai_initialized,
-            "zoho_chat_initialized": zoho_chat_initialized,
             "subscription_service_initialized": subscription_service_initialized,
             "webhook_service_initialized": webhook_service_initialized,
             "scheduler_initialized": scheduler_manager_initialized,
@@ -376,8 +398,7 @@ app.include_router(etf_router)
 app.include_router(rs_router, prefix="/api/rs-strategy", tags=["RS Strategy"])
 app.include_router(rs_etf_router, prefix="/api/rs-etf-strategy", tags=["RS ETF Strategy"])
 app.include_router(custom_strategy_router)
-app.include_router(chat_router)
-app.include_router(zoho_router)
+app.include_router(chatai1_new.router, prefix="/api")
 app.include_router(webhook_router)
 app.include_router(subscription_router)
 app.include_router(google_oauth_router)
@@ -1466,26 +1487,6 @@ async def get_rs_strategy_signals():
 
 @app.post("/api/execute/etf-signals")
 async def execute_etf_signals(request: dict = None):
-    """
-    Execute ETF trading signals
-    
-    Request body (optional):
-    {
-        "signal_date": "2024-01-15",  # Optional - defaults to last Friday
-        "side": "BUY"  # Optional - "BUY", "SELL", or None (both)
-    }
-    
-    Returns:
-    {
-        "success": bool,
-        "message": str,
-        "total_signals": int,
-        "successful": int,
-        "failed": int,
-        "duration_seconds": float,
-        "results": List[Dict]
-    }
-    """
     try:
         from Services.execution.execution_service import ExecutionService
         
@@ -1511,26 +1512,6 @@ async def execute_etf_signals(request: dict = None):
 
 @app.post("/api/execute/stock-signals")
 async def execute_stock_signals(request: dict = None):
-    """
-    Execute Stock trading signals
-    
-    Request body (optional):
-    {
-        "signal_date": "2024-01-15",  # Optional - defaults to last Friday
-        "side": "BUY"  # Optional - "BUY", "SELL", or None (both)
-    }
-    
-    Returns:
-    {
-        "success": bool,
-        "message": str,
-        "total_signals": int,
-        "successful": int,
-        "failed": int,
-        "duration_seconds": float,
-        "results": List[Dict]
-    }
-    """
     try:
         from Services.execution.execution_service import ExecutionService
         
@@ -1554,53 +1535,20 @@ async def execute_stock_signals(request: dict = None):
             detail=f"Error executing Stock signals: {str(e)}"
         )
 
+
+@app.get("/api/chat")
+async def root():
+    """Root endpoint"""
+    return {
+        "app": chatai1_new_settings.APP_NAME,
+        "version": chatai1_new_settings.APP_VERSION,
+        "status": "running"
+    }
+
+@app.get("/api/chat/health")
+async def health():
+    """Health check endpoint"""
+    return {"status": "healthy"}
+
 if __name__ == "__main__":
-    print("🚀 Starting Unified Rotation Backtester API Server...")
-    print("📊 Available endpoints:")
-    print("   GET  /health_check - Health check")
-    print("   GET  /api/stocks - List available stocks")
-    print("   GET  /api/etfs - List available ETFs")
-    print("   POST /api/stocks/metrics - Run stock backtest")
-    print("   POST /api/metrics - Run ETF backtest")
-    print("   POST /api/chat - Chat with AI")
-    print("   POST /api/rate - Rate AI response")
-    print("   POST /api/zoho/chat - ZOHO Bot Chat (no conversation storage)")
-    print("   GET  /api/zoho/health - ZOHO API health check")
-    print("   POST /api/zoho/test - ZOHO API test endpoint")
-    print("   POST /api/save-strategy - Save strategy (unified - stock/ETF)")
-    print("   GET  /api/get-saved-strategies/{user_id} - Get all saved strategies (unified)")
-    print("   POST /api/debug-request - Debug request format")
-    print("   POST /api/custom-strategy/analyze - Analyze custom strategy using AI")
-    print("   POST /api/custom-strategy/save - Save custom strategy")
-    print("   GET  /api/custom-strategy/user/{user_email} - Get user's custom strategies")
-    print("   GET  /api/custom-strategy/{strategy_id} - Get specific custom strategy")
-    print("   PUT  /api/custom-strategy/{strategy_id}/status - Update strategy status")
-    print("   GET  /api/custom-strategy/health - Custom strategy health check")
-    print("   GET  /api/strategies - Get all webhook strategies")
-    print("   POST /api/strategies - Create webhook strategy")
-    print("   GET  /api/strategies/{id} - Get specific webhook strategy")
-    print("   PUT  /api/strategies/{id} - Update webhook strategy")
-    print("   DELETE /api/strategies/{id} - Delete webhook strategy")
-    print("   POST /api/generate-json - Generate JSON data for trading orders")
-    print("   POST /api/save-json - Save JSON data")
-    print("   POST /api/deploy - Deploy strategy (generate and save JSON to Strategies/rsStrategy/nifty500_data_with_metadata.sqlite)")
-    print("   GET  /api/saved-json/{user_email} - Get saved JSON data")
-    print("   GET  /api/live-signals/ - Get live signals with LTP")
-    print("   GET  /api/live-signals/latest - Get latest live signals")
-    print("   GET  /api/live-signals/deploy/{run_id} - Deploy signals with LTP (Deploy button)")
-    print("   GET  /api/live-signals/symbol/{symbol}/ltp - Get LTP for specific symbol")
-    print("   POST /api/live-signals/deploy - Deploy live trading system")
-    print("   POST /api/live-signals/deploy-simple - Simple deploy (auto-fetch from database)")
-    print("   GET  /api/live-signals/deployments/{deployment_id} - Get deployment status")
-    print("   GET  /api/live-signals/deployments - Get user deployments")
-    print("   POST /api/scheduler/trigger - Manually trigger market data fetch")
-    print("   GET  /api/scheduler/status - Get scheduler status and next run time")
-    print("   POST /api/rs-scheduler/trigger-eod - Manually trigger RS strategy EOD data fetch")
-    print("   POST /api/rs-scheduler/trigger-all - Manually trigger all RS strategy tasks")
-    print("   GET  /api/rs-scheduler/status - Get RS strategy scheduler status")
-    print("   POST /api/execute/etf-signals - Execute ETF trading signals")
-    print("   POST /api/execute/stock-signals - Execute Stock trading signals")
-    print("🌐 Server will be available at: http://127.0.0.1:8000")
-    print("🕐 Market Data Scheduler will run automatically every day at 4:15 PM IST")
-    print("🕐 RS Strategy Scheduler will run automatically every day at 4:15 PM IST")
     uvicorn.run(app, host="127.0.0.1", port=8000)

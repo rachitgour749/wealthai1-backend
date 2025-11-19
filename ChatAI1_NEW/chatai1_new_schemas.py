@@ -1,4 +1,4 @@
-# app/schemas.py
+# app/chatai1_new_schemas.py
 """Pydantic models for request/response validation"""
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List, Dict, Any
