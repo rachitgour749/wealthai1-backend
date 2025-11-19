@@ -1486,7 +1486,6 @@ async def get_rs_strategy_signals():
 # ============================================================================
 
 
-
 @app.get("/api/chat")
 async def root():
     """Root endpoint"""
