@@ -6,7 +6,7 @@ Provides convenient functions for common database operations using PostgreSQL
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
-from Databases.neon_db_connection import get_session
+from Databases.app_data_db_connection import get_session
 from Databases.strategy_models import (
     ETFSavedStrategy, StockSavedStrategy, RSEtFSavedStrategy, CustomStrategy,
     LiveSignal, LiveRun, LiveStockSignal, LiveStockRun,

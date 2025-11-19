@@ -13,17 +13,17 @@ import re
 from contextlib import asynccontextmanager
 
 from contextlib import asynccontextmanager
-from ChatAI1_NEW.chatai1_new_config import settings as chatai1_new_settings
-from ChatAI1_NEW.database import init_db, close_db
-from ChatAI1_NEW.api import chat as chatai1_new
+from ChatAI1.chatai1_config import settings as chatai1_new_settings
+from ChatAI1.database import init_db, close_db
+from ChatAI1.api import chat as chatai1_new
 
 logger = logging.getLogger(__name__)
 
 # Add the strategy directories to the path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'stockstrategy'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'Rotation_Stocks'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'etf-strategy'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'rsStrategy'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'rsETFStrategy'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'RS_Stocks'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'RS_ETF'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'customStrategy'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'SuperTrend'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'chatAI'))
@@ -34,7 +34,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'Services', 'execution')
 sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 
 # Import the separate API modules
-from Strategies.stockstrategy.stock_api import stock_router, initialize_stock_backtester, cleanup_stock_backtester
+from Strategies.Rotation_Stocks.stock_api import stock_router, initialize_stock_backtester, cleanup_stock_backtester
 from Services.webhook.webhook_api import router as webhook_router
 from Services.webhook.webhook_logic import init_db as init_webhook_db
 from Services.subscription.api import subscription_router
@@ -43,12 +43,12 @@ from Services.subscription.database import subscription_manager
 
 
 # Import RS strategy router (before ETF to avoid import conflicts)
-from Strategies.rsStrategy.api import router as rs_router
+from Strategies.RS_Stocks.api import router as rs_router
 # Import RS ETF strategy router
-from Strategies.rsETFStrategy.api import router as rs_etf_router
+from Strategies.RS_ETF.api import router as rs_etf_router
 
 # Import ETF strategy after RS strategy to avoid conflicts
-from Strategies.etfstrategy.etf_api import etf_router, initialize_etf_backtester, cleanup_etf_backtester
+from Strategies.Rotation_ETF.etf_api import etf_router, initialize_etf_backtester, cleanup_etf_backtester
 
 # Import custom strategy router
 from Strategies.customStrategy.api import custom_strategy_router
@@ -416,7 +416,7 @@ import json
 import time
 from datetime import datetime
 
-def init_saved_rs_strategies_table(db_path: str = "Strategies/rsStrategy/nifty500_data_with_metadata.sqlite"):
+def init_saved_rs_strategies_table(db_path: str = "Strategies/RS_Stocks/nifty500_data_with_metadata.sqlite"):
     """Initialize the saved_rs_strategies table if it doesn't exist"""
     try:
         conn = sqlite3.connect(db_path)
@@ -459,7 +459,7 @@ async def save_rs_strategy(request: dict):
         if not init_saved_rs_strategies_table():
             raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
-        conn = sqlite3.connect("Strategies/rsStrategy/nifty500_data_with_metadata.sqlite")
+        conn = sqlite3.connect("Strategies/RS_Stocks/nifty500_data_with_metadata.sqlite")
         cursor = conn.cursor()
         
         # Check if strategy already exists
@@ -514,7 +514,7 @@ async def save_rs_strategy(request: dict):
 async def get_saved_rs_strategies(user_id: str):
     """Get all saved RS strategies for a specific user"""
     try:
-        conn = sqlite3.connect("Strategies/rsStrategy/nifty500_data_with_metadata.sqlite")
+        conn = sqlite3.connect("Strategies/RS_Stocks/nifty500_data_with_metadata.sqlite")
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -940,7 +940,7 @@ async def update_rs_client_information(request: dict):
         print(f"📋 Strategy ID: {request.get('strategy_id')}")
         print(f"📧 User ID: {request.get('user_id')}")
         
-        conn = sqlite3.connect("Strategies/rsStrategy/nifty500_data_with_metadata.sqlite")
+        conn = sqlite3.connect("Strategies/RS_Stocks/nifty500_data_with_metadata.sqlite")
         cursor = conn.cursor()
         
         # Extract data
@@ -994,7 +994,7 @@ async def update_rs_client_information(request: dict):
 async def stop_rs_strategy(request: dict):
     """Stop a running RS strategy"""
     try:
-        conn = sqlite3.connect("Strategies/rsStrategy/nifty500_data_with_metadata.sqlite")
+        conn = sqlite3.connect("Strategies/RS_Stocks/nifty500_data_with_metadata.sqlite")
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -1018,7 +1018,7 @@ async def stop_rs_strategy(request: dict):
 async def restart_rs_strategy(request: dict):
     """Restart a stopped RS strategy"""
     try:
-        conn = sqlite3.connect("Strategies/rsStrategy/nifty500_data_with_metadata.sqlite")
+        conn = sqlite3.connect("Strategies/RS_Stocks/nifty500_data_with_metadata.sqlite")
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -1042,7 +1042,7 @@ async def restart_rs_strategy(request: dict):
 async def delete_rs_strategy(strategy_id: int):
     """Delete a saved RS strategy"""
     try:
-        conn = sqlite3.connect("Strategies/rsStrategy/nifty500_data_with_metadata.sqlite")
+        conn = sqlite3.connect("Strategies/RS_Stocks/nifty500_data_with_metadata.sqlite")
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -1381,12 +1381,12 @@ async def save_strategy_unified(request: dict):
         # Handle different strategy type formats from frontend
         if strategy_type in ["stock", "stock_rotation"]:
             # Route to stock strategy endpoint
-            from Strategies.stockstrategy.stock_api import save_stock_strategy, SaveStockStrategyRequest
+            from Strategies.Rotation_Stocks.stock_api import save_stock_strategy, SaveStockStrategyRequest
             stock_request = SaveStockStrategyRequest(**request)
             return await save_stock_strategy(stock_request)
         elif strategy_type in ["etf", "etf_rotation"]:
             # Route to ETF strategy endpoint
-            from Strategies.etfstrategy.etf_api import save_etf_strategy, SaveETFStrategyRequest
+            from Strategies.Rotation_ETF.etf_api import save_etf_strategy, SaveETFStrategyRequest
             etf_request = SaveETFStrategyRequest(**request)
             return await save_etf_strategy(etf_request)
         elif strategy_type in ["rs_strategy", "rs"]:
@@ -1416,7 +1416,7 @@ async def get_saved_strategies_unified(user_id: str):
         
         # Get stock strategies
         try:
-            from Strategies.stockstrategy.stock_api import get_saved_stock_strategies
+            from Strategies.Rotation_Stocks.stock_api import get_saved_stock_strategies
             stock_result = await get_saved_stock_strategies(user_id)
             if "strategies" in stock_result:
                 all_strategies.extend(stock_result["strategies"])
@@ -1425,7 +1425,7 @@ async def get_saved_strategies_unified(user_id: str):
         
         # Get ETF strategies
         try:
-            from Strategies.etfstrategy.etf_api import get_saved_etf_strategies
+            from Strategies.Rotation_ETF.etf_api import get_saved_etf_strategies
             etf_result = await get_saved_etf_strategies(user_id)
             if "strategies" in etf_result:
                 all_strategies.extend(etf_result["strategies"])
@@ -1485,55 +1485,6 @@ async def get_rs_strategy_signals():
 # EXECUTION API ENDPOINTS
 # ============================================================================
 
-@app.post("/api/execute/etf-signals")
-async def execute_etf_signals(request: dict = None):
-    try:
-        from Services.execution.execution_service import ExecutionService
-        
-        execution_service = ExecutionService()
-        
-        signal_date = request.get("signal_date") if request else None
-        side = request.get("side") if request else None
-        
-        result = execution_service.execute_all_signals(
-            signal_date=signal_date,
-            side=side,
-            signal_type='etf'
-        )
-        
-        return result
-        
-    except Exception as e:
-        logger.error(f"Error executing ETF signals: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error executing ETF signals: {str(e)}"
-        )
-
-@app.post("/api/execute/stock-signals")
-async def execute_stock_signals(request: dict = None):
-    try:
-        from Services.execution.execution_service import ExecutionService
-        
-        execution_service = ExecutionService()
-        
-        signal_date = request.get("signal_date") if request else None
-        side = request.get("side") if request else None
-        
-        result = execution_service.execute_all_signals(
-            signal_date=signal_date,
-            side=side,
-            signal_type='stock'
-        )
-        
-        return result
-        
-    except Exception as e:
-        logger.error(f"Error executing Stock signals: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error executing Stock signals: {str(e)}"
-        )
 
 
 @app.get("/api/chat")

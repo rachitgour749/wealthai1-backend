@@ -1,6 +1,0 @@
-2025-10-27 10:15:53,910 - signal_generator_2025_10_24 - INFO - === Generating ETF Signals for 2025-10-24 ===
-2025-10-27 10:15:53,943 - signal_generator_2025_10_24 - INFO - === Generating Stock Signals for 2025-10-24 ===
-2025-10-27 10:15:54,023 - signal_generator_2025_10_24 - INFO - === Generating RS Signals for 2025-10-24 ===
-2025-10-27 10:15:54,113 - signal_generator_2025_10_24 - INFO - Creating mock RS signals as fallback
-2025-10-27 10:15:54,114 - signal_generator_2025_10_24 - INFO - === Generating Mock RS Signals for 2025-10-24 ===
-2025-10-27 10:15:54,148 - signal_generator_2025_10_24 - INFO - === SIGNAL GENERATION SUMMARY ===

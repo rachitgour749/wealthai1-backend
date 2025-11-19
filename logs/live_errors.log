@@ -1,7 +1,0 @@
-2025-09-20 17:26:40,459 - live_market_engine.metrics - ERROR - signal_generation failed after 5.147s - No valid metrics calculated for any ETF
-2025-09-28 22:40:20,352 - live_market_engine.metrics - ERROR - signal_generation failed after 0.358s - Failed to save signals to database
-2025-09-28 22:40:25,791 - live_market_engine - ERROR - Error logging performance: database is locked
-2025-10-07 16:00:00,033 - live_market_engine.scheduler - ERROR - Error in ingestion job: cannot import name 'IndianETFDataFetcher' from 'cronjob.scheduler' (C:\Users\Mohit Sharma\Downloads\WealthAI\WealthAI\wealthai1-backend\cronjob\scheduler.py)
-2025-10-07 16:00:00,046 - live_market_engine.metrics - ERROR - daily_ingestion failed after 0.000s - cannot import name 'IndianETFDataFetcher' from 'cronjob.scheduler' (C:\Users\Mohit Sharma\Downloads\WealthAI\WealthAI\wealthai1-backend\cronjob\scheduler.py)
-2025-10-18 09:23:14,990 - live_market_engine.metrics - ERROR - signal_generation failed after 0.231s - Failed to save signals to database
-2025-10-18 09:23:20,475 - live_market_engine - ERROR - Error logging performance: database is locked

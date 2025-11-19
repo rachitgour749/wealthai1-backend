@@ -10,7 +10,7 @@ This module contains all models for:
 
 from sqlalchemy import Column, Integer, String, Float, Boolean, Text, DateTime, UniqueConstraint, Index
 from sqlalchemy.sql import func
-from Databases.neon_db_connection import Base
+from Databases.app_data_db_connection import Base
 
 
 # ============================================================================

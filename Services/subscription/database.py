@@ -6,18 +6,10 @@ from typing import Optional, List, Dict, Any
 import os
 import sys
 import uuid
-
-# Import Neon database connection
-# Get the project root directory (two levels up from Services/subscription)
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-databases_path = os.path.join(project_root, 'Databases')
-
-# Add Databases directory to path if not already there
-if databases_path not in sys.path:
-    sys.path.insert(0, databases_path)
+from Databases import app_data_db_connection
 
 try:
-    from neon_db_connection import create_connection, get_session as get_neon_session, get_engine, Base as NeonBase, init_database as init_neon_database
+    from app_data_db_connection import create_connection, get_session as get_neon_session, get_engine, Base as NeonBase, init_database as init_neon_database
 except ImportError as e:
     print(f"Warning: Could not import neon_db_connection: {e}")
     # Fallback to local base if import fails

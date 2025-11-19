@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from neon_db_connection import create_connection, get_engine
+from app_data_db_connection import create_connection, get_engine
 from sqlalchemy import text, inspect
 
 create_connection()
