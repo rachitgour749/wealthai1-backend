@@ -496,12 +496,13 @@ async def get_backtest_trades(backtest_id: int, user_id: str = Query(..., descri
         if "no such column" in str(e):
             # Fallback for old backtests
             try:
-                trades = db.execute(f"""
+                from sqlalchemy import text
+                trades = db.execute(text("""
                     SELECT id, user_id, backtest_id, date, symbol, action, quantity, price, amount, reason, rs_score, rs_rank
                     FROM trade_logs 
-                    WHERE backtest_id = ? AND user_id = ?
+                    WHERE backtest_id = %s AND user_id = %s
                     ORDER BY date
-                """, (backtest_id, user_id)).fetchall()
+                """), (backtest_id, user_id)).fetchall()
                 
                 result = []
                 for trade in trades:

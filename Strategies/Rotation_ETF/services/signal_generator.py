@@ -3,23 +3,18 @@ Live Market Engine - Phase 2: Signal Generation
 Generates weekly BUY/SELL signals using ETFRotationBacktester core
 """
 
-import sqlite3
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional, Tuple
-import logging
-import json
-import os
+from typing import List, Dict, Any, Optional
 import sys
+import os
 
 # Get the absolute paths
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
-
-# Add paths to Python path
-sys.path.insert(0, os.path.join(project_root, 'wealthai1-backend'))  # Add inner project directory
 etf_strategy_path = os.path.join(project_root, 'wealthai1-backend', 'etf-strategy')
+
 sys.path.insert(0, etf_strategy_path)
 
 # Add Databases path for market data connection
@@ -34,7 +29,7 @@ print(f"Python path: {sys.path}")
 # Try multiple import paths for backtester_core
 try:
     # First try relative import (when used as part of the package)
-    from .backtester_core import ETFRotationBacktester
+    from .backtester import ETFRotationBacktester
 except ImportError:
     try:
         # Try absolute import from current directory
@@ -81,22 +76,13 @@ class LiveSignalGenerator:
         Initialize Live Signal Generator
         
         Args:
-            db_path: Deprecated - kept for compatibility. Market data now uses PostgreSQL.
-                    If provided, will be used for live_signals table (SQLite).
+            db_path: Deprecated - kept for compatibility. Now uses PostgreSQL for all operations.
         """
-        # For live_signals table, use SQLite if db_path provided, otherwise use default
-        if db_path is None:
-            # Get the root directory (2 levels up from the current file)
-            root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            self.db_path = os.path.join(root_dir, "unified_etf_data.sqlite")
-        else:
-            self.db_path = os.path.abspath(db_path) if db_path else None
-            
-        # Initialize backtester (now uses PostgreSQL for market data)
+        # db_path parameter ignored - all operations now use PostgreSQL
+        # Initialize backtester (uses PostgreSQL for market data)
         self.backtester = ETFRotationBacktester(None)
         self.setup_logging()
-        if self.db_path:
-            self.create_tables()
+        self.create_tables()
         
     def setup_logging(self):
         """Setup logging for signal generation"""
@@ -154,8 +140,7 @@ class LiveSignalGenerator:
     
     def get_symbols_from_deployment(self, run_id: str) -> Dict[str, Any]:
         """
-        Get ETF symbols and user info from etf_saved_strategy table based on run_id
-        Falls back to deploy_details table if not found in etf_saved_strategy
+        Get ETF symbols and user info from etf_saved_strategy table based on run_id (PostgreSQL)
         
         Args:
             run_id: Deployment run ID (format: run_etf_strategy_2025-10-15_1760544030144)
@@ -164,36 +149,32 @@ class LiveSignalGenerator:
             Dictionary with user_id, etf_symbols list, and etf_names
         """
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            from Databases.app_data_db_connection import get_session
+            from Databases.strategy_models import ETFSavedStrategy
             
-            # First try etf_saved_strategy table (primary source)
-            cursor.execute('''
-                SELECT user_id, tickers, etf_names, etf_count 
-                FROM etf_saved_strategy 
-                WHERE run_id = ?
-            ''', (run_id,))
-            
-            result = cursor.fetchone()
-            
-            if result:
-                # Found in etf_saved_strategy table
-                user_id, tickers_json, etf_names_json, etf_count = result
+            session = get_session()
+            try:
+                # Query etf_saved_strategy table from PostgreSQL
+                strategy = session.query(ETFSavedStrategy).filter(
+                    ETFSavedStrategy.run_id == run_id
+                ).first()
+                
+                if not strategy:
+                    raise ValueError(f"No deployment found for run_id: {run_id} in etf_saved_strategy table")
                 
                 # Parse tickers from JSON (preferred source)
                 try:
-                    etf_symbols = json.loads(tickers_json) if tickers_json else []
+                    etf_symbols = json.loads(strategy.tickers) if strategy.tickers else []
                 except:
                     etf_symbols = []
                 
-                # If tickers not found, try etf_names
+                # If tickers not found, try etf_names (if column exists)
                 if not etf_symbols or len(etf_symbols) == 0:
-                    try:
-                        etf_symbols = json.loads(etf_names_json) if etf_names_json else []
-                    except:
-                        etf_symbols = []
-                
-                conn.close()
+                    if hasattr(strategy, 'etf_names') and strategy.etf_names:
+                        try:
+                            etf_symbols = json.loads(strategy.etf_names) if strategy.etf_names else []
+                        except:
+                            etf_symbols = []
                 
                 if not etf_symbols or len(etf_symbols) == 0:
                     raise ValueError(f"No ETF symbols found in tickers or etf_names for run_id: {run_id}")
@@ -201,50 +182,13 @@ class LiveSignalGenerator:
                 self.logger.info(f"Found {len(etf_symbols)} ETF symbols from etf_saved_strategy for run_id {run_id}: {etf_symbols}")
                 
                 return {
-                    'user_id': user_id,
+                    'user_id': strategy.user_id,
                     'etf_symbols': etf_symbols,
                     'etf_names': etf_symbols,
-                    'etf_count': etf_count if etf_count else len(etf_symbols)
+                    'etf_count': getattr(strategy, 'etf_count', len(etf_symbols)) if hasattr(strategy, 'etf_count') else len(etf_symbols)
                 }
-            
-            # Fallback to deploy_details table (for backward compatibility)
-            try:
-                cursor.execute('''
-                    SELECT user_email, etf_names, etf_count 
-                    FROM deploy_details 
-                    WHERE run_id = ?
-                ''', (run_id,))
-                
-                result = cursor.fetchone()
-            except sqlite3.OperationalError as e:
-                # Table might not exist
-                conn.close()
-                raise ValueError(f"No deployment found for run_id: {run_id} in etf_saved_strategy or deploy_details tables. Error: {str(e)}")
-            
-            if not result:
-                conn.close()
-                raise ValueError(f"No deployment found for run_id: {run_id} in etf_saved_strategy or deploy_details tables")
-            
-            user_email, etf_names_json, etf_count = result
-            conn.close()
-            
-            # Parse ETF names from JSON
-            try:
-                etf_names = json.loads(etf_names_json) if etf_names_json else []
-            except:
-                etf_names = []
-            
-            if not etf_names or len(etf_names) == 0:
-                raise ValueError(f"No ETF symbols found for run_id: {run_id}")
-            
-            self.logger.info(f"Found {len(etf_names)} ETF symbols from deploy_details for run_id {run_id}: {etf_names}")
-            
-            return {
-                'user_id': user_email,
-                'etf_symbols': etf_names,
-                'etf_names': etf_names,
-                'etf_count': etf_count
-            }
+            finally:
+                session.close()
             
         except Exception as e:
             self.logger.error(f"Error getting symbols from deployment: {str(e)}")
@@ -252,60 +196,62 @@ class LiveSignalGenerator:
     
     def get_all_running_strategies(self) -> List[Dict[str, Any]]:
         """
-        Get all running ETF strategies from etf_saved_strategy table
+        Get all running ETF strategies from etf_saved_strategy table (PostgreSQL)
         
         Returns:
             List of dictionaries with run_id, user_id, and strategy info
         """
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            from Databases.app_data_db_connection import get_session
+            from Databases.strategy_models import ETFSavedStrategy
             
-            # Query all active strategies with run_id
-            # Include 'running' and 'deploy' status (deploy is the default active status)
-            # Include NULL and empty string status as active (for backward compatibility)
-            # Exclude only explicitly 'stopped' strategies
-            cursor.execute('''
-                SELECT run_id, user_id, strategy_name, strategy_type, tickers, etf_names, etf_count
-                FROM etf_saved_strategy 
-                WHERE run_id IS NOT NULL 
-                AND run_id != ''
-                AND (status IS NULL OR status = '' OR status = 'running' OR status = 'deploy')
-                ORDER BY created_timestamp DESC
-            ''')
-            
-            rows = cursor.fetchall()
-            conn.close()
-            
-            strategies = []
-            for row in rows:
-                run_id, user_id, strategy_name, strategy_type, tickers_json, etf_names_json, etf_count = row
+            session = get_session()
+            try:
+                # Query all active strategies with run_id
+                # Include 'running' and 'deploy' status (deploy is the default active status)
+                # Include NULL and empty string status as active (for backward compatibility)
+                # Exclude only explicitly 'stopped' strategies
+                strategies_query = session.query(ETFSavedStrategy).filter(
+                    ETFSavedStrategy.run_id.isnot(None),
+                    ETFSavedStrategy.run_id != '',
+                    # Status filter: NULL, empty, 'running', or 'deploy' are considered active
+                    (
+                        (ETFSavedStrategy.status.is_(None)) |
+                        (ETFSavedStrategy.status == '') |
+                        (ETFSavedStrategy.status == 'running') |
+                        (ETFSavedStrategy.status == 'deploy')
+                    )
+                ).order_by(ETFSavedStrategy.created_timestamp.desc())
                 
-                # Parse tickers
-                try:
-                    tickers = json.loads(tickers_json) if tickers_json else []
-                except:
-                    tickers = []
-                
-                # Parse etf_names if tickers is empty
-                if not tickers:
+                strategies = []
+                for strategy in strategies_query.all():
+                    # Parse tickers
                     try:
-                        tickers = json.loads(etf_names_json) if etf_names_json else []
+                        tickers = json.loads(strategy.tickers) if strategy.tickers else []
                     except:
                         tickers = []
+                    
+                    # Parse etf_names if tickers is empty
+                    if not tickers and hasattr(strategy, 'etf_names') and strategy.etf_names:
+                        try:
+                            tickers = json.loads(strategy.etf_names) if strategy.etf_names else []
+                        except:
+                            tickers = []
+                    
+                    if tickers:  # Only include if we have tickers
+                        strategies.append({
+                            'run_id': strategy.run_id,
+                            'user_id': strategy.user_id,
+                            'strategy_name': strategy.strategy_name,
+                            'strategy_type': strategy.strategy_type,
+                            'tickers': tickers,
+                            'etf_count': getattr(strategy, 'etf_count', len(tickers)) if hasattr(strategy, 'etf_count') else len(tickers)
+                        })
                 
-                if tickers:  # Only include if we have tickers
-                    strategies.append({
-                        'run_id': run_id,
-                        'user_id': user_id,
-                        'strategy_name': strategy_name,
-                        'strategy_type': strategy_type,
-                        'tickers': tickers,
-                        'etf_count': etf_count if etf_count else len(tickers)
-                    })
-            
-            self.logger.info(f"Found {len(strategies)} running strategies with run_id and tickers")
-            return strategies
+                self.logger.info(f"Found {len(strategies)} running strategies with run_id and tickers")
+                return strategies
+            finally:
+                session.close()
             
         except Exception as e:
             self.logger.error(f"Error getting running strategies: {str(e)}")
@@ -976,7 +922,7 @@ class LiveSignalGenerator:
     
     def get_recent_signals(self, days: int = 7) -> List[Dict[str, Any]]:
         """
-        Get recent signals from database
+        Get recent signals from database (PostgreSQL)
         
         Args:
             days: Number of days to look back
@@ -985,33 +931,59 @@ class LiveSignalGenerator:
             List of recent signals
         """
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            from Databases.app_data_db_connection import get_session
+            from Databases.strategy_models import LiveSignal, LiveRun
             
-            cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
-            
-            cursor.execute('''
-                SELECT ls.*, lr.status, lr.summary_json
-                FROM live_signals ls
-                JOIN live_runs lr ON ls.run_id = lr.run_id
-                WHERE ls.signal_date >= ?
-                ORDER BY ls.signal_date DESC, ls.created_at DESC
-            ''', (cutoff_date,))
-            
-            columns = [description[0] for description in cursor.description]
-            rows = cursor.fetchall()
-            
-            signals = []
-            for row in rows:
-                signal_dict = dict(zip(columns, row))
-                if signal_dict['payload_json']:
-                    signal_dict['payload'] = json.loads(signal_dict['payload_json'])
-                if signal_dict['summary_json']:
-                    signal_dict['summary'] = json.loads(signal_dict['summary_json'])
-                signals.append(signal_dict)
-            
-            conn.close()
-            return signals
+            session = get_session()
+            try:
+                cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+                
+                # Query signals with join to runs
+                signals_query = session.query(LiveSignal, LiveRun).join(
+                    LiveRun, LiveSignal.run_id == LiveRun.run_id
+                ).filter(
+                    LiveSignal.signal_date >= cutoff_date
+                ).order_by(
+                    LiveSignal.signal_date.desc(),
+                    LiveSignal.created_at.desc()
+                )
+                
+                signals = []
+                for signal, run in signals_query.all():
+                    signal_dict = {
+                        'id': signal.id,
+                        'run_id': signal.run_id,
+                        'user_id': signal.user_id,
+                        'strategy_version': signal.strategy_version,
+                        'signal_date': signal.signal_date,
+                        'signal_symbol': signal.signal_symbol,
+                        'etf_name': signal.etf_name,
+                        'side': signal.side,
+                        'score': signal.score,
+                        'reason': signal.reason,
+                        'payload_json': signal.payload_json,
+                        'created_at': signal.created_at.isoformat() if signal.created_at else None,
+                        'status': run.status,
+                        'summary_json': run.summary_json
+                    }
+                    
+                    # Parse JSON fields
+                    if signal_dict['payload_json']:
+                        try:
+                            signal_dict['payload'] = json.loads(signal_dict['payload_json'])
+                        except:
+                            signal_dict['payload'] = {}
+                    if signal_dict['summary_json']:
+                        try:
+                            signal_dict['summary'] = json.loads(signal_dict['summary_json'])
+                        except:
+                            signal_dict['summary'] = {}
+                    
+                    signals.append(signal_dict)
+                
+                return signals
+            finally:
+                session.close()
             
         except Exception as e:
             self.logger.error(f"[ERROR] Error getting recent signals: {e}")

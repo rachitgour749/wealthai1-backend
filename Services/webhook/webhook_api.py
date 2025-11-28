@@ -4,7 +4,6 @@ Webhook API endpoints for the Strategy Management Backend
 
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
-import sqlite3
 import json
 from datetime import datetime
 import logging
@@ -16,7 +15,7 @@ from .models import (
     JsonGenerate, JsonSave, DeployRequest, StrategyResponse, HealthResponse
 )
 from .webhook_logic import (
-    WebhookLogic, get_db_connection, init_db
+    WebhookLogic, init_db
 )
 
 # Get configuration
@@ -176,7 +175,7 @@ async def delete_saved_json_legacy(identifier: str):
 
 @router.post("/deploy", response_model=dict, status_code=201)
 async def deploy_strategy(deploy_request: DeployRequest):
-    """Deploy strategy - generates JSON data and saves it to unified_etf_data.sqlite"""
+    """Deploy strategy - generates JSON data and saves it to PostgreSQL"""
     try:
         return await webhook_logic.deploy_strategy(deploy_request)
     except HTTPException:

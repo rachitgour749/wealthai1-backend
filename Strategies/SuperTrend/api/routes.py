@@ -11,7 +11,7 @@ from .models import (
     EODRunResponse, CandidatesResponse, PositionsResponse,
     Candidate, Position
 )
-from .database import execute_query, execute_write, get_connection
+from .database import execute_query, execute_write
 from ..backtester_core.backtest_engine import BacktestEngine
 from ..backtester_core.indicators import add_indicators
 from ..backtester_core.rs_calculator import calculate_rs_for_universe
@@ -180,32 +180,39 @@ async def run_backtest(request: BacktestRequest):
         
         # Save results to database
         print(f"✓ Saving backtest results to database...")
-        conn = get_connection()
-        cursor = conn.cursor()
+        from Databases.app_data_db_connection import get_session
+        from Databases.strategy_models import SuperTrendBacktestResult
+        from sqlalchemy.dialects.postgresql import insert
         
-        # Clear old results
-        cursor.execute("DELETE FROM backtest_results")
-        
-        # Save trades
-        for trade in results['trades']:
-            cursor.execute("""
-                INSERT INTO backtest_results 
-                (run_date, trade_date, symbol, action, price, quantity, position_value, portfolio_value, cash)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                datetime.now().strftime('%Y-%m-%d'),
-                trade['date'],
-                trade['symbol'],
-                trade['action'],
-                trade['price'],
-                trade['quantity'],
-                trade['value'],
-                0,  # Portfolio value not stored per trade
-                trade['cash_after']
-            ))
-        
-        conn.commit()
-        conn.close()
+        session = get_session()
+        try:
+            # Clear old results
+            session.query(SuperTrendBacktestResult).delete()
+            
+            # Save trades
+            run_date = datetime.now().strftime('%Y-%m-%d')
+            for trade in results['trades']:
+                backtest_result = SuperTrendBacktestResult(
+                    run_date=run_date,
+                    trade_date=trade['date'],
+                    symbol=trade['symbol'],
+                    action=trade['action'],
+                    price=trade['price'],
+                    quantity=trade['quantity'],
+                    position_value=trade['value'],
+                    portfolio_value=0,  # Portfolio value not stored per trade
+                    cash=trade['cash_after']
+                )
+                session.add(backtest_result)
+            
+            session.commit()
+            print(f"✓ Saved {len(results['trades'])} backtest results")
+        except Exception as e:
+            session.rollback()
+            print(f"Error saving backtest results: {e}")
+            raise
+        finally:
+            session.close()
         
         return BacktestResponse(
             status="success",
@@ -318,33 +325,42 @@ async def run_eod():
         
         # Save candidates to database
         print(f"✓ Saving results to database...")
-        conn = get_connection()
-        cursor = conn.cursor()
+        from Databases.app_data_db_connection import get_session
+        from Databases.strategy_models import SuperTrendCandidate, SuperTrendCurrentPosition
         
-        cursor.execute("DELETE FROM candidates")
-        
-        for _, row in candidates.iterrows():
-            # Debug the values being inserted
-            rs_score_value = row['rs_score'] if pd.notna(row['rs_score']) else None
-            print(f"  Inserting {row['symbol']}: rs_score={rs_score_value}")
+        session = get_session()
+        try:
+            # Clear old candidates
+            session.query(SuperTrendCandidate).delete()
             
-            cursor.execute("""
-                INSERT INTO candidates 
-                (symbol, date, adj_close, ema10, ema20, supertrend, rs_score, rank, eligible)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                row['symbol'], row['date'], row['adj_close'],
-                row['ema10'], row['ema20'], row['supertrend_color'],
-                rs_score_value, row['rank'], row['eligible']
-            ))
-        
-        conn.commit()
-        
-        # Get current positions count
-        cursor.execute("SELECT COUNT(*) as count FROM current_positions")
-        positions_count = cursor.fetchone()[0]
-        
-        conn.close()
+            # Insert new candidates
+            for _, row in candidates.iterrows():
+                rs_score_value = row['rs_score'] if pd.notna(row['rs_score']) else None
+                print(f"  Inserting {row['symbol']}: rs_score={rs_score_value}")
+                
+                candidate = SuperTrendCandidate(
+                    symbol=row['symbol'],
+                    date=row['date'],
+                    adj_close=row['adj_close'],
+                    ema10=row['ema10'],
+                    ema20=row['ema20'],
+                    supertrend=row['supertrend_color'],
+                    rs_score=rs_score_value,
+                    rank=row['rank'],
+                    eligible=row['eligible']
+                )
+                session.add(candidate)
+            
+            session.commit()
+            
+            # Get current positions count
+            positions_count = session.query(SuperTrendCurrentPosition).count()
+        except Exception as e:
+            session.rollback()
+            print(f"Error saving candidates: {e}")
+            raise
+        finally:
+            session.close()
         print(f"✓ EOD processing completed successfully!")
         
         return EODRunResponse(

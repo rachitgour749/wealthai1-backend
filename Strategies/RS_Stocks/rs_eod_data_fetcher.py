@@ -4,7 +4,6 @@ Fetches End-of-Day data for Nifty 500 stocks and Nifty 50 index
 Uses the same logic as ETF scheduler but for RS strategy
 """
 
-import sqlite3
 import yfinance as yf
 import logging
 import pandas as pd

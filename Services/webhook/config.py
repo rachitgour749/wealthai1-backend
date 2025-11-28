@@ -9,11 +9,13 @@ class WebhookConfig:
     """Configuration class for webhook settings"""
     
     # Database settings
-    # Use absolute path to ensure database is found regardless of working directory
+    # Note: Now using PostgreSQL (Neon) - ApplicationData database
+    # DATABASE setting kept for backward compatibility but not used
+    # All database operations use Databases.app_data_db_connection
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
-    default_db_path = os.path.join(parent_dir, "unified_etf_data.sqlite")
-    DATABASE = os.getenv("WEBHOOK_DATABASE", default_db_path)
+    default_db_path = os.path.join(parent_dir, "unified_etf_data.sqlite")  # Legacy, not used
+    DATABASE = os.getenv("WEBHOOK_DATABASE", default_db_path)  # Legacy, not used
     
     # Webhook settings
     WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "")

@@ -4,17 +4,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 import warnings
 import os
-import sys
 import json
-
-warnings.filterwarnings('ignore')
-
-# Import market data database connection
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(os.path.dirname(current_dir))
-databases_path = os.path.join(parent_dir, 'Databases')
-sys.path.insert(0, databases_path)
-
 from Databases.market_data_db_connection import (
     create_connection as create_market_data_connection,
     get_session as get_market_data_session,
@@ -23,6 +13,9 @@ from Databases.market_data_db_connection import (
     ETFUnified,  # Deprecated, kept for backward compatibility
     ETFMetadata  # Metadata model (uses etf_metadata table)
 )
+
+# Import base class for OOP refactoring
+from Strategies.Rotation.RotationStrategy import RotationStrategy
 
 try:
     import plotly.graph_objects as go
@@ -35,7 +28,7 @@ except ImportError:
     print("Warning: Plotly not available. Chart functionality will be disabled.")
 
 
-class ETFRotationBacktester:
+class ETFRotationBacktester(RotationStrategy):
     def __init__(self, db_path: str = None):
         """
         Initialize ETF Rotation Backtester
@@ -43,6 +36,9 @@ class ETFRotationBacktester:
         Args:
             db_path: Deprecated - kept for compatibility. Now uses PostgreSQL MarketData database.
         """
+        # Call base class constructor (initializes common attributes)
+        super().__init__()
+        
         # Initialize PostgreSQL connection
         if not create_market_data_connection():
             raise RuntimeError("Failed to connect to MarketData database")
@@ -50,14 +46,23 @@ class ETFRotationBacktester:
         # Initialize database tables
         init_market_data_database()
 
+        # Initialize attributes before calling load_metadata (which uses _verbose)
         self.portfolio_log = []
         self.weekly_nav_df = pd.DataFrame()
         self.nifty50_df = pd.DataFrame()
         self.transaction_costs_log = []
         self.purchase_history = {}
+        
+        # Performance optimizations
+        self._data_cache = {}
+        self._verbose = False  # Set to True for debugging
+        
+        # Strategy-specific table configuration (must be set before method calls)
+        self.metadata_table = "etf_metadata"  # Use etf_metadata for ETF metadata
+        self.data_table = "etf_data"  # ETFs are stored in etf_data table
+        
         self.available_databases = []  # Not needed for PostgreSQL
-        self.etf_metadata = self.load_etf_metadata()
-
+        
         # Trade execution tracking
         self.skipped_days = []
         self.total_weeks = 0
@@ -65,11 +70,19 @@ class ETFRotationBacktester:
         self.successful_executions = 0
         self.current_cash = 0
         self.current_holdings = {}
+        
+        # Load metadata (now safe to call since _verbose is initialized)
+        self.etf_metadata = self.load_metadata()
 
-        # Performance optimizations
-        self._data_cache = {}
-        self._verbose = False  # Set to True for debugging
-
+    
+    def _get_data_model(self):
+        """Return the SQLAlchemy model for ETF data"""
+        return ETFData
+    
+    def _get_metadata_model(self):
+        """Return the SQLAlchemy model for ETF metadata"""
+        return ETFMetadata
+        
     def set_verbose(self, verbose: bool = True):
         """Enable or disable verbose logging for debugging"""
         self._verbose = verbose
@@ -77,6 +90,33 @@ class ETFRotationBacktester:
     def _get_session(self):
         """Get database session for PostgreSQL"""
         return get_market_data_session()
+    
+    def load_data(self, start_date: datetime, end_date: datetime) -> Dict[str, pd.DataFrame]:
+        """
+        Implementation of abstract method from WealthAIBase.
+        
+        Loads data for all available ETFs in metadata.
+        For specific ticker loading, use load_data_from_database() instead.
+        
+        Args:
+            start_date: Start date for data loading
+            end_date: End date for data loading
+            
+        Returns:
+            Dictionary with 'open', 'high', 'low', 'close', 'volume' DataFrames
+        """
+        # Get all available tickers from metadata
+        if not hasattr(self, 'etf_metadata') or not self.etf_metadata:
+            self.etf_metadata = self.load_metadata()
+        
+        tickers = list(self.etf_metadata.keys())
+        
+        # Convert datetime to string format expected by load_data_from_database
+        start_date_str = start_date.strftime('%Y-%m-%d')
+        end_date_str = end_date.strftime('%Y-%m-%d')
+        
+        # Delegate to the more specific method
+        return self.load_data_from_database(tickers, start_date_str, end_date_str)
 
     def cleanup(self):
         """Clean up resources and clear cache"""
@@ -123,7 +163,7 @@ class ETFRotationBacktester:
         """Check which database files are available - Not needed for PostgreSQL"""
         return []
 
-    def load_etf_metadata(self) -> Dict[str, Dict]:
+    def load_metadata(self) -> Dict[str, Dict]:
         """Load ETF metadata from PostgreSQL database"""
         session = None
         try:
@@ -146,8 +186,7 @@ class ETFRotationBacktester:
 
                 if metadata_count > 0:
                     # Load from metadata table using raw SQL (to avoid ORM model mismatch)
-                    if self._verbose:
-                        print(f"[DEBUG] Loading ETF metadata from etf_metadata table ({metadata_count} records)")
+                    print(f"[INFO] Loading ETF metadata from etf_metadata table ({metadata_count} records)")
 
                     # First, get the actual column names from the table
                     columns_result = session.execute(text("""
@@ -158,7 +197,7 @@ class ETFRotationBacktester:
                         ORDER BY ordinal_position
                     """))
                     column_names = [row[0] for row in columns_result.fetchall()]
-                    print(f"[DEBUG] etf_metadata table columns: {column_names}")
+                    print(f"[INFO] etf_metadata table columns: {column_names}")
 
                     # Build query based on actual columns
                     # Map common column name variations
@@ -202,11 +241,12 @@ class ETFRotationBacktester:
                             select_cols.append(f"{source_col} as data_source")
 
                         query_str = f"SELECT {', '.join(select_cols)} FROM etf_metadata"
-                        print(f"[DEBUG] Querying etf_metadata: {query_str}")
+                        print(f"[INFO] Querying etf_metadata: {query_str}")
 
                         try:
                             metadata_result = session.execute(text(query_str))
                             metadata_rows = metadata_result.fetchall()
+                            print(f"[INFO] Retrieved {len(metadata_rows)} rows from etf_metadata table")
 
                             metadata = {}
                             for row in metadata_rows:
@@ -242,14 +282,17 @@ class ETFRotationBacktester:
                                             idx] else 'database'
 
                                     metadata[symbol] = meta_dict
+                                    if self._verbose:
+                                        print(f"[DEBUG] Loaded metadata for {symbol}: {meta_dict}")
                                 except Exception as row_error:
                                     print(f"[ERROR] Error processing metadata row: {row_error}, row: {row}")
+                                    import traceback
+                                    print(f"[ERROR] Traceback: {traceback.format_exc()}")
                                     continue
 
-                            if self._verbose:
-                                print(f"[DEBUG] Loaded {len(metadata)} ETFs from etf_metadata table")
-
+                            print(f"[INFO] Successfully loaded {len(metadata)} ETFs from etf_metadata table")
                             if len(metadata) > 0:
+                                print(f"[INFO] Sample symbols loaded: {list(metadata.keys())[:10]}")
                                 return metadata
                             else:
                                 if self._verbose:
@@ -521,7 +564,7 @@ class ETFRotationBacktester:
             print(f"[ERROR] Traceback: {error_details}")
             return {}
 
-    def generate_etf_description(self, symbol: str) -> str:
+    def generate_asset_description(self, symbol: str) -> str:
         """Generate intelligent ETF descriptions based on symbol names"""
         etf_mappings = {
             'NIFTYBEES': 'Nifty 50 ETF - Broad Market',
@@ -601,7 +644,7 @@ class ETFRotationBacktester:
         else:
             return f'{symbol} ETF'
 
-    def get_etf_sector_classification(self, symbol: str) -> str:
+    def get_asset_sector_classification(self, symbol: str) -> str:
         """Classify ETF into sector categories"""
         symbol_lower = symbol.lower()
 
@@ -650,16 +693,61 @@ class ETFRotationBacktester:
 
     def calculate_common_date_range(self, selected_etfs: List[str]) -> Tuple[Optional[str], Optional[str], float]:
         """Calculate common date range for selected ETFs with robust 52-week lookback requirement"""
-        if not selected_etfs or not self.etf_metadata:
+        if not selected_etfs:
+            print("[ERROR] No ETFs provided for date range calculation")
             return None, None, 0.0
-
-        selected_metadata = {etf: self.etf_metadata[etf] for etf in selected_etfs if etf in self.etf_metadata}
+        
+        if not self.etf_metadata:
+            print("[ERROR] ETF metadata is empty. Cannot calculate date range.")
+            print("[DEBUG] Attempting to reload metadata...")
+            self.etf_metadata = self.load_metadata()
+            if not self.etf_metadata:
+                print("[ERROR] Failed to load ETF metadata after retry")
+                return None, None, 0.0
+        
+        print(f"[DEBUG] Available metadata symbols: {list(self.etf_metadata.keys())[:10]}...")  # Show first 10
+        print(f"[DEBUG] Requested ETFs: {selected_etfs}")
+        
+        # Try case-insensitive matching first, then exact match
+        selected_metadata = {}
+        metadata_lower = {k.lower(): (k, v) for k, v in self.etf_metadata.items()}
+        
+        for etf in selected_etfs:
+            # Try exact match first
+            if etf in self.etf_metadata:
+                selected_metadata[etf] = self.etf_metadata[etf]
+            # Try case-insensitive match
+            elif etf.lower() in metadata_lower:
+                original_key, metadata = metadata_lower[etf.lower()]
+                selected_metadata[etf] = metadata
+                print(f"[DEBUG] Matched '{etf}' to '{original_key}' (case-insensitive)")
+            else:
+                print(f"[WARNING] ETF '{etf}' not found in metadata. Available symbols: {list(self.etf_metadata.keys())[:20]}")
 
         if not selected_metadata:
+            print(f"[ERROR] None of the requested ETFs found in metadata: {selected_etfs}")
             return None, None, 0.0
 
-        start_dates = [pd.to_datetime(data['start_date']) for data in selected_metadata.values()]
-        end_dates = [pd.to_datetime(data['end_date']) for data in selected_metadata.values()]
+        # Filter out None dates and validate
+        valid_metadata = {}
+        for etf, data in selected_metadata.items():
+            if data.get('start_date') and data.get('end_date'):
+                try:
+                    # Validate dates can be parsed
+                    pd.to_datetime(data['start_date'])
+                    pd.to_datetime(data['end_date'])
+                    valid_metadata[etf] = data
+                except Exception as e:
+                    print(f"[ERROR] Invalid date format for {etf}: start_date={data.get('start_date')}, end_date={data.get('end_date')}, error={e}")
+            else:
+                print(f"[ERROR] Missing dates for {etf}: start_date={data.get('start_date')}, end_date={data.get('end_date')}")
+        
+        if not valid_metadata:
+            print("[ERROR] No valid metadata with dates found")
+            return None, None, 0.0
+
+        start_dates = [pd.to_datetime(data['start_date']) for data in valid_metadata.values()]
+        end_dates = [pd.to_datetime(data['end_date']) for data in valid_metadata.values()]
 
         # The latest start date among all ETFs (most restrictive)
         latest_start = max(start_dates)
@@ -667,9 +755,10 @@ class ETFRotationBacktester:
 
         print(f"📅 ETF Data Ranges:")
         for etf in selected_etfs:
-            if etf in selected_metadata:
-                meta = selected_metadata[etf]
-                print(f"   {etf:12s}: {meta['start_date']} to {meta['end_date']} ({meta['years_available']:.1f} years)")
+            if etf in valid_metadata:
+                meta = valid_metadata[etf]
+                years = meta.get('years_available', 0)
+                print(f"   {etf:12s}: {meta['start_date']} to {meta['end_date']} ({years:.1f} years)")
 
         print(f"📊 Common data range: {latest_start.strftime('%Y-%m-%d')} to {common_end.strftime('%Y-%m-%d')}")
 
@@ -721,7 +810,7 @@ class ETFRotationBacktester:
 
         return strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
 
-    def load_data_from_sqlite(self, tickers: List[str], start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
+    def load_data_from_database(self, tickers: List[str], start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
         """Load daily OHLCV data from PostgreSQL database for selected tickers with historical buffer for momentum calculations"""
         # Calculate buffer start date for cache key
         buffer_start_date = (pd.to_datetime(start_date) - timedelta(days=400)).strftime('%Y-%m-%d')
@@ -746,19 +835,22 @@ class ETFRotationBacktester:
 
             # Use etf_data table - column names match directly
             # Get available symbols using proper parameterization
-            from sqlalchemy import bindparam
-            ticker_params = [bindparam(f'ticker_{i}', t) for i, t in enumerate(tickers)]
+            # Build placeholders for IN clause
             placeholders = ','.join([f':ticker_{i}' for i in range(len(tickers))])
 
             query = text(f"""
                 SELECT DISTINCT symbol 
                 FROM etf_data 
                 WHERE symbol IN ({placeholders})
-                AND date >= :start_date::date AND date <= :end_date::date
+                AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
             """)
 
+            # Build parameters dict with all tickers and dates
             params = {f'ticker_{i}': t for i, t in enumerate(tickers)}
-            params.update({"start_date": buffer_start_date, "end_date": end_date})
+            params.update({
+                "start_date": buffer_start_date,
+                "end_date": end_date
+            })
 
             result = session.execute(query, params)
             available_tickers = [row[0] for row in result.fetchall()]
@@ -784,13 +876,21 @@ class ETFRotationBacktester:
                     adjusted_close
                 FROM etf_data
                 WHERE symbol IN ({placeholders})
-                AND date >= :start_date::date AND date <= :end_date::date
+                AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
                 ORDER BY date, symbol
             """)
 
             params = {f'ticker_{i}': t for i, t in enumerate(available_tickers)}
-            params.update({"start_date": buffer_start_date, "end_date": end_date})
-            df = pd.read_sql(query, session.bind, params=params)
+            params.update({
+                "start_date": buffer_start_date,
+                "end_date": end_date
+            })
+            
+            # Use session.execute instead of pd.read_sql for better parameter binding
+            result = session.execute(query, params)
+            rows = result.fetchall()
+            columns = result.keys()
+            df = pd.DataFrame(rows, columns=columns)
 
             if df.empty:
                 raise ValueError(f"No data found for the selected date range {start_date} to {end_date}")
@@ -937,38 +1037,12 @@ class ETFRotationBacktester:
         return result_df
 
     def calculate_transaction_costs(self, action: str, amount: float, brokerage_percent: float) -> Dict[str, float]:
-        """Calculate Indian market transaction costs"""
-        costs = {}
-
-        brokerage = amount * (brokerage_percent / 100)
-        costs['brokerage'] = brokerage
-
-        if action == 'sell':
-            costs['stt'] = amount * 0.001 / 100
-        else:
-            costs['stt'] = 0
-
-        if action == 'buy':
-            costs['stamp_duty'] = amount * 0.005 / 100
-        else:
-            costs['stamp_duty'] = 0
-
-        exchange_charges = amount * 0.00297 / 100
-        costs['exchange_charges'] = exchange_charges * 0.18
-
-        sebi_charges = amount * 0.0001 / 100
-        costs['sebi_charges'] = sebi_charges * 0.18
-        costs['gst'] = brokerage * 0.18
-
-        total_costs = sum(costs.values())
-        costs['total_costs'] = total_costs
-
-        if action == 'buy':
-            costs['net_amount'] = amount + total_costs
-        else:
-            costs['net_amount'] = amount - total_costs
-
-        return costs
+        """
+        Calculate Indian market transaction costs using centralized calculator.
+        
+        This method now delegates to the EquitySegment implementation.
+        """
+        return self.calculate_delivery_costs(action, amount, brokerage_percent)
 
     def add_purchase_record(self, ticker: str, units: int, price: float, date: datetime):
         """Add purchase record for FIFO tracking"""
@@ -984,56 +1058,12 @@ class ETFRotationBacktester:
 
     def calculate_capital_gains_tax(self, ticker: str, units_to_sell: int, sell_price: float,
                                     sell_date: datetime) -> Dict:
-        """Calculate capital gains tax using FIFO logic"""
-        if ticker not in self.purchase_history or not self.purchase_history[ticker]:
-            return {
-                'total_profit': 0,
-                'capital_gains_tax': 0,
-                'cost_basis': sell_price * units_to_sell,
-                'transactions': []
-            }
-
-        total_profit = 0
-        total_cost_basis = 0
-        units_remaining = units_to_sell
-        tax_transactions = []
-
-        for purchase in self.purchase_history[ticker]:
-            if units_remaining <= 0:
-                break
-
-            if purchase['remaining_units'] <= 0:
-                continue
-
-            units_from_this_purchase = min(units_remaining, purchase['remaining_units'])
-
-            cost_basis = units_from_this_purchase * purchase['price']
-            sale_value = units_from_this_purchase * sell_price
-            profit_loss = sale_value - cost_basis
-
-            purchase['remaining_units'] -= units_from_this_purchase
-
-            total_cost_basis += cost_basis
-            total_profit += profit_loss
-            units_remaining -= units_from_this_purchase
-
-            tax_transactions.append({
-                'purchase_date': purchase['date'],
-                'purchase_price': purchase['price'],
-                'units_sold': units_from_this_purchase,
-                'cost_basis': cost_basis,
-                'sale_value': sale_value,
-                'profit_loss': profit_loss
-            })
-
-        capital_gains_tax = max(0, total_profit * 0.125) if total_profit > 0 else 0
-
-        return {
-            'total_profit': total_profit,
-            'capital_gains_tax': capital_gains_tax,
-            'cost_basis': total_cost_basis,
-            'transactions': tax_transactions
-        }
+        """
+        Calculate capital gains tax using centralized calculator with FIFO logic.
+        
+        This method now delegates to the EquitySegment implementation.
+        """
+        return self.calculate_capital_gains(ticker, units_to_sell, sell_price, sell_date)
 
     def log_transaction_costs(self, week: int, date: datetime, action: str, ticker: str, units: int, price: float,
                               costs: Dict, capital_gains_tax: float = 0):
@@ -1805,7 +1835,7 @@ class ETFRotationBacktester:
         """Run the complete backtest as per Technical Specification PDF"""
         if self._verbose:
             print("Loading data from database...")
-        data_dict = self.load_data_from_sqlite(tickers, start_date, end_date)
+        data_dict = self.load_data_from_database(tickers, start_date, end_date)
 
         if not data_dict:
             return {"error": "Failed to load data"}
@@ -2089,13 +2119,20 @@ class ETFRotationBacktester:
                 SELECT date, close
                 FROM etf_data
                 WHERE symbol = :symbol
-                AND date >= :start_date::date
-                AND date <= :end_date::date
+                AND date >= CAST(:start_date AS DATE)
+                AND date <= CAST(:end_date AS DATE)
                 ORDER BY date
             """)
 
-            nifty_df = pd.read_sql(query, session.bind,
-                                   params={"symbol": benchmark_symbol, "start_date": start_date, "end_date": end_date})
+            # Use session.execute for proper parameter binding
+            result = session.execute(query, {
+                "symbol": benchmark_symbol,
+                "start_date": start_date,
+                "end_date": end_date
+            })
+            rows = result.fetchall()
+            columns = result.keys()
+            nifty_df = pd.DataFrame(rows, columns=columns)
 
             if nifty_df.empty:
                 return pd.DataFrame()
@@ -2604,6 +2641,97 @@ class ETFRotationBacktester:
 
         return pd.DataFrame(formatted_data)
 
+    def check_strategy_exists(self, strategy_name: str, user_id: str, tickers: List[str], 
+                            start_date: str, end_date: str, capital_per_week: float, 
+                            accumulation_weeks: int, brokerage_percent: float, 
+                            compounding_enabled: bool, risk_free_rate: float, 
+                            use_custom_dates: bool) -> Dict:
+        """
+        Check if a strategy with the same parameters already exists in the PostgreSQL database
+        
+        Database: PostgreSQL (Neon) - app_data_db_connection
+        Table: etf_saved_strategy
+        
+        Returns:
+            Dict with 'exists' boolean and 'existing_strategy' details if found
+        """
+        session = None
+        try:
+            # Import app_data_db_connection for ETF strategies
+            from Databases.app_data_db_connection import get_session
+            session = get_session()
+            from sqlalchemy import text
+            
+            # Check if the etf_saved_strategy table exists
+            table_check = session.execute(text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' AND table_name = 'etf_saved_strategy'
+            """))
+            if not table_check.fetchone():
+                return {"exists": False, "message": "Strategy table not found"}
+            
+            # Convert tickers to JSON for comparison
+            tickers_json = json.dumps(sorted(tickers))
+            
+            # Check for exact match of all parameters
+            query = text("""
+                SELECT id, strategy_name, created_at, created_timestamp
+                FROM etf_saved_strategy 
+                WHERE user_id = :user_id 
+                AND strategy_name = :strategy_name
+                AND tickers::text = :tickers
+                AND start_date = :start_date
+                AND end_date = :end_date
+                AND capital_per_week = :capital_per_week
+                AND accumulation_weeks = :accumulation_weeks
+                AND brokerage_percent = :brokerage_percent
+                AND compounding_enabled = :compounding_enabled
+                AND risk_free_rate = :risk_free_rate
+                AND use_custom_dates = :use_custom_dates
+            """)
+            
+            result = session.execute(query, {
+                "user_id": user_id,
+                "strategy_name": strategy_name,
+                "tickers": tickers_json,
+                "start_date": start_date,
+                "end_date": end_date,
+                "capital_per_week": capital_per_week,
+                "accumulation_weeks": accumulation_weeks,
+                "brokerage_percent": brokerage_percent,
+                "compounding_enabled": compounding_enabled,
+                "risk_free_rate": risk_free_rate,
+                "use_custom_dates": use_custom_dates
+            })
+            
+            existing_strategy = result.fetchone()
+            
+            if existing_strategy:
+                return {
+                    "exists": True,
+                    "existing_strategy": {
+                        "id": existing_strategy[0],
+                        "strategy_name": existing_strategy[1],
+                        "created_at": str(existing_strategy[2]) if existing_strategy[2] else None,
+                        "created_timestamp": str(existing_strategy[3]) if existing_strategy[3] else None
+                    },
+                    "message": f"ETF Strategy already exists"
+                }
+            else:
+                return {
+                    "exists": False,
+                    "message": "No identical strategy found"
+                }
+                
+        except Exception as e:
+            return {
+                "exists": False,
+                "error": f"Error checking strategy existence: {str(e)}"
+            }
+        finally:
+            if session:
+                session.close()
 
     def diagnose_etf_data(self, selected_etfs: List[str]) -> Dict:
         """Diagnose ETF data availability and provide recommendations"""
@@ -2711,7 +2839,7 @@ class ETFRotationBacktester:
         # ETF diversity check
         sectors = {}
         for etf in selected_etfs:
-            sector = self.get_etf_sector_classification(etf)
+            sector = self.get_asset_sector_classification(etf)
             sectors[sector] = sectors.get(sector, 0) + 1
 
         print(f"\n📊 PORTFOLIO DIVERSIFICATION:")

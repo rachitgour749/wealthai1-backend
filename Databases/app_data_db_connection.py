@@ -33,8 +33,27 @@ def create_connection():
     """
     Create and test connection to Neon PostgreSQL database.
     Returns True if successful, False otherwise.
+    If connection already exists, returns True without recreating it.
     """
     global engine, SessionLocal
+    
+    # If connection already exists, verify it's still working
+    if engine is not None and SessionLocal is not None:
+        try:
+            # Test if existing connection is still valid
+            with engine.connect() as connection:
+                connection.execute(text("SELECT 1"))
+            logger.debug("Using existing PostgreSQL database connection")
+            return True
+        except Exception as e:
+            logger.warning(f"Existing connection invalid, recreating: {e}")
+            # Connection is invalid, reset and recreate
+            try:
+                engine.dispose()
+            except:
+                pass
+            engine = None
+            SessionLocal = None
     
     try:
         # Create engine with connection pooling
@@ -66,6 +85,8 @@ def create_connection():
         
     except Exception as e:
         logger.error(f"Error connecting to Neon database: {str(e)}")
+        import traceback
+        traceback.print_exc()
         engine = None
         SessionLocal = None
         return False

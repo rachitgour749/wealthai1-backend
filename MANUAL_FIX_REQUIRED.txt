@@ -1,0 +1,60 @@
+"""
+CRITICAL FIX NEEDED - ETF Backtester is Broken
+================================================
+
+The __init__ method in backtester.py is incomplete and missing critical code.
+
+MANUAL FIX REQUIRED:
+--------------------
+
+Open this file in your editor:
+C:\Users\Lenovo\Desktop\WEALTHAI_PROD\wealthai1-backend\Strategies\Rotation_ETF\services\backtester.py
+
+Find line 38 (the __init__ method) and replace lines 38-48 with this EXACT code:
+
+```python
+    def __init__(self, db_path: str = None):
+        """
+        Initialize ETF Rotation Backtester
+
+        Args:
+            db_path: Deprecated - kept for compatibility. Now uses PostgreSQL MarketData database.
+        """
+        # Call base class constructor (initializes common attributes)
+        super().__init__()
+        
+        # Initialize PostgreSQL connection
+        if not create_market_data_connection():
+            raise RuntimeError("Failed to connect to MarketData database")
+
+        # Initialize database tables
+        init_market_data_database()
+
+        # ETF-specific attributes (not in base class)
+        self.nifty50_df = pd.DataFrame()
+        self.etf_metadata = self.load_metadata()  # Calls abstract method implementation
+        
+        # Initialize Calculator classes for cost and tax calculations
+        self.cost_calculator = IndianMarketCostCalculator()
+        self.tax_calculator = IndianCapitalGainsTaxCalculator()
+
+    
+    def _get_data_model(self):
+        """Return the SQLAlchemy model for ETF data"""
+        return ETFData
+```
+
+STEPS:
+------
+1. Open the file in VS Code or your editor
+2. Go to line 38
+3. Select from line 38 to line 48 (the broken __init__ and _get_metadata_model)
+4. Delete those lines
+5. Paste the code above
+6. Save the file
+7. Restart the server
+
+The issue is that automated edits keep corrupting the file, so manual editing is required.
+"""
+
+print(__doc__)

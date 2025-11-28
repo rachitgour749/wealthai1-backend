@@ -9,8 +9,8 @@ class Settings(BaseSettings):
 
     # Gemini API Configuration
     GEMINI_API_KEY: str
-    ROUTER_MODEL_NAME: str = "gemini-1.5-flash"
-    ANSWER_MODEL_NAME: str = "gemini-1.5-pro"
+    ROUTER_MODEL_NAME: str = "gemini-2.5-flash"
+    ANSWER_MODEL_NAME: str = "gemini-2.5-flash"
 
     # RAG Service Configuration
     RAG_SERVICE_BASE_URL: str = "https://rag-service.example.com"
@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
 
     # PostgreSQL Configuration (Neon)
-    DATABASE_URL: str = "postgresql://neondb_owner:npg_jyQ5oGFgsW9E@ep-empty-queen-a1oizpt3-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+    DATABASE_URL: str = "postgresql+asyncpg://neondb_owner:npg_jyQ5oGFgsW9E@ep-empty-queen-a1oizpt3-pooler.ap-southeast-1.aws.neon.tech/neondb"
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
 

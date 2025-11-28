@@ -23,7 +23,8 @@ from market_data_db_connection import (
     Base as MarketDataBase,
     ETFData,
     ETFMetadata,
-    IndexData
+    IndexData,
+    Nifty500Metadata
 )
 
 # Use market data connection for market data tables
@@ -54,7 +55,10 @@ def get_db():
                 logging.error(f"Error closing database session: {e}")
 
 # ETF data model - using models from market_data_db_connection
-# ETFData, ETFMetadata, and IndexData are imported from market_data_db_connection
+# ETFData, ETFMetadata, IndexData, and Nifty500Metadata are imported from market_data_db_connection
+
+# Alias for compatibility
+Nifty500Constituents = Nifty500Metadata
 
 # Strategy configuration
 class StrategyConfig(Base):

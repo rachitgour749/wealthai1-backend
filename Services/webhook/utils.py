@@ -4,7 +4,6 @@ import logging
 import requests
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
-import sqlite3
 from fastapi import HTTPException
 
 from .models import StrategyCreate, StrategyUpdate, StrategyResponse, ErrorResponse, SuccessResponse
@@ -221,76 +220,31 @@ def validate_webhook_url(url: str) -> bool:
     except Exception:
         return False
 
-def get_database_connection(database_path: str) -> sqlite3.Connection:
+def cleanup_old_json_data(retention_days: int = 30):
     """
-    Get database connection
+    Clean up old JSON data from PostgreSQL
     
     Args:
-        database_path: Path to database file
-        
-    Returns:
-        Database connection
-    """
-    try:
-        conn = sqlite3.connect(database_path)
-        conn.row_factory = sqlite3.Row
-        return conn
-    except Exception as e:
-        logger.error(f"Error connecting to database: {e}")
-        raise HTTPException(status_code=500, detail="Database connection failed")
-
-def cleanup_old_json_data(database_path: str, retention_days: int = 30):
-    """
-    Clean up old JSON data
-    
-    Args:
-        database_path: Path to database file
         retention_days: Number of days to retain data
     """
     try:
-        conn = get_database_connection(database_path)
-        cursor = conn.cursor()
+        from Databases.app_data_db_connection import get_session
+        from Databases.strategy_models import SaveJson
+        from sqlalchemy import text
+        
+        session = get_session()
         
         cutoff_date = datetime.now() - timedelta(days=retention_days)
         
-        cursor.execute(
-            "DELETE FROM saved_json WHERE created_at < ?",
-            (cutoff_date.isoformat(),)
-        )
+        deleted_count = session.query(SaveJson).filter(
+            SaveJson.created_at < cutoff_date
+        ).delete()
         
-        deleted_count = cursor.rowcount
-        conn.commit()
-        conn.close()
+        session.commit()
+        session.close()
         
         if deleted_count > 0:
             logger.info(f"Cleaned up {deleted_count} old JSON records")
             
     except Exception as e:
         logger.error(f"Error cleaning up old JSON data: {e}")
-
-def format_strategy_response(strategy_row: sqlite3.Row) -> StrategyResponse:
-    """
-    Format strategy row to StrategyResponse
-    
-    Args:
-        strategy_row: Database row
-        
-    Returns:
-        StrategyResponse object
-    """
-    try:
-        strategy_data = json.loads(strategy_row['strategy_data']) if strategy_row['strategy_data'] else {}
-        
-        return StrategyResponse(
-            id=strategy_row['id'],
-            strategy_name=strategy_row['strategy_name'],
-            user_email=strategy_row['user_email'],
-            webhook=strategy_row['webhook'],
-            strategy_data=strategy_data,
-            is_active=bool(strategy_row['is_active']),
-            created_at=datetime.fromisoformat(strategy_row['created_at']),
-            updated_at=datetime.fromisoformat(strategy_row['updated_at'])
-        )
-    except Exception as e:
-        logger.error(f"Error formatting strategy response: {e}")
-        raise HTTPException(status_code=500, detail="Error formatting strategy data")

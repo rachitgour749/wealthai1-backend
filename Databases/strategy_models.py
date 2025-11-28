@@ -282,6 +282,90 @@ class Strategy(Base):
     status = Column(String(50), default='active')
 
 
+# ============================================================================
+# SUPERTREND STRATEGY TABLES
+# ============================================================================
+
+class SuperTrendStrategyConfig(Base):
+    """SuperTrend Strategy Configuration"""
+    __tablename__ = 'strategy_config'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ema_short = Column(Integer, default=10)
+    ema_long = Column(Integer, default=20)
+    supertrend_period = Column(Integer, default=10)
+    supertrend_stop_pct = Column(Float, default=10.0)
+    max_holdings = Column(Integer, default=5)
+    buffer_pct = Column(Float, default=10.0)
+    price_floor = Column(Float, default=50.0)
+    liquidity_cr = Column(Float, default=10.0)
+    rs_window_1 = Column(Integer, default=5)
+    rs_window_2 = Column(Integer, default=21)
+    rs_window_3 = Column(Integer, default=63)
+    benchmark = Column(String(50), default='NIFTY50')
+    universe = Column(String(50), default='NIFTY200')
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class SuperTrendBacktestResult(Base):
+    """SuperTrend Backtest Results"""
+    __tablename__ = 'backtest_results'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    run_date = Column(String(50))
+    trade_date = Column(String(50))
+    symbol = Column(String(50))
+    action = Column(String(10))
+    price = Column(Float)
+    quantity = Column(Integer)
+    position_value = Column(Float)
+    portfolio_value = Column(Float)
+    cash = Column(Float)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    __table_args__ = (
+        Index('idx_supertrend_backtest_run_date', 'run_date'),
+        Index('idx_supertrend_backtest_trade_date', 'trade_date'),
+    )
+
+
+class SuperTrendCurrentPosition(Base):
+    """SuperTrend Current Positions"""
+    __tablename__ = 'current_positions'
+    
+    symbol = Column(String(50), primary_key=True)
+    entry_date = Column(String(50))
+    entry_price = Column(Float)
+    quantity = Column(Integer)
+    current_price = Column(Float)
+    current_value = Column(Float)
+    pnl = Column(Float)
+    pnl_pct = Column(Float)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class SuperTrendCandidate(Base):
+    """SuperTrend Stock Candidates"""
+    __tablename__ = 'candidates'
+    
+    symbol = Column(String(50), primary_key=True)
+    date = Column(String(50))
+    adj_close = Column(Float)
+    ema10 = Column(Float)
+    ema20 = Column(Float)
+    supertrend = Column(String(10))
+    rs_score = Column(Float)
+    rank = Column(Integer)
+    eligible = Column(Integer)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    __table_args__ = (
+        Index('idx_supertrend_candidates_date', 'date'),
+        Index('idx_supertrend_candidates_eligible', 'eligible'),
+    )
+
+
 class SaveJson(Base):
     """JSON Data Storage for Deployments"""
     __tablename__ = 'savejson'

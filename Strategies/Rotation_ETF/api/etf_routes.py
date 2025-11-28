@@ -4,99 +4,41 @@ from typing import List, Dict, Any, Optional
 import pandas as pd
 import sys
 import os
-import sqlite3
 import json
+import logging
 from datetime import datetime, timedelta
 
+logger = logging.getLogger(__name__)
+
 # Add the parent directory to the path for imports
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import the ETF backtester
-from .backtester_core import ETFRotationBacktester
-
-# Import the signal generator
-try:
-    from .signal_generator import LiveSignalGenerator
-except ImportError as e:
-    print(f"Warning: Could not import LiveSignalGenerator: {e}")
-    LiveSignalGenerator = None
+from ..services.backtester import ETFRotationBacktester
+from ..services.signal_generator import LiveSignalGenerator
+from ..etf_schemas import (
+    BacktestRequest, ETFMetadata, BacktestResult, BacktestResults,
+    SaveETFStrategyRequest, SavedETFStrategy
+)
 
 # Create ETF router
 etf_router = APIRouter(prefix="/api", tags=["ETF Strategy"])
 
 # Pydantic models for request/response
-class BacktestRequest(BaseModel):
-    tickers: List[str]
-    start_date: str
-    end_date: str
-    capital_per_week: float
-    accumulation_weeks: int
-    brokerage_percent: float
-    compounding_enabled: bool = False
-    risk_free_rate: float = 8.0
 
-class ETFMetadata(BaseModel):
-    ticker: str
-    name: str
-    category: str
-    expense_ratio: float
-    aum: float
-
-class BacktestResult(BaseModel):
-    success: bool
-    total_investment: float
-    final_portfolio_value: float
-    total_return: float
-    total_brokerage: float
-    error: Optional[str] = None
-
-class BacktestResults(BaseModel):
-    total_return: Optional[str] = None
-    cagr: Optional[str] = None
-    sharpe_ratio: Optional[str] = None
-    max_drawdown: Optional[str] = None
-
-class SaveETFStrategyRequest(BaseModel):
-    strategy_name: str
-    strategy_type: str
-    user_id: str
-    tickers: List[str]
-    start_date: str
-    end_date: str
-    capital_per_week: float
-    accumulation_weeks: int
-    brokerage_percent: float
-    compounding_enabled: bool
-    risk_free_rate: float
-    use_custom_dates: bool
-    backtest_results: BacktestResults
-    created_at: str
-
-class SavedETFStrategy(BaseModel):
-    id: int
-    strategy_name: str
-    strategy_type: str
-    user_id: str
-    tickers: List[str]
-    start_date: str
-    end_date: str
-    capital_per_week: float
-    accumulation_weeks: int
-    brokerage_percent: float
-    compounding_enabled: bool
-    risk_free_rate: float
-    use_custom_dates: bool
-    backtest_results: Dict[str, Any]
-    created_at: str
 
 # Global ETF backtester instance
 etf_backtester = None
 
 def initialize_etf_backtester(db_path: str = "unified_etf_data.sqlite"):
-    """Initialize the ETF backtester"""
+    """Initialize the ETF backtester
+    
+    Args:
+        db_path: Deprecated - kept for compatibility. Now uses PostgreSQL for all operations.
+    """
     global etf_backtester
     try:
-        etf_backtester = ETFRotationBacktester(db_path=db_path)
+        etf_backtester = ETFRotationBacktester(db_path=db_path)  # db_path ignored, uses PostgreSQL
         print("✅ ETF Backtester initialized successfully")
         return True
     except Exception as e:
@@ -123,7 +65,7 @@ async def get_available_etfs():
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
         # Load ETF metadata
-        metadata = etf_backtester.load_etf_metadata()
+        metadata = etf_backtester.load_metadata()
         etfs = []
         
         for ticker, data in metadata.items():
@@ -146,7 +88,7 @@ async def get_default_etf_selection():
         if etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
-        metadata = etf_backtester.load_etf_metadata()
+        metadata = etf_backtester.load_metadata()
         available_etfs = list(metadata.keys())
         default_selection = etf_backtester.get_default_etf_selection(available_etfs, 5)
         
@@ -162,7 +104,14 @@ async def calculate_etf_date_range(request: Dict[str, Any]):
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
         tickers = request.get("tickers", [])
+        if not tickers:
+            raise HTTPException(status_code=400, detail="No tickers provided in request")
+        
         print(f"Calculating date range for ETF tickers: {tickers}")
+        
+        # Enable verbose mode for debugging
+        etf_backtester.set_verbose(True)
+        
         start_date, end_date, years = etf_backtester.calculate_common_date_range(tickers)
         
         if start_date and end_date:
@@ -172,8 +121,22 @@ async def calculate_etf_date_range(request: Dict[str, Any]):
                 "years": years
             }
         else:
-            raise HTTPException(status_code=400, detail="Could not calculate date range. Please try different ETFs.")
+            # Provide more detailed error message
+            available_symbols = list(etf_backtester.etf_metadata.keys())[:20] if etf_backtester.etf_metadata else []
+            error_msg = f"Could not calculate date range for ETFs: {tickers}. "
+            if not etf_backtester.etf_metadata:
+                error_msg += "Metadata is empty. "
+            elif available_symbols:
+                error_msg += f"Available symbols (sample): {available_symbols}. "
+            error_msg += "Please check if the ETFs exist in the database."
+            raise HTTPException(status_code=400, detail=error_msg)
+    except HTTPException:
+        raise
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"[ERROR] Error calculating date range: {e}")
+        print(f"[ERROR] Traceback: {error_trace}")
         raise HTTPException(status_code=500, detail=f"Error calculating date range: {str(e)}")
 
 @etf_router.post("/diagnose")
@@ -196,12 +159,12 @@ async def get_etf_overview():
         if etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
-        metadata = etf_backtester.load_etf_metadata()
+        metadata = etf_backtester.load_metadata()
         etf_overview = []
         
         for symbol, meta in metadata.items():
-            description = etf_backtester.generate_etf_description(symbol)
-            sector = etf_backtester.get_etf_sector_classification(symbol)
+            description = etf_backtester.generate_asset_description(symbol)
+            sector = etf_backtester.get_asset_sector_classification(symbol)
             etf_overview.append({
                 'symbol': symbol,
                 'description': description,
@@ -749,22 +712,28 @@ def init_saved_etf_strategies_table(db_path: str = None):
     """Initialize the etf_saved_strategy table in PostgreSQL (db_path parameter ignored, kept for compatibility)"""
     try:
         # Import database connection and models
-        from Databases.app_data_db_connection import create_connection, init_database
+        from Databases.app_data_db_connection import create_connection, init_database, get_engine
         
-        # Ensure connection is established
-        if not create_connection():
-            print("❌ Failed to connect to PostgreSQL database")
-            return False
+        # Check if connection already exists, if not create it
+        try:
+            # Try to get engine to check if connection exists
+            engine = get_engine()
+            # Connection exists, just initialize tables
+        except RuntimeError:
+            # Connection doesn't exist, create it
+            if not create_connection():
+                logger.error("❌ Failed to connect to PostgreSQL database")
+                return False
         
         # Initialize all tables (including etf_saved_strategy)
         if not init_database():
-            print("❌ Failed to initialize database tables")
+            logger.error("❌ Failed to initialize database tables")
             return False
         
-        print("✅ etf_saved_strategy table initialized successfully in PostgreSQL")
+        logger.info("✅ etf_saved_strategy table initialized successfully in PostgreSQL")
         return True
     except Exception as e:
-        print(f"❌ Error initializing etf_saved_strategy table: {e}")
+        logger.error(f"❌ Error initializing etf_saved_strategy table: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -782,7 +751,7 @@ async def save_etf_strategy(request: SaveETFStrategyRequest):
             raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
         # Check if strategy already exists using the backtester core validation
-        from .backtester_core import ETFRotationBacktester
+        from ..services.backtester import ETFRotationBacktester
         
         backtester = ETFRotationBacktester()
         validation_result = backtester.check_strategy_exists(
@@ -932,89 +901,86 @@ async def get_saved_etf_strategy_by_id(strategy_id: int):
         if not init_saved_etf_strategies_table():
             raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
-        import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        # Import helper functions
+        from Databases.strategy_db_helpers import get_etf_strategy_by_id
         
-        # Get the specific strategy
-        cursor.execute('''
-            SELECT id, strategy_name, strategy_type, user_id, tickers, start_date, end_date,
-                   capital_per_week, accumulation_weeks, brokerage_percent, compounding_enabled,
-                   risk_free_rate, use_custom_dates, backtest_results, created_at, created_timestamp
-            FROM etf_saved_strategy 
-            WHERE id = ?
-        ''', (strategy_id,))
+        # Get strategy from PostgreSQL
+        strategy = get_etf_strategy_by_id(strategy_id)
         
-        row = cursor.fetchone()
-        conn.close()
-        
-        if not row:
+        if not strategy:
             raise HTTPException(status_code=404, detail="Strategy not found")
         
         try:
             # Parse JSON fields
-            tickers = json.loads(row[4]) if row[4] else []  # tickers
-            backtest_results = json.loads(row[13]) if row[13] else {}  # backtest_results
+            tickers = json.loads(strategy['tickers']) if strategy.get('tickers') else []
+            backtest_results = json.loads(strategy['backtest_results']) if strategy.get('backtest_results') else {}
             
-            strategy = {
-                "id": row[0],
-                "strategy_name": row[1],
-                "strategy_type": row[2],
-                "user_id": row[3],
+            strategy_response = {
+                "id": strategy['id'],
+                "strategy_name": strategy['strategy_name'],
+                "strategy_type": strategy['strategy_type'],
+                "user_id": strategy['user_id'],
                 "tickers": tickers,
-                "start_date": row[5],
-                "end_date": row[6],
-                "capital_per_week": row[7],
-                "accumulation_weeks": row[8],
-                "brokerage_percent": row[9],
-                "compounding_enabled": bool(row[10]),
-                "risk_free_rate": row[11],
-                "use_custom_dates": bool(row[12]),
+                "start_date": strategy['start_date'],
+                "end_date": strategy['end_date'],
+                "capital_per_week": strategy['capital_per_week'],
+                "accumulation_weeks": strategy['accumulation_weeks'],
+                "brokerage_percent": strategy['brokerage_percent'],
+                "compounding_enabled": strategy['compounding_enabled'],
+                "risk_free_rate": strategy['risk_free_rate'],
+                "use_custom_dates": strategy['use_custom_dates'],
                 "backtest_results": backtest_results,
-                "created_at": row[14],
-                "created_timestamp": row[15]
+                "created_at": strategy['created_at'],
+                "created_timestamp": strategy['created_timestamp']
             }
             
-            return {"strategy": strategy}
+            return {"strategy": strategy_response}
             
         except json.JSONDecodeError as e:
             raise HTTPException(status_code=500, detail=f"Error parsing strategy data: {str(e)}")
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving strategy: {str(e)}")
 
 @etf_router.delete("/delete-saved-strategy/{strategy_id}")
 async def delete_saved_etf_strategy(strategy_id: int):
     """Delete a saved ETF strategy by ID"""
+    session = None
     try:
         # Initialize the table if it doesn't exist
         if not init_saved_etf_strategies_table():
             raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
-        import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        from Databases.app_data_db_connection import get_session
+        from sqlalchemy import text
+        
+        session = get_session()
         
         # Check if strategy exists
-        cursor.execute('SELECT id FROM etf_saved_strategy WHERE id = ?', (strategy_id,))
-        if not cursor.fetchone():
-            conn.close()
+        result = session.execute(text("SELECT id FROM etf_saved_strategy WHERE id = :strategy_id"), {"strategy_id": strategy_id})
+        if not result.fetchone():
             raise HTTPException(status_code=404, detail="Strategy not found")
         
         # Delete the strategy
-        cursor.execute('DELETE FROM etf_saved_strategy WHERE id = ?', (strategy_id,))
-        conn.commit()
-        conn.close()
+        session.execute(text("DELETE FROM etf_saved_strategy WHERE id = :strategy_id"), {"strategy_id": strategy_id})
+        session.commit()
         
         return {
             "success": True,
             "message": "Strategy deleted successfully"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
+        if session:
+            session.rollback()
         raise HTTPException(status_code=500, detail=f"Error deleting strategy: {str(e)}")
+    finally:
+        if session:
+            session.close()
 
 @etf_router.put("/update-saved-strategy/{strategy_id}")
 async def update_saved_etf_strategy(strategy_id: int, request: SaveETFStrategyRequest):
@@ -1024,15 +990,12 @@ async def update_saved_etf_strategy(strategy_id: int, request: SaveETFStrategyRe
         if not init_saved_etf_strategies_table():
             raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
-        import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        # Import helper functions
+        from Databases.strategy_db_helpers import get_etf_strategy_by_id, save_etf_strategy as save_strategy_db
         
         # Check if strategy exists
-        cursor.execute('SELECT id FROM etf_saved_strategy WHERE id = ?', (strategy_id,))
-        if not cursor.fetchone():
-            conn.close()
+        existing_strategy = get_etf_strategy_by_id(strategy_id)
+        if not existing_strategy:
             raise HTTPException(status_code=404, detail="Strategy not found")
         
         # Convert tickers list to JSON string
@@ -1044,56 +1007,63 @@ async def update_saved_etf_strategy(strategy_id: int, request: SaveETFStrategyRe
         backtest_results_dict = {k: v for k, v in backtest_results_dict.items() if v is not None}
         backtest_results_json = json.dumps(backtest_results_dict)
         
-        # Update the strategy
-        cursor.execute('''
-            UPDATE etf_saved_strategy SET
-                strategy_name = ?, strategy_type = ?, user_id = ?, tickers = ?, start_date = ?, end_date = ?,
-                capital_per_week = ?, accumulation_weeks = ?, brokerage_percent = ?, compounding_enabled = ?,
-                risk_free_rate = ?, use_custom_dates = ?, backtest_results = ?, created_at = ?
-            WHERE id = ?
-        ''', (
-            request.strategy_name, request.strategy_type, request.user_id, tickers_json,
-            request.start_date, request.end_date, request.capital_per_week, request.accumulation_weeks,
-            request.brokerage_percent, request.compounding_enabled, request.risk_free_rate,
-            request.use_custom_dates, backtest_results_json, request.created_at, strategy_id
-        ))
+        # Prepare strategy data for update
+        strategy_data = {
+            'id': strategy_id,
+            'strategy_name': request.strategy_name,
+            'strategy_type': request.strategy_type,
+            'user_id': request.user_id,
+            'tickers': tickers_json,
+            'start_date': request.start_date,
+            'end_date': request.end_date,
+            'capital_per_week': request.capital_per_week,
+            'accumulation_weeks': request.accumulation_weeks,
+            'brokerage_percent': request.brokerage_percent,
+            'compounding_enabled': request.compounding_enabled,
+            'risk_free_rate': request.risk_free_rate,
+            'use_custom_dates': request.use_custom_dates,
+            'backtest_results': backtest_results_json,
+            'created_at': request.created_at
+        }
         
-        conn.commit()
-        conn.close()
+        # Update in PostgreSQL
+        save_strategy_db(strategy_data)
         
         return {
             "success": True,
             "message": "Strategy updated successfully"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating strategy: {str(e)}")
 
 @etf_router.get("/get-saved-strategies-count/{user_id}")
 async def get_saved_etf_strategies_count(user_id: str):
     """Get count of saved ETF strategies for a specific user"""
+    session = None
     try:
         # Initialize the table if it doesn't exist
         if not init_saved_etf_strategies_table():
             raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
-        import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        from Databases.app_data_db_connection import get_session
+        from sqlalchemy import text
+        
+        session = get_session()
         
         # Get count of strategies for the user
-        cursor.execute('''
-            SELECT COUNT(*) FROM etf_saved_strategy WHERE user_id = ?
-        ''', (user_id,))
-        
-        count = cursor.fetchone()[0]
-        conn.close()
+        result = session.execute(text("SELECT COUNT(*) FROM etf_saved_strategy WHERE user_id = :user_id"), {"user_id": user_id})
+        count = result.scalar()
         
         return {"count": count}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting strategy count: {str(e)}")
+    finally:
+        if session:
+            session.close()
 
 # ============================================================================
 # NEW RS-STYLE ENDPOINTS FOR ETF STRATEGIES
@@ -1107,44 +1077,34 @@ async def get_saved_etf_strategies_table(user_id: str):
         if not init_saved_etf_strategies_table():
             raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
-        import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        # Import helper functions
+        from Databases.strategy_db_helpers import get_etf_strategies_by_user
         
-        # Get all strategies for the user with new columns
-        cursor.execute('''
-            SELECT id, strategy_name, strategy_type, user_id, config_id, backtest_id,
-                   start_date, end_date, etf_universe, backtest_results, strategy_config,
-                   run_id, client_information_json, webhook_url, status, created_at
-            FROM etf_saved_strategy 
-            WHERE user_id = ?
-            ORDER BY created_at DESC
-        ''', (user_id,))
+        # Get strategies from PostgreSQL
+        strategies_list = get_etf_strategies_by_user(user_id)
         
+        # Format response
         strategies = []
-        for row in cursor.fetchall():
-            strategy = {
-                "id": row[0],
-                "strategy_name": row[1],
-                "strategy_type": row[2],
-                "user_id": row[3],
-                "config_id": row[4],
-                "backtest_id": row[5],
-                "start_date": row[6],
-                "end_date": row[7],
-                "etf_universe": row[8],
-                "backtest_results": json.loads(row[9]) if row[9] else {},
-                "strategy_config": json.loads(row[10]) if row[10] else {},
-                "run_id": row[11],
-                "client_information_json": row[12],
-                "webhook_url": row[13],
-                "status": row[14] or 'deploy',
-                "created_at": row[15]
+        for strategy in strategies_list:
+            strategy_response = {
+                "id": strategy['id'],
+                "strategy_name": strategy['strategy_name'],
+                "strategy_type": strategy['strategy_type'],
+                "user_id": strategy['user_id'],
+                "config_id": strategy.get('config_id'),
+                "backtest_id": strategy.get('backtest_id'),
+                "start_date": strategy['start_date'],
+                "end_date": strategy['end_date'],
+                "etf_universe": strategy.get('etf_universe', 'NIFTY500'),
+                "backtest_results": json.loads(strategy['backtest_results']) if isinstance(strategy.get('backtest_results'), str) else (strategy.get('backtest_results') or {}),
+                "strategy_config": json.loads(strategy['strategy_config']) if isinstance(strategy.get('strategy_config'), str) else (strategy.get('strategy_config') or {}),
+                "run_id": strategy.get('run_id'),
+                "client_information_json": json.loads(strategy['client_information_json']) if isinstance(strategy.get('client_information_json'), str) else (strategy.get('client_information_json') or {}),
+                "webhook_url": strategy.get('webhook_url'),
+                "status": strategy.get('status', 'deploy'),
+                "created_at": strategy.get('created_at')
             }
-            strategies.append(strategy)
-        
-        conn.close()
+            strategies.append(strategy_response)
         
         return {
             "success": True,
@@ -1157,6 +1117,7 @@ async def get_saved_etf_strategies_table(user_id: str):
 @etf_router.post("/stop-etf-strategy")
 async def stop_etf_strategy(request: dict):
     """Stop a running ETF strategy"""
+    session = None
     try:
         strategy_id = request.get("strategy_id")
         user_id = request.get("user_id")
@@ -1164,36 +1125,42 @@ async def stop_etf_strategy(request: dict):
         if not strategy_id or not user_id:
             raise HTTPException(status_code=400, detail="Missing required parameters")
         
-        import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        from Databases.app_data_db_connection import get_session
+        from sqlalchemy import text
         
-        # Update status to 'stop'
-        cursor.execute('''
+        session = get_session()
+        
+        # Update status to 'stopped'
+        result = session.execute(text("""
             UPDATE etf_saved_strategy 
-            SET status = 'stop' 
-            WHERE id = ? AND user_id = ?
-        ''', (strategy_id, user_id))
+            SET status = 'stopped', updated_at = CURRENT_TIMESTAMP
+            WHERE id = :strategy_id AND user_id = :user_id
+        """), {"strategy_id": strategy_id, "user_id": user_id})
         
-        if cursor.rowcount == 0:
-            conn.close()
+        if result.rowcount == 0:
             raise HTTPException(status_code=404, detail="Strategy not found")
         
-        conn.commit()
-        conn.close()
+        session.commit()
         
         return {
             "success": True,
             "message": "ETF strategy stopped successfully"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
+        if session:
+            session.rollback()
         raise HTTPException(status_code=500, detail=f"Error stopping ETF strategy: {str(e)}")
+    finally:
+        if session:
+            session.close()
 
 @etf_router.post("/restart-etf-strategy")
 async def restart_etf_strategy(request: dict):
     """Restart a stopped ETF strategy"""
+    session = None
     try:
         strategy_id = request.get("strategy_id")
         user_id = request.get("user_id")
@@ -1201,227 +1168,247 @@ async def restart_etf_strategy(request: dict):
         if not strategy_id or not user_id:
             raise HTTPException(status_code=400, detail="Missing required parameters")
         
-        import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        from Databases.app_data_db_connection import get_session
+        from sqlalchemy import text
+        
+        session = get_session()
         
         # Update status to 'running'
-        cursor.execute('''
+        result = session.execute(text("""
             UPDATE etf_saved_strategy 
-            SET status = 'running' 
-            WHERE id = ? AND user_id = ?
-        ''', (strategy_id, user_id))
+            SET status = 'running', updated_at = CURRENT_TIMESTAMP
+            WHERE id = :strategy_id AND user_id = :user_id
+        """), {"strategy_id": strategy_id, "user_id": user_id})
         
-        if cursor.rowcount == 0:
-            conn.close()
+        if result.rowcount == 0:
             raise HTTPException(status_code=404, detail="Strategy not found")
         
-        conn.commit()
-        conn.close()
+        session.commit()
         
         return {
             "success": True,
             "message": "ETF strategy restarted successfully"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
+        if session:
+            session.rollback()
         raise HTTPException(status_code=500, detail=f"Error restarting ETF strategy: {str(e)}")
+    finally:
+        if session:
+            session.close()
 
 @etf_router.delete("/delete-etf-strategy/{strategy_id}")
 async def delete_etf_strategy(strategy_id: int):
     """Delete an ETF strategy"""
+    session = None
     try:
-        import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        from Databases.app_data_db_connection import get_session
+        from sqlalchemy import text
+        
+        session = get_session()
         
         # Delete the strategy
-        cursor.execute('''
-            DELETE FROM etf_saved_strategy 
-            WHERE id = ?
-        ''', (strategy_id,))
+        result = session.execute(text("DELETE FROM etf_saved_strategy WHERE id = :strategy_id"), {"strategy_id": strategy_id})
         
-        if cursor.rowcount == 0:
-            conn.close()
+        if result.rowcount == 0:
             raise HTTPException(status_code=404, detail="Strategy not found")
         
-        conn.commit()
-        conn.close()
+        session.commit()
         
         return {
             "success": True,
             "message": "ETF strategy deleted successfully"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
+        if session:
+            session.rollback()
         raise HTTPException(status_code=500, detail=f"Error deleting ETF strategy: {str(e)}")
+    finally:
+        if session:
+            session.close()
 
 @etf_router.post("/stop-strategy/{strategy_id}")
 async def stop_etf_strategy(strategy_id: int):
-    """Stop a running ETF strategy by changing status to 'stopped'"""
+    """
+    Stop a running ETF strategy by changing status to 'stopped'
+    
+    Database: PostgreSQL (Neon) - app_data_db_connection (ApplicationData database)
+    Table: etf_saved_strategy
+    """
+    session = None
     try:
-        import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
+        # Initialize the table if it doesn't exist
+        if not init_saved_etf_strategies_table():
+            raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
-        conn = None
-        try:
-            conn = sqlite3.connect(db_path, timeout=30)
-            cursor = conn.cursor()
-            
-            # Check if strategy exists and get current status
-            cursor.execute('SELECT id, status FROM etf_saved_strategy WHERE id = ?', (strategy_id,))
-            strategy = cursor.fetchone()
-            
-            if not strategy:
-                raise HTTPException(status_code=404, detail="Strategy not found")
-            
-            current_status = strategy[1]
-            if current_status != 'running':
-                raise HTTPException(status_code=400, detail=f"Strategy is not running. Current status: {current_status}")
-            
-            # Update status to 'stopped'
-            cursor.execute('''
-                UPDATE etf_saved_strategy 
-                SET status = 'stopped', updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            ''', (strategy_id,))
-            
-            conn.commit()
-            
-            return {
-                "success": True,
-                "message": "Strategy stopped successfully",
-                "strategy_id": strategy_id,
-                "new_status": "stopped"
-            }
-            
-        except sqlite3.OperationalError as e:
-            if "database is locked" in str(e):
-                raise HTTPException(status_code=503, detail="Database is temporarily locked. Please try again in a moment.")
-            else:
-                raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-        finally:
-            if conn:
-                try:
-                    conn.close()
-                except:
-                    pass
-                    
+        # Use PostgreSQL connection
+        from Databases.app_data_db_connection import get_session
+        from sqlalchemy import text
+        
+        session = get_session()
+        
+        # Check if strategy exists and get current status
+        result = session.execute(text("""
+            SELECT id, status FROM etf_saved_strategy 
+            WHERE id = :strategy_id
+        """), {"strategy_id": strategy_id})
+        
+        strategy = result.fetchone()
+        
+        if not strategy:
+            raise HTTPException(status_code=404, detail="Strategy not found")
+        
+        current_status = strategy[1]
+        if current_status != 'running':
+            raise HTTPException(status_code=400, detail=f"Strategy is not running. Current status: {current_status}")
+        
+        # Update status to 'stopped'
+        session.execute(text("""
+            UPDATE etf_saved_strategy 
+            SET status = 'stopped', updated_at = CURRENT_TIMESTAMP
+            WHERE id = :strategy_id
+        """), {"strategy_id": strategy_id})
+        
+        session.commit()
+        
+        return {
+            "success": True,
+            "message": "Strategy stopped successfully",
+            "strategy_id": strategy_id,
+            "new_status": "stopped"
+        }
     except HTTPException:
         raise
     except Exception as e:
+        if session:
+            session.rollback()
+        logger.error(f"Error stopping strategy: {e}")
         raise HTTPException(status_code=500, detail=f"Error stopping strategy: {str(e)}")
+    finally:
+        if session:
+            session.close()
 
 @etf_router.post("/restart-strategy/{strategy_id}")
 async def restart_etf_strategy(strategy_id: int):
-    """Restart a stopped ETF strategy by changing status to 'running'"""
+    """
+    Restart a stopped ETF strategy by changing status to 'running'
+    
+    Database: PostgreSQL (Neon) - app_data_db_connection (ApplicationData database)
+    Table: etf_saved_strategy
+    """
+    session = None
     try:
-        import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
+        # Initialize the table if it doesn't exist
+        if not init_saved_etf_strategies_table():
+            raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
-        conn = None
-        try:
-            conn = sqlite3.connect(db_path, timeout=30)
-            cursor = conn.cursor()
-            
-            # Check if strategy exists and get current status
-            cursor.execute('SELECT id, status FROM etf_saved_strategy WHERE id = ?', (strategy_id,))
-            strategy = cursor.fetchone()
-            
-            if not strategy:
-                raise HTTPException(status_code=404, detail="Strategy not found")
-            
-            current_status = strategy[1]
-            if current_status != 'stopped':
-                raise HTTPException(status_code=400, detail=f"Strategy is not stopped. Current status: {current_status}")
-            
-            # Update status to 'running'
-            cursor.execute('''
-                UPDATE etf_saved_strategy 
-                SET status = 'running', updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            ''', (strategy_id,))
-            
-            conn.commit()
-            
-            return {
-                "success": True,
-                "message": "Strategy restarted successfully",
-                "strategy_id": strategy_id,
-                "new_status": "running"
-            }
-            
-        except sqlite3.OperationalError as e:
-            if "database is locked" in str(e):
-                raise HTTPException(status_code=503, detail="Database is temporarily locked. Please try again in a moment.")
-            else:
-                raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-        finally:
-            if conn:
-                try:
-                    conn.close()
-                except:
-                    pass
-                    
+        # Use PostgreSQL connection
+        from Databases.app_data_db_connection import get_session
+        from sqlalchemy import text
+        
+        session = get_session()
+        
+        # Check if strategy exists and get current status
+        result = session.execute(text("""
+            SELECT id, status FROM etf_saved_strategy 
+            WHERE id = :strategy_id
+        """), {"strategy_id": strategy_id})
+        
+        strategy = result.fetchone()
+        
+        if not strategy:
+            raise HTTPException(status_code=404, detail="Strategy not found")
+        
+        current_status = strategy[1]
+        if current_status != 'stopped':
+            raise HTTPException(status_code=400, detail=f"Strategy is not stopped. Current status: {current_status}")
+        
+        # Update status to 'running'
+        session.execute(text("""
+            UPDATE etf_saved_strategy 
+            SET status = 'running', updated_at = CURRENT_TIMESTAMP
+            WHERE id = :strategy_id
+        """), {"strategy_id": strategy_id})
+        
+        session.commit()
+        
+        return {
+            "success": True,
+            "message": "Strategy restarted successfully",
+            "strategy_id": strategy_id,
+            "new_status": "running"
+        }
     except HTTPException:
         raise
     except Exception as e:
+        if session:
+            session.rollback()
+        logger.error(f"Error restarting strategy: {e}")
         raise HTTPException(status_code=500, detail=f"Error restarting strategy: {str(e)}")
+    finally:
+        if session:
+            session.close()
 
 @etf_router.delete("/delete-strategy-by-run-id/{run_id}")
 async def delete_etf_strategy_by_run_id(run_id: str):
-    """Delete an ETF strategy by run_id"""
+    """
+    Delete an ETF strategy by run_id
+    
+    Database: PostgreSQL (Neon) - app_data_db_connection (ApplicationData database)
+    Table: etf_saved_strategy
+    """
+    session = None
     try:
-        import os
-        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "unified_etf_data.sqlite")
+        # Initialize the table if it doesn't exist
+        if not init_saved_etf_strategies_table():
+            raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
-        conn = None
-        try:
-            conn = sqlite3.connect(db_path, timeout=30)
-            cursor = conn.cursor()
-            
-            # Check if strategy exists
-            cursor.execute('SELECT id FROM etf_saved_strategy WHERE run_id = ?', (run_id,))
-            strategy = cursor.fetchone()
-            
-            if not strategy:
-                raise HTTPException(status_code=404, detail="Strategy not found")
-            
-            # Delete the strategy
-            cursor.execute('DELETE FROM etf_saved_strategy WHERE run_id = ?', (run_id,))
-            
-            conn.commit()
-            
-            return {
-                "success": True,
-                "message": "Strategy deleted successfully",
-                "run_id": run_id
-            }
-            
-        except sqlite3.OperationalError as e:
-            if "database is locked" in str(e):
-                raise HTTPException(status_code=503, detail="Database is temporarily locked. Please try again in a moment.")
-            else:
-                raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-        finally:
-            if conn:
-                try:
-                    conn.close()
-                except:
-                    pass
-                    
+        # Use PostgreSQL connection
+        from Databases.app_data_db_connection import get_session
+        from sqlalchemy import text
+        
+        session = get_session()
+        
+        # Check if strategy exists
+        result = session.execute(text("""
+            SELECT id FROM etf_saved_strategy 
+            WHERE run_id = :run_id
+        """), {"run_id": run_id})
+        
+        strategy = result.fetchone()
+        
+        if not strategy:
+            raise HTTPException(status_code=404, detail="Strategy not found")
+        
+        # Delete the strategy
+        result = session.execute(text("""
+            DELETE FROM etf_saved_strategy 
+            WHERE run_id = :run_id
+        """), {"run_id": run_id})
+        
+        session.commit()
+        
+        return {
+            "success": True,
+            "message": "Strategy deleted successfully",
+            "run_id": run_id
+        }
     except HTTPException:
         raise
     except Exception as e:
+        if session:
+            session.rollback()
+        logger.error(f"Error deleting strategy by run_id: {e}")
         raise HTTPException(status_code=500, detail=f"Error deleting strategy: {str(e)}")
+    finally:
+        if session:
+            session.close()
 
 # ============================================================================
 # ETF SIGNAL GENERATION ENDPOINTS
@@ -1675,43 +1662,52 @@ async def get_etf_signals_by_run_id(run_id: str):
                 detail="Signal generator not available. Check imports and dependencies."
             )
         
-        # Get database path
-        db_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
-            "unified_etf_data.sqlite"
-        )
+        # Query signals from PostgreSQL
+        from Databases.app_data_db_connection import get_session
+        from Databases.strategy_models import LiveSignal, LiveRun
         
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        
-        # Query signals for this run_id
-        cursor.execute('''
-            SELECT ls.*, lr.status, lr.summary_json, lr.strategy_version, lr.signal_date
-            FROM live_signals ls
-            JOIN live_runs lr ON ls.run_id = lr.run_id
-            WHERE ls.run_id = ?
-            ORDER BY ls.created_at DESC
-        ''', (run_id,))
-        
-        columns = [description[0] for description in cursor.description]
-        rows = cursor.fetchall()
-        
-        signals = []
-        for row in rows:
-            signal_dict = dict(zip(columns, row))
-            if signal_dict.get('payload_json'):
-                try:
-                    signal_dict['payload'] = json.loads(signal_dict['payload_json'])
-                except:
-                    signal_dict['payload'] = {}
-            if signal_dict.get('summary_json'):
-                try:
-                    signal_dict['summary'] = json.loads(signal_dict['summary_json'])
-                except:
-                    signal_dict['summary'] = {}
-            signals.append(signal_dict)
-        
-        conn.close()
+        session = get_session()
+        try:
+            # Query signals with join to runs
+            signals_query = session.query(LiveSignal, LiveRun).join(
+                LiveRun, LiveSignal.run_id == LiveRun.run_id
+            ).filter(
+                LiveSignal.run_id == run_id
+            ).order_by(LiveSignal.created_at.desc())
+            
+            signals = []
+            for signal, run in signals_query.all():
+                signal_dict = {
+                    'id': signal.id,
+                    'run_id': signal.run_id,
+                    'user_id': signal.user_id,
+                    'strategy_version': signal.strategy_version,
+                    'signal_date': signal.signal_date,
+                    'signal_symbol': signal.signal_symbol,
+                    'etf_name': signal.etf_name,
+                    'side': signal.side,
+                    'score': signal.score,
+                    'reason': signal.reason,
+                    'payload_json': signal.payload_json,
+                    'created_at': signal.created_at.isoformat() if signal.created_at else None,
+                    'status': run.status,
+                    'summary_json': run.summary_json
+                }
+                
+                # Parse JSON fields
+                if signal_dict.get('payload_json'):
+                    try:
+                        signal_dict['payload'] = json.loads(signal_dict['payload_json'])
+                    except:
+                        signal_dict['payload'] = {}
+                if signal_dict.get('summary_json'):
+                    try:
+                        signal_dict['summary'] = json.loads(signal_dict['summary_json'])
+                    except:
+                        signal_dict['summary'] = {}
+                signals.append(signal_dict)
+        finally:
+            session.close()
         
         buy_count = len([s for s in signals if s.get('side') == 'BUY'])
         sell_count = len([s for s in signals if s.get('side') == 'SELL'])
@@ -1746,44 +1742,52 @@ async def get_etf_signal_runs(days: int = 30):
     }
     """
     try:
-        # Get database path
-        db_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
-            "unified_etf_data.sqlite"
-        )
+        # Query runs from PostgreSQL
+        from Databases.app_data_db_connection import get_session
+        from Databases.strategy_models import LiveRun, LiveSignal
+        from sqlalchemy import func
         
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        
-        cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
-        
-        # Query runs
-        cursor.execute('''
-            SELECT lr.*, 
-                   COUNT(ls.id) as signal_count,
-                   SUM(CASE WHEN ls.side = 'BUY' THEN 1 ELSE 0 END) as buy_count,
-                   SUM(CASE WHEN ls.side = 'SELL' THEN 1 ELSE 0 END) as sell_count
-            FROM live_runs lr
-            LEFT JOIN live_signals ls ON lr.run_id = ls.run_id
-            WHERE lr.signal_date >= ?
-            GROUP BY lr.run_id
-            ORDER BY lr.created_at DESC
-        ''', (cutoff_date,))
-        
-        columns = [description[0] for description in cursor.description]
-        rows = cursor.fetchall()
-        
-        runs = []
-        for row in rows:
-            run_dict = dict(zip(columns, row))
-            if run_dict.get('summary_json'):
-                try:
-                    run_dict['summary'] = json.loads(run_dict['summary_json'])
-                except:
-                    run_dict['summary'] = {}
-            runs.append(run_dict)
-        
-        conn.close()
+        session = get_session()
+        try:
+            cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+            
+            # Query runs with signal counts
+            runs_query = session.query(
+                LiveRun,
+                func.count(LiveSignal.id).label('signal_count'),
+                func.sum(func.case((LiveSignal.side == 'BUY', 1), else_=0)).label('buy_count'),
+                func.sum(func.case((LiveSignal.side == 'SELL', 1), else_=0)).label('sell_count')
+            ).outerjoin(
+                LiveSignal, LiveRun.run_id == LiveSignal.run_id
+            ).filter(
+                LiveRun.signal_date >= cutoff_date
+            ).group_by(LiveRun.run_id).order_by(LiveRun.created_at.desc())
+            
+            runs = []
+            for run, signal_count, buy_count, sell_count in runs_query.all():
+                run_dict = {
+                    'id': run.id,
+                    'run_id': run.run_id,
+                    'strategy_version': run.strategy_version,
+                    'signal_date': run.signal_date,
+                    'created_at': run.created_at.isoformat() if run.created_at else None,
+                    'status': run.status,
+                    'webhook_attempts': run.webhook_attempts,
+                    'last_error': run.last_error,
+                    'summary_json': run.summary_json,
+                    'signal_count': signal_count or 0,
+                    'buy_count': int(buy_count) if buy_count else 0,
+                    'sell_count': int(sell_count) if sell_count else 0
+                }
+                
+                if run_dict.get('summary_json'):
+                    try:
+                        run_dict['summary'] = json.loads(run_dict['summary_json'])
+                    except:
+                        run_dict['summary'] = {}
+                runs.append(run_dict)
+        finally:
+            session.close()
         
         return {
             "success": True,
@@ -1813,61 +1817,60 @@ async def get_latest_etf_signals():
     }
     """
     try:
-        # Get database path
-        db_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
-            "unified_etf_data.sqlite"
-        )
+        # Query from PostgreSQL
+        from Databases.app_data_db_connection import get_session
+        from Databases.strategy_models import LiveRun, LiveSignal
         
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        
-        # Get the most recent run
-        cursor.execute('''
-            SELECT run_id, strategy_version, signal_date
-            FROM live_runs
-            ORDER BY created_at DESC
-            LIMIT 1
-        ''')
-        
-        run_row = cursor.fetchone()
-        
-        if not run_row:
-            conn.close()
-            return {
-                "success": False,
-                "message": "No signals found",
-                "run_id": None,
-                "signals": [],
-                "count": 0,
-                "buy_count": 0,
-                "sell_count": 0
-            }
-        
-        run_id, strategy_version, signal_date = run_row
-        
-        # Get signals for this run
-        cursor.execute('''
-            SELECT ls.*
-            FROM live_signals ls
-            WHERE ls.run_id = ?
-            ORDER BY ls.created_at DESC
-        ''', (run_id,))
-        
-        columns = [description[0] for description in cursor.description]
-        rows = cursor.fetchall()
-        
-        signals = []
-        for row in rows:
-            signal_dict = dict(zip(columns, row))
-            if signal_dict.get('payload_json'):
-                try:
-                    signal_dict['payload'] = json.loads(signal_dict['payload_json'])
-                except:
-                    signal_dict['payload'] = {}
-            signals.append(signal_dict)
-        
-        conn.close()
+        session = get_session()
+        try:
+            # Get the most recent run
+            run = session.query(LiveRun).order_by(LiveRun.created_at.desc()).first()
+            
+            if not run:
+                return {
+                    "success": False,
+                    "message": "No signals found",
+                    "run_id": None,
+                    "signals": [],
+                    "count": 0,
+                    "buy_count": 0,
+                    "sell_count": 0
+                }
+            
+            run_id = run.run_id
+            strategy_version = run.strategy_version
+            signal_date = run.signal_date
+            
+            # Get signals for this run
+            signals_query = session.query(LiveSignal).filter(
+                LiveSignal.run_id == run_id
+            ).order_by(LiveSignal.created_at.desc())
+            
+            signals = []
+            for signal in signals_query.all():
+                signal_dict = {
+                    'id': signal.id,
+                    'run_id': signal.run_id,
+                    'user_id': signal.user_id,
+                    'strategy_version': signal.strategy_version,
+                    'signal_date': signal.signal_date,
+                    'signal_symbol': signal.signal_symbol,
+                    'etf_name': signal.etf_name,
+                    'side': signal.side,
+                    'score': signal.score,
+                    'reason': signal.reason,
+                    'payload_json': signal.payload_json,
+                    'created_at': signal.created_at.isoformat() if signal.created_at else None
+                }
+                
+                if signal_dict.get('payload_json'):
+                    try:
+                        signal_dict['payload'] = json.loads(signal_dict['payload_json'])
+                    except:
+                        signal_dict['payload'] = {}
+                signals.append(signal_dict)
+        finally:
+            session.close()
         
         buy_count = len([s for s in signals if s.get('side') == 'BUY'])
         sell_count = len([s for s in signals if s.get('side') == 'SELL'])

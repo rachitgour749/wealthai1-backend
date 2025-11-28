@@ -14,7 +14,8 @@ engine = create_async_engine(
     pool_size=settings.DATABASE_POOL_SIZE,
     max_overflow=settings.DATABASE_MAX_OVERFLOW,
     echo=False,  # Set to True for SQL query logging
-    pool_pre_ping=True,  # Verify connections before using
+    # pool_pre_ping=True,  # Verify connections before using - DISABLED for debugging
+    connect_args={"ssl": "require"},  # SSL configuration for asyncpg
 )
 
 # Create async session factory
@@ -50,9 +51,18 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db():
     """Initialize database - create tables if they don't exist"""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata)
-    logger.info("Database initialized")
+    logger.info("Initializing ChatAI1 database...")
+    try:
+        async with engine.begin() as conn:
+            logger.info("Connected to database, creating tables...")
+            await conn.run_sync(Base.metadata.create_all)
+            logger.info("Tables created successfully")
+        logger.info("Database initialized")
+    except Exception as e:
+        logger.error(f"Error initializing database: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
 
 
 async def close_db():

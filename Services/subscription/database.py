@@ -58,12 +58,16 @@ class ProductSubscription(Base):
     status = Column(SQLEnum(SubscriptionStatus), nullable=False, default=SubscriptionStatus.TRIAL)
     plan_code = Column(String(50), nullable=False, default="FREE")
     
-    # Trial period fields
+    # Simplified subscription date fields (matches actual database schema)
+    subscription_start_date = Column(DateTime(timezone=True), nullable=True)
+    subscription_end_date = Column(DateTime(timezone=True), nullable=True)
+    
+    # Legacy trial period fields (for backward compatibility - may not exist in DB)
     trial_start_date = Column(DateTime(timezone=True), nullable=True)
     trial_end_date = Column(DateTime(timezone=True), nullable=True)
     trial_duration_days = Column(Integer, default=7)  # Default 7 days trial
     
-    # Paid subscription fields
+    # Legacy paid subscription fields (for backward compatibility - may not exist in DB)
     paid_start_date = Column(DateTime(timezone=True), nullable=True)
     paid_end_date = Column(DateTime(timezone=True), nullable=True)
     payment_id = Column(String(100), nullable=True)

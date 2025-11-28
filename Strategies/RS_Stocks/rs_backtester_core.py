@@ -239,20 +239,31 @@ class RSStrategyBacktester:
         total_data_days = (end_date - data_start_date).days
         print(f"Backtest period: {period_days} days, Total data period: {total_data_days} days")
         
-        # Load all available symbols for consistent analysis
-        params = (data_start_date, end_date)
-        symbol_limit = ""
+        # Use SQLAlchemy text() for PostgreSQL-compatible queries
+        from sqlalchemy import text
         
-        # Use raw SQL with optimization for large datasets
-        sql = f"""
-        SELECT symbol, date, adj_close as adjusted_close
-        FROM stock_data 
-        WHERE date >= ? AND date <= ? {symbol_limit}
-        ORDER BY symbol, date
-        """
+        # Query using SQLAlchemy text() with PostgreSQL parameter binding
+        query = text("""
+            SELECT symbol, date, adj_close as adjusted_close
+            FROM stock_data 
+            WHERE date >= :start_date AND date <= :end_date
+            ORDER BY symbol, date
+        """)
         
-        df = pd.read_sql(sql, self.db.bind, params=params, 
-                        index_col=['symbol', 'date'], parse_dates=['date'])
+        # Execute query and convert to DataFrame
+        result = self.db.execute(query, {
+            "start_date": data_start_date,
+            "end_date": end_date
+        })
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(result.fetchall(), columns=result.keys())
+        
+        # Set date to datetime
+        df['date'] = pd.to_datetime(df['date'])
+        
+        # Set index
+        df = df.set_index(['symbol', 'date'])
         
         print(f"Raw stock data query returned: {len(df)} records")
         
@@ -272,22 +283,38 @@ class RSStrategyBacktester:
             return None, None, 0.0
         
         try:
-            # Query database for min/max dates for each stock
+            # Query database for min/max dates for all stocks in one query (more efficient)
             stock_ranges = {}
             
-            for stock in selected_stocks:
-                # Query min and max dates for this stock
-                sql = """
-                SELECT MIN(date) as min_date, MAX(date) as max_date
+            # Use SQLAlchemy text() for PostgreSQL-compatible queries
+            from sqlalchemy import text
+            
+            # Build placeholders for IN clause
+            placeholders = ','.join([f':symbol_{i}' for i in range(len(selected_stocks))])
+            
+            # Single query to get min/max dates for all stocks
+            query = text(f"""
+                SELECT 
+                    symbol,
+                    MIN(date) as min_date, 
+                    MAX(date) as max_date
                 FROM stock_data
-                WHERE symbol = ?
-                """
-                result = pd.read_sql(sql, self.db.bind, params=(stock,))
-                
-                if not result.empty and result.iloc[0]['min_date'] is not None:
-                    min_date = pd.to_datetime(result.iloc[0]['min_date'])
-                    max_date = pd.to_datetime(result.iloc[0]['max_date'])
-                    stock_ranges[stock] = {
+                WHERE symbol IN ({placeholders})
+                GROUP BY symbol
+            """)
+            
+            # Build parameters dict
+            params = {f'symbol_{i}': stock for i, stock in enumerate(selected_stocks)}
+            
+            # Execute query
+            results = self.db.execute(query, params).fetchall()
+            
+            # Process results
+            for row in results:
+                if row.min_date is not None and row.max_date is not None:
+                    min_date = pd.to_datetime(row.min_date)
+                    max_date = pd.to_datetime(row.max_date)
+                    stock_ranges[row.symbol] = {
                         'start_date': min_date,
                         'end_date': max_date
                     }
@@ -359,7 +386,9 @@ class RSStrategyBacktester:
         
         print(f"Loading index data for {self.main_index} from {data_start_date} to {end_date} (backtest period: {start_date} to {end_date})")
         
-        # Use raw SQL to avoid SQLAlchemy model issues
+        # Use SQLAlchemy text() for PostgreSQL-compatible queries
+        from sqlalchemy import text
+        
         # Handle multiple symbol formats for NSEI index
         symbol_variants = [self.main_index]
         if self.main_index in ['^NSEI', 'NSEI', 'NIFTY50']:
@@ -367,17 +396,33 @@ class RSStrategyBacktester:
         elif self.main_index in ['^NIFTY50', 'NIFTY50']:
             symbol_variants = ['^NIFTY50', 'NIFTY50', 'NSEI']
         
-        placeholders = ','.join(['?' for _ in symbol_variants])
-        sql = f"""
-        SELECT symbol, date, open, high, low, close, adj_close, volume
-        FROM index_data 
-        WHERE symbol IN ({placeholders}) AND date >= ? AND date <= ?
-        ORDER BY date
-        """
+        # Build placeholders for IN clause
+        placeholders = ','.join([f':symbol_{i}' for i in range(len(symbol_variants))])
         
-        params = tuple(symbol_variants + [data_start_date, end_date])
-        df = pd.read_sql(sql, self.db.bind, params=params,
-                        index_col='date', parse_dates=['date'])
+        # Query using SQLAlchemy text() with PostgreSQL parameter binding
+        query = text(f"""
+            SELECT symbol, date, open, high, low, close, adj_close, volume
+            FROM index_data 
+            WHERE symbol IN ({placeholders}) AND date >= :start_date AND date <= :end_date
+            ORDER BY date
+        """)
+        
+        # Build parameters dict
+        params = {f'symbol_{i}': symbol for i, symbol in enumerate(symbol_variants)}
+        params.update({
+            "start_date": data_start_date,
+            "end_date": end_date
+        })
+        
+        # Execute query and convert to DataFrame
+        result = self.db.execute(query, params)
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(result.fetchall(), columns=result.keys())
+        
+        # Set date to datetime and index
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.set_index('date')
         
         print(f"Raw index data query returned: {len(df)} records")
         

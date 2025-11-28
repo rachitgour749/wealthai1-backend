@@ -1,6 +1,5 @@
 import sys
 import os
-import sqlite3
 import pandas as pd
 import logging
 from datetime import datetime, timedelta
@@ -9,55 +8,47 @@ import numpy as np
 import pytz
 import json
 
-# Add the etf-strategy path for backtester import
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'etf-strategy'))
-
 # Add Databases path for market data connection
 current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(os.path.dirname(current_dir))
-databases_path = os.path.join(parent_dir, 'Databases')
-sys.path.insert(0, databases_path)
+# Adjust path to reach Databases from Strategies/Rotation_Stocks/services
+project_root = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
+databases_path = os.path.join(project_root, 'Databases')
+if databases_path not in sys.path:
+    sys.path.insert(0, databases_path)
 
 try:
-    from backtester_core import ETFRotationBacktester
+    from .backtester import StockRotationBacktester
 except ImportError:
-    ETFRotationBacktester = None
+    StockRotationBacktester = None
 
 class LiveStockSignalGenerator:
     """
-    Live Stock Signal Generator using the same logic as ETF generator
-    Uses stock_data table for stock data (ETFs are in etf_data table)
+    Live Stock Signal Generator
+    Uses stock_data table for stock data
     """
     
     def __init__(self, db_path: str = None):
         """
         Initialize the stock signal generator
-        
-        Args:
-            db_path: Deprecated - kept for compatibility. Market data now uses PostgreSQL.
-                    If provided, will be used for live_stock_signals table (SQLite).
         """
-        # For live_stock_signals table, use SQLite if db_path provided, otherwise use default
-        if db_path is None:
-            db_path = os.path.join(os.path.dirname(__file__), '..', '..', 'unified_etf_data.sqlite')
-        
-        # Ensure absolute path
-        self.db_path = os.path.abspath(db_path) if db_path else None
-        
-        # Initialize backtester (now uses PostgreSQL for market data)
-        self.backtester = ETFRotationBacktester(None) if ETFRotationBacktester else None
+        # Initialize backtester (uses PostgreSQL for market data)
+        self.backtester = StockRotationBacktester(None) if StockRotationBacktester else None
         self.user_id = None  # Will be set from deployment
         self.setup_logging()
-        if self.db_path:
-            self.create_tables()
+        self.create_tables()
     
     def setup_logging(self):
         """Setup logging for stock signal generation"""
+        # Ensure logs directory exists
+        log_dir = os.path.join(project_root, 'logs')
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
+            
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler('logs/live_stock_signals.log', encoding='utf-8'),
+                logging.FileHandler(os.path.join(log_dir, 'live_stock_signals.log'), encoding='utf-8'),
                 logging.StreamHandler()
             ]
         )
@@ -76,102 +67,63 @@ class LiveStockSignalGenerator:
             console_handler.setFormatter(formatter)
     
     def create_tables(self):
-        """Create tables for stock signals if they don't exist"""
+        """Initialize live_stock_signals and live_stock_runs tables in PostgreSQL"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            from Databases.app_data_db_connection import create_connection, init_database
             
-            # Create live_stock_signals table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS live_stock_signals (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    run_id TEXT NOT NULL,
-                    symbol TEXT NOT NULL,
-                    side TEXT NOT NULL,
-                    score REAL NOT NULL,
-                    reason TEXT,
-                    payload TEXT,
-                    signal_date DATE NOT NULL,
-                    created_at TIMESTAMP DEFAULT (datetime('now', '+05:30'))
-                )
-            ''')
+            # Ensure connection is established
+            if not create_connection():
+                self.logger.error("Failed to connect to PostgreSQL database")
+                raise RuntimeError("Failed to connect to PostgreSQL database")
             
-            # Create live_stock_runs table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS live_stock_runs (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    run_id TEXT NOT NULL,
-                    strategy_type TEXT NOT NULL,
-                    strategy_config TEXT,
-                    signals_count INTEGER DEFAULT 0,
-                    buy_count INTEGER DEFAULT 0,
-                    sell_count INTEGER DEFAULT 0,
-                    run_date DATE NOT NULL,
-                    duration_seconds REAL,
-                    status TEXT DEFAULT 'completed',
-                    created_at TIMESTAMP DEFAULT (datetime('now', '+05:30'))
-                )
-            ''')
+            # Initialize all tables (including live_stock_signals and live_stock_runs)
+            if not init_database():
+                self.logger.error("Failed to initialize database tables")
+                raise RuntimeError("Failed to initialize database tables")
             
-            conn.commit()
-            conn.close()
-            self.logger.info("Live stock signals database tables created/verified successfully")
+            self.logger.info("Live stock signals database tables initialized successfully in PostgreSQL")
             
         except Exception as e:
-            self.logger.error(f"Error creating stock signal tables: {e}")
+            self.logger.error(f"Error initializing live stock signals tables: {e}")
             raise
     
     def get_symbols_from_deployment(self, run_id: str) -> List[str]:
         """
-        Get stock symbols from deploy_details table for a specific run_id
-        Similar to ETF signal generator logic
+        Get stock symbols from stock_saved_strategy table for a specific run_id (PostgreSQL)
         """
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            from Databases.app_data_db_connection import get_session
+            from Databases.strategy_models import StockSavedStrategy
             
-            # Fetch deployment details for the given run_id
-            # Note: Stock deployments also use etf_names column (same column for both strategies)
-            cursor.execute('''
-                SELECT user_email, etf_names, client_information_json, strategy_type
-                FROM deploy_details 
-                WHERE run_id = ? AND strategy_type = 'Stock Strategy'
-            ''', (run_id,))
-            
-            result = cursor.fetchone()
-            conn.close()
-            
-            if not result:
-                raise ValueError(f"No Stock Strategy deployment found for run_id: {run_id}")
-            
-            user_email, symbols_json, client_info_json, strategy_type = result
-            
-            # Store user_id for later use
-            self.user_id = user_email
-            
-            # Parse symbols JSON (stored in etf_names column for both ETF and Stock strategies)
-            if symbols_json:
+            session = get_session()
+            try:
+                # Query stock_saved_strategy table from PostgreSQL
+                strategy = session.query(StockSavedStrategy).filter(
+                    StockSavedStrategy.run_id == run_id
+                ).first()
+                
+                if not strategy:
+                    raise ValueError(f"No Stock Strategy deployment found for run_id: {run_id}")
+                
+                # Parse tickers from JSON
                 try:
-                    symbols = json.loads(symbols_json)
-                    if isinstance(symbols, list):
-                        stock_symbols = symbols
-                    else:
-                        self.logger.warning(f"Symbols is not a list: {symbols}")
-                        stock_symbols = []
-                except json.JSONDecodeError as e:
-                    self.logger.error(f"Error parsing symbols JSON: {e}")
-                    stock_symbols = []
-            else:
-                self.logger.warning(f"No symbols found for run_id: {run_id}")
-                stock_symbols = []
-            
-            self.logger.info(f"Found {len(stock_symbols)} stock symbols for run_id {run_id}: {stock_symbols}")
-            self.logger.info(f"Using stocks from deployment: {stock_symbols}")
-            
-            return stock_symbols
+                    symbols = json.loads(strategy.tickers) if strategy.tickers else []
+                except:
+                    symbols = []
+                
+                if not symbols or len(symbols) == 0:
+                    raise ValueError(f"No stock symbols found for run_id: {run_id}")
+                
+                # Store user_id for later use
+                self.user_id = strategy.user_id
+                
+                self.logger.info(f"Found {len(symbols)} stock symbols from stock_saved_strategy for run_id {run_id}: {symbols}")
+                return symbols
+            finally:
+                session.close()
             
         except Exception as e:
-            self.logger.error(f"Error getting symbols from deployment: {e}")
+            self.logger.error(f"Error getting symbols from deployment: {str(e)}")
             raise
     
     def get_stock_data_for_signals(self, days_back: int = 365) -> List[str]:
@@ -235,11 +187,19 @@ class LiveStockSignalGenerator:
             query = text("""
                 SELECT date, open, high, low, close, volume, adj_close
                 FROM stock_data
-                WHERE symbol = :symbol AND date >= :start_date::date AND date <= :end_date::date
+                WHERE symbol = :symbol AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
                 ORDER BY date
             """)
             
-            df = pd.read_sql(query, session.bind, params={"symbol": symbol, "start_date": start_date, "end_date": end_date})
+            # Use session.execute for proper parameter binding
+            result = session.execute(query, {
+                "symbol": symbol,
+                "start_date": start_date,
+                "end_date": end_date
+            })
+            rows = result.fetchall()
+            columns = result.keys()
+            df = pd.DataFrame(rows, columns=columns)
             
             if df.empty:
                 return pd.DataFrame()
@@ -498,10 +458,11 @@ class LiveStockSignalGenerator:
             raise
     
     def save_signals_to_database(self, signals: List[Dict[str, Any]], run_id: str, strategy_type: str, strategy_config: Dict[str, Any]):
-        """Save stock signals to database"""
+        """Save stock signals to database (PostgreSQL)"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            from Databases.app_data_db_connection import get_session
+            from Databases.strategy_models import LiveStockSignal, LiveStockRun
+            from sqlalchemy.dialects.postgresql import insert
             
             # Calculate the most recent Friday (same logic as ETF signal generator)
             today = datetime.now()
@@ -509,49 +470,62 @@ class LiveStockSignalGenerator:
             last_friday = today - timedelta(days=days_since_friday)
             signal_date = last_friday.strftime('%Y-%m-%d')
             
-            # Get current Indian time
-            indian_tz = pytz.timezone('Asia/Kolkata')
-            current_indian_time = datetime.now(indian_tz).strftime('%Y-%m-%d %H:%M:%S')
-            
-            for signal in signals:
-                cursor.execute('''
-                    INSERT INTO live_stock_signals 
-                    (run_id, symbol, side, score, reason, payload, signal_date, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    run_id,
-                    signal['symbol'],
-                    signal['side'],
-                    signal['score'],
-                    signal['reason'],
-                    str(signal['payload']),
-                    signal_date,
-                    current_indian_time
-                ))
-            
-            # Save run information
-            buy_count = len([s for s in signals if s['side'] == 'BUY'])
-            sell_count = len([s for s in signals if s['side'] == 'SELL'])
-            
-            cursor.execute('''
-                INSERT INTO live_stock_runs 
-                (run_id, strategy_type, strategy_config, signals_count, buy_count, sell_count, run_date, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                run_id,
-                strategy_type,
-                str(strategy_config),
-                len(signals),
-                buy_count,
-                sell_count,
-                signal_date,
-                current_indian_time
-            ))
-            
-            conn.commit()
-            conn.close()
-            
-            self.logger.info(f"Saved {len(signals)} stock signals to database with run_id: {run_id}")
+            session = get_session()
+            try:
+                # Save run information
+                buy_count = len([s for s in signals if s['side'] == 'BUY'])
+                sell_count = len([s for s in signals if s['side'] == 'SELL'])
+                
+                run_data = {
+                    'run_id': run_id,
+                    'strategy_type': strategy_type,
+                    'strategy_config': json.dumps(strategy_config) if strategy_config else None,
+                    'signals_count': len(signals),
+                    'buy_count': buy_count,
+                    'sell_count': sell_count,
+                    'run_date': signal_date,
+                    'status': 'completed'
+                }
+                
+                stmt = insert(LiveStockRun).values(**run_data)
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=['run_id'],
+                    set_=dict(
+                        strategy_type=stmt.excluded.strategy_type,
+                        strategy_config=stmt.excluded.strategy_config,
+                        signals_count=stmt.excluded.signals_count,
+                        buy_count=stmt.excluded.buy_count,
+                        sell_count=stmt.excluded.sell_count,
+                        run_date=stmt.excluded.run_date,
+                        status=stmt.excluded.status
+                    )
+                )
+                session.execute(stmt)
+                
+                # Insert/update signals
+                for signal in signals:
+                    signal_data = {
+                        'run_id': run_id,
+                        'symbol': signal['symbol'],
+                        'side': signal['side'],
+                        'score': signal['score'],
+                        'reason': signal.get('reason'),
+                        'payload': json.dumps(signal['payload']) if 'payload' in signal else None,
+                        'signal_date': signal_date
+                    }
+                    
+                    stmt = insert(LiveStockSignal).values(**signal_data)
+                    stmt = stmt.on_conflict_do_nothing()  # Skip if duplicate
+                    session.execute(stmt)
+                
+                session.commit()
+                self.logger.info(f"Saved {len(signals)} stock signals to PostgreSQL database with run_id: {run_id}")
+                
+            except Exception as e:
+                session.rollback()
+                raise
+            finally:
+                session.close()
             
         except Exception as e:
             self.logger.error(f"Error saving stock signals: {e}")
@@ -643,49 +617,45 @@ class LiveStockSignalGenerator:
     
     def get_all_running_strategies(self) -> List[Dict[str, Any]]:
         """
-        Get all running stock strategies from stock_saved_strategy table
+        Get all running stock strategies from stock_saved_strategy table (PostgreSQL)
         
         Returns:
             List of dictionaries with run_id, user_id, and strategy info
         """
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            from Databases.app_data_db_connection import get_session
+            from Databases.strategy_models import StockSavedStrategy
             
-            # Query all active strategies with run_id and status = 'running'
-            cursor.execute('''
-                SELECT run_id, user_id, strategy_name, strategy_type, tickers
-                FROM stock_saved_strategy 
-                WHERE run_id IS NOT NULL 
-                AND run_id != ''
-                AND status = 'running'
-                ORDER BY created_timestamp DESC
-            ''')
-            
-            rows = cursor.fetchall()
-            conn.close()
-            
-            strategies = []
-            for row in rows:
-                run_id, user_id, strategy_name, strategy_type, tickers_json = row
+            session = get_session()
+            try:
+                # Query all active strategies with run_id and status = 'running'
+                strategies_query = session.query(StockSavedStrategy).filter(
+                    StockSavedStrategy.run_id.isnot(None),
+                    StockSavedStrategy.run_id != '',
+                    StockSavedStrategy.status == 'running'
+                ).order_by(StockSavedStrategy.created_timestamp.desc())
                 
-                # Parse tickers
-                try:
-                    tickers = json.loads(tickers_json) if tickers_json else []
-                except:
-                    tickers = []
+                strategies = []
+                for strategy in strategies_query.all():
+                    # Parse tickers
+                    try:
+                        tickers = json.loads(strategy.tickers) if strategy.tickers else []
+                    except:
+                        tickers = []
+                    
+                    if tickers:  # Only include if we have tickers
+                        strategies.append({
+                            'run_id': strategy.run_id,
+                            'user_id': strategy.user_id,
+                            'strategy_name': strategy.strategy_name,
+                            'strategy_type': strategy.strategy_type,
+                            'tickers': tickers
+                        })
                 
-                if tickers:  # Only include if we have tickers
-                    strategies.append({
-                        'run_id': run_id,
-                        'user_id': user_id,
-                        'strategy_name': strategy_name,
-                        'strategy_type': strategy_type,
-                        'tickers': tickers
-                    })
-            
-            self.logger.info(f"Found {len(strategies)} running stock strategies")
-            return strategies
+                self.logger.info(f"Found {len(strategies)} running stock strategies")
+                return strategies
+            finally:
+                session.close()
             
         except Exception as e:
             self.logger.error(f"Error getting running stock strategies: {e}")

@@ -1,247 +1,195 @@
-import sqlite3
 import json
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-import os
+import logging
+
+from Databases.app_data_db_connection import get_session, create_connection, init_database
+from Databases.strategy_models import CustomStrategy
+
+logger = logging.getLogger(__name__)
 
 class CustomStrategyDatabase:
     def __init__(self, db_path: str = None):
-        if db_path is None:
-            # Use the unified database path
-            current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            self.db_path = os.path.join(current_dir, "unified_etf_data.sqlite")
-        else:
-            self.db_path = db_path
+        """
+        Initialize CustomStrategyDatabase with PostgreSQL.
+        db_path parameter is ignored (kept for compatibility) - always uses PostgreSQL ApplicationData database.
+        """
+        # Ensure database connection is established
+        if not create_connection():
+            logger.error("Failed to connect to PostgreSQL database")
+            raise RuntimeError("Failed to connect to PostgreSQL database")
         
-        self.init_database()
+        # Initialize all tables (including custom_strategies)
+        if not init_database():
+            logger.error("Failed to initialize database tables")
+            raise RuntimeError("Failed to initialize database tables")
+        
+        logger.info("CustomStrategyDatabase initialized with PostgreSQL")
     
     def init_database(self):
-        """Initialize the custom_strategies table"""
+        """Initialize the custom_strategies table in PostgreSQL"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            # Ensure connection is established
+            if not create_connection():
+                logger.error("Failed to connect to PostgreSQL database")
+                return False
             
-            # Check if table exists and has old schema
-            cursor.execute("PRAGMA table_info(custom_strategies)")
-            columns = [column[1] for column in cursor.fetchall()]
+            # Initialize all tables (including custom_strategies)
+            if not init_database():
+                logger.error("Failed to initialize database tables")
+                return False
             
-            if not columns:
-                # Table doesn't exist, create new schema
-                cursor.execute('''
-                    CREATE TABLE custom_strategies (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_email TEXT NOT NULL,
-                        user_phone TEXT NOT NULL,
-                        strategy_description TEXT NOT NULL,
-                        ai_analysis_json TEXT NOT NULL,
-                        strategy_rating INTEGER,
-                        status TEXT DEFAULT 'pending',
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                    )
-                ''')
-            elif 'user_id' in columns and 'user_email' in columns:
-                # Old schema exists, migrate to new schema
-                print("🔄 Migrating custom_strategies table to new schema...")
-                
-                # Create new table with correct schema
-                cursor.execute('''
-                    CREATE TABLE custom_strategies_new (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_email TEXT NOT NULL,
-                        user_phone TEXT NOT NULL,
-                        strategy_description TEXT NOT NULL,
-                        ai_analysis_json TEXT NOT NULL,
-                        strategy_rating INTEGER,
-                        status TEXT DEFAULT 'pending',
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                    )
-                ''')
-                
-                # Copy data from old table to new table
-                cursor.execute('''
-                    INSERT INTO custom_strategies_new 
-                    (id, user_email, user_phone, strategy_description, ai_analysis_json, strategy_rating, status, created_at, updated_at)
-                    SELECT id, user_email, user_phone, strategy_description, ai_analysis_json, strategy_rating, status, created_at, updated_at
-                    FROM custom_strategies
-                ''')
-                
-                # Drop old table and rename new table
-                cursor.execute('DROP TABLE custom_strategies')
-                cursor.execute('ALTER TABLE custom_strategies_new RENAME TO custom_strategies')
-                
-                print("✅ Migration completed successfully")
-            else:
-                # Table exists with correct schema, just ensure it's up to date
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS custom_strategies (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_email TEXT NOT NULL,
-                        user_phone TEXT NOT NULL,
-                        strategy_description TEXT NOT NULL,
-                        ai_analysis_json TEXT NOT NULL,
-                        strategy_rating INTEGER,
-                        status TEXT DEFAULT 'pending',
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                    )
-                ''')
-            
-            # Create index on user_email for faster queries
-            cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_custom_strategies_user_email 
-                ON custom_strategies(user_email)
-            ''')
-            
-            conn.commit()
-            conn.close()
-            print("[SUCCESS] Custom strategies table initialized successfully")
+            logger.info("Custom strategies table initialized successfully in PostgreSQL")
             return True
         except Exception as e:
-            print(f"[ERROR] Error initializing custom strategies table: {e}")
+            logger.error(f"Error initializing custom strategies table: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def save_strategy(self, user_email: str, user_phone: str, 
                      strategy_description: str, analysis: Dict[str, Any]) -> int:
         """Save a custom strategy to the database"""
-        conn = None
+        session = None
         try:
-            # Use timeout to prevent database locking
-            conn = sqlite3.connect(self.db_path, timeout=30.0)
-            cursor = conn.cursor()
+            session = get_session()
             
             # Convert analysis to JSON string
             analysis_json = json.dumps(analysis)
             strategy_rating = analysis.get('strategy_rating', 0)
             
-            cursor.execute('''
-                INSERT INTO custom_strategies 
-                (user_email, user_phone, strategy_description, 
-                 ai_analysis_json, strategy_rating, status)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (user_email, user_phone, strategy_description, 
-                  analysis_json, strategy_rating, 'pending'))
+            # Create new strategy
+            strategy = CustomStrategy(
+                user_email=user_email,
+                user_phone=user_phone,
+                strategy_description=strategy_description,
+                ai_analysis_json=analysis_json,
+                strategy_rating=strategy_rating,
+                status='pending'
+            )
             
-            strategy_id = cursor.lastrowid
-            conn.commit()
+            session.add(strategy)
+            session.commit()
+            session.refresh(strategy)
             
-            print(f"[SUCCESS] Custom strategy saved with ID: {strategy_id}")
+            strategy_id = strategy.id
+            logger.info(f"Custom strategy saved with ID: {strategy_id}")
             return strategy_id
-        except sqlite3.OperationalError as e:
-            if "database is locked" in str(e):
-                print(f"[WARNING] Database is locked, retrying in 1 second...")
-                import time
-                time.sleep(1)
-                # Retry once
-                return self.save_strategy(user_email, user_phone, strategy_description, analysis)
-            else:
-                print(f"[ERROR] Database error: {e}")
-                raise e
+            
         except Exception as e:
-            print(f"[ERROR] Error saving custom strategy: {e}")
+            if session:
+                session.rollback()
+            logger.error(f"Error saving custom strategy: {e}")
+            import traceback
+            traceback.print_exc()
             raise e
         finally:
-            if conn:
-                conn.close()
+            if session:
+                session.close()
     
     def get_strategies_by_email(self, user_email: str) -> List[Dict[str, Any]]:
         """Get all custom strategies for a user by email"""
+        session = None
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            session = get_session()
             
-            cursor.execute('''
-                SELECT id, user_email, user_phone, strategy_description,
-                       ai_analysis_json, strategy_rating, status, created_at, updated_at
-                FROM custom_strategies 
-                WHERE user_email = ?
-                ORDER BY created_at DESC
-            ''', (user_email,))
+            strategies = session.query(CustomStrategy).filter(
+                CustomStrategy.user_email == user_email
+            ).order_by(CustomStrategy.created_at.desc()).all()
             
-            rows = cursor.fetchall()
-            conn.close()
-            
-            strategies = []
-            for row in rows:
+            result = []
+            for strategy in strategies:
                 try:
-                    analysis = json.loads(row[4]) if row[4] else {}
-                    strategies.append({
-                        "id": row[0],
-                        "user_email": row[1],
-                        "user_phone": row[2],
-                        "strategy_description": row[3],
+                    analysis = json.loads(strategy.ai_analysis_json) if strategy.ai_analysis_json else {}
+                    result.append({
+                        "id": strategy.id,
+                        "user_email": strategy.user_email,
+                        "user_phone": strategy.user_phone,
+                        "strategy_description": strategy.strategy_description,
                         "analysis": analysis,
-                        "strategy_rating": row[5],
-                        "status": row[6],
-                        "created_at": row[7],
-                        "updated_at": row[8]
+                        "strategy_rating": strategy.strategy_rating,
+                        "status": strategy.status,
+                        "created_at": strategy.created_at.isoformat() if strategy.created_at else None,
+                        "updated_at": strategy.updated_at.isoformat() if strategy.updated_at else None
                     })
                 except json.JSONDecodeError as e:
-                    print(f"Warning: Could not parse analysis for strategy ID {row[0]}: {e}")
+                    logger.warning(f"Could not parse analysis for strategy ID {strategy.id}: {e}")
                     continue
             
-            return strategies
+            return result
         except Exception as e:
-            print(f"[ERROR] Error getting strategies for user {user_email}: {e}")
+            logger.error(f"Error getting strategies for user {user_email}: {e}")
+            import traceback
+            traceback.print_exc()
             return []
+        finally:
+            if session:
+                session.close()
     
     def get_strategy_by_id(self, strategy_id: int) -> Optional[Dict[str, Any]]:
         """Get a specific custom strategy by ID"""
+        session = None
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            session = get_session()
             
-            cursor.execute('''
-                SELECT id, user_email, user_phone, strategy_description,
-                       ai_analysis_json, strategy_rating, status, created_at, updated_at
-                FROM custom_strategies 
-                WHERE id = ?
-            ''', (strategy_id,))
+            strategy = session.query(CustomStrategy).filter(
+                CustomStrategy.id == strategy_id
+            ).first()
             
-            row = cursor.fetchone()
-            conn.close()
-            
-            if not row:
+            if not strategy:
                 return None
             
             try:
-                analysis = json.loads(row[4]) if row[4] else {}
+                analysis = json.loads(strategy.ai_analysis_json) if strategy.ai_analysis_json else {}
                 return {
-                    "id": row[0],
-                    "user_email": row[1],
-                    "user_phone": row[2],
-                    "strategy_description": row[3],
+                    "id": strategy.id,
+                    "user_email": strategy.user_email,
+                    "user_phone": strategy.user_phone,
+                    "strategy_description": strategy.strategy_description,
                     "analysis": analysis,
-                    "strategy_rating": row[5],
-                    "status": row[6],
-                    "created_at": row[7],
-                    "updated_at": row[8]
+                    "strategy_rating": strategy.strategy_rating,
+                    "status": strategy.status,
+                    "created_at": strategy.created_at.isoformat() if strategy.created_at else None,
+                    "updated_at": strategy.updated_at.isoformat() if strategy.updated_at else None
                 }
             except json.JSONDecodeError as e:
-                print(f"Warning: Could not parse analysis for strategy ID {row[0]}: {e}")
+                logger.warning(f"Could not parse analysis for strategy ID {strategy.id}: {e}")
                 return None
         except Exception as e:
-            print(f"[ERROR] Error getting strategy {strategy_id}: {e}")
+            logger.error(f"Error getting strategy {strategy_id}: {e}")
+            import traceback
+            traceback.print_exc()
             return None
+        finally:
+            if session:
+                session.close()
     
     def update_strategy_status(self, strategy_id: int, status: str) -> bool:
         """Update strategy status"""
+        session = None
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            session = get_session()
             
-            cursor.execute('''
-                UPDATE custom_strategies 
-                SET status = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            ''', (status, strategy_id))
+            strategy = session.query(CustomStrategy).filter(
+                CustomStrategy.id == strategy_id
+            ).first()
             
-            success = cursor.rowcount > 0
-            conn.commit()
-            conn.close()
+            if not strategy:
+                logger.warning(f"Strategy {strategy_id} not found")
+                return False
             
-            return success
+            strategy.status = status
+            session.commit()
+            
+            logger.info(f"Strategy {strategy_id} status updated to {status}")
+            return True
         except Exception as e:
-            print(f"[ERROR] Error updating strategy status: {e}")
+            if session:
+                session.rollback()
+            logger.error(f"Error updating strategy status: {e}")
+            import traceback
+            traceback.print_exc()
             return False
+        finally:
+            if session:
+                session.close()

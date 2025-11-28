@@ -2,7 +2,6 @@
 Webhook logic implementation for the Strategy Management Backend
 """
 
-import sqlite3
 import json
 import os
 import logging
@@ -19,6 +18,8 @@ from .utils import (
     log_strategy_operation, create_error_response, create_success_response,
     sanitize_input
 )
+from Databases.app_data_db_connection import get_session, create_connection, init_database
+from Databases.strategy_models import Strategy, SaveJson
 
 # Get configuration
 config_name = os.environ.get('FASTAPI_ENV', 'default')
@@ -27,88 +28,74 @@ app_config = config[config_name]
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Database configuration
-DATABASE = app_config.DATABASE
-
-def get_db_connection():
-    """Get database connection"""
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
-
 def init_db():
     """Initialize the database with required tables"""
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    
-    # Create strategies table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS strategies (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            strategy_name TEXT NOT NULL,
-            user_email TEXT,
-            webhook TEXT NOT NULL,
-            reference_capital TEXT,
-            client_ids TEXT,
-            capitals TEXT,
-            execution_date TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            status TEXT DEFAULT 'active'
-        )
-    ''')
-    
-    # Create savejson table for storing JSON data
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS savejson (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_email TEXT NOT NULL,
-            json_data TEXT NOT NULL,
-            strategy_name TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    conn.commit()
-    conn.close()
+    try:
+        # Ensure connection is established
+        if not create_connection():
+            logger.error("Failed to connect to PostgreSQL database")
+            return False
+        
+        # Initialize all tables (including strategies and savejson)
+        if not init_database():
+            logger.error("Failed to initialize database tables")
+            return False
+        
+        logger.info("Webhook database tables initialized successfully in PostgreSQL")
+        return True
+    except Exception as e:
+        logger.error(f"Error initializing webhook database: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 class WebhookLogic:
     """Webhook business logic implementation"""
     
     def __init__(self):
         """Initialize webhook logic"""
-        self.database = DATABASE
+        # Ensure database is initialized
+        init_db()
     
     async def get_all_strategies(self) -> List[StrategyResponse]:
         """Get all strategies"""
+        session = None
         try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM strategies ORDER BY created_at DESC')
-            strategies = cursor.fetchall()
-            conn.close()
+            session = get_session()
+            
+            strategies = session.query(Strategy).order_by(Strategy.created_at.desc()).all()
             
             result = []
             for strategy in strategies:
+                client_ids = json.loads(strategy.client_ids) if strategy.client_ids else []
+                capitals = json.loads(strategy.capitals) if strategy.capitals else []
+                
                 result.append(StrategyResponse(
-                    id=strategy['id'],
-                    strategy_name=strategy['strategy_name'],
-                    user_email=strategy['user_email'],
-                    webhook=strategy['webhook'],
-                    reference_capital=strategy['reference_capital'],
-                    client_ids=json.loads(strategy['client_ids']) if strategy['client_ids'] else [],
-                    capitals=json.loads(strategy['capitals']) if strategy['capitals'] else [],
-                    execution_date=strategy['execution_date'],
-                    created_at=strategy['created_at'],
-                    status=strategy['status']
+                    id=strategy.id,
+                    strategy_name=strategy.strategy_name,
+                    user_email=strategy.user_email,
+                    webhook=strategy.webhook,
+                    reference_capital=strategy.reference_capital,
+                    client_ids=client_ids,
+                    capitals=capitals,
+                    execution_date=strategy.execution_date,
+                    created_at=strategy.created_at.isoformat() if strategy.created_at else None,
+                    status=strategy.status
                 ))
             
             return result
         except Exception as e:
             logger.error(f"Error getting strategies: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
+        finally:
+            if session:
+                session.close()
     
     async def create_strategy(self, strategy: StrategyCreate) -> Dict[str, Any]:
         """Create a new strategy"""
+        session = None
         try:
             # Validate strategy data
             is_valid, validation_errors = validate_strategy_data(strategy.dict())
@@ -135,18 +122,24 @@ class WebhookLogic:
             execution_date = datetime.now().strftime('%B %d, %Y')
             
             # Insert into database
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO strategies (strategy_name, user_email, webhook, reference_capital, 
-                                      client_ids, capitals, execution_date)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (strategy_name, user_email, webhook, reference_capital, 
-                  json.dumps(client_ids), json.dumps(capitals), execution_date))
+            session = get_session()
             
-            strategy_id = cursor.lastrowid
-            conn.commit()
-            conn.close()
+            new_strategy = Strategy(
+                strategy_name=strategy_name,
+                user_email=user_email,
+                webhook=webhook,
+                reference_capital=reference_capital,
+                client_ids=json.dumps(client_ids),
+                capitals=json.dumps(capitals),
+                execution_date=execution_date,
+                status='active'
+            )
+            
+            session.add(new_strategy)
+            session.commit()
+            session.refresh(new_strategy)
+            
+            strategy_id = new_strategy.id
             
             # Log strategy creation
             log_strategy_operation("created", strategy_id, user_email or "anonymous", f"Strategy: {strategy_name}")
@@ -155,7 +148,7 @@ class WebhookLogic:
             webhook_sent = False
             if webhook:
                 try:
-                    json_data = generate_json_data(client_ids, capitals)
+                    json_data = generate_json_data(client_ids, capitals, "deploy")
                     webhook_data = {
                         "strategy_id": strategy_id,
                         "strategy_name": strategy_name,
@@ -177,132 +170,173 @@ class WebhookLogic:
             )
             
         except Exception as e:
+            if session:
+                session.rollback()
             logger.error(f"Error creating strategy: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
+        finally:
+            if session:
+                session.close()
     
     async def get_strategy_by_id(self, strategy_id: int) -> StrategyResponse:
         """Get a specific strategy by ID"""
+        session = None
         try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM strategies WHERE id = ?', (strategy_id,))
-            strategy = cursor.fetchone()
-            conn.close()
+            session = get_session()
+            
+            strategy = session.query(Strategy).filter(Strategy.id == strategy_id).first()
             
             if not strategy:
                 from fastapi import HTTPException
                 raise HTTPException(status_code=404, detail="Strategy not found")
             
+            client_ids = json.loads(strategy.client_ids) if strategy.client_ids else []
+            capitals = json.loads(strategy.capitals) if strategy.capitals else []
+            
             return StrategyResponse(
-                id=strategy['id'],
-                strategy_name=strategy['strategy_name'],
-                user_email=strategy['user_email'],
-                webhook=strategy['webhook'],
-                reference_capital=strategy['reference_capital'],
-                client_ids=json.loads(strategy['client_ids']) if strategy['client_ids'] else [],
-                capitals=json.loads(strategy['capitals']) if strategy['capitals'] else [],
-                execution_date=strategy['execution_date'],
-                created_at=strategy['created_at'],
-                status=strategy['status']
+                id=strategy.id,
+                strategy_name=strategy.strategy_name,
+                user_email=strategy.user_email,
+                webhook=strategy.webhook,
+                reference_capital=strategy.reference_capital,
+                client_ids=client_ids,
+                capitals=capitals,
+                execution_date=strategy.execution_date,
+                created_at=strategy.created_at.isoformat() if strategy.created_at else None,
+                status=strategy.status
             )
         except Exception as e:
             logger.error(f"Error getting strategy: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
+        finally:
+            if session:
+                session.close()
     
     async def update_strategy(self, strategy_id: int, strategy_update: StrategyUpdate) -> Dict[str, Any]:
         """Update a specific strategy"""
+        session = None
         try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
+            session = get_session()
             
             # Check if strategy exists
-            cursor.execute('SELECT * FROM strategies WHERE id = ?', (strategy_id,))
-            strategy = cursor.fetchone()
+            strategy = session.query(Strategy).filter(Strategy.id == strategy_id).first()
             
             if not strategy:
-                conn.close()
                 from fastapi import HTTPException
                 raise HTTPException(status_code=404, detail="Strategy not found")
             
-            # Prepare update data
-            update_data = {}
+            # Update fields
             if strategy_update.strategyName is not None:
-                update_data['strategy_name'] = strategy_update.strategyName
+                strategy.strategy_name = strategy_update.strategyName
             if strategy_update.userEmail is not None:
-                update_data['user_email'] = strategy_update.userEmail
+                strategy.user_email = strategy_update.userEmail
             if strategy_update.webhook is not None:
-                update_data['webhook'] = strategy_update.webhook
+                strategy.webhook = strategy_update.webhook
             if strategy_update.referenceCapital is not None:
-                update_data['reference_capital'] = strategy_update.referenceCapital
+                strategy.reference_capital = strategy_update.referenceCapital
             if strategy_update.clientIds is not None:
-                update_data['client_ids'] = json.dumps([client.dict() for client in strategy_update.clientIds])
+                strategy.client_ids = json.dumps([client.dict() for client in strategy_update.clientIds])
             if strategy_update.capitals is not None:
-                update_data['capitals'] = json.dumps([capital.dict() for capital in strategy_update.capitals])
+                strategy.capitals = json.dumps([capital.dict() for capital in strategy_update.capitals])
             
-            # Update strategy
-            if update_data:
-                set_clause = ', '.join([f"{key} = ?" for key in update_data.keys()])
-                values = list(update_data.values()) + [strategy_id]
-                cursor.execute(f'UPDATE strategies SET {set_clause} WHERE id = ?', values)
-            
-            conn.commit()
-            conn.close()
+            session.commit()
             
             return {"message": "Strategy updated successfully"}
         except Exception as e:
+            if session:
+                session.rollback()
             logger.error(f"Error updating strategy: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
+        finally:
+            if session:
+                session.close()
     
     async def delete_strategy(self, strategy_id: int) -> Dict[str, Any]:
         """Delete a specific strategy"""
+        session = None
         try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
+            session = get_session()
             
             # Check if strategy exists
-            cursor.execute('SELECT * FROM strategies WHERE id = ?', (strategy_id,))
-            strategy = cursor.fetchone()
+            strategy = session.query(Strategy).filter(Strategy.id == strategy_id).first()
             
             if not strategy:
-                conn.close()
                 from fastapi import HTTPException
                 raise HTTPException(status_code=404, detail="Strategy not found")
             
             # Delete strategy
-            cursor.execute('DELETE FROM strategies WHERE id = ?', (strategy_id,))
-            conn.commit()
-            conn.close()
+            session.delete(strategy)
+            session.commit()
             
             return {"message": "Strategy deleted successfully"}
         except Exception as e:
+            if session:
+                session.rollback()
             logger.error(f"Error deleting strategy: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
+        finally:
+            if session:
+                session.close()
     
     async def update_strategy_status(self, strategy_id: int, status_update: StrategyStatusUpdate) -> Dict[str, Any]:
         """Update strategy status (active/inactive)"""
+        session = None
         try:
             if status_update.status not in ['active', 'inactive']:
                 from fastapi import HTTPException
                 raise HTTPException(status_code=400, detail="Status must be 'active' or 'inactive'")
             
-            conn = get_db_connection()
-            cursor = conn.cursor()
+            session = get_session()
             
-            cursor.execute('UPDATE strategies SET status = ? WHERE id = ?', (status_update.status, strategy_id))
-            conn.commit()
-            conn.close()
+            strategy = session.query(Strategy).filter(Strategy.id == strategy_id).first()
+            
+            if not strategy:
+                from fastapi import HTTPException
+                raise HTTPException(status_code=404, detail="Strategy not found")
+            
+            strategy.status = status_update.status
+            session.commit()
             
             return {"message": f"Strategy status updated to {status_update.status}"}
         except Exception as e:
+            if session:
+                session.rollback()
             logger.error(f"Error updating strategy status: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
+        finally:
+            if session:
+                session.close()
     
     async def health_check(self) -> HealthResponse:
         """Health check endpoint"""
+        session = None
+        try:
+            # Test database connection
+            from sqlalchemy import text
+            session = get_session()
+            session.execute(text("SELECT 1"))
+            database_status = "connected"
+        except Exception as e:
+            logger.warning(f"Database health check failed: {e}")
+            database_status = "disconnected"
+        finally:
+            if session:
+                session.close()
+        
         return HealthResponse(
             status="healthy",
             timestamp=datetime.now().isoformat(),
-            database="connected" if os.path.exists(DATABASE) else "not_found",
+            database=database_status,
             version="1.0.0"
         )
     
@@ -321,7 +355,7 @@ class WebhookLogic:
                 raise HTTPException(status_code=400, detail="Number of client IDs must match number of capital values")
             
             # Generate JSON data
-            generated_json = generate_json_data(client_ids, capitals)
+            generated_json = generate_json_data(client_ids, capitals, "deploy")
             
             logger.info(f"Generated JSON data for {len(client_ids)} clients")
             
@@ -332,44 +366,45 @@ class WebhookLogic:
             
         except Exception as e:
             logger.error(f"Error generating JSON: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
     
     async def trigger_webhook(self, strategy_id: int) -> Dict[str, Any]:
         """Trigger webhook notification for a specific strategy"""
+        session = None
         try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM strategies WHERE id = ?', (strategy_id,))
-            strategy = cursor.fetchone()
-            conn.close()
+            session = get_session()
+            
+            strategy = session.query(Strategy).filter(Strategy.id == strategy_id).first()
             
             if not strategy:
                 from fastapi import HTTPException
                 raise HTTPException(status_code=404, detail="Strategy not found")
             
             # Generate JSON data for webhook
-            client_ids = json.loads(strategy['client_ids']) if strategy['client_ids'] else []
-            capitals = json.loads(strategy['capitals']) if strategy['capitals'] else []
-            json_data = generate_json_data(client_ids, capitals)
+            client_ids = json.loads(strategy.client_ids) if strategy.client_ids else []
+            capitals = json.loads(strategy.capitals) if strategy.capitals else []
+            json_data = generate_json_data(client_ids, capitals, "deploy")
             
             # Add strategy metadata
             webhook_data = {
                 "strategy_id": strategy_id,
-                "strategy_name": strategy['strategy_name'],
-                "user_email": strategy['user_email'],
-                "execution_date": strategy['execution_date'],
+                "strategy_name": strategy.strategy_name,
+                "user_email": strategy.user_email,
+                "execution_date": strategy.execution_date,
                 "trading_data": json_data
             }
             
             # Send webhook notification
             webhook_sent = send_webhook_notification(
-                strategy['webhook'], 
+                strategy.webhook, 
                 webhook_data, 
                 app_config.MAX_RETRIES
             )
             
             if webhook_sent:
-                log_strategy_operation("webhook_triggered", strategy_id, strategy['user_email'])
+                log_strategy_operation("webhook_triggered", strategy_id, strategy.user_email, {})
                 return create_success_response("Webhook notification sent successfully")
             else:
                 from fastapi import HTTPException
@@ -377,42 +412,51 @@ class WebhookLogic:
                 
         except Exception as e:
             logger.error(f"Error triggering webhook: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
+        finally:
+            if session:
+                session.close()
     
     async def get_strategy_json(self, strategy_id: int) -> Dict[str, Any]:
         """Get JSON data for a specific strategy"""
+        session = None
         try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM strategies WHERE id = ?', (strategy_id,))
-            strategy = cursor.fetchone()
-            conn.close()
+            session = get_session()
+            
+            strategy = session.query(Strategy).filter(Strategy.id == strategy_id).first()
             
             if not strategy:
                 from fastapi import HTTPException
                 raise HTTPException(status_code=404, detail="Strategy not found")
             
             # Generate JSON data
-            client_ids = json.loads(strategy['client_ids']) if strategy['client_ids'] else []
-            capitals = json.loads(strategy['capitals']) if strategy['capitals'] else []
-            json_data = generate_json_data(client_ids, capitals)
+            client_ids = json.loads(strategy.client_ids) if strategy.client_ids else []
+            capitals = json.loads(strategy.capitals) if strategy.capitals else []
+            json_data = generate_json_data(client_ids, capitals, "deploy")
             
             return create_success_response("JSON data retrieved successfully", {
                 "strategy_id": strategy_id,
-                "strategy_name": strategy['strategy_name'],
+                "strategy_name": strategy.strategy_name,
                 "json_data": json_data
             })
             
         except Exception as e:
             logger.error(f"Error getting strategy JSON: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
+        finally:
+            if session:
+                session.close()
     
     async def save_json_data(self, json_save: JsonSave) -> Dict[str, Any]:
         """Save JSON data for a user"""
+        session = None
         try:
-            # Insert into saved_json table
-            conn = get_db_connection()
-            cursor = conn.cursor()
+            session = get_session()
+            
             # Get current execution date and time in local time with readable format
             current_time = datetime.now()
             execution_date = current_time.strftime("%B %d, %Y")
@@ -420,26 +464,27 @@ class WebhookLogic:
             full_timestamp = current_time.strftime("%B %d, %Y at %I:%M:%S %p")
             iso_timestamp = current_time.isoformat()  # JavaScript-compatible format
             
-            cursor.execute('''
-                INSERT INTO savejson (user_email, json_data, strategy_name)
-                VALUES (?, ?, ?)
-            ''', (
-                json_save.user_email,
-                json.dumps({
-                    'user_email': json_save.user_email,
-                    'json_data': json_save.json_data,
-                    'strategy_name': json_save.strategy_name,
-                    'execution_date': execution_date,
-                    'execution_time': execution_time,
-                    'full_timestamp': full_timestamp,
-                    'iso_timestamp': iso_timestamp
-                }),
-                json_save.strategy_name
-            ))
+            save_data = {
+                'user_email': json_save.user_email,
+                'json_data': json_save.json_data,
+                'strategy_name': json_save.strategy_name,
+                'execution_date': execution_date,
+                'execution_time': execution_time,
+                'full_timestamp': full_timestamp,
+                'iso_timestamp': iso_timestamp
+            }
             
-            saved_id = cursor.lastrowid
-            conn.commit()
-            conn.close()
+            new_save = SaveJson(
+                user_email=json_save.user_email,
+                json_data=json.dumps(save_data),
+                strategy_name=json_save.strategy_name
+            )
+            
+            session.add(new_save)
+            session.commit()
+            session.refresh(new_save)
+            
+            saved_id = new_save.id
             
             logger.info(f"JSON data saved for user {json_save.user_email} with ID {saved_id}")
             
@@ -455,11 +500,19 @@ class WebhookLogic:
             }
             
         except Exception as e:
+            if session:
+                session.rollback()
             logger.error(f"Error saving JSON: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
+        finally:
+            if session:
+                session.close()
     
     async def deploy_strategy(self, deploy_request) -> Dict[str, Any]:
-        """Deploy strategy - generates JSON data and saves it to unified_etf_data.sqlite"""
+        """Deploy strategy - generates JSON data and saves it to PostgreSQL"""
+        session = None
         try:
             # First, generate the JSON data
             from .utils import generate_json_data
@@ -471,23 +524,7 @@ class WebhookLogic:
             # Generate JSON data
             generated_json = generate_json_data(deploy_request.client_ids, deploy_request.capitals, "deploy")
             
-            # Now save to unified_etf_data.sqlite database
-            import sqlite3
-            
-            # Connect to unified_etf_data.sqlite
-            conn = sqlite3.connect("unified_etf_data.sqlite")
-            cursor = conn.cursor()
-            
-            # Create savejson table if it doesn't exist
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS savejson (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_email TEXT NOT NULL,
-                    json_data TEXT NOT NULL,
-                    strategy_name TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
+            session = get_session()
             
             # Get current execution date and time in local time with readable format
             current_time = datetime.now()
@@ -510,18 +547,17 @@ class WebhookLogic:
             }
             
             # Insert into savejson table
-            cursor.execute('''
-                INSERT INTO savejson (user_email, json_data, strategy_name)
-                VALUES (?, ?, ?)
-            ''', (
-                deploy_request.user_email,
-                json.dumps(save_data),
-                deploy_request.strategy_name
-            ))
+            new_save = SaveJson(
+                user_email=deploy_request.user_email,
+                json_data=json.dumps(save_data),
+                strategy_name=deploy_request.strategy_name
+            )
             
-            saved_id = cursor.lastrowid
-            conn.commit()
-            conn.close()
+            session.add(new_save)
+            session.commit()
+            session.refresh(new_save)
+            
+            saved_id = new_save.id
             
             logger.info(f"Strategy deployed for user {deploy_request.user_email} with ID {saved_id}")
             
@@ -539,40 +575,44 @@ class WebhookLogic:
             }
             
         except Exception as e:
+            if session:
+                session.rollback()
             logger.error(f"Error deploying strategy: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
+        finally:
+            if session:
+                session.close()
     
     async def get_saved_json_data(self, user_email: str, strategy_name: Optional[str] = None) -> Dict[str, Any]:
         """Get saved JSON data for a user, optionally filtered by strategy name"""
+        session = None
         try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT * FROM savejson 
-                WHERE user_email = ?
-                ORDER BY id DESC
-            ''', (user_email,))
-            saved_jsons = cursor.fetchall()
-            conn.close()
+            session = get_session()
+            
+            query = session.query(SaveJson).filter(SaveJson.user_email == user_email)
+            
+            if strategy_name:
+                query = query.filter(SaveJson.strategy_name == strategy_name)
+            
+            saved_jsons = query.order_by(SaveJson.id.desc()).all()
             
             result = []
             for saved_json in saved_jsons:
-                # saved_json structure: (id, user_email, json_data, strategy_name, created_at)
-                json_data = json.loads(saved_json[2])  # json_data column is at index 2
+                json_data = json.loads(saved_json.json_data) if saved_json.json_data else {}
                 
-                # If strategy_name is provided, filter by strategy name
-                if strategy_name is None or saved_json[3] == strategy_name:  # strategy_name column is at index 3
-                    result.append({
-                        'id': saved_json[0],  # id column is at index 0
-                        'user_email': saved_json[1],  # user_email column is at index 1
-                        'json_data': json_data.get('json_data'),
-                        'strategy_name': saved_json[3],  # strategy_name column is at index 3
-                        'execution_date': json_data.get('execution_date'),
-                        'execution_time': json_data.get('execution_time'),
-                        'full_timestamp': json_data.get('full_timestamp'),
-                        'iso_timestamp': json_data.get('iso_timestamp'),
-                        'created_at': saved_json[4]  # created_at column is at index 4
-                    })
+                result.append({
+                    'id': saved_json.id,
+                    'user_email': saved_json.user_email,
+                    'json_data': json_data.get('json_data'),
+                    'strategy_name': saved_json.strategy_name,
+                    'execution_date': json_data.get('execution_date'),
+                    'execution_time': json_data.get('execution_time'),
+                    'full_timestamp': json_data.get('full_timestamp'),
+                    'iso_timestamp': json_data.get('iso_timestamp'),
+                    'created_at': saved_json.created_at.isoformat() if saved_json.created_at else None
+                })
             
             success_response = create_success_response("Saved JSON data retrieved successfully", {
                 "saved_jsons": result,
@@ -586,27 +626,29 @@ class WebhookLogic:
             
         except Exception as e:
             logger.error(f"Error getting saved JSON: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
+        finally:
+            if session:
+                session.close()
     
     async def delete_saved_json_data(self, json_id: int) -> Dict[str, Any]:
         """Delete a specific saved JSON entry by ID"""
+        session = None
         try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
+            session = get_session()
             
             # Check if the JSON entry exists
-            cursor.execute('SELECT * FROM savejson WHERE id = ?', (json_id,))
-            saved_json = cursor.fetchone()
+            saved_json = session.query(SaveJson).filter(SaveJson.id == json_id).first()
             
             if not saved_json:
-                conn.close()
                 from fastapi import HTTPException
                 raise HTTPException(status_code=404, detail="JSON entry not found")
             
             # Delete the JSON entry
-            cursor.execute('DELETE FROM savejson WHERE id = ?', (json_id,))
-            conn.commit()
-            conn.close()
+            session.delete(saved_json)
+            session.commit()
             
             logger.info(f"JSON entry with ID {json_id} deleted successfully")
             
@@ -620,8 +662,15 @@ class WebhookLogic:
             }
             
         except Exception as e:
+            if session:
+                session.rollback()
             logger.error(f"Error deleting saved JSON: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
+        finally:
+            if session:
+                session.close()
 
     async def delete_saved_json_data_any(self, identifier: str) -> Dict[str, Any]:
         """Delete a saved JSON entry by numeric id or composite identifier.
@@ -630,6 +679,7 @@ class WebhookLogic:
         - a numeric userid (e.g., "5")
         - a composite key in the format "{iso_timestamp}_{user_email}_{strategy_name}"
         """
+        session = None
         try:
             # Try numeric id first
             try:
@@ -646,27 +696,31 @@ class WebhookLogic:
                 raise HTTPException(status_code=422, detail="Invalid identifier format")
             iso_timestamp, user_email, strategy_name = parts
 
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute('SELECT id, json_data FROM savejson WHERE user_email = ? AND strategy_name = ?', (user_email, strategy_name))
-            rows = cursor.fetchall()
+            session = get_session()
+            
+            saved_jsons = session.query(SaveJson).filter(
+                SaveJson.user_email == user_email,
+                SaveJson.strategy_name == strategy_name
+            ).all()
+            
             target_id = None
-            for row in rows:
+            for saved_json in saved_jsons:
                 try:
-                    payload = json.loads(row[1])
+                    payload = json.loads(saved_json.json_data) if saved_json.json_data else {}
                 except Exception:
                     continue
                 if payload.get('iso_timestamp') == iso_timestamp:
-                    target_id = row[0]
+                    target_id = saved_json.id
                     break
+            
             if target_id is None:
-                conn.close()
                 from fastapi import HTTPException
                 raise HTTPException(status_code=404, detail="JSON entry not found")
 
-            cursor.execute('DELETE FROM savejson WHERE id = ?', (target_id,))
-            conn.commit()
-            conn.close()
+            saved_json = session.query(SaveJson).filter(SaveJson.id == target_id).first()
+            if saved_json:
+                session.delete(saved_json)
+                session.commit()
 
             logger.info(f"JSON entry with composite identifier {identifier} deleted successfully (id={target_id})")
 
@@ -679,8 +733,15 @@ class WebhookLogic:
                 "timestamp": success_response.timestamp.isoformat()
             }
         except Exception as e:
+            if session:
+                session.rollback()
             logger.error(f"Error deleting saved JSON (any): {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
+        finally:
+            if session:
+                session.close()
     
     async def deploy_legacy(self, data: dict) -> Dict[str, Any]:
         """Legacy deploy endpoint"""
@@ -702,4 +763,6 @@ class WebhookLogic:
             return {"message": f"Strategy '{strategy_name}' deployed successfully!"}
         except Exception as e:
             logger.error(f"Error in legacy deploy: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
