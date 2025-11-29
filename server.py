@@ -168,42 +168,42 @@ async def root():
         "services": ["subscription", "webhook", "single-sign-on", "deployments"]
     }
 
-@app.get("/health_check")
-async def health_check():
-    """Health check endpoint to verify API and database status"""
-    try:
-        status = {
-            "api_status_latest": "healthy",
-            "stock_backtester_initialized": stock_backtester_initialized,
-            "etf_backtester_initialized": etf_backtester_initialized,
-            "rs_strategy_initialized": True,  # RS strategy is always available
-            "custom_strategy_initialized": custom_strategy_service_initialized,
-            "subscription_service_initialized": subscription_service_initialized,
-            "webhook_service_initialized": webhook_service_initialized,
-            "single_sign_on_service_initialized": single_sign_on_service_initialized,
-            "stock_database_available": stock_backtester_initialized,
-            "etf_database_available": etf_backtester_initialized,
-            "rs_strategy_database_available": True,
-            "custom_strategy_database_available": custom_strategy_service_initialized,
-            "subscription_database_available": subscription_service_initialized,
-            "webhook_database_available": True,
-            "stock_count": 0,
-            "etf_count": 0,
-        }
+# @app.get("/health_check")
+# async def health_check():
+#     """Health check endpoint to verify API and database status"""
+#     try:
+#         status = {
+#             "api_status_latest": "healthy",
+#             "stock_backtester_initialized": stock_backtester_initialized,
+#             "etf_backtester_initialized": etf_backtester_initialized,
+#             "rs_strategy_initialized": True,  # RS strategy is always available
+#             "custom_strategy_initialized": custom_strategy_service_initialized,
+#             "subscription_service_initialized": subscription_service_initialized,
+#             "webhook_service_initialized": webhook_service_initialized,
+#             "single_sign_on_service_initialized": single_sign_on_service_initialized,
+#             "stock_database_available": stock_backtester_initialized,
+#             "etf_database_available": etf_backtester_initialized,
+#             "rs_strategy_database_available": True,
+#             "custom_strategy_database_available": custom_strategy_service_initialized,
+#             "subscription_database_available": subscription_service_initialized,
+#             "webhook_database_available": True,
+#             "stock_count": 0,
+#             "etf_count": 0,
+#         }
         
-        return status
-    except Exception as e:
-        return {
-            "api_status": "error",
-            "error": str(e),
-            "stock_backtester_initialized": stock_backtester_initialized,
-            "etf_backtester_initialized": etf_backtester_initialized,
-            "rs_strategy_initialized": True,
-            "custom_strategy_initialized": custom_strategy_service_initialized,
-            "subscription_service_initialized": subscription_service_initialized,
-            "webhook_service_initialized": webhook_service_initialized,
-            "single_sign_on_service_initialized": single_sign_on_service_initialized,
-        }
+#         return status
+#     except Exception as e:
+#         return {
+#             "api_status": "error",
+#             "error": str(e),
+#             "stock_backtester_initialized": stock_backtester_initialized,
+#             "etf_backtester_initialized": etf_backtester_initialized,
+#             "rs_strategy_initialized": True,
+#             "custom_strategy_initialized": custom_strategy_service_initialized,
+#             "subscription_service_initialized": subscription_service_initialized,
+#             "webhook_service_initialized": webhook_service_initialized,
+#             "single_sign_on_service_initialized": single_sign_on_service_initialized,
+#         }
 
 @app.get("/favicon.ico")
 async def favicon():
@@ -248,10 +248,10 @@ async def root():
         "status": "running"
     }
 
-@app.get("/api/chat/health")
+@app.get("/api/chat/health")      
 async def health():
     """Health check endpoint"""
     return {"status": "healthy"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
