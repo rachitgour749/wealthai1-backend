@@ -27,7 +27,14 @@ for lib in ["uvicorn", "uvicorn.access", "sqlalchemy", "sqlalchemy.engine",
 # =========================
 # PATH SETUP (Minimal - only for imports)
 # =========================
-BASE_DIR = os.path.dirname(__file__)
+# Get absolute path to the directory containing this file
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# Ensure BASE_DIR is in sys.path first (for package imports like Services.Subscription)
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+# Add subdirectories for direct imports (legacy support)
 sys.path.extend([
     os.path.join(BASE_DIR, 'Strategies', 'Rotation_Stocks'),
     os.path.join(BASE_DIR, 'Strategies', 'etf-strategy'),
@@ -39,7 +46,6 @@ sys.path.extend([
     os.path.join(BASE_DIR, 'Services', 'Subscription'),
     os.path.join(BASE_DIR, 'Services', 'Deployments_helper'),
     os.path.join(BASE_DIR, 'Services', 'SingleSignOn'),
-    BASE_DIR
 ])
 
 # =========================
