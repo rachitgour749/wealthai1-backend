@@ -25,7 +25,7 @@ for lib in ["uvicorn", "uvicorn.access", "sqlalchemy", "sqlalchemy.engine",
     logging.getLogger(lib).setLevel(logging.ERROR)
 
 # =========================
-# PATH SETUP (Minimal - only for imports)
+# PATH SETUP (Critical - must run before any imports)
 # =========================
 # Get absolute path to the directory containing this file
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -33,6 +33,42 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 # Ensure BASE_DIR is in sys.path first (for package imports like Services.Subscription)
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
+
+# Verify critical directories exist
+SERVICES_DIR = os.path.join(BASE_DIR, 'Services')
+if not os.path.exists(SERVICES_DIR):
+    logger.error(f"Services directory not found at: {SERVICES_DIR}")
+    logger.error(f"BASE_DIR: {BASE_DIR}")
+    logger.error(f"Current working directory: {os.getcwd()}")
+    logger.error(f"Files in BASE_DIR: {os.listdir(BASE_DIR) if os.path.exists(BASE_DIR) else 'BASE_DIR does not exist'}")
+
+# Ensure Services/__init__.py exists
+SERVICES_INIT = os.path.join(SERVICES_DIR, '__init__.py')
+if not os.path.exists(SERVICES_INIT):
+    logger.warning(f"Services/__init__.py not found, creating it at: {SERVICES_INIT}")
+    try:
+        os.makedirs(SERVICES_DIR, exist_ok=True)
+        with open(SERVICES_INIT, 'w') as f:
+            f.write("# Services package initialization\n")
+        logger.info(f"Created Services/__init__.py successfully")
+    except Exception as e:
+        logger.error(f"Failed to create Services/__init__.py: {e}")
+        logger.error(f"Exception details: {type(e).__name__}: {e}")
+
+# Verify Services package can be imported (early validation)
+try:
+    import Services
+    if not hasattr(Services, '__file__'):
+        logger.warning("Services package imported but __file__ attribute missing")
+    else:
+        logger.info(f"Services package verified at: {Services.__file__}")
+except ImportError as e:
+    logger.error(f"CRITICAL: Cannot import Services package: {e}")
+    logger.error(f"This will cause all Services.* imports to fail!")
+    logger.error(f"BASE_DIR: {BASE_DIR}")
+    logger.error(f"SERVICES_DIR exists: {os.path.exists(SERVICES_DIR)}")
+    logger.error(f"SERVICES_INIT exists: {os.path.exists(SERVICES_INIT)}")
+    # Don't raise here - let it fail later with better context
 
 # Add subdirectories for direct imports (legacy support)
 sys.path.extend([
@@ -47,6 +83,13 @@ sys.path.extend([
     os.path.join(BASE_DIR, 'Services', 'Deployments_helper'),
     os.path.join(BASE_DIR, 'Services', 'SingleSignOn'),
 ])
+
+# Log path setup for debugging (only in development)
+if os.getenv('DEBUG', '').lower() == 'true':
+    logger.info(f"BASE_DIR: {BASE_DIR}")
+    logger.info(f"Python path includes BASE_DIR: {BASE_DIR in sys.path}")
+    logger.info(f"Services directory exists: {os.path.exists(SERVICES_DIR)}")
+    logger.info(f"Services/__init__.py exists: {os.path.exists(SERVICES_INIT)}")
 
 # =========================
 # GLOBAL STATE VARIABLES
@@ -270,24 +313,98 @@ app.add_middleware(
 # =========================
 # ROUTE IMPORTS (Lazy - only import routers, not initialization)
 # =========================
+# Import routers with detailed error handling
+stock_router = None
+etf_router = None
+rs_router = None
+rs_etf_router = None
+custom_strategy_router = None
+supertrend_router = None
+webhook_router = None
+subscription_router = None
+google_oauth_router = None
+deployment_router = None
+single_sign_on_router = None
+chatai1_new_settings = None
+chatai1_new = None
+
 try:
     from Strategies.Rotation_Stocks.api.stock_routes import stock_router
+except Exception as e:
+    logger.error(f"Failed to import stock_router: {e}")
+
+try:
     from Strategies.Rotation_ETF.api.etf_routes import etf_router
+except Exception as e:
+    logger.error(f"Failed to import etf_router: {e}")
+
+try:
     from Strategies.RS_Stocks.api import router as rs_router
+except Exception as e:
+    logger.error(f"Failed to import rs_router: {e}")
+
+try:
     from Strategies.RS_ETF.api import router as rs_etf_router
+except Exception as e:
+    logger.error(f"Failed to import rs_etf_router: {e}")
+
+try:
     from Strategies.customStrategy.api import custom_strategy_router
+except Exception as e:
+    logger.error(f"Failed to import custom_strategy_router: {e}")
+
+try:
     from Strategies.SuperTrend.api.routes import router as supertrend_router
+except Exception as e:
+    logger.error(f"Failed to import supertrend_router: {e}")
+
+try:
     from Services.webhook.webhook_api import router as webhook_router
+except Exception as e:
+    logger.error(f"Failed to import webhook_router: {e}")
+
+# Critical: Subscription routers - provide detailed error info
+try:
+    # Verify Services package can be imported
+    import Services
+    logger.info(f"Services package found at: {Services.__file__ if hasattr(Services, '__file__') else 'unknown'}")
+    
+    # Try importing Subscription subpackage
+    try:
+        import Services.Subscription
+        logger.info(f"Services.Subscription package found")
+    except ImportError as e:
+        logger.error(f"Failed to import Services.Subscription: {e}")
+        logger.error(f"Services directory contents: {os.listdir(SERVICES_DIR) if os.path.exists(SERVICES_DIR) else 'N/A'}")
+        logger.error(f"Services/__init__.py exists: {os.path.exists(SERVICES_INIT)}")
+        logger.error(f"Python path: {sys.path[:5]}")  # Show first 5 entries
+        raise
+    
     from Services.Subscription.api.subscription import subscription_router
     from Services.Subscription.api.google_oauth_api import google_oauth_router
+except Exception as e:
+    logger.error(f"Failed to import Subscription routers: {e}")
+    logger.error(f"Error type: {type(e).__name__}")
+    import traceback
+    logger.error(f"Traceback: {traceback.format_exc()}")
+    # Don't raise here - let the app start without subscription routes if needed
+    # But log it clearly so we can debug
+
+try:
     from Services.Deployments_helper.deployment_helper import deployment_router
+except Exception as e:
+    logger.error(f"Failed to import deployment_router: {e}")
+
+try:
     from Services.SingleSignOn import router as single_sign_on_router
-    
-    # ChatAI router (lazy import)
+except Exception as e:
+    logger.error(f"Failed to import single_sign_on_router: {e}")
+
+# ChatAI router (lazy import)
+try:
     chatai1_new_settings, _, _, chatai1_new = _lazy_import_chatai()
 except Exception as e:
-    logger.error(f"Router import failed: {e}")
-    raise
+    logger.error(f"Failed to import ChatAI: {e}")
 
 # =========================
 # CORE ROUTES
@@ -325,18 +442,32 @@ async def favicon():
     return Response(content=favicon_data, media_type="image/x-icon")
 
 # =========================
-# INCLUDE ROUTERS
+# INCLUDE ROUTERS (only include if successfully imported)
 # =========================
-app.include_router(stock_router)
-app.include_router(etf_router)
-app.include_router(rs_router, prefix="/api/rs-strategy", tags=["RS Strategy"])
-app.include_router(rs_etf_router, prefix="/api/rs-etf-strategy", tags=["RS ETF Strategy"])
-app.include_router(custom_strategy_router)
-app.include_router(webhook_router)
-app.include_router(subscription_router)
-app.include_router(google_oauth_router)
-app.include_router(deployment_router)
-app.include_router(single_sign_on_router)
+if stock_router:
+    app.include_router(stock_router)
+if etf_router:
+    app.include_router(etf_router)
+if rs_router:
+    app.include_router(rs_router, prefix="/api/rs-strategy", tags=["RS Strategy"])
+if rs_etf_router:
+    app.include_router(rs_etf_router, prefix="/api/rs-etf-strategy", tags=["RS ETF Strategy"])
+if custom_strategy_router:
+    app.include_router(custom_strategy_router)
+if webhook_router:
+    app.include_router(webhook_router)
+if subscription_router:
+    app.include_router(subscription_router)
+else:
+    logger.error("⚠️  Subscription router not loaded - subscription endpoints will not be available")
+if google_oauth_router:
+    app.include_router(google_oauth_router)
+else:
+    logger.error("⚠️  Google OAuth router not loaded - OAuth endpoints will not be available")
+if deployment_router:
+    app.include_router(deployment_router)
+if single_sign_on_router:
+    app.include_router(single_sign_on_router)
 
 # ChatAI router (only if available)
 if chatai1_new and hasattr(chatai1_new, 'router'):
