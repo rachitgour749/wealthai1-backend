@@ -1,6 +1,7 @@
 from .api.etf_routes import etf_router
 from .services.backtester import ETFRotationBacktester
-from .services.signal_generator import LiveSignalGenerator
+# Signal generator removed - not needed
+LiveSignalGenerator = None
 from .etf_schemas import (
     BacktestRequest, ETFMetadata, BacktestResult, BacktestResults,
     SaveETFStrategyRequest, SavedETFStrategy

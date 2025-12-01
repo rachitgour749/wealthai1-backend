@@ -5,253 +5,374 @@ from fastapi.routing import APIRoute
 import uvicorn
 import sys
 import os
-import threading
-import atexit
-import time
+import asyncio
 import logging
-import re
 from contextlib import asynccontextmanager
+from typing import Dict, Any
+import concurrent.futures
 
-from contextlib import asynccontextmanager
-from ChatAI1.chatai1_config import settings as chatai1_new_settings
-from ChatAI1.database import init_db, close_db
-from ChatAI1.api import chat as chatai1_new
-
+# Configure concise structured logging
+logging.basicConfig(
+    level=logging.ERROR,  # Only errors by default (quiet startup)
+    format='[%(levelname)s] %(name)s: %(message)s',
+    datefmt='%H:%M:%S'
+)
 logger = logging.getLogger(__name__)
 
-# Add the strategy directories to the path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'Rotation_Stocks'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'etf-strategy'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'RS_Stocks'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'RS_ETF'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'customStrategy'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Strategies', 'SuperTrend'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'chatAI'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Services', 'cronjob'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Services', 'webhook'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Services', 'subscription'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Services', 'execution'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Services', 'Deployments_helper'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Services', 'SingleSignOn'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
+# Suppress all verbose logs from third-party libraries
+for lib in ["uvicorn", "uvicorn.access", "sqlalchemy", "sqlalchemy.engine", 
+            "sqlalchemy.pool", "sqlalchemy.dialects", "fastapi", "httpx"]:
+    logging.getLogger(lib).setLevel(logging.ERROR)
 
-# Import the separate API modules
-from Strategies.Rotation_Stocks.api.stock_routes import stock_router, initialize_stock_backtester, cleanup_stock_backtester
-from Services.webhook.webhook_api import router as webhook_router
-from Services.webhook.webhook_logic import init_db as init_webhook_db
-from Services.subscription.api import subscription_router
-from Services.subscription.google_oauth_api import google_oauth_router
-from Services.subscription.database import subscription_manager
-from Services.Deployments_helper.deployment_helper import deployment_router
-from Services.SingleSignOn import router as single_sign_on_router
+# =========================
+# PATH SETUP (Minimal - only for imports)
+# =========================
+BASE_DIR = os.path.dirname(__file__)
+sys.path.extend([
+    os.path.join(BASE_DIR, 'Strategies', 'Rotation_Stocks'),
+    os.path.join(BASE_DIR, 'Strategies', 'etf-strategy'),
+    os.path.join(BASE_DIR, 'Strategies', 'RS_Stocks'),
+    os.path.join(BASE_DIR, 'Strategies', 'RS_ETF'),
+    os.path.join(BASE_DIR, 'Strategies', 'customStrategy'),
+    os.path.join(BASE_DIR, 'Strategies', 'SuperTrend'),
+    os.path.join(BASE_DIR, 'Services', 'webhook'),
+    os.path.join(BASE_DIR, 'Services', 'Subscription'),
+    os.path.join(BASE_DIR, 'Services', 'Deployments_helper'),
+    os.path.join(BASE_DIR, 'Services', 'SingleSignOn'),
+    BASE_DIR
+])
 
+# =========================
+# GLOBAL STATE VARIABLES
+# =========================
+# Initialize with False - will be set during async startup
+stock_backtester_initialized: bool = False
+etf_backtester_initialized: bool = False
+subscription_service_initialized: bool = False
+webhook_service_initialized: bool = False
+custom_strategy_service_initialized: bool = False
+single_sign_on_service_initialized: bool = False
 
-# Import RS strategy router (before ETF to avoid import conflicts)
-from Strategies.RS_Stocks.api import router as rs_router
-# Import RS ETF strategy router
-from Strategies.RS_ETF.api import router as rs_etf_router
+# Lazy loaded backtesters - initialized on first use
+_stock_backtester = None
+_etf_backtester = None
+_initialization_lock = asyncio.Lock()
 
-# Import ETF strategy after RS strategy to avoid conflicts
-from Strategies.Rotation_ETF.api.etf_routes import etf_router, initialize_etf_backtester, cleanup_etf_backtester
+# =========================
+# LAZY IMPORT FUNCTIONS (Defer heavy imports until needed)
+# =========================
+def _lazy_import_chatai():
+    """Lazy import ChatAI1 modules - only when needed"""
+    try:
+        from ChatAI1.chatai1_config import settings as chatai1_new_settings
+        from ChatAI1.database import init_db, close_db
+        from ChatAI1.api import chat as chatai1_new
+        return chatai1_new_settings, init_db, close_db, chatai1_new
+    except Exception:
+        return None, None, None, None
 
-# Import custom strategy router
-from Strategies.customStrategy.api import custom_strategy_router
-from Strategies.customStrategy.database import CustomStrategyDatabase
+def _lazy_import_backtesters():
+    """Lazy import backtester initialization functions"""
+    try:
+        from Strategies.Rotation_Stocks.api.stock_routes import (
+            initialize_stock_backtester, cleanup_stock_backtester
+        )
+        from Strategies.Rotation_ETF.api.etf_routes import (
+            initialize_etf_backtester, cleanup_etf_backtester
+        )
+        return initialize_stock_backtester, initialize_etf_backtester, \
+               cleanup_stock_backtester, cleanup_etf_backtester
+    except Exception:
+        return None, None, None, None
 
-# Import SuperTrend strategy router
-from Strategies.SuperTrend.api.routes import router as supertrend_router
-from Strategies.SuperTrend.api.database import init_database as init_supertrend_database
+# =========================
+# ASYNC INITIALIZATION FUNCTIONS
+# =========================
+async def _init_database_services() -> Dict[str, bool]:
+    """Initialize all database services in parallel (non-blocking)"""
+    results = {
+        'subscription': False,
+        'webhook': False,
+        'custom_strategy': False,
+        'single_sign_on': False
+    }
+    
+    async def init_subscription():
+        """Initialize subscription service"""
+        try:
+            from Services.Subscription.database import subscription_manager
+            # Run in thread pool to avoid blocking
+            loop = asyncio.get_event_loop()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                await loop.run_in_executor(executor, subscription_manager.init_database)
+            results['subscription'] = True
+        except Exception as e:
+            logger.error(f"Subscription init failed: {e}")
+            results['subscription'] = False
+    
+    async def init_webhook():
+        """Initialize webhook database"""
+        try:
+            from Services.webhook.webhook_logic import init_db as init_webhook_db
+            loop = asyncio.get_event_loop()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                await loop.run_in_executor(executor, init_webhook_db)
+            results['webhook'] = True
+        except Exception as e:
+            logger.error(f"Webhook init failed: {e}")
+            results['webhook'] = False
+    
+    async def init_custom_strategy():
+        """Initialize custom strategy database"""
+        try:
+            from Strategies.customStrategy.database import CustomStrategyDatabase
+            loop = asyncio.get_event_loop()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                await loop.run_in_executor(
+                    executor, 
+                    lambda: CustomStrategyDatabase()
+                )
+            results['custom_strategy'] = True
+        except Exception as e:
+            logger.error(f"Custom strategy init failed: {e}")
+            results['custom_strategy'] = False
+    
+    async def init_single_sign_on():
+        """Initialize SingleSignOn service"""
+        try:
+            from Databases.app_data_db_connection import create_connection as init_sso_db
+            loop = asyncio.get_event_loop()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                sso_init = await loop.run_in_executor(executor, init_sso_db)
+            results['single_sign_on'] = bool(sso_init)
+        except Exception as e:
+            logger.error(f"SingleSignOn init failed: {e}")
+            results['single_sign_on'] = False
+    
+    # Run all database initializations in parallel
+    await asyncio.gather(
+        init_subscription(),
+        init_webhook(),
+        init_custom_strategy(),
+        init_single_sign_on(),
+        return_exceptions=True
+    )
+    
+    return results
 
+async def _init_backtesters_lazy():
+    """Lazy initialize backtesters in background (non-blocking for startup)"""
+    global stock_backtester_initialized, etf_backtester_initialized
+    
+    init_stock, init_etf, _, _ = _lazy_import_backtesters()
+    
+    if not init_stock or not init_etf:
+        return
+    
+    async def init_stock_backtester():
+        """Initialize stock backtester in background"""
+        try:
+            loop = asyncio.get_event_loop()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                result = await loop.run_in_executor(executor, init_stock)
+            global stock_backtester_initialized
+            stock_backtester_initialized = bool(result)
+        except Exception as e:
+            logger.error(f"Stock backtester init failed: {e}")
+            stock_backtester_initialized = False
+    
+    async def init_etf_backtester():
+        """Initialize ETF backtester in background"""
+        try:
+            loop = asyncio.get_event_loop()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                result = await loop.run_in_executor(executor, init_etf)
+            global etf_backtester_initialized
+            etf_backtester_initialized = bool(result)
+        except Exception as e:
+            logger.error(f"ETF backtester init failed: {e}")
+            etf_backtester_initialized = False
+    
+    # Start backtesters in background (non-blocking)
+    asyncio.create_task(init_stock_backtester())
+    asyncio.create_task(init_etf_backtester())
 
-
+# =========================
+# LIFESPAN CONTEXT MANAGER
+# =========================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan context manager for startup/shutdown events"""
-    # Startup
-    logger.info(f"Starting {chatai1_new_settings.APP_NAME} v{chatai1_new_settings.APP_VERSION}")
-    logger.info(f"Router model: {chatai1_new_settings.ROUTER_MODEL_NAME}")
-    logger.info(f"Answer model: {chatai1_new_settings.ANSWER_MODEL_NAME}")
-    logger.info(f"RAG service: {chatai1_new_settings.RAG_SERVICE_BASE_URL}")
-
-    # Initialize database
-    await init_db()
-    logger.info("Database initialized")
-
+    """Optimized lifespan with async parallel initialization"""
+    global subscription_service_initialized, webhook_service_initialized
+    global custom_strategy_service_initialized, single_sign_on_service_initialized
+    
+    # Initialize ChatAI database (required for chat routes)
+    chatai1_new_settings, init_db, close_db, chatai1_new = _lazy_import_chatai()
+    if init_db:
+        try:
+            await init_db()
+        except Exception as e:
+            logger.error(f"ChatAI database init failed: {e}")
+    
+    # Initialize all database services in parallel
+    db_results = await _init_database_services()
+    
+    subscription_service_initialized = db_results['subscription']
+    webhook_service_initialized = db_results['webhook']
+    custom_strategy_service_initialized = db_results['custom_strategy']
+    single_sign_on_service_initialized = db_results['single_sign_on']
+    
+    # Start backtesters in background (non-blocking)
+    await _init_backtesters_lazy()
+    
     yield
-
+    
     # Shutdown
-    logger.info(f"Shutting down {chatai1_new_settings.APP_NAME}")
-    await close_db()
+    if close_db:
+        try:
+            await close_db()
+        except Exception as e:
+            logger.error(f"ChatAI database close failed: {e}")
 
+# =========================
+# FASTAPI APP CREATION (Fast - no blocking operations)
+# =========================
+app = FastAPI(
+    title="WealthAI1 API",
+    version="1.0.0",
+    lifespan=lifespan,
+    description="High-performance financial backtesting and trading strategy API"
+)
 
-# Initialize backtesters (before app creation to ensure variables are defined)
-try:
-    stock_backtester_initialized = initialize_stock_backtester()
-    print("[SUCCESS] Stock backtester initialized successfully")
-except Exception as e:
-    stock_backtester_initialized = False
-    print(f"[ERROR] Failed to initialize stock backtester: {e}")
-
-try:
-    etf_backtester_initialized = initialize_etf_backtester()
-    print("[SUCCESS] ETF backtester initialized successfully")
-except Exception as e:
-    etf_backtester_initialized = False
-    print(f"[ERROR] Failed to initialize ETF backtester: {e}")
-
-# Create main FastAPI app
-app = FastAPI(title="WealthAI1 API", version="1.0.0", lifespan=lifespan)
-
-# Add CORS middleware
+# =========================
+# CORS MIDDLEWARE
+# =========================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",  # Local development
-        "http://127.0.0.1:3000",  # Local development alternative
-        "https://your-cloudfront-domain.cloudfront.net",  # Your CloudFront domain
-        "https://wealthai1.in",  # Your custom domain
-        "https://www.wealthai1.in",  # www subdomain
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://wealthai1.in",
+        "https://www.wealthai1.in",
         "https://trade.wealthai1.in",
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Initialize subscription service
+# =========================
+# ROUTE IMPORTS (Lazy - only import routers, not initialization)
+# =========================
 try:
-    subscription_manager.init_database()
-    subscription_service_initialized = True
-    print("[SUCCESS] Subscription service initialized successfully")
+    from Strategies.Rotation_Stocks.api.stock_routes import stock_router
+    from Strategies.Rotation_ETF.api.etf_routes import etf_router
+    from Strategies.RS_Stocks.api import router as rs_router
+    from Strategies.RS_ETF.api import router as rs_etf_router
+    from Strategies.customStrategy.api import custom_strategy_router
+    from Strategies.SuperTrend.api.routes import router as supertrend_router
+    from Services.webhook.webhook_api import router as webhook_router
+    from Services.Subscription.api.subscription import subscription_router
+    from Services.Subscription.api.google_oauth_api import google_oauth_router
+    from Services.Deployments_helper.deployment_helper import deployment_router
+    from Services.SingleSignOn import router as single_sign_on_router
+    
+    # ChatAI router (lazy import)
+    chatai1_new_settings, _, _, chatai1_new = _lazy_import_chatai()
 except Exception as e:
-    subscription_service_initialized = False
-    print(f"[ERROR] Failed to initialize subscription service: {e}")
+    logger.error(f"Router import failed: {e}")
+    raise
 
-# Initialize webhook database
-try:
-    init_webhook_db()
-    webhook_service_initialized = True
-    print("[SUCCESS] Webhook database initialized successfully")
-except Exception as e:
-    webhook_service_initialized = False
-    print(f"[ERROR] Failed to initialize webhook database: {e}")
-
-# Initialize custom strategy database
-try:
-    custom_strategy_db = CustomStrategyDatabase()  # Uses PostgreSQL, db_path parameter ignored
-    custom_strategy_service_initialized = True
-    print("[SUCCESS] Custom strategy database initialized successfully")
-except Exception as e:
-    custom_strategy_service_initialized = False
-    print(f"[ERROR] Failed to initialize custom strategy database: {e}")
-
-# Initialize SingleSignOn service
-try:
-    from Databases.app_data_db_connection import create_connection as init_sso_db
-    sso_db_initialized = init_sso_db()
-    single_sign_on_service_initialized = sso_db_initialized
-    if sso_db_initialized:
-        print("[SUCCESS] SingleSignOn service initialized successfully")
-    else:
-        print("[ERROR] Failed to initialize SingleSignOn database connection")
-except Exception as e:
-    single_sign_on_service_initialized = False
-    print(f"[ERROR] Failed to initialize SingleSignOn service: {e}")
-
-
-# Root endpoint
+# =========================
+# CORE ROUTES
+# =========================
 @app.get("/")
 async def root():
+    """Root endpoint - fast response"""
     return {
-        "message": "Unified Rotation Backtester API", 
+        "message": "WealthAI1 API Running ✅",
+        "version": "1.0.0",
         "strategies": ["stock", "etf", "rs-strategy", "custom-strategy", "chat"],
-        "services": ["subscription", "webhook", "single-sign-on", "deployments"]
+        "services": ["subscription", "webhook", "single-sign-on", "deployments"],
+        "status": "operational"
     }
 
-# @app.get("/health_check")
-# async def health_check():
-#     """Health check endpoint to verify API and database status"""
-#     try:
-#         status = {
-#             "api_status_latest": "healthy",
-#             "stock_backtester_initialized": stock_backtester_initialized,
-#             "etf_backtester_initialized": etf_backtester_initialized,
-#             "rs_strategy_initialized": True,  # RS strategy is always available
-#             "custom_strategy_initialized": custom_strategy_service_initialized,
-#             "subscription_service_initialized": subscription_service_initialized,
-#             "webhook_service_initialized": webhook_service_initialized,
-#             "single_sign_on_service_initialized": single_sign_on_service_initialized,
-#             "stock_database_available": stock_backtester_initialized,
-#             "etf_database_available": etf_backtester_initialized,
-#             "rs_strategy_database_available": True,
-#             "custom_strategy_database_available": custom_strategy_service_initialized,
-#             "subscription_database_available": subscription_service_initialized,
-#             "webhook_database_available": True,
-#             "stock_count": 0,
-#             "etf_count": 0,
-#         }
-        
-#         return status
-#     except Exception as e:
-#         return {
-#             "api_status": "error",
-#             "error": str(e),
-#             "stock_backtester_initialized": stock_backtester_initialized,
-#             "etf_backtester_initialized": etf_backtester_initialized,
-#             "rs_strategy_initialized": True,
-#             "custom_strategy_initialized": custom_strategy_service_initialized,
-#             "subscription_service_initialized": subscription_service_initialized,
-#             "webhook_service_initialized": webhook_service_initialized,
-#             "single_sign_on_service_initialized": single_sign_on_service_initialized,
-#         }
+@app.get("/health_check")
+async def health_check():
+    """Health check endpoint - shows initialization status"""
+    return {
+        "api_status": "healthy",
+        "stock_backtester": "ready" if stock_backtester_initialized else "initializing",
+        "etf_backtester": "ready" if etf_backtester_initialized else "initializing",
+        "services": {
+            "subscription": subscription_service_initialized,
+            "webhook": webhook_service_initialized,
+            "custom_strategy": custom_strategy_service_initialized,
+            "single_sign_on": single_sign_on_service_initialized,
+        }
+    }
 
 @app.get("/favicon.ico")
 async def favicon():
-    """Return a simple favicon to prevent 404 errors"""
-    # Return a minimal 1x1 transparent PNG
+    """Favicon endpoint"""
     favicon_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x00\x00\x02\x00\x01\xe5\x27\xde\xfc\x00\x00\x00\x00IEND\xaeB`\x82'
     return Response(content=favicon_data, media_type="image/x-icon")
 
-
-# Include the routers in the main app
+# =========================
+# INCLUDE ROUTERS
+# =========================
 app.include_router(stock_router)
 app.include_router(etf_router)
 app.include_router(rs_router, prefix="/api/rs-strategy", tags=["RS Strategy"])
 app.include_router(rs_etf_router, prefix="/api/rs-etf-strategy", tags=["RS ETF Strategy"])
 app.include_router(custom_strategy_router)
-app.include_router(chatai1_new.router, prefix="/api")
 app.include_router(webhook_router)
 app.include_router(subscription_router)
 app.include_router(google_oauth_router)
 app.include_router(deployment_router)
 app.include_router(single_sign_on_router)
 
-# Remove SuperTrend root route to avoid duplicate "/" definition
-supertrend_router.routes = [
-    route for route in supertrend_router.routes
-    if not (isinstance(route, APIRoute) and route.path == "/")
-]
-app.include_router(supertrend_router, tags=["SuperTrend"])
+# ChatAI router (only if available)
+if chatai1_new and hasattr(chatai1_new, 'router'):
+    app.include_router(chatai1_new.router, prefix="/api")
 
+# SuperTrend router (handle duplicate root route)
+try:
+    supertrend_router.routes = [
+        route for route in supertrend_router.routes
+        if not (isinstance(route, APIRoute) and route.path == "/")
+    ]
+    app.include_router(supertrend_router, tags=["SuperTrend"])
+except Exception as e:
+    logger.error(f"SuperTrend router failed: {e}")
 
-# ============================================================================
-# EXECUTION API ENDPOINTS
-# ============================================================================
-
-
+# =========================
+# CHATAI ENDPOINTS (Fallback if router not available)
+# =========================
 @app.get("/api/chat")
-async def root():
-    """Root endpoint"""
-    return {
-        "app": chatai1_new_settings.APP_NAME,
-        "version": chatai1_new_settings.APP_VERSION,
-        "status": "running"
-    }
+async def chat_root():
+    """ChatAI root endpoint"""
+    if chatai1_new_settings:
+        return {
+            "app": chatai1_new_settings.APP_NAME,
+            "version": chatai1_new_settings.APP_VERSION,
+            "status": "running"
+        }
+    return {"status": "chat_service_unavailable"}
 
-@app.get("/api/chat/health")      
-async def health():
-    """Health check endpoint"""
+@app.get("/api/chat/health")
+async def chat_health():
+    """ChatAI health endpoint"""
     return {"status": "healthy"}
 
+# =========================
+# LOCAL RUN
+# =========================
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        log_level="error",  # Suppress uvicorn access logs
+        access_log=False    # Disable access log completely
+    )

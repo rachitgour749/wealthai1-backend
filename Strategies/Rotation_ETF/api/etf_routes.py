@@ -15,7 +15,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 # Import the ETF backtester
 from ..services.backtester import ETFRotationBacktester
-from ..services.signal_generator import LiveSignalGenerator
+# Signal generator removed - not needed
+LiveSignalGenerator = None
 from ..etf_schemas import (
     BacktestRequest, ETFMetadata, BacktestResult, BacktestResults,
     SaveETFStrategyRequest, SavedETFStrategy

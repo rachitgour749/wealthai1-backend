@@ -16,12 +16,8 @@ import sys
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
-# Import RS strategy modules
-try:
-    from .rs_eod_data_fetcher import RSEODDataFetcher
-except ImportError as e:
-    print(f"Warning: Could not import RS strategy modules: {e}")
-    RSEODDataFetcher = None
+# RS EOD Data Fetcher not available for RS_ETF - removed import
+RSEODDataFetcher = None
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

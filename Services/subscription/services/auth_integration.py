@@ -5,12 +5,10 @@ Handles automatic trial creation when users login via Google OAuth
 
 from fastapi import HTTPException, Depends, Header
 from typing import Optional, Dict, Any
-import jwt
 import logging
-from datetime import datetime, timedelta
 
-from .service import subscription_service
-from .models import SubscriptionRequest, SubscriptionPlan, SubscriptionStatus
+from .subscription_service import subscription_service
+from Services.Subscription.subscription_schemas import SubscriptionRequest, SubscriptionPlan, SubscriptionStatus
 
 logger = logging.getLogger(__name__)
 
@@ -98,14 +96,15 @@ class GoogleAuthIntegration:
                     plan=SubscriptionPlan.FREE
                 )
                 
-                new_subscription = await self.service.create_subscription(subscription_request)
+                await self.service.create_subscription(subscription_request)
+                refreshed_status = await self.service.get_subscription_status(user_email)
                 
                 return {
                     "user_email": user_email,
                     "user_name": user_name,
-                    "subscription_status": new_subscription,
-                    "trial_created": False,  # No trial created on first sign-in
-                    "message": "Welcome! Your subscription is now active."
+                    "subscription_status": refreshed_status,
+                    "trial_created": False,
+                    "message": "Welcome! Your profile has been created."
                 }
                 
         except HTTPException:

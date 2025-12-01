@@ -1,2 +1,3 @@
 from .backtester import ETFRotationBacktester
-from .signal_generator import LiveSignalGenerator
+# Signal generator removed - not needed
+LiveSignalGenerator = None

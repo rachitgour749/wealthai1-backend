@@ -73,7 +73,7 @@ def backfill_product_subscriptions():
             
             # Map numeric prod_code to ProductCode string
             prod_code_mapping = {
-                1: "TRADAI",
+                1: "TRADEAI",
                 2: "MARKETAI",
                 3: "CHATAI",
                 4: "AUTOMATIONAI"

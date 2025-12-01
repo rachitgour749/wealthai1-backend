@@ -1,7 +1,10 @@
+# Services/Subscription/subscription_schemas.py
+"""Pydantic models for request/response validation"""
 from pydantic import BaseModel, Field, validator
 from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
+
 
 class SubscriptionStatus(str, Enum):
     """Subscription status enumeration"""
@@ -11,6 +14,7 @@ class SubscriptionStatus(str, Enum):
     CANCELLED = "cancelled"
     SUSPENDED = "suspended"
 
+
 class SubscriptionPlan(str, Enum):
     """Subscription plan enumeration"""
     FREE = "free"
@@ -18,18 +22,21 @@ class SubscriptionPlan(str, Enum):
     PREMIUM = "premium"
     ENTERPRISE = "enterprise"
 
+
 class ProductCode(str, Enum):
     """Product code enumeration"""
     MARKETAI = "MARKETAI"
     CHATAI = "CHATAI"
-    TRADAI = "TRADAI"
+    TRADAI = "TRADEAI"
     AUTOMATIONAI = "AUTOMATIONAI"
+
 
 class SubscriptionType(str, Enum):
     """Subscription type enumeration"""
     TRIAL = "trial"
     PAID = "paid"
     BUNDLE = "bundle"
+
 
 class SubscriptionRequest(BaseModel):
     """Request model for creating subscription"""
@@ -43,6 +50,7 @@ class SubscriptionRequest(BaseModel):
             raise ValueError('Invalid email format')
         return v.lower()
 
+
 class SubscriptionResponse(BaseModel):
     """Response model for subscription"""
     id: str
@@ -50,8 +58,8 @@ class SubscriptionResponse(BaseModel):
     user_name: Optional[str]
     plan: SubscriptionPlan
     status: SubscriptionStatus
-    trial_start_date: Optional[datetime] = None  # Only set when is_trial=True
-    trial_end_date: Optional[datetime] = None  # Only set when is_trial=True
+    trial_start_date: Optional[datetime] = None
+    trial_end_date: Optional[datetime] = None
     subscription_start_date: Optional[datetime] = None
     subscription_end_date: Optional[datetime] = None
     created_at: datetime
@@ -59,18 +67,20 @@ class SubscriptionResponse(BaseModel):
     is_trial_active: bool
     days_remaining: int
 
+
 class SubscriptionStatusResponse(BaseModel):
     """Response model for subscription status check"""
     user_email: str
-    has_subscription: bool = True  # Indicates if subscription exists in database
+    has_subscription: bool = True
     status: SubscriptionStatus
     plan: SubscriptionPlan
-    plan_code: Optional[str] = None  # Plan code from database (as string)
+    plan_code: Optional[str] = None
     is_trial_active: bool
     trial_end_date: Optional[datetime] = None
     subscription_end_date: Optional[datetime] = None
     days_remaining: int
     can_access_premium: bool
+
 
 class TrialExtensionRequest(BaseModel):
     """Request model for extending trial period"""
@@ -83,6 +93,7 @@ class TrialExtensionRequest(BaseModel):
             raise ValueError('Invalid email format')
         return v.lower()
 
+
 class SubscriptionUpgradeRequest(BaseModel):
     """Request model for upgrading subscription"""
     user_email: str = Field(..., description="User email address")
@@ -94,6 +105,7 @@ class SubscriptionUpgradeRequest(BaseModel):
             raise ValueError('Invalid email format')
         return v.lower()
 
+
 class SubscriptionAnalytics(BaseModel):
     """Subscription analytics model"""
     total_users: int
@@ -103,6 +115,7 @@ class SubscriptionAnalytics(BaseModel):
     trial_conversion_rate: float
     average_trial_duration: float
     plan_distribution: Dict[str, int]
+
 
 # Product-based subscription models
 class ProductSubscriptionRequest(BaseModel):
@@ -118,6 +131,7 @@ class ProductSubscriptionRequest(BaseModel):
             raise ValueError('Invalid email format')
         return v.lower()
 
+
 class ProductAccessResponse(BaseModel):
     """Response model for product access check"""
     user_email: str
@@ -129,6 +143,7 @@ class ProductAccessResponse(BaseModel):
     paid_end_date: Optional[datetime] = None
     status: SubscriptionStatus
     plan: Optional[str] = None
+
 
 class ProductSubscriptionResponse(BaseModel):
     """Response model for product subscription"""
@@ -153,6 +168,7 @@ class ProductSubscriptionResponse(BaseModel):
     total_tokens: int = 0
     used_tokens: int = 0
 
+
 class BundleSubscriptionRequest(BaseModel):
     """Request model for bundle subscription"""
     user_email: str = Field(..., description="User email address")
@@ -171,6 +187,7 @@ class BundleSubscriptionRequest(BaseModel):
             raise ValueError('Bundle must include at least 2 products')
         return v
 
+
 class ProductUpgradeRequest(BaseModel):
     """Request model for upgrading product subscription"""
     user_email: str = Field(..., description="User email address")
@@ -183,6 +200,7 @@ class ProductUpgradeRequest(BaseModel):
             raise ValueError('Invalid email format')
         return v.lower()
 
+
 class AllProductsStatusResponse(BaseModel):
     """Response model for all products status"""
     user_email: str
@@ -190,6 +208,7 @@ class AllProductsStatusResponse(BaseModel):
     total_active_products: int
     has_bundle: bool
     bundle_products: List[ProductCode] = []
+
 
 # New models for Product Trial Activation API
 class ProductTrialActivationRequest(BaseModel):
@@ -210,6 +229,7 @@ class ProductTrialActivationRequest(BaseModel):
             raise ValueError('Plan code must be a positive number')
         return v
 
+
 class ProductTrialActivationResponse(BaseModel):
     """Response model for product trial activation"""
     user_email: str
@@ -223,3 +243,30 @@ class ProductTrialActivationResponse(BaseModel):
             datetime: lambda v: v.isoformat()
         }
 
+
+class UserDetailsResponse(BaseModel):
+    """Response model for user details"""
+    user_email: str
+    user_name: Optional[str]
+    phone_no: Optional[str] = None
+    status: str  # TRIAL/PAID
+    created_at: datetime
+    updated_at: datetime
+
+
+class ProductManagerRecord(BaseModel):
+    """Response model for product entries stored in product_manager"""
+    id: str
+    user_email: str
+    product_code: ProductCode
+    product_code_label: str
+    subscription_type: SubscriptionType
+    status: SubscriptionStatus
+    subscription_start_date: Optional[datetime]
+    subscription_end_date: Optional[datetime]
+    chatai_key: Optional[str] = None
+    total_token: Optional[str] = None
+    used_token: Optional[str] = None
+    remaining_token: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime

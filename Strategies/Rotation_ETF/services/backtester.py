@@ -186,7 +186,7 @@ class ETFRotationBacktester(RotationStrategy):
 
                 if metadata_count > 0:
                     # Load from metadata table using raw SQL (to avoid ORM model mismatch)
-                    print(f"[INFO] Loading ETF metadata from etf_metadata table ({metadata_count} records)")
+                    # Loading ETF metadata (silent)
 
                     # First, get the actual column names from the table
                     columns_result = session.execute(text("""
@@ -197,7 +197,7 @@ class ETFRotationBacktester(RotationStrategy):
                         ORDER BY ordinal_position
                     """))
                     column_names = [row[0] for row in columns_result.fetchall()]
-                    print(f"[INFO] etf_metadata table columns: {column_names}")
+                    # Metadata columns retrieved (silent)
 
                     # Build query based on actual columns
                     # Map common column name variations
@@ -224,7 +224,7 @@ class ETFRotationBacktester(RotationStrategy):
                             source_col = col
 
                     if not symbol_col:
-                        print("[ERROR] Could not find symbol column in etf_metadata table")
+                        logger.error("Could not find symbol column in etf_metadata table")
                         # Fall back to calculating from data table
                     else:
                         # Build SELECT query with available columns
@@ -241,12 +241,12 @@ class ETFRotationBacktester(RotationStrategy):
                             select_cols.append(f"{source_col} as data_source")
 
                         query_str = f"SELECT {', '.join(select_cols)} FROM etf_metadata"
-                        print(f"[INFO] Querying etf_metadata: {query_str}")
+                        # Querying metadata (silent)
 
                         try:
                             metadata_result = session.execute(text(query_str))
                             metadata_rows = metadata_result.fetchall()
-                            print(f"[INFO] Retrieved {len(metadata_rows)} rows from etf_metadata table")
+                            # Metadata rows retrieved (silent)
 
                             metadata = {}
                             for row in metadata_rows:
@@ -282,26 +282,20 @@ class ETFRotationBacktester(RotationStrategy):
                                             idx] else 'database'
 
                                     metadata[symbol] = meta_dict
-                                    if self._verbose:
-                                        print(f"[DEBUG] Loaded metadata for {symbol}: {meta_dict}")
                                 except Exception as row_error:
-                                    print(f"[ERROR] Error processing metadata row: {row_error}, row: {row}")
-                                    import traceback
-                                    print(f"[ERROR] Traceback: {traceback.format_exc()}")
+                                    # Skip invalid rows silently
                                     continue
 
-                            print(f"[INFO] Successfully loaded {len(metadata)} ETFs from etf_metadata table")
+                            # Metadata loaded successfully (silent - no log needed)
                             if len(metadata) > 0:
-                                print(f"[INFO] Sample symbols loaded: {list(metadata.keys())[:10]}")
                                 return metadata
                             else:
                                 if self._verbose:
                                     print(
                                         "[DEBUG] etf_metadata table has records but couldn't parse them, falling back to calculating from data table")
                         except Exception as query_error:
-                            print(f"[ERROR] Error querying etf_metadata table: {query_error}")
-                            import traceback
-                            print(f"[ERROR] Traceback: {traceback.format_exc()}")
+                            # Query error - will fallback to data table calculation
+                            pass
                             # Fall back to calculating from data table
                 else:
                     if self._verbose:

@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 
 from Databases.app_data_db_connection import create_connection, get_session
-from Services.subscription.database import ProductSubscription, Subscription
-from Services.subscription.models import ProductCode, SubscriptionStatus
+from Services.Subscription.subscription_models import ProductManager, Subscription
+from Services.Subscription.subscription_schemas import ProductCode, SubscriptionStatus
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +109,7 @@ def _is_subscription_active(subscription) -> bool:
 @router.get("/{userid}")
 async def single_sign_on(userid: str) -> Dict[str, Any]:
     """
-    Validate user access for TRADAI product and return subscription details in the requested format.
+    Validate user access for TRADEAI product and return subscription details in the requested format.
     """
     session: Session | None = None
 
@@ -122,59 +122,23 @@ async def single_sign_on(userid: str) -> Dict[str, Any]:
             )
         user_email = userid.lower()
 
-        # Get TRADAI product subscription using raw SQL to avoid column mismatch issues
-        # Query only the columns that exist in the database (avoiding trial_start_date, trial_end_date, paid_start_date, paid_end_date)
-        query = text("""
-            SELECT id, user_email, product_code::text, subscription_type::text, status::text, plan_code,
-                   COALESCE(subscription_start_date, NULL) as subscription_start_date,
-                   COALESCE(subscription_end_date, NULL) as subscription_end_date,
-                   payment_id, payment_status, bundle_id, is_bundle_subscription,
-                   chatai_key, total_tokens, used_tokens, created_at, updated_at, product_metadata
-            FROM product_subscriptions
-            WHERE user_email = :user_email AND product_code = :product_code
-            ORDER BY updated_at DESC
-            LIMIT 1
-        """)
-        
-        result = session.execute(query, {
-            "user_email": user_email,
-            "product_code": ProductCode.TRADAI.value
-        }).fetchone()
-        
-        if not result:
-            raise HTTPException(
-                status_code=404,
-                detail="TRADAI product subscription not found for the provided user",
+        # ------------------------------------------------------------------
+        # Validate TRADEAI access using product_manager table
+        # ------------------------------------------------------------------
+        trad_ai_subscription = (
+            session.query(ProductManager)
+            .filter(
+                ProductManager.user_email == user_email,
+                ProductManager.product_code == ProductCode.TRADAI.value,  # Compare with string value
             )
-        
-        # Create a simple object to hold the subscription data
-        class SubscriptionData:
-            def __init__(self, row):
-                self.id = row[0]
-                self.user_email = row[1]
-                self.product_code = row[2]
-                self.subscription_type = row[3]
-                self.status = row[4]
-                self.plan_code = row[5]
-                self.subscription_start_date = row[6]
-                self.subscription_end_date = row[7]
-                self.payment_id = row[8]
-                self.payment_status = row[9]
-                self.bundle_id = row[10]
-                self.is_bundle_subscription = row[11]
-                self.chatai_key = row[12]
-                self.total_tokens = row[13]
-                self.used_tokens = row[14]
-                self.created_at = row[15]
-                self.updated_at = row[16]
-                self.product_metadata = row[17]
-        
-        trad_ai_subscription = SubscriptionData(result)
+            .order_by(ProductManager.updated_at.desc())
+            .first()
+        )
 
         if not trad_ai_subscription:
             raise HTTPException(
                 status_code=404,
-                detail="TRADAI product subscription not found for the provided user",
+                detail="TRADEAI product subscription not found for the provided user",
             )
 
         # Get user name from Subscription table
@@ -192,29 +156,18 @@ async def single_sign_on(userid: str) -> Dict[str, Any]:
             email_parts = user_email.split("@")[0].split(".")
             user_name = " ".join(word.capitalize() for word in email_parts)
         
-        # Get plan name
-        plan_name = _get_plan_name(trad_ai_subscription.plan_code, session)
+        # For product_manager-based flow, plan name is not stored; use a simple label
+        plan_name = "tradeai"
         
-        # Get subscription dates from simplified date fields
+        # Get subscription dates from ProductManager
         subscription_start_date = trad_ai_subscription.subscription_start_date
         subscription_end_date = trad_ai_subscription.subscription_end_date
         
         # Check if subscription is active
         is_active = _is_subscription_active(trad_ai_subscription)
         
-        # Get allowed_accounts from product_metadata or set default
+        # product_manager does not carry product_metadata; keep a fixed default
         allowed_accounts = 10  # Default value
-        try:
-            if trad_ai_subscription.product_metadata:
-                if isinstance(trad_ai_subscription.product_metadata, dict):
-                    allowed_accounts = trad_ai_subscription.product_metadata.get("allowed_accounts", 10)
-                elif isinstance(trad_ai_subscription.product_metadata, str):
-                    # Try to parse JSON string
-                    metadata_dict = json.loads(trad_ai_subscription.product_metadata)
-                    allowed_accounts = metadata_dict.get("allowed_accounts", 10)
-        except Exception as exc:
-            logger.warning("Error parsing product_metadata for allowed_accounts: %s", exc)
-            # Keep default value of 10
         
         # Build response in the requested format
         response_payload = {

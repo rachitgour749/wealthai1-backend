@@ -24,12 +24,12 @@ except ImportError:
         class Request:
             pass
 import os
-import json
 
-from .service import subscription_service
-from .models import (
-    SubscriptionRequest, SubscriptionResponse, SubscriptionStatusResponse,
-    SubscriptionPlan, SubscriptionStatus
+from Services.Subscription.services.subscription_service import subscription_service
+from Services.Subscription.subscription_schemas import (
+    SubscriptionRequest,
+    SubscriptionPlan,
+    SubscriptionStatus,
 )
 
 # Create router
@@ -147,7 +147,7 @@ class GoogleOAuthHandler:
             logger.error(f"Error verifying Google token: {str(e)}")
             raise HTTPException(status_code=401, detail=f"Invalid Google token: {str(e)}")
     
-    async def handle_google_login(self, token: str) -> Dict[str, Any]:
+    async def handle_google_login(self, token: str, phone_no: str = None) -> Dict[str, Any]:
         """Handle Google login and manage subscription"""
         try:
             # Verify Google token and extract user info
@@ -158,35 +158,26 @@ class GoogleOAuthHandler:
             logger.info(f"Processing Google login for user: {user_email}")
             
             # Check if user already has a subscription in database
-            existing_subscription = self.service.db_manager.get_subscription_by_email(user_email)
-            user_exists = existing_subscription is not None
+            # We use get_user_details to check for existence in user_details table
+            existing_user = await self.service.get_user_details(user_email)
             
-            if user_exists:
-                # Existing user - get their current subscription status
+            if existing_user:
+                # Existing user - return details
                 logger.info(f"Existing user {user_email} logged in")
                 
-                existing_status = await self.service.get_subscription_status(user_email)
-                
-                # Check subscription status
-                if existing_status.status == SubscriptionStatus.TRIAL and existing_status.is_trial_active:
-                    message = f"Welcome back! Your trial expires in {existing_status.days_remaining} days."
-                elif existing_status.status == SubscriptionStatus.ACTIVE:
-                    message = f"Welcome back! Your subscription is active."
-                elif existing_status.status in [SubscriptionStatus.EXPIRED, SubscriptionStatus.CANCELLED]:
-                    message = "Your trial/subscription has expired. Please subscribe to continue using premium features."
-                else:
-                    message = "Welcome back!"
-                
                 return {
-                    "user_info": user_info,
-                    "subscription_status": serialize_datetime_dict(existing_status),
+                    "user_email": existing_user.user_email,
+                    "user_name": existing_user.user_name,
+                    "created_at": existing_user.created_at.isoformat() if existing_user.created_at else None,
+                    "updated_at": existing_user.updated_at.isoformat() if existing_user.updated_at else None,
+                    "status": existing_user.status,
+                    "phone_no": existing_user.phone_no,
                     "is_new_user": False,
-                    "trial_created": False,
-                    "message": message
+                    "message": "Welcome back!"
                 }
             else:
-                # New user - create subscription (not trial)
-                logger.info(f"Creating subscription for new user (first-time sign-in): {user_email}")
+                # New user - create subscription (trial)
+                logger.info(f"Creating new user: {user_email}")
                 
                 subscription_request = SubscriptionRequest(
                     user_email=user_email,
@@ -194,14 +185,19 @@ class GoogleOAuthHandler:
                     plan=SubscriptionPlan.FREE
                 )
                 
-                new_subscription = await self.service.create_subscription(subscription_request)
+                # create_subscription now handles creating UserDetails and setting status/phone_no
+                # We pass phone_no to it
+                new_user = await self.service.create_subscription(subscription_request, phone_no=phone_no)
                 
                 return {
-                    "user_info": user_info,
-                    "subscription_status": serialize_datetime_dict(new_subscription),
+                    "user_email": new_user.user_email,
+                    "user_name": new_user.user_name,
+                    "created_at": new_user.created_at.isoformat() if new_user.created_at else None,
+                    "updated_at": new_user.updated_at.isoformat() if new_user.updated_at else None,
+                    "status": new_user.status,
+                    "phone_no": new_user.phone_no,
                     "is_new_user": True,
-                    "trial_created": False,  # No trial created on first sign-in
-                    "message": "Welcome to WealthAI! Your subscription is now active."
+                    "message": "Welcome to WealthAI! Your account has been created."
                 }
                 
         except HTTPException:
@@ -217,14 +213,16 @@ google_oauth_handler = GoogleOAuthHandler()
 async def google_login(request: Dict[str, Any]):
     """
     Handle Google OAuth login and subscription management
-    Expected request: {"token": "google_oauth_token"}
+    Expected request: {"token": "google_oauth_token", "phone_no": "optional_phone_number"}
     """
     try:
         token = request.get("token")
+        phone_no = request.get("phone_no")
+        
         if not token:
             raise HTTPException(status_code=400, detail="Google token is required")
         
-        result = await google_oauth_handler.handle_google_login(token)
+        result = await google_oauth_handler.handle_google_login(token, phone_no)
         
         return JSONResponse(content={
             "success": True,
@@ -235,68 +233,7 @@ async def google_login(request: Dict[str, Any]):
         raise
     except Exception as e:
         logger.error(f"Error in Google login endpoint: {str(e)}")
-        logger.error(f"Error type: {type(e)}")
-        import traceback
-        logger.error(f"Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
-
-@google_oauth_router.get("/subscription-status")
-async def get_user_subscription_status(authorization: Optional[str] = Header(None)):
-    """Get subscription status for authenticated user"""
-    try:
-        if not authorization or not authorization.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Authorization header required")
-        
-        token = authorization.replace("Bearer ", "")
-        user_info = google_oauth_handler.verify_google_token(token)
-        user_email = user_info["email"]
-        
-        subscription_status = await subscription_service.get_subscription_status(user_email)
-        
-        return JSONResponse(content={
-            "success": True,
-            "data": {
-                "user_info": user_info,
-                "subscription_status": serialize_datetime_dict(subscription_status)
-            }
-        })
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting subscription status: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to get subscription status: {str(e)}")
-
-@google_oauth_router.post("/check-access")
-async def check_user_access(
-    request: Dict[str, Any],
-    authorization: Optional[str] = Header(None)
-):
-    """
-    Check if user has access to specific features
-    Expected request: {"feature": "premium"}
-    """
-    try:
-        if not authorization or not authorization.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Authorization header required")
-        
-        token = authorization.replace("Bearer ", "")
-        user_info = google_oauth_handler.verify_google_token(token)
-        user_email = user_info["email"]
-        
-        feature = request.get("feature", "premium")
-        access_info = await subscription_service.check_access_permission(user_email, feature)
-        
-        return JSONResponse(content={
-            "success": True,
-            "data": access_info
-        })
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error checking access: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to check access: {str(e)}")
 
 @google_oauth_router.get("/user-info")
 async def get_user_info(authorization: Optional[str] = Header(None)):
@@ -307,10 +244,24 @@ async def get_user_info(authorization: Optional[str] = Header(None)):
         
         token = authorization.replace("Bearer ", "")
         user_info = google_oauth_handler.verify_google_token(token)
+        user_email = user_info["email"]
         
+        # Get details from database
+        user_details = await subscription_service.get_user_details(user_email)
+        
+        if not user_details:
+             raise HTTPException(status_code=404, detail="User not found")
+
         return JSONResponse(content={
             "success": True,
-            "data": {"user_info": user_info}
+            "data": {
+                "user_email": user_details.user_email,
+                "user_name": user_details.user_name,
+                "created_at": user_details.created_at.isoformat() if user_details.created_at else None,
+                "updated_at": user_details.updated_at.isoformat() if user_details.updated_at else None,
+                "status": user_details.status,
+                "phone_no": user_details.phone_no
+            }
         })
         
     except HTTPException:
@@ -336,3 +287,4 @@ async def health_check():
             "success": False,
             "error": str(e)
         }, status_code=500)
+
