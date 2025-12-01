@@ -1,11 +1,11 @@
 # Services/Subscription/__init__.py
 """Subscription module for WealthAI1 - Refactored to match ChatAI1 structure"""
 
-# Export main router
-from Services.Subscription.api.subscription import subscription_router
+# Export main router (using relative imports for case-insensitivity)
+from .api.subscription import subscription_router
 
 # Export commonly used schemas
-from Services.Subscription.subscription_schemas import (
+from .subscription_schemas import (
     ProductCode,
     SubscriptionStatus,
     SubscriptionPlan,
@@ -15,7 +15,7 @@ from Services.Subscription.subscription_schemas import (
 )
 
 # Export primary service
-from Services.Subscription.services.subscription_service import subscription_service
+from .services.subscription_service import subscription_service
 
 __all__ = [
     "subscription_router",

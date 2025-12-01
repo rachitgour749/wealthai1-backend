@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, Integer, DateTime, Text, Boolean, Enum as
 from sqlalchemy.sql import func
 from datetime import datetime
 from Databases.app_data_db_connection import Base
-from Services.Subscription.subscription_schemas import SubscriptionStatus, SubscriptionPlan, ProductCode, SubscriptionType
+from .subscription_schemas import SubscriptionStatus, SubscriptionPlan, ProductCode, SubscriptionType
 
 
 class UserDetails(Base):

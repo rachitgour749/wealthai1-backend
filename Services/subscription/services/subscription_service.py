@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from Services.Subscription.database import subscription_manager, normalize_status
-from Services.Subscription.subscription_schemas import (
+from ..database import subscription_manager, normalize_status
+from ..subscription_schemas import (
     SubscriptionRequest,
     SubscriptionStatusResponse,
     SubscriptionStatus,

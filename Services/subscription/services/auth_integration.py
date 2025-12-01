@@ -8,7 +8,7 @@ from typing import Optional, Dict, Any
 import logging
 
 from .subscription_service import subscription_service
-from Services.Subscription.subscription_schemas import SubscriptionRequest, SubscriptionPlan, SubscriptionStatus
+from ..subscription_schemas import SubscriptionRequest, SubscriptionPlan, SubscriptionStatus
 
 logger = logging.getLogger(__name__)
 

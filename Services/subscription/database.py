@@ -13,14 +13,14 @@ from Databases.app_data_db_connection import (
     Base as NeonBase,
     init_database as init_neon_database,
 )
-from Services.Subscription.subscription_models import UserDetails, ProductManager
-from Services.Subscription.subscription_schemas import (
+from .subscription_models import UserDetails, ProductManager
+from .subscription_schemas import (
     SubscriptionStatus,
     SubscriptionType,
     ProductCode,
     ProductManagerRecord,
 )
-from Services.Subscription.subscription_config import settings
+from .subscription_config import settings
 
 Base = NeonBase
 

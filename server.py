@@ -180,7 +180,9 @@ async def _init_database_services() -> Dict[str, bool]:
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 await loop.run_in_executor(executor, subscription_manager.init_database)
             results['subscription'] = True
-            logger.info(f"✅ Subscription service initialized successfully")
+            logger.info("=" * 60)
+            logger.info("✅ SUCCESS: Subscription database service initialized!")
+            logger.info("=" * 60)
         except Exception as e:
             logger.error(f"Subscription init failed: {e}")
             import traceback
@@ -404,24 +406,34 @@ try:
     try:
         # Use importlib to import with the actual directory name
         import importlib
+        logger.info(f"Attempting to import Services.{SUBSCRIPTION_DIR_NAME}...")
         subscription_module = importlib.import_module(f'Services.{SUBSCRIPTION_DIR_NAME}')
-        logger.info(f"✅ Successfully imported Services.{SUBSCRIPTION_DIR_NAME}")
+        logger.info(f"✅ Successfully imported Services.{SUBSCRIPTION_DIR_NAME} module")
         
         # Now import the routers using the actual module
+        logger.info(f"Loading routers from Services.{SUBSCRIPTION_DIR_NAME}...")
         subscription_api = importlib.import_module(f'Services.{SUBSCRIPTION_DIR_NAME}.api.subscription')
         google_oauth_api = importlib.import_module(f'Services.{SUBSCRIPTION_DIR_NAME}.api.google_oauth_api')
         
         subscription_router = subscription_api.subscription_router
         google_oauth_router = google_oauth_api.google_oauth_router
         
-        logger.info("✅ Successfully loaded subscription_router and google_oauth_router")
-        logger.info("✅ Subscription endpoints are now available: /api/subscription/* and /api/auth/google-login")
+        logger.info("=" * 60)
+        logger.info("✅ SUCCESS: Subscription routers loaded successfully!")
+        logger.info("✅ subscription_router: LOADED")
+        logger.info("✅ google_oauth_router: LOADED")
+        logger.info("✅ Subscription endpoints available:")
+        logger.info("   - /api/subscription/*")
+        logger.info("   - /api/auth/google-login")
+        logger.info("=" * 60)
         
     except ImportError as e:
-        logger.error(f"Failed to import Services.{SUBSCRIPTION_DIR_NAME}: {e}")
+        logger.error(f"❌ Failed to import Services.{SUBSCRIPTION_DIR_NAME}: {e}")
         logger.error(f"Services directory contents: {os.listdir(SERVICES_DIR) if os.path.exists(SERVICES_DIR) else 'N/A'}")
         logger.error(f"Services/__init__.py exists: {os.path.exists(SERVICES_INIT)}")
         logger.error(f"Python path: {sys.path[:5]}")  # Show first 5 entries
+        import traceback
+        logger.error(f"Full traceback:\n{traceback.format_exc()}")
         raise
     
 except Exception as e:

@@ -4,8 +4,8 @@ from fastapi import APIRouter, HTTPException
 from typing import List
 import logging
 
-from Services.Subscription.services.subscription_service import subscription_service
-from Services.Subscription.subscription_schemas import (
+from ..services.subscription_service import subscription_service
+from ..subscription_schemas import (
     ProductTrialActivationRequest,
     ProductTrialActivationResponse,
     ProductManagerRecord,

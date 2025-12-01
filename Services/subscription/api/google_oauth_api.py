@@ -25,8 +25,8 @@ except ImportError:
             pass
 import os
 
-from Services.Subscription.services.subscription_service import subscription_service
-from Services.Subscription.subscription_schemas import (
+from ..services.subscription_service import subscription_service
+from ..subscription_schemas import (
     SubscriptionRequest,
     SubscriptionPlan,
     SubscriptionStatus,
