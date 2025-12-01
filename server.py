@@ -70,6 +70,24 @@ except ImportError as e:
     logger.error(f"SERVICES_INIT exists: {os.path.exists(SERVICES_INIT)}")
     # Don't raise here - let it fail later with better context
 
+# Helper function to get subscription directory name (case-insensitive)
+def get_subscription_dir_name():
+    """Get the actual subscription directory name (handles case differences)"""
+    if not os.path.exists(SERVICES_DIR):
+        return None
+    services_contents = os.listdir(SERVICES_DIR)
+    for item in services_contents:
+        if item.lower() == 'subscription':
+            return item
+    return None
+
+# Store subscription directory name globally for use in async functions
+SUBSCRIPTION_DIR_NAME = get_subscription_dir_name()
+if SUBSCRIPTION_DIR_NAME:
+    logger.info(f"📦 Detected subscription directory: {SUBSCRIPTION_DIR_NAME}")
+else:
+    logger.warning("⚠️  Subscription directory not found - subscription features will be unavailable")
+
 # Add subdirectories for direct imports (legacy support)
 sys.path.extend([
     os.path.join(BASE_DIR, 'Strategies', 'Rotation_Stocks'),
@@ -149,14 +167,24 @@ async def _init_database_services() -> Dict[str, bool]:
     async def init_subscription():
         """Initialize subscription service"""
         try:
-            from Services.Subscription.database import subscription_manager
+            if not SUBSCRIPTION_DIR_NAME:
+                raise ImportError("Subscription directory not found")
+            
+            # Import using actual directory name
+            import importlib
+            subscription_db = importlib.import_module(f'Services.{SUBSCRIPTION_DIR_NAME}.database')
+            subscription_manager = subscription_db.subscription_manager
+            
             # Run in thread pool to avoid blocking
             loop = asyncio.get_event_loop()
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 await loop.run_in_executor(executor, subscription_manager.init_database)
             results['subscription'] = True
+            logger.info(f"✅ Subscription service initialized successfully")
         except Exception as e:
             logger.error(f"Subscription init failed: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             results['subscription'] = False
     
     async def init_webhook():
@@ -365,30 +393,44 @@ except Exception as e:
 
 # Critical: Subscription routers - provide detailed error info
 try:
+    if not SUBSCRIPTION_DIR_NAME:
+        raise ImportError(f"Subscription directory not found in Services. Available: {os.listdir(SERVICES_DIR) if os.path.exists(SERVICES_DIR) else 'N/A'}")
+    
     # Verify Services package can be imported
     import Services
     logger.info(f"Services package found at: {Services.__file__ if hasattr(Services, '__file__') else 'unknown'}")
     
-    # Try importing Subscription subpackage
+    # Try importing with actual directory name
     try:
-        import Services.Subscription
-        logger.info(f"Services.Subscription package found")
+        # Use importlib to import with the actual directory name
+        import importlib
+        subscription_module = importlib.import_module(f'Services.{SUBSCRIPTION_DIR_NAME}')
+        logger.info(f"✅ Successfully imported Services.{SUBSCRIPTION_DIR_NAME}")
+        
+        # Now import the routers using the actual module
+        subscription_api = importlib.import_module(f'Services.{SUBSCRIPTION_DIR_NAME}.api.subscription')
+        google_oauth_api = importlib.import_module(f'Services.{SUBSCRIPTION_DIR_NAME}.api.google_oauth_api')
+        
+        subscription_router = subscription_api.subscription_router
+        google_oauth_router = google_oauth_api.google_oauth_router
+        
+        logger.info("✅ Successfully loaded subscription_router and google_oauth_router")
+        logger.info("✅ Subscription endpoints are now available: /api/subscription/* and /api/auth/google-login")
+        
     except ImportError as e:
-        logger.error(f"Failed to import Services.Subscription: {e}")
+        logger.error(f"Failed to import Services.{SUBSCRIPTION_DIR_NAME}: {e}")
         logger.error(f"Services directory contents: {os.listdir(SERVICES_DIR) if os.path.exists(SERVICES_DIR) else 'N/A'}")
         logger.error(f"Services/__init__.py exists: {os.path.exists(SERVICES_INIT)}")
         logger.error(f"Python path: {sys.path[:5]}")  # Show first 5 entries
         raise
     
-    from Services.Subscription.api.subscription import subscription_router
-    from Services.Subscription.api.google_oauth_api import google_oauth_router
 except Exception as e:
     logger.error(f"Failed to import Subscription routers: {e}")
     logger.error(f"Error type: {type(e).__name__}")
     import traceback
     logger.error(f"Traceback: {traceback.format_exc()}")
-    # Don't raise here - let the app start without subscription routes if needed
-    # But log it clearly so we can debug
+    subscription_router = None
+    google_oauth_router = None
 
 try:
     from Services.Deployments_helper.deployment_helper import deployment_router

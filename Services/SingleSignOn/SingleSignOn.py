@@ -9,8 +9,32 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 
 from Databases.app_data_db_connection import create_connection, get_session
-from Services.Subscription.subscription_models import ProductManager, Subscription
-from Services.Subscription.subscription_schemas import ProductCode, SubscriptionStatus
+
+# Case-insensitive import for Subscription (handles 'subscription' vs 'Subscription')
+import os
+import sys
+import importlib
+
+# Find the actual subscription directory name
+_services_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)))
+_subscription_dir = None
+if os.path.exists(_services_dir):
+    for item in os.listdir(_services_dir):
+        if item.lower() == 'subscription':
+            _subscription_dir = item
+            break
+
+if _subscription_dir:
+    _subscription_models = importlib.import_module(f'Services.{_subscription_dir}.subscription_models')
+    _subscription_schemas = importlib.import_module(f'Services.{_subscription_dir}.subscription_schemas')
+    ProductManager = _subscription_models.ProductManager
+    Subscription = _subscription_models.Subscription
+    ProductCode = _subscription_schemas.ProductCode
+    SubscriptionStatus = _subscription_schemas.SubscriptionStatus
+else:
+    # Fallback to direct import (will fail if directory doesn't exist)
+    from Services.Subscription.subscription_models import ProductManager, Subscription
+    from Services.Subscription.subscription_schemas import ProductCode, SubscriptionStatus
 
 logger = logging.getLogger(__name__)
 
