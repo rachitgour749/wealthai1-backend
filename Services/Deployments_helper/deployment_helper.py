@@ -731,6 +731,214 @@ async def save_deployment(request: dict):
             session.close()
 
 
+@deployment_router.post("/live-signals/save-deployment")
+async def save_live_signals_deployment(request: dict):
+    """
+    Save ETF/Stock Rotation strategy deployment with webhook and client info
+    This endpoint is specifically for Rotation strategies (not RS strategies)
+    """
+    session = None
+    try:
+        logger.info(f"🔍 Live Signals Deployment Request: {list(request.keys())}")
+        logger.info(f"📧 User Email: {request.get('user_email')}")
+        logger.info(f"📋 Strategy Name: {request.get('strategy_name')}")
+        logger.info(f"🔗 Webhook URL: {request.get('webhook_url')}")
+        
+        session = get_session()
+        
+        
+        # Extract all deployment data from frontend
+        user_email = request.get('user_email')
+        strategy_name = request.get('strategy_name')
+        client_information_json = request.get('client_information_json', '{}')
+        webhook_url = request.get('webhook_url', '')
+        
+        # Additional deployment fields
+        reference_capital = request.get('reference_capital', '')
+        ltp = request.get('ltp', 0)
+        deployment_data = request.get('deployment_data')
+        etf_count = request.get('etf_count')
+        etf_names = request.get('etf_names')
+        strategy_type = request.get('strategy_type', '')
+        
+        # Validate required fields
+        if not user_email:
+            return {
+                "success": False,
+                "message": "user_email is required"
+            }
+        
+        if not strategy_name:
+            return {
+                "success": False,
+                "message": "strategy_name is required"
+            }
+        
+        # Check ETF table first
+        result = session.execute(text("""
+            SELECT id FROM etf_saved_strategy 
+            WHERE strategy_name = :strategy_name AND user_id = :user_id
+        """), {
+            "strategy_name": strategy_name,
+            "user_id": user_email
+        })
+        
+        strategy_result = result.fetchone()
+        table_name = 'etf_saved_strategy'
+        is_etf_strategy = True
+        
+        if not strategy_result:
+            # Check Stock table
+            result = session.execute(text("""
+                SELECT id FROM stock_saved_strategy 
+                WHERE strategy_name = :strategy_name AND user_id = :user_id
+            """), {
+                "strategy_name": strategy_name,
+                "user_id": user_email
+            })
+            strategy_result = result.fetchone()
+            table_name = 'stock_saved_strategy'
+            is_etf_strategy = False
+        
+        if not strategy_result:
+            return {
+                "success": False,
+                "message": f"Strategy '{strategy_name}' not found for user {user_email}"
+            }
+        
+        strategy_id = strategy_result[0]
+        
+        # Always generate unique run_id using backend logic
+        clean_name = strategy_name.replace(' ', '_').replace('-', '_')
+        clean_name = re.sub(r'[^a-zA-Z0-9_]', '_', clean_name)
+        
+        if is_etf_strategy:
+            run_id = f"run_etfs_rotation_strategy_{clean_name}_{int(time.time())}"
+        else:  # stock_saved_strategy
+            run_id = f"run_stock_rotation_strategy_{clean_name}_{int(time.time())}"
+        
+        # Always calculate execution date using backend logic (next Monday)
+        current_date = datetime.now()
+        execution_date = calculate_next_execution_date(current_date)
+        
+        # Set last_execution_date and next_execution_date
+        # For new deployments: last = "N/A", next = calculated/provided date
+        last_execution_date = "N/A"  # No execution yet
+        next_execution_date = execution_date  # Use provided or calculated date
+        
+        logger.info(f"🔍 DEPLOYMENT INFO:")
+        logger.info(f"   Strategy ID: {strategy_id}")
+        logger.info(f"   Table: {table_name}")
+        logger.info(f"   Run ID: {run_id}")
+        logger.info(f"   Execution Date: {execution_date}")
+        logger.info(f"   Last Execution Date: {last_execution_date}")
+        logger.info(f"   Next Execution Date: {next_execution_date}")
+        logger.info(f"   Reference Capital: {reference_capital}")
+        
+        # Prepare update query based on strategy type
+        if is_etf_strategy:
+            # ETF strategy - include all ETF-specific fields
+            update_query = f"""
+                UPDATE {table_name} 
+                SET run_id = :run_id, 
+                    client_information_json = :client_info, 
+                    webhook_url = :webhook_url, 
+                    status = :status,
+                    execution_date = :exec_date,
+                    last_execution_date = :last_exec_date,
+                    next_execution_date = :next_exec_date,
+                    reference_capital = :ref_capital,
+                    ltp = :ltp,
+                    deployment_data = :deployment_data,
+                    etf_count = :etf_count,
+                    etf_names = :etf_names,
+                    strategy_type = :strategy_type
+                WHERE id = :strategy_id
+            """
+            
+            # Convert deployment_data and etf_names to JSON strings
+            import json
+            deployment_data_json = json.dumps(deployment_data) if deployment_data else None
+            etf_names_json = json.dumps(etf_names) if etf_names else None
+            
+            update_params = {
+                "run_id": run_id,
+                "client_info": client_information_json,
+                "webhook_url": webhook_url,
+                "status": 'running',
+                "exec_date": execution_date,
+                "last_exec_date": last_execution_date,
+                "next_exec_date": next_execution_date,
+                "ref_capital": reference_capital,
+                "ltp": ltp,
+                "deployment_data": deployment_data_json,
+                "etf_count": etf_count,
+                "etf_names": etf_names_json,
+                "strategy_type": strategy_type,
+                "strategy_id": strategy_id
+            }
+        else:
+            # Stock strategy - no ETF-specific fields
+            update_query = f"""
+                UPDATE {table_name} 
+                SET run_id = :run_id, 
+                    client_information_json = :client_info, 
+                    webhook_url = :webhook_url, 
+                    status = :status,
+                    execution_date = :exec_date,
+                    last_execution_date = :last_exec_date,
+                    next_execution_date = :next_exec_date,
+                    reference_capital = :ref_capital,
+                    strategy_type = :strategy_type
+                WHERE id = :strategy_id
+            """
+            
+            update_params = {
+                "run_id": run_id,
+                "client_info": client_information_json,
+                "webhook_url": webhook_url,
+                "status": 'running',
+                "exec_date": execution_date,
+                "last_exec_date": last_execution_date,
+                "next_exec_date": next_execution_date,
+                "ref_capital": reference_capital,
+                "strategy_type": strategy_type,
+                "strategy_id": strategy_id
+            }
+        
+        logger.info(f"🔍 SQL UPDATE QUERY:")
+        logger.info(f"   Table: {table_name}")
+        logger.info(f"   Parameters: {list(update_params.keys())}")
+        
+        session.execute(text(update_query), update_params)
+        session.commit()
+        
+        logger.info(f"✅ Deployment saved successfully for {table_name}")
+        
+        return {
+            "success": True,
+            "message": f"{table_name.replace('_', ' ').title()} deployment saved successfully",
+            "run_id": run_id,
+            "execution_date": execution_date,
+            "last_execution_date": last_execution_date,
+            "next_execution_date": next_execution_date,
+            "table": table_name
+        }
+    except Exception as e:
+        if session:
+            session.rollback()
+        logger.error(f"Error in save_live_signals_deployment: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "success": False,
+            "message": f"Error saving deployment: {str(e)}"
+        }
+    finally:
+        if session:
+            session.close()
+
+
 @deployment_router.post("/live-signals/deployment-status-by-strategy")
 async def get_deployment_status_by_strategy(request: dict):
     """Get deployment status for ETF/Stock/RS strategy by strategy name"""
