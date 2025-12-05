@@ -9,32 +9,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 
 from Databases.app_data_db_connection import create_connection, get_session
-
-# Case-insensitive import for Subscription (handles 'subscription' vs 'Subscription')
-import os
-import sys
-import importlib
-
-# Find the actual subscription directory name
-_services_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)))
-_subscription_dir = None
-if os.path.exists(_services_dir):
-    for item in os.listdir(_services_dir):
-        if item.lower() == 'subscription':
-            _subscription_dir = item
-            break
-
-if _subscription_dir:
-    _subscription_models = importlib.import_module(f'Services.{_subscription_dir}.subscription_models')
-    _subscription_schemas = importlib.import_module(f'Services.{_subscription_dir}.subscription_schemas')
-    ProductManager = _subscription_models.ProductManager
-    Subscription = _subscription_models.Subscription
-    ProductCode = _subscription_schemas.ProductCode
-    SubscriptionStatus = _subscription_schemas.SubscriptionStatus
-else:
-    # Fallback to direct import (will fail if directory doesn't exist)
-    from Services.Subscription.subscription_models import ProductManager, Subscription
-    from Services.Subscription.subscription_schemas import ProductCode, SubscriptionStatus
+from Services.Subscription.subscription_models import ProductSubscription, Subscription
+from Services.Subscription.subscription_schemas import ProductCode, SubscriptionStatus
 
 logger = logging.getLogger(__name__)
 
@@ -146,18 +122,54 @@ async def single_sign_on(userid: str) -> Dict[str, Any]:
             )
         user_email = userid.lower()
 
-        # ------------------------------------------------------------------
-        # Validate TRADEAI access using product_manager table
-        # ------------------------------------------------------------------
-        trad_ai_subscription = (
-            session.query(ProductManager)
-            .filter(
-                ProductManager.user_email == user_email,
-                ProductManager.product_code == ProductCode.TRADAI.value,  # Compare with string value
+        # Get TRADEAI product subscription using raw SQL to avoid column mismatch issues
+        # Query only the columns that exist in the database (avoiding trial_start_date, trial_end_date, paid_start_date, paid_end_date)
+        query = text("""
+            SELECT id, user_email, product_code::text, subscription_type::text, status::text, plan_code,
+                   COALESCE(subscription_start_date, NULL) as subscription_start_date,
+                   COALESCE(subscription_end_date, NULL) as subscription_end_date,
+                   payment_id, payment_status, bundle_id, is_bundle_subscription,
+                   chatai_key, total_tokens, used_tokens, created_at, updated_at, product_metadata
+            FROM product_subscriptions
+            WHERE user_email = :user_email AND product_code = :product_code
+            ORDER BY updated_at DESC
+            LIMIT 1
+        """)
+        
+        result = session.execute(query, {
+            "user_email": user_email,
+            "product_code": ProductCode.TRADAI.value
+        }).fetchone()
+        
+        if not result:
+            raise HTTPException(
+                status_code=404,
+                detail="TRADEAI product subscription not found for the provided user",
             )
-            .order_by(ProductManager.updated_at.desc())
-            .first()
-        )
+        
+        # Create a simple object to hold the subscription data
+        class SubscriptionData:
+            def __init__(self, row):
+                self.id = row[0]
+                self.user_email = row[1]
+                self.product_code = row[2]
+                self.subscription_type = row[3]
+                self.status = row[4]
+                self.plan_code = row[5]
+                self.subscription_start_date = row[6]
+                self.subscription_end_date = row[7]
+                self.payment_id = row[8]
+                self.payment_status = row[9]
+                self.bundle_id = row[10]
+                self.is_bundle_subscription = row[11]
+                self.chatai_key = row[12]
+                self.total_tokens = row[13]
+                self.used_tokens = row[14]
+                self.created_at = row[15]
+                self.updated_at = row[16]
+                self.product_metadata = row[17]
+        
+        trad_ai_subscription = SubscriptionData(result)
 
         if not trad_ai_subscription:
             raise HTTPException(
@@ -180,18 +192,29 @@ async def single_sign_on(userid: str) -> Dict[str, Any]:
             email_parts = user_email.split("@")[0].split(".")
             user_name = " ".join(word.capitalize() for word in email_parts)
         
-        # For product_manager-based flow, plan name is not stored; use a simple label
-        plan_name = "tradeai"
+        # Get plan name
+        plan_name = _get_plan_name(trad_ai_subscription.plan_code, session)
         
-        # Get subscription dates from ProductManager
+        # Get subscription dates from simplified date fields
         subscription_start_date = trad_ai_subscription.subscription_start_date
         subscription_end_date = trad_ai_subscription.subscription_end_date
         
         # Check if subscription is active
         is_active = _is_subscription_active(trad_ai_subscription)
         
-        # product_manager does not carry product_metadata; keep a fixed default
+        # Get allowed_accounts from product_metadata or set default
         allowed_accounts = 10  # Default value
+        try:
+            if trad_ai_subscription.product_metadata:
+                if isinstance(trad_ai_subscription.product_metadata, dict):
+                    allowed_accounts = trad_ai_subscription.product_metadata.get("allowed_accounts", 10)
+                elif isinstance(trad_ai_subscription.product_metadata, str):
+                    # Try to parse JSON string
+                    metadata_dict = json.loads(trad_ai_subscription.product_metadata)
+                    allowed_accounts = metadata_dict.get("allowed_accounts", 10)
+        except Exception as exc:
+            logger.warning("Error parsing product_metadata for allowed_accounts: %s", exc)
+            # Keep default value of 10
         
         # Build response in the requested format
         response_payload = {

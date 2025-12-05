@@ -28,16 +28,44 @@ from market_data_db_connection import (
 )
 
 # Use market data connection for market data tables
-# Initialize connection
-if not create_market_data_connection():
-    raise RuntimeError("Failed to connect to MarketData database")
+# Lazy initialization - connection will be established when first needed
+_connection_initialized = False
 
-engine = get_market_data_engine()
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+def ensure_connection():
+    """Ensure database connection is established (lazy initialization)"""
+    global _connection_initialized
+    if not _connection_initialized:
+        if not create_market_data_connection():
+            raise RuntimeError("Failed to connect to MarketData database")
+        _connection_initialized = True
+    return True
+
+# Get engine and session maker (will be initialized on first use)
+def get_engine():
+    """Get database engine, initializing connection if needed"""
+    ensure_connection()
+    return get_market_data_engine()
+
+def get_session_maker():
+    """Get session maker, initializing connection if needed"""
+    ensure_connection()
+    return sessionmaker(autocommit=False, autoflush=False, bind=get_engine())
+
+# Initialize engine and SessionLocal lazily
+engine = None
+SessionLocal = None
 Base = MarketDataBase  # Use the same Base for all models
+
+def _init_engine_and_session():
+    """Initialize engine and SessionLocal if not already done"""
+    global engine, SessionLocal
+    if engine is None:
+        engine = get_engine()
+        SessionLocal = get_session_maker()
 
 # Dependency to get database session with enhanced error handling
 def get_db():
+    _init_engine_and_session()  # Ensure connection is initialized
     db = None
     try:
         db = SessionLocal()
@@ -178,8 +206,16 @@ class SavedETFStrategy(Base):
 
 # Backtest database setup - use same PostgreSQL connection for market data
 # Strategy-specific tables (backtest_results, trade_logs, etc.) can use the same connection
-backtest_engine = engine  # Use the same engine
-BacktestSessionLocal = SessionLocal  # Use the same session maker
+backtest_engine = None  # Will be initialized lazily
+BacktestSessionLocal = None  # Will be initialized lazily
+
+def _init_backtest_session():
+    """Initialize backtest engine and session if not already done"""
+    global backtest_engine, BacktestSessionLocal
+    if backtest_engine is None:
+        _init_engine_and_session()  # Ensure main engine is initialized first
+        backtest_engine = engine
+        BacktestSessionLocal = SessionLocal
 
 # Utility functions
 async def execute_with_retry(func, max_retries=3, delay=0.5):
@@ -200,6 +236,7 @@ async def execute_with_retry(func, max_retries=3, delay=0.5):
 def check_database_health():
     """Check if database is accessible"""
     try:
+        _init_engine_and_session()  # Ensure connection is initialized
         from sqlalchemy import text
         db = SessionLocal()
         db.execute(text("SELECT 1"))
@@ -211,6 +248,7 @@ def check_database_health():
 
 async def save_backtest_result_safely(result_data, max_retries=5, retry_delay=2):
     """Save backtest result with enhanced error handling and retry logic"""
+    _init_backtest_session()  # Ensure backtest session is initialized
     db = None
     for attempt in range(max_retries):
         try:
@@ -245,6 +283,7 @@ async def save_backtest_result_safely(result_data, max_retries=5, retry_delay=2)
 
 async def save_additional_data_safely(trade_logs=None, portfolio_snapshots=None, max_retries=3, retry_delay=1):
     """Save trade logs and portfolio snapshots with enhanced error handling and retry logic"""
+    _init_backtest_session()  # Ensure backtest session is initialized
     db = None
     for attempt in range(max_retries):
         try:
@@ -288,8 +327,10 @@ async def save_additional_data_safely(trade_logs=None, portfolio_snapshots=None,
 def reset_database_connections():
     """Reset database connections"""
     try:
-        engine.dispose()
-        backtest_engine.dispose()
+        if engine is not None:
+            engine.dispose()
+        if backtest_engine is not None:
+            backtest_engine.dispose()
         logging.info("Database connections reset successfully")
     except Exception as e:
         logging.error(f"Failed to reset database connections: {e}")
@@ -308,6 +349,7 @@ def force_unlock_database():
 @contextmanager
 def get_backtest_session():
     """Context manager for backtest database sessions with proper cleanup"""
+    _init_backtest_session()  # Ensure backtest session is initialized
     db = None
     try:
         db = BacktestSessionLocal()
@@ -327,6 +369,7 @@ def get_backtest_session():
 @contextmanager
 def get_main_session():
     """Context manager for main database sessions with proper cleanup"""
+    _init_engine_and_session()  # Ensure connection is initialized
     db = None
     try:
         db = SessionLocal()

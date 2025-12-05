@@ -5,11 +5,12 @@ Migrated from SQLite to PostgreSQL (Neon)
 
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import re
 import time
 import logging
+import holidays
 
 from Databases.app_data_db_connection import get_session, create_connection, init_database
 
@@ -107,140 +108,11 @@ def init_saved_rs_strategies_table():
         return False
 
 
-@deployment_router.post("/save-rs-strategy")
-async def save_rs_strategy(request: dict):
-    """Save RS strategy with deployment features"""
-    session = None
-    try:
-        # Initialize database table if needed
-        if not init_saved_rs_strategies_table():
-            raise HTTPException(status_code=500, detail="Failed to initialize database table")
-        
-        session = get_session()
-        
-        # Check if strategy already exists
-        result = session.execute(text("""
-            SELECT id FROM saved_rs_strategies 
-            WHERE strategy_name = :strategy_name AND user_id = :user_id
-        """), {
-            "strategy_name": request['strategy_name'],
-            "user_id": request['user_id']
-        })
-        
-        if result.fetchone():
-            return {
-                "success": False,
-                "message": "Strategy with this name already exists",
-                "strategy_exists": True
-            }
-        
-        # Insert new strategy
-        result = session.execute(text("""
-            INSERT INTO saved_rs_strategies (
-                strategy_name, strategy_type, user_id, config_id, backtest_id,
-                start_date, end_date, stock_universe, backtest_results, 
-                strategy_config, created_at
-            ) VALUES (
-                :strategy_name, :strategy_type, :user_id, :config_id, :backtest_id,
-                :start_date, :end_date, :stock_universe, :backtest_results, 
-                :strategy_config, :created_at
-            )
-            RETURNING id
-        """), {
-            "strategy_name": request['strategy_name'],
-            "strategy_type": request['strategy_type'],
-            "user_id": request['user_id'],
-            "config_id": request.get('config_id'),
-            "backtest_id": request.get('backtest_id'),
-            "start_date": request.get('start_date'),
-            "end_date": request.get('end_date'),
-            "stock_universe": request.get('stock_universe'),
-            "backtest_results": json.dumps(request.get('backtest_results', {})),
-            "strategy_config": json.dumps(request.get('strategy_config', {})),
-            "created_at": request.get('created_at')
-        })
-        
-        strategy_id = result.scalar_one()
-        session.commit()
-        
-        return {
-            "success": True,
-            "message": "RS Strategy saved successfully",
-            "strategy_id": strategy_id,
-            "strategy_exists": False
-        }
-    except Exception as e:
-        if session:
-            session.rollback()
-        logger.error(f"Error saving RS strategy: {e}")
-        raise HTTPException(status_code=500, detail=f"Error saving RS strategy: {str(e)}")
-    finally:
-        if session:
-            session.close()
+# Removed duplicate init_rs_stock_instance_table
 
 
-@deployment_router.get("/get-saved-rs-strategies/{user_id}")
-async def get_saved_rs_strategies(user_id: str):
-    """Get all saved RS strategies for a specific user"""
-    session = None
-    try:
-        session = get_session()
-        
-        result = session.execute(text("""
-            SELECT * FROM saved_rs_strategies 
-            WHERE user_id = :user_id 
-            ORDER BY created_at DESC
-        """), {"user_id": user_id})
-        
-        rows = result.fetchall()
-        columns = result.keys()
-        
-        strategies = []
-        for row in rows:
-            strategy_dict = dict(zip(columns, row))
-            
-            # Parse JSON fields
-            if strategy_dict.get('backtest_results'):
-                if isinstance(strategy_dict['backtest_results'], str):
-                    try:
-                        strategy_dict['backtest_results'] = json.loads(strategy_dict['backtest_results'])
-                    except:
-                        strategy_dict['backtest_results'] = {}
-            
-            if strategy_dict.get('strategy_config'):
-                if isinstance(strategy_dict['strategy_config'], str):
-                    try:
-                        strategy_dict['strategy_config'] = json.loads(strategy_dict['strategy_config'])
-                    except:
-                        strategy_dict['strategy_config'] = {}
-            
-            if strategy_dict.get('client_information_json'):
-                if isinstance(strategy_dict['client_information_json'], str):
-                    try:
-                        strategy_dict['client_information_json'] = json.loads(strategy_dict['client_information_json'])
-                    except:
-                        strategy_dict['client_information_json'] = {}
-            
-            strategies.append(strategy_dict)
-        
-        return {
-            "success": True,
-            "strategies": strategies
-        }
-    except Exception as e:
-        logger.error(f"Error fetching RS strategies: {e}")
-        raise HTTPException(status_code=500, detail=f"Error fetching RS strategies: {str(e)}")
-    finally:
-        if session:
-            session.close()
-
-
-# ============================================================================
-# RS ETF STRATEGY FUNCTIONS (PostgreSQL)
-# ============================================================================
-
-def init_rs_etf_saved_strategies_table():
-    """Initialize the rs_etf_saved_strategies table if it doesn't exist"""
+def init_rs_stock_instance_table():
+    """Initialize the rs_stock_instance table if it doesn't exist"""
     try:
         if not create_connection():
             logger.error("Failed to connect to PostgreSQL database")
@@ -258,60 +130,61 @@ def init_rs_etf_saved_strategies_table():
             result = session.execute(text("""
                 SELECT table_name 
                 FROM information_schema.tables 
-                WHERE table_schema = 'public' AND table_name = 'rs_etf_saved_strategies'
+                WHERE table_schema = 'public' AND table_name = 'rs_stock_instance'
             """))
             
             if not result.fetchone():
                 # Create table
                 session.execute(text("""
-                    CREATE TABLE rs_etf_saved_strategies (
+                    CREATE TABLE rs_stock_instance (
                         id SERIAL PRIMARY KEY,
                         strategy_name VARCHAR(255) NOT NULL,
-                        strategy_type VARCHAR(255) NOT NULL DEFAULT 'RS ETF Strategy',
+                        strategy_type VARCHAR(255) NOT NULL,
                         user_id VARCHAR(255) NOT NULL,
+                        config_id INTEGER,
+                        backtest_id INTEGER,
                         start_date VARCHAR(50),
                         end_date VARCHAR(50),
-                        rs_etf_universe TEXT,
+                        stock_universe TEXT,
                         backtest_results JSONB,
                         strategy_config JSONB,
-                        created_at VARCHAR(50),
-                        is_active BOOLEAN DEFAULT TRUE,
-                        updated_at VARCHAR(50),
-                        last_run_date VARCHAR(50),
-                        next_run_date VARCHAR(50),
-                        run_frequency VARCHAR(50) DEFAULT 'daily',
-                        status VARCHAR(50) DEFAULT 'deploy',
                         run_id VARCHAR(255) UNIQUE,
-                        webhook_url TEXT,
                         client_information_json JSONB,
+                        webhook_url TEXT,
+                        status VARCHAR(50) DEFAULT 'deploy',
+                        created_at VARCHAR(50),
+                        last_execution_date VARCHAR(50),
+                        next_execution_date VARCHAR(50),
                         UNIQUE(strategy_name, user_id)
                     )
                 """))
                 session.commit()
-                logger.info("rs_etf_saved_strategies table created successfully")
+                logger.info("rs_stock_instance table created successfully")
             else:
                 # Check for missing columns and add them
                 columns_result = session.execute(text("""
                     SELECT column_name 
                     FROM information_schema.columns
                     WHERE table_schema = 'public' 
-                    AND table_name = 'rs_etf_saved_strategies'
+                    AND table_name = 'rs_stock_instance'
                 """))
                 existing_columns = [row[0] for row in columns_result.fetchall()]
                 
                 required_columns = {
                     'run_id': 'VARCHAR(255)',
-                    'webhook_url': 'TEXT',
                     'client_information_json': 'JSONB',
-                    'status': 'VARCHAR(50) DEFAULT \'deploy\''
+                    'webhook_url': 'TEXT',
+                    'status': 'VARCHAR(50) DEFAULT \'deploy\'',
+                    'last_execution_date': 'VARCHAR(50)',
+                    'next_execution_date': 'VARCHAR(50)'
                 }
                 
                 for column_name, column_def in required_columns.items():
                     if column_name not in existing_columns:
                         try:
-                            session.execute(text(f"ALTER TABLE rs_etf_saved_strategies ADD COLUMN {column_name} {column_def}"))
+                            session.execute(text(f"ALTER TABLE rs_stock_instance ADD COLUMN {column_name} {column_def}"))
                             session.commit()
-                            logger.info(f"Added missing column '{column_name}' to rs_etf_saved_strategies")
+                            logger.info(f"Added missing column '{column_name}' to rs_stock_instance")
                         except Exception as e:
                             logger.warning(f"Could not add column '{column_name}': {e}")
             
@@ -320,7 +193,99 @@ def init_rs_etf_saved_strategies_table():
             if session:
                 session.close()
     except Exception as e:
-        logger.error(f"Error creating rs_etf_saved_strategies table: {e}")
+        logger.error(f"Error creating rs_stock_instance table: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+
+
+
+
+def init_rs_etf_instance_table():
+    """Initialize the rs_etf_instance table if it doesn't exist"""
+    try:
+        if not create_connection():
+            logger.error("Failed to connect to PostgreSQL database")
+            return False
+        
+        if not init_database():
+            logger.error("Failed to initialize database tables")
+            return False
+        
+        session = None
+        try:
+            session = get_session()
+            
+            # Check if table exists
+            result = session.execute(text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' AND table_name = 'rs_etf_instance'
+            """))
+            
+            if not result.fetchone():
+                # Create table
+                session.execute(text("""
+                    CREATE TABLE rs_etf_instance (
+                        id SERIAL PRIMARY KEY,
+                        strategy_name VARCHAR(255) NOT NULL,
+                        strategy_type VARCHAR(255) NOT NULL,
+                        user_id VARCHAR(255) NOT NULL,
+                        config_id INTEGER,
+                        backtest_id INTEGER,
+                        start_date VARCHAR(50),
+                        end_date VARCHAR(50),
+                        rs_etf_universe TEXT,
+                        backtest_results JSONB,
+                        strategy_config JSONB,
+                        run_id VARCHAR(255) UNIQUE,
+                        client_information_json JSONB,
+                        webhook_url TEXT,
+                        status VARCHAR(50) DEFAULT 'deploy',
+                        created_at VARCHAR(50),
+                        last_execution_date VARCHAR(50),
+                        next_execution_date VARCHAR(50),
+                        UNIQUE(strategy_name, user_id)
+                    )
+                """))
+                session.commit()
+                logger.info("rs_etf_instance table created successfully")
+            else:
+                # Check for missing columns and add them
+                columns_result = session.execute(text("""
+                    SELECT column_name 
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'rs_etf_instance'
+                """))
+                existing_columns = [row[0] for row in columns_result.fetchall()]
+                
+                required_columns = {
+                    'run_id': 'VARCHAR(255)',
+                    'client_information_json': 'JSONB',
+                    'webhook_url': 'TEXT',
+                    'status': 'VARCHAR(50) DEFAULT \'deploy\'',
+                    'last_execution_date': 'VARCHAR(50)',
+                    'next_execution_date': 'VARCHAR(50)'
+                }
+                
+                for column_name, column_def in required_columns.items():
+                    if column_name not in existing_columns:
+                        try:
+                            session.execute(text(f"ALTER TABLE rs_etf_instance ADD COLUMN {column_name} {column_def}"))
+                            session.commit()
+                            logger.info(f"Added missing column '{column_name}' to rs_etf_instance")
+                        except Exception as e:
+                            logger.warning(f"Could not add column '{column_name}': {e}")
+            
+            return True
+        finally:
+            if session:
+                session.close()
+    except Exception as e:
+        logger.error(f"Error creating rs_etf_instance table: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -332,17 +297,17 @@ async def save_rs_etf_strategy(request: dict):
     session = None
     try:
         # Initialize database table if needed
-        if not init_rs_etf_saved_strategies_table():
+        if not init_rs_etf_instance_table():
             return {
                 "success": False,
-                "message": "Failed to initialize database table"
+                "message": "Failed to initialize rs_etf_instance table"
             }
-        
+
         session = get_session()
         
-        # Check if strategy already exists
+        # Check if strategy already exists in rs_etf_instance
         result = session.execute(text("""
-            SELECT id FROM rs_etf_saved_strategies 
+            SELECT id FROM rs_etf_instance 
             WHERE strategy_name = :strategy_name AND user_id = :user_id
         """), {
             "strategy_name": request.get('strategy_name'),
@@ -358,14 +323,14 @@ async def save_rs_etf_strategy(request: dict):
         
         # Insert new strategy
         result = session.execute(text("""
-            INSERT INTO rs_etf_saved_strategies (
+            INSERT INTO rs_etf_instance (
                 strategy_name, strategy_type, user_id, 
                 start_date, end_date, rs_etf_universe, backtest_results, 
-                strategy_config, created_at, is_active, status
+                strategy_config, created_at, status
             ) VALUES (
                 :strategy_name, :strategy_type, :user_id, 
                 :start_date, :end_date, :rs_etf_universe, :backtest_results, 
-                :strategy_config, :created_at, :is_active, :status
+                :strategy_config, :created_at, :status
             )
             RETURNING id
         """), {
@@ -378,7 +343,6 @@ async def save_rs_etf_strategy(request: dict):
             "backtest_results": json.dumps(request.get('backtest_results', {})) if request.get('backtest_results') else None,
             "strategy_config": json.dumps(request.get('strategy_config', {})) if request.get('strategy_config') else None,
             "created_at": request.get('created_at', datetime.now().isoformat()),
-            "is_active": True,
             "status": request.get('status', 'deploy')
         })
         
@@ -395,8 +359,6 @@ async def save_rs_etf_strategy(request: dict):
         if session:
             session.rollback()
         logger.error(f"Error saving RS ETF strategy: {e}")
-        import traceback
-        traceback.print_exc()
         return {
             "success": False,
             "message": f"Error saving RS ETF strategy: {str(e)}"
@@ -408,13 +370,13 @@ async def save_rs_etf_strategy(request: dict):
 
 @deployment_router.get("/get-saved-rs-etf-strategies/{user_id}")
 async def get_saved_rs_etf_strategies(user_id: str):
-    """Get all saved RS ETF strategies for a specific user"""
+    """Get all saved RS ETF strategies for a specific user from rs_etf_instance table"""
     session = None
     try:
         session = get_session()
         
         result = session.execute(text("""
-            SELECT * FROM rs_etf_saved_strategies 
+            SELECT * FROM rs_etf_instance 
             WHERE user_id = :user_id 
             ORDER BY created_at DESC
         """), {"user_id": user_id})
@@ -443,133 +405,177 @@ async def get_saved_rs_etf_strategies(user_id: str):
         }
     except Exception as e:
         logger.error(f"Error fetching RS ETF strategies: {e}")
-        return {
-            "success": False,
-            "message": f"Error fetching RS ETF strategies: {str(e)}"
-        }
+        raise HTTPException(status_code=500, detail=f"Error fetching RS ETF strategies: {str(e)}")
     finally:
         if session:
             session.close()
 
 
-# ============================================================================
-# DEPLOYMENT ENDPOINTS
-# ============================================================================
-
-@deployment_router.post("/save-rs-deployment")
-async def save_rs_deployment(request: dict):
-    """Save RS strategy deployment with webhook and client info"""
+@deployment_router.post("/save-rs-stock-strategy")
+async def save_rs_stock_strategy(request: dict):
+    """Save RS Stock Strategy configuration"""
     session = None
     try:
         # Initialize database table if needed
-        if not init_rs_etf_saved_strategies_table():
+        if not init_rs_stock_instance_table():
             return {
                 "success": False,
-                "message": "Failed to initialize database table"
+                "message": "Failed to initialize rs_stock_instance table"
             }
-        
-        logger.info(f"🔍 RS Deployment Request: {list(request.keys())}")
-        logger.info(f"📧 User Email: {request.get('user_email')}")
-        logger.info(f"📋 Strategy Name: {request.get('strategy_name')}")
-        logger.info(f"🔗 Webhook URL: {request.get('webhook_url')}")
-        
+
         session = get_session()
         
-        # Extract data
-        user_email = request.get('user_email', '').strip()
-        strategy_name = request.get('strategy_name', '').strip()
-        client_information_json = request.get('client_information_json', '{}')
-        webhook_url = request.get('webhook_url', '')
-        
-        # Validate required fields
-        if not user_email:
-            return {
-                "success": False,
-                "message": "user_email is required"
-            }
-        
-        if not strategy_name:
-            return {
-                "success": False,
-                "message": "strategy_name is required"
-            }
-        
-        # Find strategy by name and user email (case-insensitive)
+        # Check if strategy already exists in rs_stock_instance
         result = session.execute(text("""
-            SELECT id, strategy_name FROM rs_etf_saved_strategies 
-            WHERE LOWER(TRIM(strategy_name)) = LOWER(:strategy_name) AND user_id = :user_id
+            SELECT id FROM rs_stock_instance 
+            WHERE strategy_name = :strategy_name AND user_id = :user_id
         """), {
-            "strategy_name": strategy_name,
-            "user_id": user_email
+            "strategy_name": request.get('strategy_name'),
+            "user_id": request.get('user_id')
         })
         
-        strategy_result = result.fetchone()
+        if result.fetchone():
+            return {
+                "success": False,
+                "message": "Strategy with this name already exists",
+                "strategy_exists": True
+            }
         
-        if not strategy_result:
-            # Try exact match as fallback
-            result = session.execute(text("""
-                SELECT id, strategy_name FROM rs_etf_saved_strategies 
-                WHERE strategy_name = :strategy_name AND user_id = :user_id
-            """), {
-                "strategy_name": strategy_name,
-                "user_id": user_email
-            })
-            strategy_result = result.fetchone()
-            
-            if not strategy_result:
-                return {
-                    "success": False,
-                    "message": f"Strategy '{strategy_name}' not found for user {user_email}"
-                }
-        
-        strategy_id = strategy_result[0]
-        actual_strategy_name = strategy_result[1]
-        logger.info(f"✅ Found strategy: ID={strategy_id}, Name='{actual_strategy_name}'")
-        
-        # Generate unique run_id
-        clean_name = actual_strategy_name.replace(' ', '_').replace('-', '_')
-        clean_name = re.sub(r'[^a-zA-Z0-9_]', '_', clean_name)
-        run_id = f"RS_ETF_{clean_name}_{int(time.time())}"
-        
-        # Update strategy with deployment info
-        session.execute(text("""
-            UPDATE rs_etf_saved_strategies 
-            SET run_id = :run_id, client_information_json = :client_info, 
-                webhook_url = :webhook_url, status = :status
-            WHERE id = :strategy_id
+        # Insert new strategy
+        result = session.execute(text("""
+            INSERT INTO rs_stock_instance (
+                strategy_name, strategy_type, user_id, 
+                start_date, end_date, stock_universe, backtest_results, 
+                strategy_config, created_at, status
+            ) VALUES (
+                :strategy_name, :strategy_type, :user_id, 
+                :start_date, :end_date, :stock_universe, :backtest_results, 
+                :strategy_config, :created_at, :status
+            )
+            RETURNING id
         """), {
-            "run_id": run_id,
-            "client_info": client_information_json,
-            "webhook_url": webhook_url,
-            "status": 'running',
-            "strategy_id": strategy_id
+            "strategy_name": request.get('strategy_name'),
+            "strategy_type": request.get('strategy_type', 'RS Stock Strategy'),
+            "user_id": request.get('user_id'),
+            "start_date": request.get('start_date'),
+            "end_date": request.get('end_date'),
+            "stock_universe": request.get('stock_universe') or 'NIFTY50',
+            "backtest_results": json.dumps(request.get('backtest_results', {})) if request.get('backtest_results') else None,
+            "strategy_config": json.dumps(request.get('strategy_config', {})) if request.get('strategy_config') else None,
+            "created_at": request.get('created_at', datetime.now().isoformat()),
+            "status": request.get('status', 'deploy')
         })
         
+        strategy_id = result.scalar_one()
         session.commit()
         
         return {
             "success": True,
-            "message": "RS Strategy deployment saved successfully",
-            "run_id": run_id
+            "message": "RS Stock Strategy saved successfully",
+            "strategy_id": strategy_id,
+            "strategy_exists": False
         }
     except Exception as e:
         if session:
             session.rollback()
-        logger.error(f"Error in save_rs_deployment: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error saving RS Stock strategy: {e}")
         return {
             "success": False,
-            "message": f"Error saving RS deployment: {str(e)}"
+            "message": f"Error saving RS Stock strategy: {str(e)}"
         }
     finally:
         if session:
             session.close()
 
 
-@deployment_router.post("/live-signals/save-deployment")
+
+
+
+@deployment_router.get("/get-saved-rs-strategies/{user_id}")
+async def get_saved_rs_strategies(user_id: str):
+    """Get all saved RS Stock strategies for a specific user from rs_stock_instance table"""
+    session = None
+    try:
+        session = get_session()
+        
+        result = session.execute(text("""
+            SELECT * FROM rs_stock_instance 
+            WHERE user_id = :user_id 
+            ORDER BY created_at DESC
+        """), {"user_id": user_id})
+        
+        rows = result.fetchall()
+        columns = result.keys()
+        
+        strategies = []
+        for row in rows:
+            strategy_dict = dict(zip(columns, row))
+            
+            # Parse JSON fields
+            for json_field in ['backtest_results', 'strategy_config', 'client_information_json']:
+                if strategy_dict.get(json_field):
+                    if isinstance(strategy_dict[json_field], str):
+                        try:
+                            strategy_dict[json_field] = json.loads(strategy_dict[json_field])
+                        except:
+                            strategy_dict[json_field] = {}
+            
+            strategies.append(strategy_dict)
+        
+        return {
+            "success": True,
+            "strategies": strategies
+        }
+    except Exception as e:
+        logger.error(f"Error fetching RS Stock strategies: {e}")
+        raise HTTPException(status_code=500, detail=f"Error fetching RS Stock strategies: {str(e)}")
+    finally:
+        if session:
+            session.close()
+
+
+def calculate_next_execution_date(current_date: datetime = None) -> str:
+    """
+    Calculate the next execution date (next Monday or Tuesday if holiday).
+    Uses dynamic holiday detection for India (NSE).
+    """
+    if current_date is None:
+        current_date = datetime.now()
+    
+    logger.info(f"📅 Calculating next execution date from: {current_date}")
+    
+    # Get India holidays for current and next year
+    year = current_date.year
+    in_holidays = holidays.India(years=[year, year + 1])
+    
+    # Calculate days until next Monday (0 = Monday, 6 = Sunday)
+    days_ahead = 0 - current_date.weekday()
+    if days_ahead <= 0: # Target day already happened this week
+        days_ahead += 7
+        
+    next_execution = current_date + timedelta(days=days_ahead)
+    
+    # Check if Monday is a holiday
+    # If holiday, move to next day until a non-holiday is found
+    # Limit to 5 days to avoid infinite loops (though unlikely)
+    for _ in range(5):
+        if next_execution in in_holidays:
+            logger.info(f"Skipping holiday: {next_execution.strftime('%Y-%m-%d')} - {in_holidays.get(next_execution)}")
+            next_execution += timedelta(days=1)
+        else:
+            break
+    
+    result = next_execution.strftime('%Y-%m-%d')
+    logger.info(f"📅 Final next execution date: {result}")
+    return result
+
+
+
+
+
+@deployment_router.post("/save-rs-deployment")
 async def save_deployment(request: dict):
-    """Save ETF/Stock strategy deployment with webhook and client info"""
+    """Save ETF/Stock/RS strategy deployment with webhook and client info"""
     session = None
     try:
         logger.info(f"🔍 Deployment Request: {list(request.keys())}")
@@ -622,6 +628,30 @@ async def save_deployment(request: dict):
             })
             strategy_result = result.fetchone()
             table_name = 'stock_saved_strategy'
+            
+        if not strategy_result:
+            # Check RS Stock table
+            result = session.execute(text("""
+                SELECT id FROM rs_stock_instance 
+                WHERE strategy_name = :strategy_name AND user_id = :user_id
+            """), {
+                "strategy_name": strategy_name,
+                "user_id": user_email
+            })
+            strategy_result = result.fetchone()
+            table_name = 'rs_stock_instance'
+
+        if not strategy_result:
+            # Check RS ETF table
+            result = session.execute(text("""
+                SELECT id FROM rs_etf_instance 
+                WHERE strategy_name = :strategy_name AND user_id = :user_id
+            """), {
+                "strategy_name": strategy_name,
+                "user_id": user_email
+            })
+            strategy_result = result.fetchone()
+            table_name = 'rs_etf_instance'
         
         if not strategy_result:
             return {
@@ -637,22 +667,49 @@ async def save_deployment(request: dict):
         
         if table_name == 'etf_saved_strategy':
             run_id = f"run_etfs_rotation_strategy_{clean_name}_{int(time.time())}"
-        else:
+        elif table_name == 'stock_saved_strategy':
             run_id = f"run_stock_rotation_strategy_{clean_name}_{int(time.time())}"
+        elif table_name == 'rs_stock_instance':
+            run_id = f"RS_STOCK_{clean_name}_{int(time.time())}"
+        elif table_name == 'rs_etf_instance':
+            run_id = f"RS_ETF_{clean_name}_{int(time.time())}"
+        
+        # Calculate execution dates
+        current_date = datetime.now()
+        next_exec_date = calculate_next_execution_date(current_date)
+        last_exec_date = "N/A"
+        
+        logger.info(f"🔍 EXECUTION DATES CALCULATION:")
+        logger.info(f"   Current Date: {current_date}")
+        logger.info(f"   Next Execution Date: {next_exec_date}")
+        logger.info(f"   Last Execution Date: {last_exec_date}")
         
         # Update strategy with deployment info
-        session.execute(text(f"""
+        update_query = f"""
             UPDATE {table_name} 
             SET run_id = :run_id, client_information_json = :client_info, 
-                webhook_url = :webhook_url, status = :status
+                webhook_url = :webhook_url, status = :status,
+                last_execution_date = :last_exec_date,
+                next_execution_date = :next_exec_date
             WHERE id = :strategy_id
-        """), {
+        """
+        
+        update_params = {
             "run_id": run_id,
             "client_info": client_information_json,
             "webhook_url": webhook_url,
             "status": 'running',
+            "last_exec_date": last_exec_date,
+            "next_exec_date": next_exec_date,
             "strategy_id": strategy_id
-        })
+        }
+        
+        logger.info(f"🔍 SQL UPDATE QUERY:")
+        logger.info(f"   Table: {table_name}")
+        logger.info(f"   Query: {update_query}")
+        logger.info(f"   Parameters: {update_params}")
+        
+        session.execute(text(update_query), update_params)
         
         session.commit()
         
@@ -676,7 +733,7 @@ async def save_deployment(request: dict):
 
 @deployment_router.post("/live-signals/deployment-status-by-strategy")
 async def get_deployment_status_by_strategy(request: dict):
-    """Get deployment status for ETF/Stock strategy by strategy name"""
+    """Get deployment status for ETF/Stock/RS strategy by strategy name"""
     session = None
     try:
         strategy_name = request.get('strategy_name')
@@ -712,6 +769,28 @@ async def get_deployment_status_by_strategy(request: dict):
             """), {"strategy_name": strategy_name})
             row = result.fetchone()
             table_name = 'stock_saved_strategy'
+            
+        if not row:
+            # Check RS Stock table (use last_execution_date as execution_date)
+            result = session.execute(text("""
+                SELECT id, run_id, status, client_information_json, webhook_url, 
+                       last_execution_date, created_at
+                FROM rs_stock_instance 
+                WHERE strategy_name = :strategy_name
+            """), {"strategy_name": strategy_name})
+            row = result.fetchone()
+            table_name = 'rs_stock_instance'
+
+        if not row:
+            # Check RS ETF table (use last_execution_date as execution_date)
+            result = session.execute(text("""
+                SELECT id, run_id, status, client_information_json, webhook_url, 
+                       last_execution_date, created_at
+                FROM rs_etf_instance 
+                WHERE strategy_name = :strategy_name
+            """), {"strategy_name": strategy_name})
+            row = result.fetchone()
+            table_name = 'rs_etf_instance'
         
         if row:
             return {
@@ -970,13 +1049,13 @@ async def update_rs_client_information(request: dict):
 
 @deployment_router.post("/stop-rs-strategy")
 async def stop_rs_strategy(request: dict):
-    """Stop a running RS strategy"""
+    """Stop a running RS Stock strategy"""
     session = None
     try:
         session = get_session()
         
         result = session.execute(text("""
-            UPDATE saved_rs_strategies 
+            UPDATE rs_stock_instance 
             SET status = 'stop'
             WHERE id = :strategy_id AND user_id = :user_id
         """), {
@@ -988,13 +1067,13 @@ async def stop_rs_strategy(request: dict):
         
         return {
             "success": True,
-            "message": "RS Strategy stopped successfully"
+            "message": "RS Stock Strategy stopped successfully"
         }
     except Exception as e:
         if session:
             session.rollback()
-        logger.error(f"Error stopping RS strategy: {e}")
-        raise HTTPException(status_code=500, detail=f"Error stopping RS strategy: {str(e)}")
+        logger.error(f"Error stopping RS Stock strategy: {e}")
+        raise HTTPException(status_code=500, detail=f"Error stopping RS Stock strategy: {str(e)}")
     finally:
         if session:
             session.close()
@@ -1002,13 +1081,13 @@ async def stop_rs_strategy(request: dict):
 
 @deployment_router.post("/restart-rs-strategy")
 async def restart_rs_strategy(request: dict):
-    """Restart a stopped RS strategy"""
+    """Restart a stopped RS Stock strategy"""
     session = None
     try:
         session = get_session()
         
         result = session.execute(text("""
-            UPDATE saved_rs_strategies 
+            UPDATE rs_stock_instance 
             SET status = 'running'
             WHERE id = :strategy_id AND user_id = :user_id
         """), {
@@ -1020,13 +1099,13 @@ async def restart_rs_strategy(request: dict):
         
         return {
             "success": True,
-            "message": "RS Strategy restarted successfully"
+            "message": "RS Stock Strategy restarted successfully"
         }
     except Exception as e:
         if session:
             session.rollback()
-        logger.error(f"Error restarting RS strategy: {e}")
-        raise HTTPException(status_code=500, detail=f"Error restarting RS strategy: {str(e)}")
+        logger.error(f"Error restarting RS Stock strategy: {e}")
+        raise HTTPException(status_code=500, detail=f"Error restarting RS Stock strategy: {str(e)}")
     finally:
         if session:
             session.close()
@@ -1034,13 +1113,13 @@ async def restart_rs_strategy(request: dict):
 
 @deployment_router.delete("/delete-rs-strategy/{strategy_id}")
 async def delete_rs_strategy(strategy_id: int):
-    """Delete a saved RS strategy"""
+    """Delete a saved RS Stock strategy"""
     session = None
     try:
         session = get_session()
         
         result = session.execute(text("""
-            DELETE FROM saved_rs_strategies 
+            DELETE FROM rs_stock_instance 
             WHERE id = :strategy_id
         """), {"strategy_id": strategy_id})
         
@@ -1048,13 +1127,13 @@ async def delete_rs_strategy(strategy_id: int):
         
         return {
             "success": True,
-            "message": "RS Strategy deleted successfully"
+            "message": "RS Stock Strategy deleted successfully"
         }
     except Exception as e:
         if session:
             session.rollback()
-        logger.error(f"Error deleting RS strategy: {e}")
-        raise HTTPException(status_code=500, detail=f"Error deleting RS strategy: {str(e)}")
+        logger.error(f"Error deleting RS Stock strategy: {e}")
+        raise HTTPException(status_code=500, detail=f"Error deleting RS Stock strategy: {str(e)}")
     finally:
         if session:
             session.close()
@@ -1068,8 +1147,8 @@ async def stop_rs_etf_strategy(request: dict):
         session = get_session()
         
         result = session.execute(text("""
-            UPDATE rs_etf_saved_strategies 
-            SET status = 'stopped', is_active = FALSE
+            UPDATE rs_etf_instance 
+            SET status = 'stop'
             WHERE id = :strategy_id AND user_id = :user_id
         """), {
             "strategy_id": request.get('strategy_id'),
@@ -1086,10 +1165,7 @@ async def stop_rs_etf_strategy(request: dict):
         if session:
             session.rollback()
         logger.error(f"Error stopping RS ETF strategy: {e}")
-        return {
-            "success": False,
-            "message": f"Error stopping RS ETF strategy: {str(e)}"
-        }
+        raise HTTPException(status_code=500, detail=f"Error stopping RS ETF strategy: {str(e)}")
     finally:
         if session:
             session.close()
@@ -1103,8 +1179,8 @@ async def restart_rs_etf_strategy(request: dict):
         session = get_session()
         
         result = session.execute(text("""
-            UPDATE rs_etf_saved_strategies 
-            SET status = 'active', is_active = TRUE
+            UPDATE rs_etf_instance 
+            SET status = 'running'
             WHERE id = :strategy_id AND user_id = :user_id
         """), {
             "strategy_id": request.get('strategy_id'),
@@ -1121,10 +1197,7 @@ async def restart_rs_etf_strategy(request: dict):
         if session:
             session.rollback()
         logger.error(f"Error restarting RS ETF strategy: {e}")
-        return {
-            "success": False,
-            "message": f"Error restarting RS ETF strategy: {str(e)}"
-        }
+        raise HTTPException(status_code=500, detail=f"Error restarting RS ETF strategy: {str(e)}")
     finally:
         if session:
             session.close()
@@ -1138,7 +1211,7 @@ async def delete_rs_etf_strategy(strategy_id: int):
         session = get_session()
         
         result = session.execute(text("""
-            DELETE FROM rs_etf_saved_strategies 
+            DELETE FROM rs_etf_instance 
             WHERE id = :strategy_id
         """), {"strategy_id": strategy_id})
         
@@ -1152,10 +1225,7 @@ async def delete_rs_etf_strategy(strategy_id: int):
         if session:
             session.rollback()
         logger.error(f"Error deleting RS ETF strategy: {e}")
-        return {
-            "success": False,
-            "message": f"Error deleting RS ETF strategy: {str(e)}"
-        }
+        raise HTTPException(status_code=500, detail=f"Error deleting RS ETF strategy: {str(e)}")
     finally:
         if session:
             session.close()

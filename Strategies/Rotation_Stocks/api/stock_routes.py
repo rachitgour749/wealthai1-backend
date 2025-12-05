@@ -880,7 +880,9 @@ async def get_saved_stock_strategies(user_id: str):
                     "use_custom_dates": strategy['use_custom_dates'],
                     "backtest_results": backtest_results,
                     "created_at": strategy['created_at'],
-                    "created_timestamp": strategy['created_timestamp']
+                    "created_timestamp": strategy['created_timestamp'],
+                    "last_execution_date": strategy.get('last_execution_date'),
+                    "next_execution_date": strategy.get('next_execution_date')
                 })
             except json.JSONDecodeError as e:
                 print(f"Warning: Could not parse JSON for strategy ID {strategy.get('id')}: {e}")

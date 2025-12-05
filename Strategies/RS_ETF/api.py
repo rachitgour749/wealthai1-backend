@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from sqlalchemy.orm import Session
-from .database import get_db, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot, execute_with_retry, check_database_health, save_backtest_result_safely, save_additional_data_safely, reset_database_connections, force_unlock_database, BacktestSessionLocal, SessionLocal, get_backtest_session, get_main_session
+from .database import get_db, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot, execute_with_retry, check_database_health, save_backtest_result_safely, save_additional_data_safely, reset_database_connections, force_unlock_database, BacktestSessionLocal, SessionLocal, get_backtest_session, get_main_session, SavedETFStrategy
 from .rs_etf_backtester_core import RSETFStrategyBacktester
 from pydantic import BaseModel
 from datetime import datetime, timedelta
@@ -1071,3 +1071,65 @@ async def delete_backtest_result(backtest_id: int, user_id: str = Query(..., des
         db.rollback()
         print(f"Error deleting backtest {backtest_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to delete backtest: {str(e)}")
+
+@router.get("/get-saved-strategies-list/{user_id}")
+async def get_saved_strategies_list(user_id: str, db: Session = Depends(get_db)):
+    """Get all saved RS ETF strategies for a specific user"""
+    try:
+        strategies = db.query(SavedETFStrategy).filter(SavedETFStrategy.user_id == user_id).order_by(SavedETFStrategy.created_at.desc()).all()
+        
+        result = []
+        for strategy in strategies:
+            # Parse JSON fields safely
+            backtest_results = {}
+            if strategy.backtest_results:
+                try:
+                    backtest_results = json.loads(strategy.backtest_results)
+                except:
+                    backtest_results = {}
+            
+            strategy_config = {}
+            if strategy.strategy_config:
+                try:
+                    strategy_config = json.loads(strategy.strategy_config)
+                except:
+                    strategy_config = {}
+            
+            client_info = {}
+            if strategy.client_information_json:
+                try:
+                    client_info = json.loads(strategy.client_information_json)
+                except:
+                    client_info = {}
+
+            strategy_dict = {
+                'id': strategy.id,
+                'strategy_name': strategy.strategy_name,
+                'strategy_type': strategy.strategy_type,
+                'user_id': strategy.user_id,
+                'start_date': strategy.start_date,
+                'end_date': strategy.end_date,
+                'rs_etf_universe': strategy.rs_etf_universe,
+                'backtest_results': backtest_results,
+                'strategy_config': strategy_config,
+                'created_at': strategy.created_at.isoformat() if strategy.created_at else None,
+                'is_active': strategy.is_active,
+                'status': strategy.status,
+                'run_id': strategy.run_id,
+                'webhook_url': strategy.webhook_url,
+                'client_information_json': client_info,
+                'last_run_date': strategy.last_run_date.isoformat() if strategy.last_run_date else "N/A",
+                'next_run_date': strategy.next_run_date.isoformat() if strategy.next_run_date else "N/A"
+            }
+            result.append(strategy_dict)
+            
+        return {
+            "success": True,
+            "strategies": result
+        }
+    except Exception as e:
+        logger.error(f"Error fetching RS ETF strategies: {e}")
+        return {
+            "success": False,
+            "message": f"Error fetching RS ETF strategies: {str(e)}"
+        }

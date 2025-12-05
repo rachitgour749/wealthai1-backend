@@ -48,6 +48,8 @@ class ETFSavedStrategy(Base):
     execution_date = Column(String(50))
     ltp = Column(Float)
     reference_capital = Column(Text)
+    last_execution_date = Column(String(50))
+    next_execution_date = Column(String(50))
     deployment_data = Column(Text)  # JSON
     etf_count = Column(Integer)
     etf_names = Column(Text)  # JSON array
@@ -88,6 +90,8 @@ class StockSavedStrategy(Base):
     webhook_url = Column(Text)
     status = Column(String(50), default='deploy')
     execution_date = Column(String(50))
+    last_execution_date = Column(String(50))
+    next_execution_date = Column(String(50))
     reference_capital = Column(Text)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     

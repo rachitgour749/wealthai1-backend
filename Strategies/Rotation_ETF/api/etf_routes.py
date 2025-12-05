@@ -875,7 +875,8 @@ async def get_saved_etf_strategies(user_id: str):
                     "run_id": strategy.get('run_id'),
                     "webhook_url": strategy.get('webhook_url'),
                     "client_information_json": strategy.get('client_information_json'),
-                    "execution_date": strategy.get('execution_date')
+                    "last_execution_date": strategy.get('last_execution_date'),
+                    "next_execution_date": strategy.get('next_execution_date')
                 })
             except (json.JSONDecodeError, KeyError) as e:
                 print(f"Warning: Could not parse strategy ID {strategy.get('id')}: {e}")

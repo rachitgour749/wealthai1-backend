@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional
 from sqlalchemy.orm import Session
 try:
-    from .database import ETFData, IndexData, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
+    from .database import StockData, IndexData, Nifty500Constituents, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
 except ImportError:
-    from database import ETFData, IndexData, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
+    from database import StockData, IndexData, Nifty500Constituents, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
 import json
 from dataclasses import dataclass
 import math
@@ -109,7 +109,7 @@ class Position:
     unrealized_pnl: float
     stop_loss_price: float
 
-class RSETFStrategyBacktester:
+class RSStrategyBacktester:
     def __init__(self, db: Session, config_id: int = None, config_dict: Dict = None):
         self.db = db
         
@@ -145,8 +145,8 @@ class RSETFStrategyBacktester:
             self.transaction_cost_pct = config_dict.get('transaction_cost_pct', 0.1) / 100
             # Removed min_price - no price filtering, all stocks eligible
             self.min_turnover = config_dict.get('min_turnover', 1000000.0)  # Default: ₹10L
-            self.etf_universe = config_dict.get('etf_universe', 'ALL_ETFS')
-            self.custom_etfs = config_dict.get('custom_etfs', None)  # Custom ETF selection
+            self.stock_universe = config_dict.get('stock_universe', 'NIFTY500')
+            self.custom_stocks = config_dict.get('custom_stocks', None)  # Custom stock selection
             self.config = None  # No database config object for custom configs
         elif config_id:
             # Load from database (existing behavior)
@@ -165,11 +165,11 @@ class RSETFStrategyBacktester:
             self.total_capital = self.config.total_capital
             self.stop_loss_pct = self.config.stop_loss_pct / 100
             self.capital_reset_threshold_pct = self.config.capital_reset_threshold_pct / 100
-            # Removed max_holding_period - ETFs held until RS ranking drops
+            # Removed max_holding_period - stocks held until RS ranking drops
             self.transaction_cost_pct = self.config.transaction_cost_pct / 100
-            # Removed min_price - no price filtering, all ETFs eligible
+            # Removed min_price - no price filtering, all stocks eligible
             self.min_turnover = self.config.min_turnover
-            self.etf_universe = getattr(self.config, 'etf_universe', 'ALL_ETFS')
+            self.stock_universe = getattr(self.config, 'stock_universe', 'NIFTY500')
         else:
             raise ValueError("Either config_id or config_dict must be provided")
         
@@ -219,8 +219,8 @@ class RSETFStrategyBacktester:
             volatility_threshold=0.5  # Higher threshold for more opportunities
         )
         
-    def load_etf_data(self, start_date: datetime, end_date: datetime) -> pd.DataFrame:
-        """Load ETF data from etf_data table"""
+    def load_stock_data(self, start_date: datetime, end_date: datetime) -> pd.DataFrame:
+        """Load stock data for Nifty 500 constituents with optimization for long periods"""
         # Ensure dates are timezone-naive
         if start_date.tzinfo:
             start_date = start_date.replace(tzinfo=None)
@@ -232,105 +232,115 @@ class RSETFStrategyBacktester:
         # buffer_start_date = (pd.to_datetime(start_date) - timedelta(days=400)).strftime('%Y-%m-%d')
         data_start_date = start_date - timedelta(days=100)
         
-        print(f"Loading ETF data from {data_start_date} to {end_date} (backtest period: {start_date} to {end_date})")
+        print(f"Loading stock data from {data_start_date} to {end_date} (backtest period: {start_date} to {end_date})")
         
         # Calculate period length
         period_days = (end_date - start_date).days
         total_data_days = (end_date - data_start_date).days
         print(f"Backtest period: {period_days} days, Total data period: {total_data_days} days")
         
-        # Get selected ETF symbols
-        selected_etfs = self.get_custom_etf_universe()
-        if not selected_etfs:
-            raise ValueError("No ETFs selected for backtest")
+        # Use SQLAlchemy text() for PostgreSQL-compatible queries
+        from sqlalchemy import text
         
-        print(f"Selected ETFs for backtest: {len(selected_etfs)} ETFs")
-        print(f"ETF symbols: {selected_etfs}")
+        # Query using SQLAlchemy text() with PostgreSQL parameter binding
+        query = text("""
+            SELECT symbol, date, adj_close as adjusted_close
+            FROM stock_data 
+            WHERE date >= :start_date AND date <= :end_date
+            ORDER BY symbol, date
+        """)
         
-        # Build symbol filter for SQL query
-        placeholders = ','.join(['%s'] * len(selected_etfs))
-        symbol_limit = f"AND symbol IN ({placeholders})"
+        # Execute query and convert to DataFrame
+        result = self.db.execute(query, {
+            "start_date": data_start_date,
+            "end_date": end_date
+        })
         
-        # Use raw SQL to query etf_data table with symbol filtering
-        sql = f"""
-        SELECT symbol, date, adjusted_close
-        FROM etf_data 
-        WHERE date >= %s AND date <= %s {symbol_limit}
-        ORDER BY symbol, date
-        """
+        # Convert to DataFrame
+        df = pd.DataFrame(result.fetchall(), columns=result.keys())
         
-        params = tuple([data_start_date, end_date] + selected_etfs)
-        df = pd.read_sql(sql, self.db.bind, params=params, 
-                        index_col=['symbol', 'date'], parse_dates=['date'])
+        # Set date to datetime
+        df['date'] = pd.to_datetime(df['date'])
         
-        print(f"Raw ETF data query returned: {len(df)} records")
+        # Set index
+        df = df.set_index(['symbol', 'date'])
+        
+        print(f"Raw stock data query returned: {len(df)} records")
         
         # Convert timezone-aware dates to timezone-naive
         if df.index.get_level_values('date').tz is not None:
             df.index = df.index.set_levels(df.index.levels[1].tz_convert(None), level='date')
         
-        print(f"Final ETF data: {len(df)} records, {len(df.index.get_level_values('symbol').unique())} ETFs")
+        print(f"Final stock data: {len(df)} records, {len(df.index.get_level_values('symbol').unique())} symbols")
         if not df.empty:
             print(f"Date range: {df.index.get_level_values('date').min()} to {df.index.get_level_values('date').max()}")
         
         return df
     
-    def calculate_common_date_range(self, selected_etfs: List[str]) -> Tuple[Optional[str], Optional[str], float]:
-        """Calculate common date range for selected ETFs by querying the database"""
-        if not selected_etfs:
+    def calculate_common_date_range(self, selected_stocks: List[str]) -> Tuple[Optional[str], Optional[str], float]:
+        """Calculate common date range for selected stocks by querying the database"""
+        if not selected_stocks:
             return None, None, 0.0
         
         try:
-            # Filter to only allowed ETFs (optional validation)
-            allowed_etfs = self._get_allowed_etf_list()
-            valid_etfs = [etf for etf in selected_etfs if etf in allowed_etfs]
+            # Query database for min/max dates for all stocks in one query (more efficient)
+            stock_ranges = {}
             
-            if not valid_etfs:
-                print(f"Warning: No valid ETFs in selection. Allowed ETFs: {allowed_etfs}")
-                return None, None, 0.0
+            # Use SQLAlchemy text() for PostgreSQL-compatible queries
+            from sqlalchemy import text
             
-            # Query database for min/max dates for each ETF
-            etf_ranges = {}
+            # Build placeholders for IN clause
+            placeholders = ','.join([f':symbol_{i}' for i in range(len(selected_stocks))])
             
-            for etf in valid_etfs:
-                # Query min and max dates for this ETF
-                sql = """
-                SELECT MIN(date) as min_date, MAX(date) as max_date
-                FROM etf_data 
-                WHERE symbol = %s
-                """
-                result = pd.read_sql(sql, self.db.bind, params=(etf,))
-                
-                if not result.empty and result.iloc[0]['min_date'] is not None:
-                    min_date = pd.to_datetime(result.iloc[0]['min_date'])
-                    max_date = pd.to_datetime(result.iloc[0]['max_date'])
-                    etf_ranges[etf] = {
+            # Single query to get min/max dates for all stocks
+            query = text(f"""
+                SELECT 
+                    symbol,
+                    MIN(date) as min_date, 
+                    MAX(date) as max_date
+                FROM stock_data
+                WHERE symbol IN ({placeholders})
+                GROUP BY symbol
+            """)
+            
+            # Build parameters dict
+            params = {f'symbol_{i}': stock for i, stock in enumerate(selected_stocks)}
+            
+            # Execute query
+            results = self.db.execute(query, params).fetchall()
+            
+            # Process results
+            for row in results:
+                if row.min_date is not None and row.max_date is not None:
+                    min_date = pd.to_datetime(row.min_date)
+                    max_date = pd.to_datetime(row.max_date)
+                    stock_ranges[row.symbol] = {
                         'start_date': min_date,
                         'end_date': max_date
                     }
             
-            if not etf_ranges:
-                print(f"No data found for selected ETFs: {valid_etfs}")
+            if not stock_ranges:
+                print(f"No data found for selected stocks: {selected_stocks}")
                 return None, None, 0.0
             
             # Find the latest start date and earliest end date (common range)
-            start_dates = [data['start_date'] for data in etf_ranges.values()]
-            end_dates = [data['end_date'] for data in etf_ranges.values()]
+            start_dates = [data['start_date'] for data in stock_ranges.values()]
+            end_dates = [data['end_date'] for data in stock_ranges.values()]
             
             latest_start = max(start_dates)
             earliest_end = min(end_dates)
             
-            print(f"📅 RS ETF Strategy Data Ranges:")
-            for etf in valid_etfs:
-                if etf in etf_ranges:
-                    data = etf_ranges[etf]
+            print(f"📅 RS Strategy Stock Data Ranges:")
+            for stock in selected_stocks:
+                if stock in stock_ranges:
+                    data = stock_ranges[stock]
                     days_available = (data['end_date'] - data['start_date']).days
                     years_available = days_available / 365.25
-                    print(f"   {etf:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years_available:.1f} years)")
+                    print(f"   {stock:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years_available:.1f} years)")
             
             print(f"📊 Common data range: {latest_start.strftime('%Y-%m-%d')} to {earliest_end.strftime('%Y-%m-%d')}")
             
-            # Add buffer for RS ETF strategy calculations
+            # Add buffer for RS strategy calculations (similar to stock strategy)
             # RS strategy needs lookback periods, so add buffer
             buffer_weeks = 90  # 90 weeks = ~630 calendar days
             buffer_days = buffer_weeks * 7
@@ -376,7 +386,9 @@ class RSETFStrategyBacktester:
         
         print(f"Loading index data for {self.main_index} from {data_start_date} to {end_date} (backtest period: {start_date} to {end_date})")
         
-        # Use raw SQL to avoid SQLAlchemy model issues
+        # Use SQLAlchemy text() for PostgreSQL-compatible queries
+        from sqlalchemy import text
+        
         # Handle multiple symbol formats for NSEI index
         symbol_variants = [self.main_index]
         if self.main_index in ['^NSEI', 'NSEI', 'NIFTY50']:
@@ -384,26 +396,39 @@ class RSETFStrategyBacktester:
         elif self.main_index in ['^NIFTY50', 'NIFTY50']:
             symbol_variants = ['^NIFTY50', 'NIFTY50', 'NSEI']
         
-        placeholders = ','.join(['%s' for _ in symbol_variants])
-        sql = f"""
-        SELECT symbol, date, open, high, low, close, adj_close, volume
-        FROM index_data 
-        WHERE symbol IN ({placeholders}) AND date >= %s AND date <= %s
-        ORDER BY date
-        """
+        # Build placeholders for IN clause
+        placeholders = ','.join([f':symbol_{i}' for i in range(len(symbol_variants))])
         
-        params = tuple(symbol_variants + [data_start_date, end_date])
-        df = pd.read_sql(sql, self.db.bind, params=params,
-                        index_col='date', parse_dates=['date'])
+        # Query using SQLAlchemy text() with PostgreSQL parameter binding
+        query = text(f"""
+            SELECT symbol, date, open, high, low, close, adj_close, volume
+            FROM index_data 
+            WHERE symbol IN ({placeholders}) AND date >= :start_date AND date <= :end_date
+            ORDER BY date
+        """)
+        
+        # Build parameters dict
+        params = {f'symbol_{i}': symbol for i, symbol in enumerate(symbol_variants)}
+        params.update({
+            "start_date": data_start_date,
+            "end_date": end_date
+        })
+        
+        # Execute query and convert to DataFrame
+        result = self.db.execute(query, params)
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(result.fetchall(), columns=result.keys())
+        
+        # Set date to datetime and index
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.set_index('date')
         
         print(f"Raw index data query returned: {len(df)} records")
         
-        
-        # Rename adj_close to adjusted_close for consistency
+        # Rename column to match our expected schema
         if 'adj_close' in df.columns:
             df = df.rename(columns={'adj_close': 'adjusted_close'})
-        # Column is already named adjusted_close in MarketData.sqlite
-        # No renaming needed
         
         # Convert timezone-aware dates to timezone-naive
         if df.index.tz is not None:
@@ -417,9 +442,7 @@ class RSETFStrategyBacktester:
 
 
     def get_nifty50_custom_stocks(self) -> List[str]:
-        """Deprecated: This method is not used for ETF strategy. Use get_custom_etf_universe() instead."""
-        # Return empty list - this method should not be called for ETF strategy
-        return []
+        """Your best selected Nifty 50 stocks from actual database"""
         return [
             'RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'HINDUNILVR',
             'ICICIBANK', 'KOTAKBANK', 'ITC', 'BHARTIARTL','M&M',
@@ -433,196 +456,312 @@ class RSETFStrategyBacktester:
             'BAJAJ-AUTO', 'TATACONSUM', 'DABUR', 'GODREJCP', 'PIDILITIND'
         ]
     
-    # def get_nifty100_custom_stocks(self) -> List[str]:
-    #     """Your best selected Nifty 100 stocks"""
-    #     nifty50 = self.get_nifty50_custom_stocks()
-    #     additional_stocks = [
-    #         'VEDL', 'GAIL', 'IOC', 'PETRONET', 'BANDHANBNK', 
-    #         'MOTHERSON', 'BOSCHLTD', 'BERGEPAINT', 'GODREJPROP', 'MFSL',
-    #         'BIOCON', 'COLPAL', 'HDFCLIFE', 'ICICIGI', 'ICICIPRULI',
-    #         'MARICO', 'MPHASIS', 'MRF', 'SAIL', 'SIEMENS',
-    #         'TATACHEM', 'TATAPOWER', 'TORNTPHARM', 'TVSMOTOR', 'UBL',
-    #         'ZEEL', 'ZYDUSLIFE', 'ABBOTINDIA', 'ADANIENT', 'ADANIGREEN',
-    #         'ALKEM', 'AMBUJACEM', 'APLLTD', 'ASHOKLEY', 'ASTRAL',
-    #         'ATUL', 'AUBANK', 'AUROPHARMA', 'BAJAJHLDNG', 'BALRAMCHIN',
-    #         'BATAINDIA', 'BEL', 'BEML', 'BHARATFORG', 'BHEL',
-    #         'BLUEDART', 'BLUESTARCO', 'CANBK', 'CENTRALBK', 'CESC'
-    #     ]
-    #     return nifty50 + additional_stocks
+    def get_nifty100_custom_stocks(self) -> List[str]:
+        """Your best selected Nifty 100 stocks"""
+        nifty50 = self.get_nifty50_custom_stocks()
+        additional_stocks = [
+            'VEDL', 'GAIL', 'IOC', 'PETRONET', 'BANDHANBNK', 
+            'MOTHERSON', 'BOSCHLTD', 'BERGEPAINT', 'GODREJPROP', 'MFSL',
+            'BIOCON', 'COLPAL', 'HDFCLIFE', 'ICICIGI', 'ICICIPRULI',
+            'MARICO', 'MPHASIS', 'MRF', 'SAIL', 'SIEMENS',
+            'TATACHEM', 'TATAPOWER', 'TORNTPHARM', 'TVSMOTOR', 'UBL',
+            'ZEEL', 'ZYDUSLIFE', 'ABBOTINDIA', 'ADANIENT', 'ADANIGREEN',
+            'ALKEM', 'AMBUJACEM', 'APLLTD', 'ASHOKLEY', 'ASTRAL',
+            'ATUL', 'AUBANK', 'AUROPHARMA', 'BAJAJHLDNG', 'BALRAMCHIN',
+            'BATAINDIA', 'BEL', 'BEML', 'BHARATFORG', 'BHEL',
+            'BLUEDART', 'BLUESTARCO', 'CANBK', 'CENTRALBK', 'CESC'
+        ]
+        return nifty50 + additional_stocks
     
-    # def get_nifty200_custom_stocks(self) -> List[str]:
-    #     """Your best selected Nifty 200 stocks"""
-    #     nifty100 = self.get_nifty100_custom_stocks()
-    #     additional_stocks = [
-    #         'BEML', 'BHARATFORG', 'CANFINHOME', 'CHOLAFIN', 'CONCOR',
-    #         'CROMPTON', 'CUMMINSIND', 'DALBHARAT', 'DEEPAKNTR', 'DLF',
-    #         'ESCORTS', 'EXIDEIND', 'FEDERALBNK', 'GLENMARK', 'GRANULES',
-    #         'GUJGASLTD', 'HAL', 'HAVELLS', 'HDFCAMC', 'HINDPETRO',
-    #         'IBULHSGFIN', 'IDBI', 'IDFCFIRSTB', 'IGL', 'INDHOTEL',
-    #         'INDIANB', 'INDIGO', 'IPCALAB', 'IRCTC', 'JINDALSTEL',
-    #         'JKCEMENT', 'JUBLFOOD', 'JUSTDIAL', 'LICHSGFIN', 'LTTS',
-    #         'LUPIN', 'M&M', 'M&MFIN', 'MANAPPURAM', 'MUTHOOTFIN',
-    #         'NATIONALUM', 'NAUKRI', 'NMDC', 'OBEROI', 'OFSS',
-    #         'PAGEIND', 'PEL', 'PNB', 'POLYCAB', 'PVR',
-    #         'RBLBANK', 'RECLTD', 'SBICARD', 'SBILIFE', 'SRF',
-    #         'SUNTV', 'TRENT', 'VOLTAS', 'YESBANK', '3MINDIA',
-    #         'ABB', 'ACC', 'ADANIPOWER', 'ADANITRANS', 'APOLLOTYRE',
-    #         'ASHOKLEY', 'ASTRAL', 'ATUL', 'AUBANK', 'AUROPHARMA',
-    #         'BAJAJHLDNG', 'BALRAMCHIN', 'BANDHANBNK', 'BATAINDIA', 'BEL',
-    #         'BEML', 'BERGEPAINT', 'BHARATFORG', 'BIOCON', 'BOSCHLTD',
-    #         'CADILAHC', 'CANFINHOME', 'CHOLAFIN', 'CIPLA', 'COLPAL',
-    #         'CONCOR', 'CROMPTON', 'CUMMINSIND', 'DABUR', 'DALBHARAT',
-    #         'DEEPAKNTR', 'DIVISLAB', 'DLF', 'DRREDDY', 'EICHERMOT',
-    #         'ESCORTS', 'EXIDEIND', 'FEDERALBNK', 'GAIL', 'GLENMARK',
-    #         # 'GODREJCP', 'GODREJPROP', 'GRANULES', 'GRASIM', 'GUJGASLTD',
-    #         # 'HAL', 'HAVELLS', 'HCLTECH', 'HDFCAMC', 'HDFCLIFE',
-    #         # 'HEROMOTOCO', 'HINDALCO', 'HINDPETRO', 'HINDUNILVR', 'IBULHSGFIN',
-    #         # 'ICICIGI', 'ICICIPRULI', 'IDBI', 'IDFCFIRSTB', 'IGL',
-    #         # 'INDHOTEL', 'INDIANB', 'INDIGO', 'INDUSINDBK', 'INFY',
-    #         # 'IOC', 'IPCALAB', 'IRCTC', 'ITC', 'JINDALSTEL',
-    #         # 'JKCEMENT', 'JSWSTEEL', 'JUBLFOOD', 'JUSTDIAL', 'KOTAKBANK',
-    #         # 'LALPATHLAB', 'LICHSGFIN', 'LT', 'LTTS', 'LUPIN',
-    #         # 'M&M', 'M&MFIN', 'MANAPPURAM', 'MARICO', 'MARUTI',
-    #         # 'MCDOWELL-N', 'MFSL', 'MINDTREE', 'MOTHERSON', 'MPHASIS',
-    #         # 'MRF', 'MUTHOOTFIN', 'NATIONALUM', 'NAUKRI', 'NESTLEIND',
-    #         # 'NMDC', 'NTPC', 'OBEROI', 'OFSS', 'ONGC',
-    #         # 'PAGEIND', 'PEL', 'PETRONET', 'PIDILITIND', 'PNB',
-    #         # 'POLYCAB', 'POWERGRID', 'PVR', 'RBLBANK', 'RECLTD',
-    #         # 'RELAXO', 'RELIANCE', 'SAIL', 'SBICARD', 'SBILIFE',
-    #         # 'SBIN', 'SHREECEM', 'SIEMENS', 'SRF', 'SUNPHARMA',
-    #         # 'SUNTV', 'TATACHEM', 'TATACONSUM', 'TATAMOTORS', 'TATAPOWER',
-    #         # 'TATASTEEL', 'TCS', 'TECHM', 'TITAN', 'TORNTPHARM',
-    #         # 'TRENT', 'TVSMOTORS', 'UBL', 'ULTRACEMCO', 'UPL',
-    #         # 'VEDL', 'VOLTAS', 'WIPRO', 'YESBANK', 'ZEEL',
-    #         # 'ZYDUSLIFE'
-    #     ]
-    #     return nifty100 + additional_stocks
+    def get_nifty200_custom_stocks(self) -> List[str]:
+        """Your best selected Nifty 200 stocks"""
+        nifty100 = self.get_nifty100_custom_stocks()
+        additional_stocks = [
+            'BEML', 'BHARATFORG', 'CANFINHOME', 'CHOLAFIN', 'CONCOR',
+            'CROMPTON', 'CUMMINSIND', 'DALBHARAT', 'DEEPAKNTR', 'DLF',
+            'ESCORTS', 'EXIDEIND', 'FEDERALBNK', 'GLENMARK', 'GRANULES',
+            'GUJGASLTD', 'HAL', 'HAVELLS', 'HDFCAMC', 'HINDPETRO',
+            'IBULHSGFIN', 'IDBI', 'IDFCFIRSTB', 'IGL', 'INDHOTEL',
+            'INDIANB', 'INDIGO', 'IPCALAB', 'IRCTC', 'JINDALSTEL',
+            'JKCEMENT', 'JUBLFOOD', 'JUSTDIAL', 'LICHSGFIN', 'LTTS',
+            'LUPIN', 'M&M', 'M&MFIN', 'MANAPPURAM', 'MUTHOOTFIN',
+            'NATIONALUM', 'NAUKRI', 'NMDC', 'OBEROI', 'OFSS',
+            'PAGEIND', 'PEL', 'PNB', 'POLYCAB', 'PVR',
+            'RBLBANK', 'RECLTD', 'SBICARD', 'SBILIFE', 'SRF',
+            'SUNTV', 'TRENT', 'VOLTAS', 'YESBANK', '3MINDIA',
+            'ABB', 'ACC', 'ADANIPOWER', 'ADANITRANS', 'APOLLOTYRE',
+            'ASHOKLEY', 'ASTRAL', 'ATUL', 'AUBANK', 'AUROPHARMA',
+            'BAJAJHLDNG', 'BALRAMCHIN', 'BANDHANBNK', 'BATAINDIA', 'BEL',
+            'BEML', 'BERGEPAINT', 'BHARATFORG', 'BIOCON', 'BOSCHLTD',
+            'CADILAHC', 'CANFINHOME', 'CHOLAFIN', 'CIPLA', 'COLPAL',
+            'CONCOR', 'CROMPTON', 'CUMMINSIND', 'DABUR', 'DALBHARAT',
+            'DEEPAKNTR', 'DIVISLAB', 'DLF', 'DRREDDY', 'EICHERMOT',
+            'ESCORTS', 'EXIDEIND', 'FEDERALBNK', 'GAIL', 'GLENMARK',
+            # 'GODREJCP', 'GODREJPROP', 'GRANULES', 'GRASIM', 'GUJGASLTD',
+            # 'HAL', 'HAVELLS', 'HCLTECH', 'HDFCAMC', 'HDFCLIFE',
+            # 'HEROMOTOCO', 'HINDALCO', 'HINDPETRO', 'HINDUNILVR', 'IBULHSGFIN',
+            # 'ICICIGI', 'ICICIPRULI', 'IDBI', 'IDFCFIRSTB', 'IGL',
+            # 'INDHOTEL', 'INDIANB', 'INDIGO', 'INDUSINDBK', 'INFY',
+            # 'IOC', 'IPCALAB', 'IRCTC', 'ITC', 'JINDALSTEL',
+            # 'JKCEMENT', 'JSWSTEEL', 'JUBLFOOD', 'JUSTDIAL', 'KOTAKBANK',
+            # 'LALPATHLAB', 'LICHSGFIN', 'LT', 'LTTS', 'LUPIN',
+            # 'M&M', 'M&MFIN', 'MANAPPURAM', 'MARICO', 'MARUTI',
+            # 'MCDOWELL-N', 'MFSL', 'MINDTREE', 'MOTHERSON', 'MPHASIS',
+            # 'MRF', 'MUTHOOTFIN', 'NATIONALUM', 'NAUKRI', 'NESTLEIND',
+            # 'NMDC', 'NTPC', 'OBEROI', 'OFSS', 'ONGC',
+            # 'PAGEIND', 'PEL', 'PETRONET', 'PIDILITIND', 'PNB',
+            # 'POLYCAB', 'POWERGRID', 'PVR', 'RBLBANK', 'RECLTD',
+            # 'RELAXO', 'RELIANCE', 'SAIL', 'SBICARD', 'SBILIFE',
+            # 'SBIN', 'SHREECEM', 'SIEMENS', 'SRF', 'SUNPHARMA',
+            # 'SUNTV', 'TATACHEM', 'TATACONSUM', 'TATAMOTORS', 'TATAPOWER',
+            # 'TATASTEEL', 'TCS', 'TECHM', 'TITAN', 'TORNTPHARM',
+            # 'TRENT', 'TVSMOTORS', 'UBL', 'ULTRACEMCO', 'UPL',
+            # 'VEDL', 'VOLTAS', 'WIPRO', 'YESBANK', 'ZEEL',
+            # 'ZYDUSLIFE'
+        ]
+        return nifty100 + additional_stocks
     
-    # def get_nifty300_custom_stocks(self) -> List[str]:
-    #     """Your best selected Nifty 300 stocks"""
-    #     nifty200 = self.get_nifty200_custom_stocks()
-    #     additional_stocks = [
-    #         '3MINDIA', 'ABB', 'ACC', 'ADANIENT', 'ADANIGREEN',
-    #         'ADANIPORTS', 'ADANITRANS', 'ADANIPOWER', 'ALKEM', 'AMBUJACEM',
-    #         'APLLTD', 'ASHOKLEY', 'ASTRAL', 'ATUL', 'AUBANK',
-    #         'AUROPHARMA', 'BAJAJHLDNG', 'BALRAMCHIN', 'BANDHANBNK', 'BATAINDIA',
-    #         'BEL', 'BEML', 'BERGEPAINT', 'BHARATFORG', 'BIOCON',
-    #         'BOSCHLTD', 'CADILAHC', 'CANFINHOME', 'CHOLAFIN', 'CIPLA',
-    #         'COLPAL', 'CONCOR', 'CROMPTON', 'CUMMINSIND', 'DABUR',
-    #         'DALBHARAT', 'DEEPAKNTR', 'DIVISLAB', 'DLF', 'DRREDDY',
-    #         'EICHERMOT', 'ESCORTS', 'EXIDEIND', 'FEDERALBNK', 'GAIL',
-    #         'GLENMARK', 'GODREJCP', 'GODREJPROP', 'GRANULES', 'GRASIM',
-    #         'GUJGASLTD', 'HAL', 'HAVELLS', 'HCLTECH', 'HDFCAMC',
-    #         'HDFCLIFE', 'HEROMOTOCO', 'HINDALCO', 'HINDPETRO', 'HINDUNILVR',
-    #         'IBULHSGFIN', 'ICICIGI', 'ICICIPRULI', 'IDBI', 'IDFCFIRSTB',
-    #         'IGL', 'INDHOTEL', 'INDIANB', 'INDIGO', 'INDUSINDBK',
-    #         'INFY', 'IOC', 'IPCALAB', 'IRCTC', 'ITC',
-    #         'JINDALSTEL', 'JKCEMENT', 'JSWSTEEL', 'JUBLFOOD', 'JUSTDIAL',
-    #         'KOTAKBANK', 'LALPATHLAB', 'LICHSGFIN', 'LT', 'LTTS',
-    #         'LUPIN', 'M&M', 'M&MFIN', 'MANAPPURAM', 'MARICO',
-    #         'MARUTI', 'MCDOWELL-N', 'MFSL', 'MINDTREE', 'MOTHERSON',
-    #         'MPHASIS', 'MRF', 'MUTHOOTFIN', 'NATIONALUM', 'NAUKRI',
-    #         # 'NESTLEIND', 'NMDC', 'NTPC', 'OBEROI', 'OFSS',
-    #         # 'ONGC', 'PAGEIND', 'PEL', 'PETRONET', 'PIDILITIND',
-    #         # 'PNB', 'POLYCAB', 'POWERGRID', 'PVR', 'RBLBANK',
-    #         # 'RECLTD', 'RELAXO', 'RELIANCE', 'SAIL', 'SBICARD',
-    #         # 'SBILIFE', 'SBIN', 'SHREECEM', 'SIEMENS', 'SRF',
-    #         # 'SUNPHARMA', 'SUNTV', 'TATACHEM', 'TATACONSUM', 'TATAMOTORS',
-    #         # 'TATAPOWER', 'TATASTEEL', 'TCS', 'TECHM', 'TITAN',
-    #         # 'TORNTPHARM', 'TRENT', 'TVSMOTORS', 'UBL', 'ULTRACEMCO',
-    #         # 'UPL', 'VEDL', 'VOLTAS', 'WIPRO', 'YESBANK',
-    #         # 'ZEEL', 'ZYDUSLIFE'
-    #     ]
-    #     return nifty200 + additional_stocks
+    def get_nifty300_custom_stocks(self) -> List[str]:
+        """Your best selected Nifty 300 stocks"""
+        nifty200 = self.get_nifty200_custom_stocks()
+        additional_stocks = [
+            '3MINDIA', 'ABB', 'ACC', 'ADANIENT', 'ADANIGREEN',
+            'ADANIPORTS', 'ADANITRANS', 'ADANIPOWER', 'ALKEM', 'AMBUJACEM',
+            'APLLTD', 'ASHOKLEY', 'ASTRAL', 'ATUL', 'AUBANK',
+            'AUROPHARMA', 'BAJAJHLDNG', 'BALRAMCHIN', 'BANDHANBNK', 'BATAINDIA',
+            'BEL', 'BEML', 'BERGEPAINT', 'BHARATFORG', 'BIOCON',
+            'BOSCHLTD', 'CADILAHC', 'CANFINHOME', 'CHOLAFIN', 'CIPLA',
+            'COLPAL', 'CONCOR', 'CROMPTON', 'CUMMINSIND', 'DABUR',
+            'DALBHARAT', 'DEEPAKNTR', 'DIVISLAB', 'DLF', 'DRREDDY',
+            'EICHERMOT', 'ESCORTS', 'EXIDEIND', 'FEDERALBNK', 'GAIL',
+            'GLENMARK', 'GODREJCP', 'GODREJPROP', 'GRANULES', 'GRASIM',
+            'GUJGASLTD', 'HAL', 'HAVELLS', 'HCLTECH', 'HDFCAMC',
+            'HDFCLIFE', 'HEROMOTOCO', 'HINDALCO', 'HINDPETRO', 'HINDUNILVR',
+            'IBULHSGFIN', 'ICICIGI', 'ICICIPRULI', 'IDBI', 'IDFCFIRSTB',
+            'IGL', 'INDHOTEL', 'INDIANB', 'INDIGO', 'INDUSINDBK',
+            'INFY', 'IOC', 'IPCALAB', 'IRCTC', 'ITC',
+            'JINDALSTEL', 'JKCEMENT', 'JSWSTEEL', 'JUBLFOOD', 'JUSTDIAL',
+            'KOTAKBANK', 'LALPATHLAB', 'LICHSGFIN', 'LT', 'LTTS',
+            'LUPIN', 'M&M', 'M&MFIN', 'MANAPPURAM', 'MARICO',
+            'MARUTI', 'MCDOWELL-N', 'MFSL', 'MINDTREE', 'MOTHERSON',
+            'MPHASIS', 'MRF', 'MUTHOOTFIN', 'NATIONALUM', 'NAUKRI',
+            # 'NESTLEIND', 'NMDC', 'NTPC', 'OBEROI', 'OFSS',
+            # 'ONGC', 'PAGEIND', 'PEL', 'PETRONET', 'PIDILITIND',
+            # 'PNB', 'POLYCAB', 'POWERGRID', 'PVR', 'RBLBANK',
+            # 'RECLTD', 'RELAXO', 'RELIANCE', 'SAIL', 'SBICARD',
+            # 'SBILIFE', 'SBIN', 'SHREECEM', 'SIEMENS', 'SRF',
+            # 'SUNPHARMA', 'SUNTV', 'TATACHEM', 'TATACONSUM', 'TATAMOTORS',
+            # 'TATAPOWER', 'TATASTEEL', 'TCS', 'TECHM', 'TITAN',
+            # 'TORNTPHARM', 'TRENT', 'TVSMOTORS', 'UBL', 'ULTRACEMCO',
+            # 'UPL', 'VEDL', 'VOLTAS', 'WIPRO', 'YESBANK',
+            # 'ZEEL', 'ZYDUSLIFE'
+        ]
+        return nifty200 + additional_stocks
     
-    # def get_nifty500_custom_stocks(self) -> List[str]:
-    #     """Your best selected Nifty 500 stocks"""
-    #     nifty300 = self.get_nifty300_custom_stocks()
-    #     additional_stocks = [
-    #         '3MINDIA', 'ABB', 'ACC', 'ADANIENT', 'ADANIGREEN',
-    #         'ADANIPORTS', 'ADANITRANS', 'ADANIPOWER', 'ALKEM', 'AMBUJACEM',
-    #         'APLLTD', 'ASHOKLEY', 'ASTRAL', 'ATUL', 'AUBANK',
-    #         'AUROPHARMA', 'BAJAJHLDNG', 'BALRAMCHIN', 'BANDHANBNK', 'BATAINDIA',
-    #         'BEL', 'BEML', 'BERGEPAINT', 'BHARATFORG', 'BIOCON',
-    #         'BOSCHLTD', 'CADILAHC', 'CANFINHOME', 'CHOLAFIN', 'CIPLA',
-    #         'COLPAL', 'CONCOR', 'CROMPTON', 'CUMMINSIND', 'DABUR',
-    #         'DALBHARAT', 'DEEPAKNTR', 'DIVISLAB', 'DLF', 'DRREDDY',
-    #         'EICHERMOT', 'ESCORTS', 'EXIDEIND', 'FEDERALBNK', 'GAIL',
-    #         'GLENMARK', 'GODREJCP', 'GODREJPROP', 'GRANULES', 'GRASIM',
-    #         'GUJGASLTD', 'HAL', 'HAVELLS', 'HCLTECH', 'HDFCAMC',
-    #         'HDFCLIFE', 'HEROMOTOCO', 'HINDALCO', 'HINDPETRO', 'HINDUNILVR',
-    #         'IBULHSGFIN', 'ICICIGI', 'ICICIPRULI', 'IDBI', 'IDFCFIRSTB',
-    #         'IGL', 'INDHOTEL', 'INDIANB', 'INDIGO', 'INDUSINDBK',
-    #         'INFY', 'IOC', 'IPCALAB', 'IRCTC', 'ITC',
-    #         'JINDALSTEL', 'JKCEMENT', 'JSWSTEEL', 'JUBLFOOD', 'JUSTDIAL',
-    #         'KOTAKBANK', 'LALPATHLAB', 'LICHSGFIN', 'LT', 'LTTS',
-    #         'LUPIN', 'M&M', 'M&MFIN', 'MANAPPURAM', 'MARICO',
-    #         'MARUTI', 'MCDOWELL-N', 'MFSL', 'MINDTREE', 'MOTHERSON',
-    #         'MPHASIS', 'MRF', 'MUTHOOTFIN', 'NATIONALUM', 'NAUKRI',
-    #         'NESTLEIND', 'NMDC', 'NTPC', 'OBEROI', 'OFSS',
-    #         'ONGC', 'PAGEIND', 'PEL', 'PETRONET', 'PIDILITIND',
-    #         'PNB', 'POLYCAB', 'POWERGRID', 'PVR', 'RBLBANK',
-    #         'RECLTD', 'RELAXO', 'RELIANCE', 'SAIL', 'SBICARD',
-    #         'SBILIFE', 'SBIN', 'SHREECEM', 'SIEMENS', 'SRF',
-    #         'SUNPHARMA', 'SUNTV', 'TATACHEM', 'TATACONSUM', 'TATAMOTORS',
-    #         'TATAPOWER', 'TATASTEEL', 'TCS', 'TECHM', 'TITAN',
-    #         'TORNTPHARM', 'TRENT', 'TVSMOTORS', 'UBL', 'ULTRACEMCO',
-    #         'UPL', 'VEDL', 'VOLTAS', 'WIPRO', 'YESBANK',
-    #         # 'ZEEL', 'ZYDUSLIFE'
-    #     ]
-    #     return nifty300 + additional_stocks
+    def get_nifty500_custom_stocks(self) -> List[str]:
+        """Your best selected Nifty 500 stocks"""
+        nifty300 = self.get_nifty300_custom_stocks()
+        additional_stocks = [
+            '3MINDIA', 'ABB', 'ACC', 'ADANIENT', 'ADANIGREEN',
+            'ADANIPORTS', 'ADANITRANS', 'ADANIPOWER', 'ALKEM', 'AMBUJACEM',
+            'APLLTD', 'ASHOKLEY', 'ASTRAL', 'ATUL', 'AUBANK',
+            'AUROPHARMA', 'BAJAJHLDNG', 'BALRAMCHIN', 'BANDHANBNK', 'BATAINDIA',
+            'BEL', 'BEML', 'BERGEPAINT', 'BHARATFORG', 'BIOCON',
+            'BOSCHLTD', 'CADILAHC', 'CANFINHOME', 'CHOLAFIN', 'CIPLA',
+            'COLPAL', 'CONCOR', 'CROMPTON', 'CUMMINSIND', 'DABUR',
+            'DALBHARAT', 'DEEPAKNTR', 'DIVISLAB', 'DLF', 'DRREDDY',
+            'EICHERMOT', 'ESCORTS', 'EXIDEIND', 'FEDERALBNK', 'GAIL',
+            'GLENMARK', 'GODREJCP', 'GODREJPROP', 'GRANULES', 'GRASIM',
+            'GUJGASLTD', 'HAL', 'HAVELLS', 'HCLTECH', 'HDFCAMC',
+            'HDFCLIFE', 'HEROMOTOCO', 'HINDALCO', 'HINDPETRO', 'HINDUNILVR',
+            'IBULHSGFIN', 'ICICIGI', 'ICICIPRULI', 'IDBI', 'IDFCFIRSTB',
+            'IGL', 'INDHOTEL', 'INDIANB', 'INDIGO', 'INDUSINDBK',
+            'INFY', 'IOC', 'IPCALAB', 'IRCTC', 'ITC',
+            'JINDALSTEL', 'JKCEMENT', 'JSWSTEEL', 'JUBLFOOD', 'JUSTDIAL',
+            'KOTAKBANK', 'LALPATHLAB', 'LICHSGFIN', 'LT', 'LTTS',
+            'LUPIN', 'M&M', 'M&MFIN', 'MANAPPURAM', 'MARICO',
+            'MARUTI', 'MCDOWELL-N', 'MFSL', 'MINDTREE', 'MOTHERSON',
+            'MPHASIS', 'MRF', 'MUTHOOTFIN', 'NATIONALUM', 'NAUKRI',
+            'NESTLEIND', 'NMDC', 'NTPC', 'OBEROI', 'OFSS',
+            'ONGC', 'PAGEIND', 'PEL', 'PETRONET', 'PIDILITIND',
+            'PNB', 'POLYCAB', 'POWERGRID', 'PVR', 'RBLBANK',
+            'RECLTD', 'RELAXO', 'RELIANCE', 'SAIL', 'SBICARD',
+            'SBILIFE', 'SBIN', 'SHREECEM', 'SIEMENS', 'SRF',
+            'SUNPHARMA', 'SUNTV', 'TATACHEM', 'TATACONSUM', 'TATAMOTORS',
+            'TATAPOWER', 'TATASTEEL', 'TCS', 'TECHM', 'TITAN',
+            'TORNTPHARM', 'TRENT', 'TVSMOTORS', 'UBL', 'ULTRACEMCO',
+            'UPL', 'VEDL', 'VOLTAS', 'WIPRO', 'YESBANK',
+            # 'ZEEL', 'ZYDUSLIFE'
+        ]
+        return nifty300 + additional_stocks
     
     
-    def get_custom_etf_universe(self) -> List[str]:
-        """Get custom list of ETFs based on user selection or configuration"""
+    def get_custom_stock_universe(self) -> List[str]:
+        """Get custom list of stocks based on user selection or configuration"""
         try:
-            # PRIORITY 1: Use custom_etfs if provided (user-selected subset)
-            if hasattr(self, 'custom_etfs') and self.custom_etfs:
-                # Filter to ensure only valid ETFs from our allowed list
-                allowed_etfs = self._get_allowed_etf_list()
-                filtered_etfs = [etf for etf in self.custom_etfs if etf in allowed_etfs]
-                if filtered_etfs:
-                    print(f"Using custom ETF selection: {len(filtered_etfs)} ETFs")
-                    return filtered_etfs
-                else:
-                    print(f"Warning: Custom ETFs not in allowed list, using default list")
+            # PRIORITY 1: Use custom_stocks if provided (Option B: stock_universe + custom_stocks)
+            if hasattr(self, 'custom_stocks') and self.custom_stocks:
+                print(f"Using custom stock selection: {len(self.custom_stocks)} stocks")
+                return self.custom_stocks
             
-            # PRIORITY 2: Get from configuration
-            if self.config and hasattr(self.config, 'custom_etfs') and self.config.custom_etfs:
-                custom_etfs = json.loads(self.config.custom_etfs) if isinstance(self.config.custom_etfs, str) else self.config.custom_etfs
-                # Filter to ensure only valid ETFs
-                allowed_etfs = self._get_allowed_etf_list()
-                filtered_etfs = [etf for etf in custom_etfs if etf in allowed_etfs]
-                if filtered_etfs:
-                    print(f"Using custom ETF universe from config: {len(filtered_etfs)} ETFs")
-                    return filtered_etfs
+            # PRIORITY 2: Get from configuration (if you add a custom_stocks field)
+            if hasattr(self.config, 'custom_stocks') and self.config.custom_stocks:
+                custom_stocks = json.loads(self.config.custom_stocks)
+                print(f"Using custom stock universe from config: {len(custom_stocks)} stocks")
+                return custom_stocks
             
-            # PRIORITY 3: Return default allowed ETF list
-            default_etfs = self._get_allowed_etf_list()
-            print(f"Using default allowed ETF list: {len(default_etfs)} ETFs")
-            return default_etfs
+            # PRIORITY 3: Use stock_universe to get predefined list
+            # Get stock universe from instance or config
+            stock_universe = None
+            if hasattr(self, 'stock_universe'):
+                stock_universe = self.stock_universe
+            elif self.config:
+                stock_universe = getattr(self.config, 'stock_universe', None)
+            
+            # Option 4: Use actual database symbols instead of hardcoded lists
+            # This ensures we use symbols that actually exist in the database
+            all_database_symbols = [
+                '360ONE', '3MINDIA', 'AADHARHFC', 'AARTIIND', 'AAVAS',
+                'ABB', 'ABBOTINDIA', 'ABCAPITAL', 'ABFRL', 'ABREL',
+                'ABSLAMC', 'ACC', 'ACE', 'ACMESOLAR', 'ADANIENSOL',
+                'ADANIENT', 'ADANIGREEN', 'ADANIPORTS', 'ADANIPOWER', 'AEGISLOG',
+                'AFCONS', 'AFFLE', 'AIAENG', 'AIIL', 'AJANTPHARM',
+                'AKUMS', 'ALIVUS', 'ALKEM', 'ALKYLAMINE', 'ALOKINDS',
+                'AMBER', 'AMBUJACEM', 'ANANDRATHI', 'ANANTRAJ', 'ANGELONE',
+                'APARINDS', 'APLAPOLLO', 'APLLTD', 'APOLLOHOSP', 'APOLLOTYRE',
+                'APTUS', 'ARE&M', 'ASAHIINDIA', 'ASHOKLEY', 'ASIANPAINT',
+                'ASTERDM', 'ASTRAL', 'ASTRAZEN', 'ATGL', 'ATUL',
+                'AUBANK', 'AUROPHARMA', 'AWL', 'AXISBANK', 'BAJAJ-AUTO',
+                'BAJAJFINSV', 'BAJAJHFL', 'BAJAJHLDNG', 'BAJFINANCE', 'BALKRISIND',
+                'BALRAMCHIN', 'BANDHANBNK', 'BANKBARODA', 'BANKINDIA', 'BASF',
+                'BATAINDIA', 'BAYERCROP', 'BBTC', 'BDL', 'BEL',
+                'BEML', 'BERGEPAINT', 'BHARATFORG', 'BHARTIARTL', 'BHARTIHEXA',
+                'BHEL', 'BIKAJI', 'BIOCON', 'BLS', 'BLUEDART',
+                'BLUESTARCO', 'BOSCHLTD', 'BPCL', 'BRIGADE', 'BRITANNIA',
+                'BSE', 'BSOFT', 'CAMPUS', 'CAMS', 'CANBK',
+                'CANFINHOME', 'CAPLIPOINT', 'CARBORUNIV', 'CASTROLIND', 'CCL',
+                'CDSL', 'CEATLTD', 'CENTRALBK', 'CENTURYPLY', 'CERA',
+                'CESC', 'CGCL', 'CGPOWER', 'CHALET', 'CHAMBLFERT',
+                'CHENNPETRO', 'CHOLAFIN', 'CHOLAHLDNG', 'CIPLA', 'CLEAN',
+                'COALINDIA', 'COCHINSHIP', 'COFORGE', 'COLPAL', 'CONCOR',
+                'CONCORDBIO', 'COROMANDEL', 'CRAFTSMAN', 'CREDITACC', 'CRISIL',
+                'CROMPTON', 'CUB', 'CUMMINSIND', 'CYIENT', 'DABUR',
+                'DALBHARAT', 'DATAPATTNS', 'DBREALTY', 'DCMSHRIRAM', 'DEEPAKFERT',
+                'DEEPAKNTR', 'DELHIVERY', 'DEVYANI', 'DIVISLAB', 'DIXON',
+                'DLF', 'DMART', 'DOMS', 'DRREDDY', 'ECLERX',
+                'EICHERMOT', 'EIDPARRY', 'EIHOTEL', 'ELECON', 'ELGIEQUIP',
+                'EMAMILTD', 'EMCURE', 'ENDURANCE', 'ENGINERSIN', 'ERIS',
+                'ESCORTS', 'ETERNAL', 'EXIDEIND', 'FACT', 'FEDERALBNK',
+                'FINCABLES', 'FINPIPE', 'FIRSTCRY', 'FIVESTAR', 'FLUOROCHEM',
+                'FORTIS', 'FSL', 'GAIL', 'GESHIP', 'GICRE',
+                'GILLETTE', 'GLAND', 'GLAXO', 'GLENMARK', 'GMDCLTD',
+                'GMRAIRPORT', 'GNFC', 'GODFRYPHLP', 'GODIGIT', 'GODREJAGRO',
+                'GODREJCP', 'GODREJIND', 'GODREJPROP', 'GPIL', 'GPPL',
+                'GRANULES', 'GRAPHITE', 'GRASIM', 'GRAVITA', 'GRSE',
+                'GSPL', 'GUJGASLTD', 'GVT&D', 'HAL', 'HAPPSTMNDS',
+                'HAVELLS', 'HBLENGINE', 'HCLTECH', 'HDFCAMC', 'HDFCBANK',
+                'HDFCLIFE', 'HEG', 'HEROMOTOCO', 'HFCL', 'HINDALCO',
+                'HINDCOPPER', 'HINDPETRO', 'HINDUNILVR', 'HINDZINC', 'HOMEFIRST',
+                'HONASA', 'HONAUT', 'HSCL', 'HUDCO', 'HYUNDAI',
+                'ICICIBANK', 'ICICIGI', 'ICICIPRULI', 'IDBI', 'IDEA',
+                'IDFCFIRSTB', 'IEX', 'IFCI', 'IGIL', 'IGL',
+                'IIFL', 'IKS', 'INDGN', 'INDHOTEL', 'INDIACEM',
+                'INDIAMART', 'INDIANB', 'INDIGO', 'INDUSINDBK', 'INDUSTOWER',
+                'INFY', 'INOXINDIA', 'INOXWIND', 'INTELLECT', 'IOB',
+                'IOC', 'IPCALAB', 'IRB', 'IRCON', 'IRCTC',
+                'IREDA', 'IRFC', 'ITC', 'ITI', 'J&KBANK',
+                'JBCHEPHARM', 'JBMA', 'JINDALSAW', 'JINDALSTEL', 'JIOFIN',
+                'JKCEMENT', 'JKTYRE', 'JMFINANCIL', 'JPPOWER', 'JSL',
+                'JSWENERGY', 'JSWHL', 'JSWINFRA', 'JSWSTEEL', 'JUBLFOOD',
+                'JUBLINGREA', 'JUBLPHARMA', 'JUSTDIAL', 'JWL', 'JYOTHYLAB',
+                'JYOTICNC', 'KAJARIACER', 'KALYANKJIL', 'KANSAINER', 'KARURVYSYA',
+                'KAYNES', 'KEC', 'KEI', 'KFINTECH', 'KIMS',
+                'KIRLOSBROS', 'KIRLOSENG', 'KNRCON', 'KOTAKBANK', 'KPIL',
+                'KPITTECH', 'KPRMILL', 'LALPATHLAB', 'LATENTVIEW', 'LAURUSLABS',
+                'LEMONTREE', 'LICHSGFIN', 'LICI', 'LINDEINDIA', 'LLOYDSME',
+                'LODHA', 'LT', 'LTF', 'LTFOODS', 'LTIM',
+                'LTTS', 'LUPIN', 'M&M', 'M&MFIN', 'MAHABANK',
+                'MAHSEAMLES', 'MANAPPURAM', 'MANKIND', 'MANYAVAR', 'MAPMYINDIA',
+                'MARICO', 'MARUTI', 'MASTEK', 'MAXHEALTH', 'MAZDOCK',
+                'MCX', 'MEDANTA', 'METROPOLIS', 'MFSL', 'MGL',
+                'MINDACORP', 'MMTC', 'MOTHERSON', 'MOTILALOFS', 'MPHASIS',
+                'MRF', 'MRPL', 'MSUMI', 'MUTHOOTFIN', 'NAM-INDIA',
+                'NATCOPHARM', 'NATIONALUM', 'NAUKRI', 'NAVA', 'NAVINFLUOR',
+                'NBCC', 'NCC', 'NESTLEIND', 'NETWEB', 'NETWORK18',
+                'NEULANDLAB', 'NEWGEN', 'NH', 'NHPC', 'NIACL',
+                'NIVABUPA', 'NLCINDIA', 'NMDC', 'NSLNISP', 'NTPC',
+                'NTPCGREEN', 'NUVAMA', 'NYKAA', 'OBEROIRLTY', 'OFSS',
+                'OIL', 'OLAELEC', 'OLECTRA', 'ONGC', 'PAGEIND',
+                'PATANJALI', 'PAYTM', 'PCBL', 'PEL', 'PERSISTENT',
+                'PETRONET', 'PFC', 'PFIZER', 'PGEL', 'PHOENIXLTD',
+                'PIDILITIND', 'PIIND', 'PNB', 'PNBHOUSING', 'PNCINFRA',
+                'POLICYBZR', 'POLYCAB', 'POLYMED', 'POONAWALLA', 'POWERGRID',
+                'POWERINDIA', 'PPLPHARMA', 'PRAJIND', 'PREMIERENE', 'PRESTIGE',
+                'PTCIL', 'PVRINOX', 'RADICO', 'RAILTEL', 'RAINBOW',
+                'RAMCOCEM', 'RAYMOND', 'RAYMONDLSL', 'RBLBANK', 'RCF',
+                'RECLTD', 'REDINGTON', 'RELIANCE', 'RENUKA', 'RHIM',
+                'RITES', 'RKFORGE', 'ROUTE', 'RPOWER', 'RRKABEL',
+                'RTNINDIA', 'RVNL', 'SAGILITY', 'SAIL', 'SAILIFE',
+                'SAMMAANCAP', 'SAPPHIRE', 'SARDAEN', 'SAREGAMA', 'SBFC',
+                'SBICARD', 'SBILIFE', 'SBIN', 'SCHAEFFLER', 'SCHNEIDER',
+                'SCI', 'SHREECEM', 'SHRIRAMFIN', 'SHYAMMETL', 'SIEMENS',
+                'SIGNATURE', 'SJVN', 'SKFINDIA', 'SOBHA', 'SOLARINDS',
+                'SONACOMS', 'SONATSOFTW', 'SRF', 'STARHEALTH', 'SUMICHEM',
+                'SUNDARMFIN', 'SUNDRMFAST', 'SUNPHARMA', 'SUNTV', 'SUPREMEIND',
+                'SUZLON', 'SWANCORP', 'SWIGGY', 'SWSOLAR', 'SYNGENE',
+                'SYRMA', 'TANLA', 'TARIL', 'TATACHEM', 'TATACOMM',
+                'TATACONSUM', 'TATAELXSI', 'TATAINVEST', 'TATAMOTORS', 'TATAPOWER',
+                'TATASTEEL', 'TATATECH', 'TBOTEK', 'TCS', 'TECHM',
+                'TECHNOE', 'TEJASNET', 'THERMAX', 'TIINDIA', 'TIMKEN',
+                'TITAGARH', 'TITAN', 'TORNTPHARM', 'TORNTPOWER', 'TRENT',
+                'TRIDENT', 'TRITURBINE', 'TRIVENI', 'TTML', 'TVSMOTOR',
+                'UBL', 'UCOBANK', 'ULTRACEMCO', 'UNIONBANK', 'UNITDSPR',
+                'UNOMINDA', 'UPL', 'USHAMART', 'UTIAMC', 'VBL',
+                'VEDL', 'VGUARD', 'VIJAYA', 'VMM', 'VOLTAS',
+                'VTL', 'WAAREEENER', 'WELCORP', 'WELSPUNLIV', 'WESTLIFE',
+                'WHIRLPOOL', 'WIPRO', 'WOCKPHARMA', 'YESBANK', 'ZEEL',
+                'ZENSARTECH', 'ZENTEC', 'ZFCVINDIA', 'ZYDUSLIFE'
+            ]
+            
+            # Initialize custom_stocks with default value
+            custom_stocks = []
+            
+            # Select subset based on stock_universe
+            if stock_universe == 'NIFTY50':
+                custom_stocks = self.get_nifty50_custom_stocks()
+            elif stock_universe == 'NIFTY100':
+                custom_stocks = self.get_nifty100_custom_stocks()
+            elif stock_universe == 'NIFTY200':
+                custom_stocks = self.get_nifty200_custom_stocks()
+            elif stock_universe == 'NIFTY300':
+                custom_stocks = self.get_nifty300_custom_stocks()
+            elif stock_universe == 'NIFTY500':
+                custom_stocks = self.get_nifty500_custom_stocks()
+            else:
+                # Fallback: use main_index for backward compatibility
+                if self.main_index in ['^NIFTY50', '^NSEI', 'NIFTY50']:
+                    custom_stocks = self.get_nifty50_custom_stocks()
+                elif self.main_index == '^NIFTY100':
+                    custom_stocks = self.get_nifty100_custom_stocks()
+                elif self.main_index == '^NIFTY200':
+                    custom_stocks = self.get_nifty200_custom_stocks()
+                elif self.main_index == '^NIFTY300':
+                    custom_stocks = self.get_nifty300_custom_stocks()
+                else:  # Default to NIFTY500
+                    custom_stocks = self.get_nifty500_custom_stocks()
+            
+            universe_used = stock_universe if stock_universe else f"main_index:{self.main_index}"
+            print(f"Using stock universe '{universe_used}': {len(custom_stocks)} stocks")
+            if custom_stocks:
+                print(f"Sample symbols: {custom_stocks[:10]}")
+            return custom_stocks
             
         except Exception as e:
-            print(f"Error in get_custom_etf_universe: {e}")
-            # Fallback to default list on error
-            return self._get_allowed_etf_list()
+            print(f"Error fetching custom stock universe: {e}")
+            return []
     
-    def _get_allowed_etf_list(self) -> List[str]:
-        """Get the allowed list of ETFs for RS ETF Strategy"""
-        # Hardcoded list of allowed ETFs only
-        return [
-            'NIFTYBEES',
-            'JUNIORBEES',
-            'GOLDBEES',
-            'PSUBNKBEES',
-            'HNGSNGBEES',
-            'MON100',
-            'BANKBEES',
-            'CPSEETF',
-            'INFRABEES',
-            'ITBEES',
-            'PHARMABEES'
-        ]
+    
+    
     def validate_data_range(self, start_date: datetime, end_date: datetime) -> bool:
         """Validate that we have sufficient data for the requested period"""
         try:
@@ -630,7 +769,7 @@ class RSETFStrategyBacktester:
             earliest_required = start_date - timedelta(days=self.lookback_quarters * 7)
             
             # Query the earliest date in our data
-            earliest_data = self.db.query(ETFData.date).order_by(ETFData.date.asc()).first()
+            earliest_data = self.db.query(StockData.date).order_by(StockData.date.asc()).first()
             
             if earliest_data and earliest_data[0] > earliest_required:
                 print(f"WARNING: Insufficient data. Need data from {earliest_required}, but only have from {earliest_data[0]}")
@@ -662,24 +801,24 @@ class RSETFStrategyBacktester:
             last_date = dates_in_week[-1]
             self.last_trading_days.add(last_date)
     
-    def calculate_rs_score(self, etf_prices: pd.Series, index_prices: pd.Series, 
+    def calculate_rs_score(self, stock_prices: pd.Series, index_prices: pd.Series, 
                           current_date: datetime) -> Optional[float]:
-        """Calculate Relative Strength score for an ETF with robust data validation"""
+        """Calculate Relative Strength score for a stock with robust data validation"""
         try:
             # Get available trading dates from actual data
-            available_etf_dates = sorted(etf_prices.index)
+            available_stock_dates = sorted(stock_prices.index)
             available_index_dates = sorted(index_prices.index)
-
+            
             # Find current date index in both datasets
             try:
-                current_etf_index = available_etf_dates.index(current_date) 
-                current_index_index = available_index_dates.index(current_date) 
+                current_stock_index = available_stock_dates.index(current_date)
+                current_index_index = available_index_dates.index(current_date)
             except ValueError:
                 # Current date not found in data
                 return None
-
+            
             # Get current prices
-            current_etf_price = etf_prices.loc[current_date]
+            current_stock_price = stock_prices.loc[current_date]
             current_index_price = index_prices.loc[current_date]
             
             # Calculate required lookback periods
@@ -691,53 +830,53 @@ class RSETFStrategyBacktester:
             else:
                 self._debug_count = 1
                 
-            if self._debug_count <= 3:  # Print for first 3 calculations        
+            if self._debug_count <= 3:  # Print for first 3 calculations
                 print(f"  DEBUG RS Calculation:")
                 print(f"    Date: {current_date}")
-                print(f"    ETF data: {len(available_etf_dates)} dates, first: {available_etf_dates[0]}, last: {available_etf_dates[-1]}")              
-                print(f"    Index data: {len(available_index_dates)} dates, first: {available_index_dates[0]}, last: {available_index_dates[-1]}")              
-                print(f"    Current ETF index: {current_etf_index}")        
-                print(f"    Current index position: {current_index_index}")     
+                print(f"    Stock data: {len(available_stock_dates)} dates, first: {available_stock_dates[0]}, last: {available_stock_dates[-1]}")
+                print(f"    Index data: {len(available_index_dates)} dates, first: {available_index_dates[0]}, last: {available_index_dates[-1]}")
+                print(f"    Current stock index: {current_stock_index}")
+                print(f"    Current index position: {current_index_index}")
                 print(f"    Max lookback required: {max_lookback}")
-                print(f"    Lookback periods: week={self.lookback_weeks}, month={self.lookback_months}, quarter={self.lookback_quarters}")                      
-
+                print(f"    Lookback periods: week={self.lookback_weeks}, month={self.lookback_months}, quarter={self.lookback_quarters}")
+        
             # Check if we have enough historical data
-            if current_etf_index < max_lookback or current_index_index < max_lookback:                                                                        
+            if current_stock_index < max_lookback or current_index_index < max_lookback:
                 if self._debug_count <= 3:
-                    print(f"      FAILED: Not enough historical data (need {max_lookback}, have ETF:{current_etf_index}, index:{current_index_index})")     
+                    print(f"      FAILED: Not enough historical data (need {max_lookback}, have stock:{current_stock_index}, index:{current_index_index})")
                 return None
-
+            
             # Get historical dates using actual available data
-            week_ago_date = available_etf_dates[current_etf_index - self.lookback_weeks]                                                                    
-            month_ago_date = available_etf_dates[current_etf_index - self.lookback_months]                                                                  
-            quarter_ago_date = available_etf_dates[current_etf_index - self.lookback_quarters]                                                              
-
+            week_ago_date = available_stock_dates[current_stock_index - self.lookback_weeks]
+            month_ago_date = available_stock_dates[current_stock_index - self.lookback_months]
+            quarter_ago_date = available_stock_dates[current_stock_index - self.lookback_quarters]
+            
             # Verify index dates are available for the same periods
-            week_ago_index_date = available_index_dates[current_index_index - self.lookback_weeks]                                                              
-            month_ago_index_date = available_index_dates[current_index_index - self.lookback_months]                                                            
-            quarter_ago_index_date = available_index_dates[current_index_index - self.lookback_quarters]                                                        
-
-            # DEBUG: Print current and historical prices for first calculation  
+            week_ago_index_date = available_index_dates[current_index_index - self.lookback_weeks]
+            month_ago_index_date = available_index_dates[current_index_index - self.lookback_months]
+            quarter_ago_index_date = available_index_dates[current_index_index - self.lookback_quarters]
+            
+            # DEBUG: Print current and historical prices for first calculation
             if self._debug_count <= 4:
                 print(f"    Current prices:")
-                print(f"      ETF: ₹{current_etf_price:.2f}, Index: ₹{current_index_price:.2f}")                                                            
+                print(f"      Stock: ₹{current_stock_price:.2f}, Index: ₹{current_index_price:.2f}")
                 print(f"    Historical dates and prices:")
-                print(f"      Week ago: {week_ago_date} - ETF: ₹{etf_prices.loc[week_ago_date]:.2f}, Index: ₹{index_prices.loc[week_ago_index_date]:.2f}")  
-                print(f"      Month ago: {month_ago_date} - ETF: ₹{etf_prices.loc[month_ago_date]:.2f}, Index: ₹{index_prices.loc[month_ago_index_date]:.2f}")                                                                              
-                print(f"      Quarter ago: {quarter_ago_date} - ETF: ₹{etf_prices.loc[quarter_ago_date]:.2f}, Index: ₹{index_prices.loc[quarter_ago_index_date]:.2f}")                                                                      
-
+                print(f"      Week ago: {week_ago_date} - Stock: ₹{stock_prices.loc[week_ago_date]:.2f}, Index: ₹{index_prices.loc[week_ago_index_date]:.2f}")
+                print(f"      Month ago: {month_ago_date} - Stock: ₹{stock_prices.loc[month_ago_date]:.2f}, Index: ₹{index_prices.loc[month_ago_index_date]:.2f}")
+                print(f"      Quarter ago: {quarter_ago_date} - Stock: ₹{stock_prices.loc[quarter_ago_date]:.2f}, Index: ₹{index_prices.loc[quarter_ago_index_date]:.2f}")
+            
             # Calculate RS for each period using actual historical data
             rs_w = self.calculate_single_rs(
-                current_etf_price, etf_prices.loc[week_ago_date],
-                current_index_price, index_prices.loc[week_ago_index_date]      
+                current_stock_price, stock_prices.loc[week_ago_date],
+                current_index_price, index_prices.loc[week_ago_index_date]
             )
             rs_m = self.calculate_single_rs(
-                current_etf_price, etf_prices.loc[month_ago_date],
-                current_index_price, index_prices.loc[month_ago_index_date]     
+                current_stock_price, stock_prices.loc[month_ago_date],
+                current_index_price, index_prices.loc[month_ago_index_date]
             )
             rs_q = self.calculate_single_rs(
-                current_etf_price, etf_prices.loc[quarter_ago_date],        
-                current_index_price, index_prices.loc[quarter_ago_index_date]   
+                current_stock_price, stock_prices.loc[quarter_ago_date],
+                current_index_price, index_prices.loc[quarter_ago_index_date]
             )
             
             # DEBUG: Print RS values for first calculation
@@ -763,17 +902,180 @@ class RSETFStrategyBacktester:
                 print(f"      FAILED: Exception - {str(e)}")
             return None
     
-    def calculate_single_rs(self, etf_current: float, etf_past: float,
+    def calculate_single_rs(self, stock_current: float, stock_past: float,
                            index_current: float, index_past: float) -> Optional[float]:
         """Calculate single period RS"""
         try:
-            if etf_past == 0 or index_past == 0:
+            if stock_past == 0 or index_past == 0:
                 return None
-            rs = (etf_current / etf_past) / (index_current / index_past) - 1
+            rs = (stock_current / stock_past) / (index_current / index_past) - 1
             return rs
         except (ZeroDivisionError, ValueError):
             return None
     
+
+    # ========================================================================
+    # VECTORIZED RS CALCULATION METHODS (20-30x faster)
+    # Added by auto-integration script
+    # ========================================================================
+    
+    def calculate_rs_scores_vectorized(self, stock_data: pd.DataFrame, 
+                                       index_data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Vectorized RS calculation for all stocks at once using NumPy/Pandas
+        
+        Performance: 20-30x faster than loop-based approach
+        """
+        print("🚀 Calculating RS scores (vectorized)...")
+        start_time = pd.Timestamp.now()
+        
+        try:
+            # Pivot stock data: rows=dates, columns=symbols, values=prices
+            stock_pivot = stock_data.pivot(
+                index='date', 
+                columns='symbol', 
+                values='adjusted_close'
+            )
+            
+            # Prepare index data as Series
+            if isinstance(index_data, pd.DataFrame):
+                if 'adjusted_close' in index_data.columns:
+                    index_series = index_data.set_index('date')['adjusted_close']
+                elif 'adj_close' in index_data.columns:
+                    index_series = index_data.set_index('date')['adj_close']
+                else:
+                    raise ValueError("Index data must have 'adjusted_close' or 'adj_close' column")
+            else:
+                index_series = index_data
+            
+            # Ensure same date range
+            common_dates = stock_pivot.index.intersection(index_series.index)
+            stock_pivot = stock_pivot.loc[common_dates].sort_index()
+            index_series = index_series.loc[common_dates].sort_index()
+            
+            print(f"   Data: {stock_pivot.shape[0]} dates × {stock_pivot.shape[1]} stocks")
+            
+            # Calculate returns for all periods (vectorized)
+            stock_returns_w = stock_pivot.pct_change(periods=self.lookback_weeks)
+            stock_returns_m = stock_pivot.pct_change(periods=self.lookback_months)
+            stock_returns_q = stock_pivot.pct_change(periods=self.lookback_quarters)
+            
+            index_returns_w = index_series.pct_change(periods=self.lookback_weeks)
+            index_returns_m = index_series.pct_change(periods=self.lookback_months)
+            index_returns_q = index_series.pct_change(periods=self.lookback_quarters)
+            
+            # Calculate RS (vectorized with broadcasting)
+            rs_w = stock_returns_w.sub(index_returns_w, axis=0)
+            rs_m = stock_returns_m.sub(index_returns_m, axis=0)
+            rs_q = stock_returns_q.sub(index_returns_q, axis=0)
+            
+            # Weighted average: 40% weekly, 30% monthly, 30% quarterly
+            rs_scores = 0.4 * rs_w + 0.3 * rs_m + 0.3 * rs_q
+            
+            # Clean up inf/NaN
+            rs_scores = rs_scores.replace([np.inf, -np.inf], np.nan).fillna(0)
+            
+            calc_time = (pd.Timestamp.now() - start_time).total_seconds()
+            total_calcs = rs_scores.shape[0] * rs_scores.shape[1]
+            
+            print(f"   ✅ {total_calcs:,} scores in {calc_time:.2f}s ({total_calcs/calc_time:,.0f}/sec)")
+            
+            return rs_scores
+            
+        except Exception as e:
+            print(f"   ❌ Error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise
+    
+    def get_top_rs_stocks_vectorized(self, date: datetime, 
+                                     rs_scores: pd.DataFrame,
+                                     n: int = None) -> List[Tuple[str, float]]:
+        """Get top N stocks by RS score for a given date"""
+        if n is None:
+            n = self.max_positions
+        
+        if date not in rs_scores.index:
+            return []
+        
+        date_scores = rs_scores.loc[date].dropna()
+        top_stocks = date_scores.nlargest(n)
+        
+        return [(symbol, float(score)) for symbol, score in top_stocks.items()]
+    
+    def get_stock_rs_rank_vectorized(self, symbol: str, date: datetime,
+                                     rs_scores: pd.DataFrame) -> Optional[int]:
+        """Get RS rank for a stock on a date"""
+        if date not in rs_scores.index or symbol not in rs_scores.columns:
+            return None
+        
+        date_scores = rs_scores.loc[date].dropna()
+        if symbol not in date_scores.index:
+            return None
+        
+        sorted_scores = date_scores.sort_values(ascending=False)
+        rank = list(sorted_scores.index).index(symbol) + 1
+        
+        return rank
+    
+    def load_stock_data_optimized(self, start_date: datetime, 
+                                  end_date: datetime) -> pd.DataFrame:
+        """
+        Optimized stock data loading
+        Returns flat DataFrame for easier pivoting
+        """
+        if start_date.tzinfo:
+            start_date = start_date.replace(tzinfo=None)
+        if end_date.tzinfo:
+            end_date = end_date.replace(tzinfo=None)
+        
+        buffer_days = max(self.lookback_quarters * 7, 100)
+        data_start_date = start_date - timedelta(days=buffer_days)
+        
+        print(f"Loading data: {data_start_date.date()} to {end_date.date()}")
+        
+        stock_symbols = self.get_custom_stock_universe()
+        if not stock_symbols:
+            raise ValueError("No stocks in universe")
+        
+        print(f"  Universe: {len(stock_symbols)} symbols")
+        
+        from sqlalchemy import text
+        
+        query = text("""
+            SELECT symbol, date, adj_close as adjusted_close
+            FROM stock_data 
+            WHERE symbol = ANY(:symbols)
+            AND date BETWEEN :start_date AND :end_date
+            ORDER BY date, symbol
+        """)
+        
+        result = self.db.execute(query, {
+            "symbols": stock_symbols,
+            "start_date": data_start_date,
+            "end_date": end_date
+        })
+        
+        df = pd.DataFrame(result.fetchall(), columns=['symbol', 'date', 'adjusted_close'])
+        
+        if df.empty:
+            raise ValueError(f"No data for {data_start_date} to {end_date}")
+        
+        # Optimize dtypes
+        df['symbol'] = df['symbol'].astype('category')
+        df['adjusted_close'] = df['adjusted_close'].astype('float32')
+        df['date'] = pd.to_datetime(df['date'])
+        
+        if df['date'].dt.tz is not None:
+            df['date'] = df['date'].dt.tz_localize(None)
+        
+        print(f"  ✅ {len(df):,} records, {df['symbol'].nunique()} symbols")
+        
+        return df
+    
+    # ========================================================================
+    # END OF VECTORIZED METHODS
+    # ========================================================================
     def get_trading_date_before(self, date: datetime, days_back: int) -> Optional[datetime]:
         """Get trading date N days before given date"""
         # Calculate actual trading days (approximately 5 trading days per week)
@@ -796,24 +1098,24 @@ class RSETFStrategyBacktester:
             days_ahead = 0
         return date + timedelta(days=days_ahead)
     
-    def rank_etfs(self, etf_data: pd.DataFrame, index_data: pd.DataFrame, 
+    def rank_stocks(self, stock_data: pd.DataFrame, index_data: pd.DataFrame, 
                    signal_date: datetime) -> pd.DataFrame:
-        """Rank all eligible ETFs by RS score with enhanced error handling"""
-        symbols = self.get_custom_etf_universe()  # Use custom ETF selection
+        """Rank all eligible stocks by RS score with enhanced error handling"""
+        symbols = self.get_custom_stock_universe()  # Use custom stock selection
         rankings = []
         valid_symbols = 0
         failed_symbols = 0
         
         # Get universe size based on custom selection
         universe_size = len(symbols)
-        print(f"Custom ETF universe size: {universe_size} ETFs and date: {signal_date.strftime('%Y-%m-%d (%A)')} ,day:{signal_date.weekday()}")
+        print(f"Custom stock universe size: {universe_size} stocks and date: {signal_date.strftime('%Y-%m-%d (%A)')} ,day:{signal_date.weekday()}")
         
         print(f"Processing {universe_size} custom selected symbols for RS calculation")
         
         for i, symbol in enumerate(symbols):
             try:
-                etf_prices = etf_data.loc[symbol]['adjusted_close']
-                rs_score = self.calculate_rs_score(etf_prices, index_data['adjusted_close'], signal_date)
+                stock_prices = stock_data.loc[symbol]['adjusted_close']
+                rs_score = self.calculate_rs_score(stock_prices, index_data['adjusted_close'], signal_date)
                 
                 if rs_score is not None:
                     valid_symbols += 1
@@ -822,11 +1124,11 @@ class RSETFStrategyBacktester:
                         print(f"    {symbol}: RS Score = {rs_score:.3f}")
 
                     # Get additional ranking criteria
-                    current_price = etf_prices.loc[signal_date]
+                    current_price = stock_prices.loc[signal_date]
                     
                     # Calculate 20-day volatility (simplified)
                     try:
-                        price_20d = etf_prices.loc[signal_date - timedelta(days=20):signal_date]
+                        price_20d = stock_prices.loc[signal_date - timedelta(days=20):signal_date]
                         volatility = price_20d.pct_change().std() * np.sqrt(252) if len(price_20d) > 1 else 0
                     except:
                         volatility = 0
@@ -871,19 +1173,19 @@ class RSETFStrategyBacktester:
         
         return df
     
-    def generate_signals(self, etf_data: pd.DataFrame, index_data: pd.DataFrame,
+    def generate_signals(self, stock_data: pd.DataFrame, index_data: pd.DataFrame,
                         signal_date: datetime) -> Tuple[List[str], List[str]]:
         """Generate buy and sell signals for a given date"""
         # No price filtering - all stocks eligible for RS ranking
-        rankings = self.rank_etfs(etf_data, index_data, signal_date)
+        rankings = self.rank_stocks(stock_data, index_data, signal_date)
         
         if rankings.empty:
             print("  No rankings available, returning empty signals")
             return [], []
         
-        # Select top N ETFs with positive RS scores (more opportunities)
+        # Select top N stocks with positive RS scores (more opportunities)
         positive_rs = rankings[rankings['rs_score'] > 0]
-        print(f"  ETFs with positive RS: {len(positive_rs)}")
+        print(f"  Stocks with positive RS: {len(positive_rs)}")
         
         # Select top positions for better diversification
         top_stocks = positive_rs.head(self.dynamic_params.max_positions)
@@ -894,14 +1196,14 @@ class RSETFStrategyBacktester:
         current_symbols = list(self.positions.keys())
         print(f"  Current positions: {current_symbols}")
         
-        # Determine exits (ETFs not in targets)
+        # Determine exits (stocks not in targets)
         exits = []
         for symbol in current_symbols:
             if symbol not in target_symbols:
                 exits.append(symbol)
                 print(f"    Exit signal: {symbol} (not in targets)")
-
-        # Determine entries (new ETFs to buy)
+        
+        # Determine entries (new stocks to buy)
         entries = []
         for symbol in target_symbols:
             if symbol not in current_symbols:
@@ -947,26 +1249,26 @@ class RSETFStrategyBacktester:
         }
 
     
-    def update_positions(self, etf_data: pd.DataFrame, date: datetime):
+    def update_positions(self, stock_data: pd.DataFrame, date: datetime):
         """Update current positions with latest prices"""
         for symbol, position in self.positions.items():
             try:
-                current_price = etf_data.loc[symbol, date]['adjusted_close']
+                current_price = stock_data.loc[symbol, date]['adjusted_close']
                 position.current_price = current_price
                 position.unrealized_pnl = (current_price - position.buy_price) * position.quantity
             except (KeyError, IndexError):
                 continue
     
-    def calculate_portfolio_value(self, etf_data: pd.DataFrame, date: datetime) -> float:
+    def calculate_portfolio_value(self, stock_data: pd.DataFrame, date: datetime) -> float:
         """Calculate total portfolio value"""
-        self.update_positions(etf_data, date)
+        self.update_positions(stock_data, date)
         
         positions_value = sum(pos.current_price * pos.quantity for pos in self.positions.values())
         return self.cash_balance + positions_value
     
-    def take_portfolio_snapshot(self, etf_data: pd.DataFrame, index_data: pd.DataFrame, date: datetime):
+    def take_portfolio_snapshot(self, stock_data: pd.DataFrame, index_data: pd.DataFrame, date: datetime):
         """Take a snapshot of portfolio state with memory optimization"""
-        total_value = self.calculate_portfolio_value(etf_data, date)
+        total_value = self.calculate_portfolio_value(stock_data, date)
         
         # For long backtests, store simplified snapshots to save memory
         # Only store detailed positions for weekly snapshots
@@ -1042,19 +1344,19 @@ class RSETFStrategyBacktester:
         
     #     # Load data
     #     print("Loading stock data...")
-    #     etf_data = self.load_etf_data(start_date, end_date)
-    #     print(f"ETF data loaded: {len(etf_data)} records, {len(etf_data.index.get_level_values('symbol').unique())} symbols")
+    #     stock_data = self.load_stock_data(start_date, end_date)
+    #     print(f"Stock data loaded: {len(stock_data)} records, {len(stock_data.index.get_level_values('symbol').unique())} symbols")
         
     #     print("Loading index data...")
     #     index_data = self.load_index_data(start_date, end_date)
     #     print(f"Index data loaded: {len(index_data)} records")
         
-    #     if etf_data.empty or index_data.empty:
+    #     if stock_data.empty or index_data.empty:
     #         print("ERROR: No data available for backtest period")
     #         raise ValueError("No data available for backtest period")
         
     #     # Get all trading dates (should be timezone-naive now)
-    #     trading_dates = sorted(etf_data.index.get_level_values('date').unique())
+    #     trading_dates = sorted(stock_data.index.get_level_values('date').unique())
     #     print(f"Total trading dates: {len(trading_dates)}")
     #     print(f"First date: {trading_dates[0]}, Last date: {trading_dates[-1]}")
         
@@ -1488,23 +1790,23 @@ class RSETFStrategyBacktester:
         
         return exits
     
-    def apply_minimum_price_filter(self, etf_data: pd.DataFrame, signal_date: datetime) -> List[str]:
-        """Filter out ETFs below minimum price threshold"""
+    def apply_minimum_price_filter(self, stock_data: pd.DataFrame, signal_date: datetime) -> List[str]:
+        """Filter out stocks below minimum price threshold"""
         filtered_symbols = []
         
         try:
-            for symbol in etf_data.index.get_level_values('symbol').unique():
+            for symbol in stock_data.index.get_level_values('symbol').unique():
                 try:
-                    current_price = etf_data.loc[symbol, signal_date]['adjusted_close']
+                    current_price = stock_data.loc[symbol, signal_date]['adjusted_close']
                     if current_price >= (self.min_price * 0.5):  # Relaxed minimum price filter
                         filtered_symbols.append(symbol)
                 except (KeyError, IndexError):
                     continue
         except Exception as e:
             print(f"Error applying minimum price filter: {e}")
-            return list(etf_data.index.get_level_values('symbol').unique())
+            return list(stock_data.index.get_level_values('symbol').unique())
         
-        print(f"  Price filter: {len(etf_data.index.get_level_values('symbol').unique())} -> {len(filtered_symbols)} ETFs (min price: ₹{self.min_price})")
+        print(f"  Price filter: {len(stock_data.index.get_level_values('symbol').unique())} -> {len(filtered_symbols)} stocks (min price: ₹{self.min_price})")
         return filtered_symbols
      
     def run_backtest(self, start_date: datetime, end_date: datetime) -> Dict:
@@ -1534,10 +1836,10 @@ class RSETFStrategyBacktester:
                 raise
             
             # Load data
-            print("Loading ETF data...")
-            etf_data = self.load_etf_data(start_date, end_date)
-            if etf_data.empty:
-                raise ValueError("No ETF data available for the specified date range")
+            print("Loading stock data...")
+            stock_data = self.load_stock_data(start_date, end_date)
+            if stock_data.empty:
+                raise ValueError("No stock data available for the specified date range")
             
             print("Loading index data...")
             index_data = self.load_index_data(start_date, end_date)
@@ -1548,7 +1850,7 @@ class RSETFStrategyBacktester:
             self.index_data = index_data
             
             # Get trading dates - filter to backtest period only for processing
-            all_trading_dates = sorted(etf_data.index.get_level_values('date').unique())
+            all_trading_dates = sorted(stock_data.index.get_level_values('date').unique())
             trading_dates = [d for d in all_trading_dates if start_date <= d <= end_date]
             
             print(f"Total loaded dates: {len(all_trading_dates)} (from {all_trading_dates[0]} to {all_trading_dates[-1]})")
@@ -1577,21 +1879,21 @@ class RSETFStrategyBacktester:
                 
                 try:
                     # Update positions with current prices
-                    self.update_positions(etf_data, date)
+                    self.update_positions(stock_data, date)
                     
                     # Check for capital reset threshold
-                    current_portfolio_value = self.calculate_portfolio_value(etf_data, date)
+                    current_portfolio_value = self.calculate_portfolio_value(stock_data, date)
                     self.check_capital_reset_threshold(current_portfolio_value, date)
                     
                     # Removed max holding period check - stocks held until RS ranking drops
                     
                     # Check for daily stop loss exits
-                    stop_loss_exits = self.check_daily_stop_loss(etf_data, date)
+                    stop_loss_exits = self.check_daily_stop_loss(stock_data, date)
                     
                     # Execute stop loss exits immediately
                     for symbol in stop_loss_exits:
                         try:
-                            price_data = etf_data.loc[symbol, date]['adjusted_close']
+                            price_data = stock_data.loc[symbol, date]['adjusted_close']
                             price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
                             self.execute_trade(date, symbol, "SELL", price, "Stop Loss")
                         except (KeyError, IndexError):
@@ -1602,12 +1904,12 @@ class RSETFStrategyBacktester:
                     
                     # Generate signals only on Friday (or last trading day of week)
                     if self.is_friday_or_last_trading_day(date):  # Generate signals only on Friday
-                        entries, exits = self.generate_signals(etf_data, index_data, date)
+                        entries, exits = self.generate_signals(stock_data, index_data, date)
                         
                         # Apply capital reset logic
                         entries, exits = self.apply_capital_reset_logic(entries, exits)
                         
-                        # Removed max holding period exits - ETFs only exit based on RS ranking
+                        # Removed max holding period exits - stocks only exit based on RS ranking
                         
                         # Store signals for Monday execution (don't execute immediately)
                         self.pending_entries = entries
@@ -1631,7 +1933,7 @@ class RSETFStrategyBacktester:
                             # SELL FIRST to free up cash before buying new positions
                             for symbol in self.pending_exits:
                                 try:
-                                    price_data = etf_data.loc[symbol, execution_day]['adjusted_close']
+                                    price_data = stock_data.loc[symbol, execution_day]['adjusted_close']
                                     price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
                                     self.execute_trade(execution_day, symbol, "SELL", price, "RS Exit")
                                 except (KeyError, IndexError):
@@ -1640,7 +1942,7 @@ class RSETFStrategyBacktester:
                             # THEN BUY using freed cash (and buffer only if needed)
                             for symbol in self.pending_entries:
                                 try:
-                                    price_data = etf_data.loc[symbol, execution_day]['adjusted_close']
+                                    price_data = stock_data.loc[symbol, execution_day]['adjusted_close']
                                     price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
                                     self.execute_trade(execution_day, symbol, "BUY", price, "RS Signal")
                                 except (KeyError, IndexError):
@@ -1651,7 +1953,7 @@ class RSETFStrategyBacktester:
                             self.pending_exits = None
                     
                     # Record portfolio snapshot
-                    portfolio_value = self.calculate_portfolio_value(etf_data, date)
+                    portfolio_value = self.calculate_portfolio_value(stock_data, date)
                     snapshot = {
                         'date': date,
                         'total_value': portfolio_value,
@@ -1691,7 +1993,7 @@ class RSETFStrategyBacktester:
             print(f"Backtest failed: {e}")
             raise
     
-    def calculate_portfolio_value(self, etf_data: pd.DataFrame, date: datetime) -> float:
+    def calculate_portfolio_value(self, stock_data: pd.DataFrame, date: datetime) -> float:
         """Calculate total portfolio value at given date (including buffer capital)"""
         try:
             # Start with cash balance
@@ -1703,7 +2005,7 @@ class RSETFStrategyBacktester:
             # Add value of all positions
             for symbol, position in self.positions.items():
                 try:
-                    price_data = etf_data.loc[symbol, date]['adjusted_close']
+                    price_data = stock_data.loc[symbol, date]['adjusted_close']
                     current_price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
                     position.current_price = current_price
                     position.unrealized_pnl = (current_price - position.buy_price) * position.quantity
@@ -2252,8 +2554,8 @@ class RSETFStrategyBacktester:
             print(f"Error executing trade {action} {symbol}: {e}")
             return False
     
-    def check_daily_stop_loss(self, etf_data: pd.DataFrame, current_date: datetime) -> List[str]:
-        """Check stop loss for all positions and return ETFs to sell"""
+    def check_daily_stop_loss(self, stock_data: pd.DataFrame, current_date: datetime) -> List[str]:
+        """Check stop loss for all positions and return stocks to sell"""
         stop_loss_exits = []
         
         # Print daily check header
@@ -2267,7 +2569,7 @@ class RSETFStrategyBacktester:
             for symbol, position in self.positions.items():
                 try:
                     # Get current price
-                    price_data = etf_data.loc[symbol, current_date]['adjusted_close']
+                    price_data = stock_data.loc[symbol, current_date]['adjusted_close']
                     current_price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
                     
                     # Check if stop loss hit
@@ -2307,4 +2609,4 @@ class RSETFStrategyBacktester:
         for date in trading_dates:
             if date > start_date:
                 return date
-        return None 
+        return None

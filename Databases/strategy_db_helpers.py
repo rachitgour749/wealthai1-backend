@@ -120,6 +120,8 @@ def _etf_strategy_to_dict(strategy: ETFSavedStrategy) -> Dict[str, Any]:
         'execution_date': strategy.execution_date,
         'ltp': strategy.ltp,
         'reference_capital': strategy.reference_capital,
+        'last_execution_date': strategy.last_execution_date,
+        'next_execution_date': strategy.next_execution_date,
         'deployment_data': strategy.deployment_data,
         'etf_count': strategy.etf_count,
         'etf_names': strategy.etf_names,
@@ -225,6 +227,8 @@ def _stock_strategy_to_dict(strategy: StockSavedStrategy) -> Dict[str, Any]:
         'status': strategy.status,
         'execution_date': strategy.execution_date,
         'reference_capital': strategy.reference_capital,
+        'last_execution_date': strategy.last_execution_date,
+        'next_execution_date': strategy.next_execution_date,
         'updated_at': strategy.updated_at.isoformat() if strategy.updated_at else None,
     }
 

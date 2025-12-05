@@ -82,7 +82,7 @@ The architecture follows a 4-tier inheritance model:
 #### A. RotationStrategy (For Stocks & ETFs)
 **File:** `Strategies/Rotation/RotationStrategy.py`
 **Inherits:** `EquitySegment`
-
+ nvb   
 | Function Name | Visibility | Description |
 | :--- | :--- | :--- |
 | `calculate_momentum_score` | Private | Computes distance from 52-week high/low. |
