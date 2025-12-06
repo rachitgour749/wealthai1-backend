@@ -382,77 +382,147 @@ class StockRotationBacktester(RotationStrategy):
         return selected
 
     def calculate_common_date_range(self, selected_stocks: List[str]) -> Tuple[Optional[str], Optional[str], float]:
-        """Calculate common date range for selected stocks with robust 52-week lookback requirement"""
-        if not selected_stocks or not self.stock_metadata:
+        """Calculate common date range for selected stocks by querying stock_data table directly"""
+        if not selected_stocks:
+            print("[ERROR] No stocks provided for date range calculation")
             return None, None, 0.0
-
-        selected_metadata = {stock: self.stock_metadata[stock] for stock in selected_stocks if stock in self.stock_metadata}
-
-        if not selected_metadata:
-            return None, None, 0.0
-
-        start_dates = [pd.to_datetime(data['start_date']) for data in selected_metadata.values()]
-        end_dates = [pd.to_datetime(data['end_date']) for data in selected_metadata.values()]
-
-        # The latest start date among all stocks (most restrictive)
-        latest_start = max(start_dates)
-        common_end = min(end_dates)
-
-        print(f"📅 stock Data Ranges:")
-        for stock in selected_stocks:
-            if stock in selected_metadata:
-                meta = selected_metadata[stock]
-                print(f"   {stock:12s}: {meta['start_date']} to {meta['end_date']} ({meta['years_available']:.1f} years)")
-
-        print(f"📊 Common data range: {latest_start.strftime('%Y-%m-%d')} to {common_end.strftime('%Y-%m-%d')}")
-
-        # INCREASED BUFFER: Use 90 weeks (630 days) instead of 70 weeks
-        buffer_weeks = 90
-        buffer_days = buffer_weeks * 7  # 630 calendar days
-        strategy_start = latest_start + timedelta(days=buffer_days)
-
-        print(f"🎯 Enhanced Buffer Strategy:")
-        print(f"   Buffer period: {buffer_weeks} weeks ({buffer_days} calendar days)")
-        print(f"   Expected trading days: ~{int(buffer_days * 5 / 7)} days")
-        print(f"   Required for momentum: 252 trading days")
-        print(f"   Safety margin: ~{int(buffer_days * 5 / 7) - 252} trading days")
-        print(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
-
-        # Ensure we have at least 1 year of backtest data after the strategy start
-        if strategy_start >= common_end:
-            print(f"❌ Insufficient data even with {buffer_weeks}-week buffer:")
-            print(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
-            print(f"   Data ends: {common_end.strftime('%Y-%m-%d')}")
-            shortage_days = (strategy_start - common_end).days
-            print(f"   Shortage: {shortage_days} days")
-
-            # Try with maximum possible buffer
-            max_possible_days = (common_end - latest_start).days - 365  # Reserve 1 year for backtesting
-            if max_possible_days > 252:  # At least need 252 trading days
-                alt_strategy_start = latest_start + timedelta(days=max_possible_days)
-                print(f"🔄 Alternative with maximum buffer:")
-                print(f"   Maximum buffer: {max_possible_days} days ({max_possible_days / 7:.1f} weeks)")
-                print(f"   Alternative start: {alt_strategy_start.strftime('%Y-%m-%d')}")
-
-                years_available = (common_end - alt_strategy_start).days / 365.25
-                return alt_strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
-            else:
+        
+        session = None
+        try:
+            session = self._get_session()
+            from sqlalchemy import text
+            
+            print(f"[DEBUG] Querying stock_data table for date ranges of: {selected_stocks}")
+            
+            # Build placeholders for IN clause
+            placeholders = ','.join([f':ticker_{i}' for i in range(len(selected_stocks))])
+            
+            # Query to get MIN and MAX dates for each stock directly from stock_data table
+            query = text(f"""
+                SELECT 
+                    symbol,
+                    MIN(date) as start_date,
+                    MAX(date) as end_date,
+                    COUNT(*) as total_records
+                FROM stock_data
+                WHERE symbol IN ({placeholders})
+                GROUP BY symbol
+                ORDER BY symbol
+            """)
+            
+            # Build parameters dict
+            params = {f'ticker_{i}': ticker for i, ticker in enumerate(selected_stocks)}
+            
+            result = session.execute(query, params)
+            rows = result.fetchall()
+            
+            if not rows:
+                print(f"[ERROR] No data found in stock_data table for: {selected_stocks}")
                 return None, None, 0.0
-
-        # Check if we have sufficient backtest period
-        years_available = (common_end - strategy_start).days / 365.25
-
-        print(f"📈 Backtest Feasibility:")
-        if years_available >= 10:
-            print(f"   ✅ Excellent: {years_available:.1f} years provides statistically robust results")
-        elif years_available >= 5:
-            print(f"   ✅ Good: {years_available:.1f} years allows reasonable strategy validation")
-        elif years_available >= 2:
-            print(f"   ⚠️ Fair: {years_available:.1f} years provides basic validation")
-        else:
-            print(f"   ⚠️ Limited: {years_available:.1f} years may not be reliable")
-
-        return strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
+            
+            # Parse results
+            stock_date_ranges = {}
+            for row in rows:
+                symbol = row[0]
+                start_date = row[1]
+                end_date = row[2]
+                total_records = row[3]
+                
+                # Convert to datetime if they're strings
+                if isinstance(start_date, str):
+                    start_date = pd.to_datetime(start_date)
+                if isinstance(end_date, str):
+                    end_date = pd.to_datetime(end_date)
+                
+                years_available = (end_date - start_date).days / 365.25
+                
+                stock_date_ranges[symbol] = {
+                    'start_date': start_date,
+                    'end_date': end_date,
+                    'total_records': total_records,
+                    'years_available': years_available
+                }
+            
+            # Check if all requested stocks were found
+            missing_stocks = [stock for stock in selected_stocks if stock not in stock_date_ranges]
+            if missing_stocks:
+                print(f"[WARNING] No data found for: {missing_stocks}")
+            
+            if not stock_date_ranges:
+                print(f"[ERROR] None of the requested stocks found in stock_data table: {selected_stocks}")
+                return None, None, 0.0
+            
+            # Calculate common date range
+            start_dates = [data['start_date'] for data in stock_date_ranges.values()]
+            end_dates = [data['end_date'] for data in stock_date_ranges.values()]
+            
+            # The latest start date among all stocks (most restrictive)
+            latest_start = max(start_dates)
+            common_end = min(end_dates)
+            
+            print(f"📅 Stock Data Ranges (from stock_data table):")
+            for symbol, data in stock_date_ranges.items():
+                years = data['years_available']
+                print(f"   {symbol:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years:.1f} years, {data['total_records']} records)")
+            
+            print(f"📊 Common data range: {latest_start.strftime('%Y-%m-%d')} to {common_end.strftime('%Y-%m-%d')}")
+            
+            # OPTIMIZED BUFFER: Use 53 weeks (371 days) for 252+ trading days
+            buffer_weeks = 53
+            buffer_days = buffer_weeks * 7  # 371 calendar days (~265 trading days)
+            strategy_start = latest_start + timedelta(days=buffer_days)
+            
+            print(f"🎯 Enhanced Buffer Strategy:")
+            print(f"   Buffer period: {buffer_weeks} weeks ({buffer_days} calendar days)")
+            print(f"   Expected trading days: ~{int(buffer_days * 5 / 7)} days")
+            print(f"   Required for momentum: 252 trading days")
+            print(f"   Safety margin: ~{int(buffer_days * 5 / 7) - 252} trading days")
+            print(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
+            
+            # Ensure we have at least 1 year of backtest data after the strategy start
+            if strategy_start >= common_end:
+                print(f"❌ Insufficient data even with {buffer_weeks}-week buffer:")
+                print(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
+                print(f"   Data ends: {common_end.strftime('%Y-%m-%d')}")
+                shortage_days = (strategy_start - common_end).days
+                print(f"   Shortage: {shortage_days} days")
+                
+                # Try with maximum possible buffer
+                max_possible_days = (common_end - latest_start).days - 365  # Reserve 1 year for backtesting
+                if max_possible_days > 252:  # At least need 252 trading days
+                    alt_strategy_start = latest_start + timedelta(days=max_possible_days)
+                    print(f"🔄 Alternative with maximum buffer:")
+                    print(f"   Maximum buffer: {max_possible_days} days ({max_possible_days / 7:.1f} weeks)")
+                    print(f"   Alternative start: {alt_strategy_start.strftime('%Y-%m-%d')}")
+                    
+                    years_available = (common_end - alt_strategy_start).days / 365.25
+                    return alt_strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
+                else:
+                    return None, None, 0.0
+            
+            # Check if we have sufficient backtest period
+            years_available = (common_end - strategy_start).days / 365.25
+            
+            print(f"📈 Backtest Feasibility:")
+            if years_available >= 10:
+                print(f"   ✅ Excellent: {years_available:.1f} years provides statistically robust results")
+            elif years_available >= 5:
+                print(f"   ✅ Good: {years_available:.1f} years allows reasonable strategy validation")
+            elif years_available >= 2:
+                print(f"   ⚠️ Fair: {years_available:.1f} years provides basic validation")
+            else:
+                print(f"   ⚠️ Limited: {years_available:.1f} years may not be reliable")
+            
+            return strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
+            
+        except Exception as e:
+            print(f"[ERROR] Error calculating date range from stock_data table: {e}")
+            import traceback
+            print(f"[ERROR] Traceback: {traceback.format_exc()}")
+            return None, None, 0.0
+        finally:
+            if session:
+                session.close()
 
     def load_data_from_database(self, tickers: List[str], start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
         """Load daily OHLCV data from PostgreSQL database for selected tickers with historical buffer for momentum calculations"""
@@ -1194,7 +1264,7 @@ class StockRotationBacktester(RotationStrategy):
                 
                 # 2. Calculate Momentum (52-week High/Low)
                 # Use previous Friday for signal generation
-                signal_date = self.get_last_trading_day(close_df, current_date, 'Friday')
+                signal_date = self.get_next_trading_day(close_df, current_date, 'Friday')
                 
                 if signal_date:
                     high_low_data = self.compute_52_week_high_low(close_df, signal_date)

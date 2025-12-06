@@ -332,7 +332,7 @@ class RSETFStrategyBacktester:
             
             # Add buffer for RS ETF strategy calculations
             # RS strategy needs lookback periods, so add buffer
-            buffer_weeks = 90  # 90 weeks = ~630 calendar days
+            buffer_weeks = 15  # 90 weeks = ~630 calendar days
             buffer_days = buffer_weeks * 7
             strategy_start = latest_start + timedelta(days=buffer_days)
             
