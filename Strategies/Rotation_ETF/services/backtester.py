@@ -1056,11 +1056,11 @@ class ETFRotationBacktester(RotationStrategy):
 
     def calculate_transaction_costs(self, action: str, amount: float, brokerage_percent: float) -> Dict[str, float]:
         """
-        Calculate Indian market transaction costs using centralized calculator.
+        Calculate Indian market transaction costs for ETFs.
         
-        This method now delegates to the EquitySegment implementation.
+        Uses ETF-specific cost calculation with STT only on sell.
         """
-        return self.calculate_delivery_costs(action, amount, brokerage_percent)
+        return self.calculate_etf_delivery_costs(action, amount, brokerage_percent)
 
     def add_purchase_record(self, ticker: str, units: int, price: float, date: datetime):
         """Add purchase record for FIFO tracking"""
@@ -2107,17 +2107,19 @@ class ETFRotationBacktester(RotationStrategy):
             from sqlalchemy import text
 
             # Try multiple potential benchmark symbols in order of preference
+            # NOTE: Symbols WITHOUT .NS suffix have complete data (~1081 rows)
+            # Symbols WITH .NS suffix only have 1 row - prioritize symbols without suffix
             benchmark_symbols = [
-                'NIFTYBEES.NS',  # Nifty ETF
-                'NIFTYBEES',  # Nifty ETF (without suffix)
+                'NIFTYBEES',  # Nifty ETF (without suffix) - HAS DATA
+                'BANKBEES',  # Banking ETF (without suffix) - HAS DATA
+                'JUNIORBEES',  # Nifty Next 50 ETF (without suffix) - HAS DATA
+                'ITBEES',  # IT Sector ETF (without suffix) - HAS DATA
+                'NIFTYBEES.NS',  # Nifty ETF (with suffix) - LIMITED DATA
                 'NIFTY50',  # NSE Nifty 50 Index
                 'SENSEX',  # BSE Sensex
-                'BANKBEES.NS',  # Banking ETF
-                'BANKBEES',  # Banking ETF (without suffix)
-                'JUNIORBEES.NS',  # Nifty Next 50 ETF
-                'JUNIORBEES',  # Nifty Next 50 ETF (without suffix)
-                'ITBEES.NS',  # IT Sector ETF
-                'ITBEES'  # IT Sector ETF (without suffix)
+                'BANKBEES.NS',  # Banking ETF (with suffix) - LIMITED DATA
+                'JUNIORBEES.NS',  # Nifty Next 50 ETF (with suffix) - LIMITED DATA
+                'ITBEES.NS'  # IT Sector ETF (with suffix) - LIMITED DATA
             ]
 
             benchmark_symbol = None
@@ -2152,8 +2154,16 @@ class ETFRotationBacktester(RotationStrategy):
             columns = result.keys()
             nifty_df = pd.DataFrame(rows, columns=columns)
 
+            print(f"📊 Benchmark SQL query returned {len(nifty_df)} rows for {benchmark_symbol}")
+            print(f"   Query params: start_date={start_date}, end_date={end_date}")
+
             if nifty_df.empty:
+                print("⚠️ No benchmark data found - query returned 0 rows")
                 return pd.DataFrame()
+            
+            if len(nifty_df) == 1:
+                print(f"⚠️ WARNING: Only 1 row returned! Date: {nifty_df['date'].iloc[0]}, Close: {nifty_df['close'].iloc[0]}")
+                print(f"   This suggests the benchmark symbol '{benchmark_symbol}' has very limited data in the database")
 
             nifty_df['date'] = pd.to_datetime(nifty_df['date'])
             nifty_df = nifty_df.set_index('date')
@@ -2167,9 +2177,39 @@ class ETFRotationBacktester(RotationStrategy):
             actual_costs = self.calculate_transaction_costs('buy', actual_investment, brokerage_percent)
 
             nifty_df['nav'] = units * nifty_df['close']
-            nifty_df['returns'] = nifty_df['close'].pct_change()
 
+            # FIXED: Align with weekly strategy dates using merge_asof
+            if hasattr(self, 'weekly_nav_df') and not self.weekly_nav_df.empty:
+                weekly_dates = pd.to_datetime(self.weekly_nav_df['date'])
+                
+                print(f"📊 Aligning benchmark data from {len(nifty_df)} daily points to {len(weekly_dates)} weekly dates")
+                
+                # Reset index to prepare for merge
+                nifty_df_daily = nifty_df.reset_index()
+                
+                # Create weekly dates dataframe
+                weekly_df = pd.DataFrame({'date': weekly_dates})
+                
+                # Use merge_asof to match each weekly date to the nearest prior daily benchmark value
+                aligned_df = pd.merge_asof(
+                    weekly_df.sort_values('date'),
+                    nifty_df_daily.sort_values('date'),
+                    on='date',
+                    direction='backward'
+                )
+                
+                # Set date as index
+                nifty_df = aligned_df.set_index('date')
+                
+                print(f"✅ Aligned benchmark data to {len(nifty_df)} weekly dates")
+            else:
+                print("⚠️ weekly_nav_df not available, using daily benchmark data")
+            
+            # Recalculate returns based on weekly aligned data
+            nifty_df['returns'] = nifty_df['nav'].pct_change()
+            
             nifty_df = nifty_df.reset_index()
+            nifty_df = nifty_df.rename(columns={'index': 'date'})
 
             return nifty_df
 

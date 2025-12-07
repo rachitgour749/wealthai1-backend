@@ -18,11 +18,12 @@ class EquitySegment(IndianExchange):
         # FIFO Inventory: {ticker: [{'date': date, 'units': qty, 'price': price, 'remaining_units': qty}]}
         self.purchase_history: Dict[str, List[Dict]] = {}
         
-    def calculate_delivery_costs(self, action: str, amount: float, 
-                               brokerage_percent: float = 0.1) -> Dict[str, float]:
+    def calculate_stock_delivery_costs(self, action: str, amount: float, 
+                                       brokerage_percent: float = 0.1) -> Dict[str, float]:
         """
-        Calculates transaction costs for Delivery trades.
-        Uses IndianMarketCostCalculator logic.
+        Calculates transaction costs for Stock Delivery trades.
+        STT: 0.1% on BOTH buy and sell
+        Stamp Duty: 0.015% on buy only
         """
         costs = {}
         
@@ -30,31 +31,22 @@ class EquitySegment(IndianExchange):
         brokerage = amount * (brokerage_percent / 100)
         costs['brokerage'] = brokerage
         
-        # STT (Securities Transaction Tax) - 0.1% on Buy & Sell for Equity Delivery
-        # Note: Some ETFs might have 0.001% on Sell only, but standard Equity is 0.1%
-        # For this implementation, we stick to the provided logic in Core_Logic.py which was:
-        # STT on Sell only (0.001%) - likely optimized for ETFs. 
-        # However, standard Equity Delivery is 0.1% on both.
-        # Let's stick to the logic from Core_Logic.py to maintain backward compatibility for now,
-        # but document this decision.
-        if action == 'sell':
-            costs['stt'] = amount * 0.001 / 100
-        else:
-            costs['stt'] = 0
+        # STT (Securities Transaction Tax) - 0.1% on BOTH Buy & Sell for Stocks
+        costs['stt'] = amount * 0.1 / 100
         
-        # Stamp duty - 0.005% (Buy Only)
+        # Stamp duty - 0.015% (Buy Only)
         if action == 'buy':
-            costs['stamp_duty'] = amount * 0.005 / 100
+            costs['stamp_duty'] = amount * 0.015 / 100
         else:
             costs['stamp_duty'] = 0
         
         # Exchange charges - 0.00297%
         exchange_charges = amount * 0.00297 / 100
-        costs['exchange_charges'] = exchange_charges # Base charge
+        costs['exchange_charges'] = exchange_charges
         
         # SEBI charges - 0.0001%
         sebi_charges = amount * 0.0001 / 100
-        costs['sebi_charges'] = sebi_charges # Base charge
+        costs['sebi_charges'] = sebi_charges
         
         # GST - 18% on Brokerage + Exchange + SEBI
         costs['gst'] = (brokerage + exchange_charges + sebi_charges) * 0.18
@@ -70,6 +62,63 @@ class EquitySegment(IndianExchange):
             costs['net_amount'] = amount - total_costs
             
         return costs
+    
+    def calculate_etf_delivery_costs(self, action: str, amount: float, 
+                                     brokerage_percent: float = 0.1) -> Dict[str, float]:
+        """
+        Calculates transaction costs for ETF Delivery trades.
+        STT: 0.001% on SELL only
+        Stamp Duty: 0.015% on buy only
+        """
+        costs = {}
+        
+        # Brokerage
+        brokerage = amount * (brokerage_percent / 100)
+        costs['brokerage'] = brokerage
+        
+        # STT (Securities Transaction Tax) - 0.001% on Sell only for ETFs
+        if action == 'sell':
+            costs['stt'] = amount * 0.001 / 100
+        else:
+            costs['stt'] = 0
+        
+        # Stamp duty - 0.015% (Buy Only)
+        if action == 'buy':
+            costs['stamp_duty'] = amount * 0.015 / 100
+        else:
+            costs['stamp_duty'] = 0
+        
+        # Exchange charges - 0.00297%
+        exchange_charges = amount * 0.00297 / 100
+        costs['exchange_charges'] = exchange_charges
+        
+        # SEBI charges - 0.0001%
+        sebi_charges = amount * 0.0001 / 100
+        costs['sebi_charges'] = sebi_charges
+        
+        # GST - 18% on Brokerage + Exchange + SEBI
+        costs['gst'] = (brokerage + exchange_charges + sebi_charges) * 0.18
+        
+        # Total costs
+        total_costs = sum(costs.values())
+        costs['total_costs'] = total_costs
+        
+        # Net amount
+        if action == 'buy':
+            costs['net_amount'] = amount + total_costs
+        else:
+            costs['net_amount'] = amount - total_costs
+            
+        return costs
+
+    def calculate_delivery_costs(self, action: str, amount: float, 
+                               brokerage_percent: float = 0.1) -> Dict[str, float]:
+        """
+        Calculates transaction costs for Delivery trades.
+        Defaults to ETF logic for backward compatibility.
+        Use calculate_stock_delivery_costs() or calculate_etf_delivery_costs() for specific needs.
+        """
+        return self.calculate_etf_delivery_costs(action, amount, brokerage_percent)
 
     def manage_fifo_inventory(self, ticker: str, units: int, price: float, date: datetime):
         """

@@ -239,19 +239,31 @@ class RSStrategyBacktester:
         total_data_days = (end_date - data_start_date).days
         print(f"Backtest period: {period_days} days, Total data period: {total_data_days} days")
         
+        # Get custom stock universe
+        stock_symbols = self.get_custom_stock_universe()
+        if not stock_symbols:
+            # Fallback if universe is empty - maybe log a warning?
+            print("WARNING: Custom stock universe is empty. Defaulting to empty dataframe.")
+            return pd.DataFrame()
+            
+        print(f"Restricting data load to {len(stock_symbols)} configured stocks")
+        
         # Use SQLAlchemy text() for PostgreSQL-compatible queries
         from sqlalchemy import text
         
-        # Query using SQLAlchemy text() with PostgreSQL parameter binding
+        # Query using SQLAlchemy text() with PostgreSQL parameter binding and symbol filtering
+        # Using ANY(:symbols) for efficient array filtering in Postgres
         query = text("""
             SELECT symbol, date, adj_close as adjusted_close
             FROM stock_data 
-            WHERE date >= :start_date AND date <= :end_date
+            WHERE symbol = ANY(:symbols) 
+            AND date >= :start_date AND date <= :end_date
             ORDER BY symbol, date
         """)
         
         # Execute query and convert to DataFrame
         result = self.db.execute(query, {
+            "symbols": stock_symbols,
             "start_date": data_start_date,
             "end_date": end_date
         })
@@ -259,6 +271,10 @@ class RSStrategyBacktester:
         # Convert to DataFrame
         df = pd.DataFrame(result.fetchall(), columns=result.keys())
         
+        if df.empty:
+            print("No data found for the selected stocks in the given date range.")
+            return df
+
         # Set date to datetime
         df['date'] = pd.to_datetime(df['date'])
         
@@ -975,6 +991,11 @@ class RSStrategyBacktester:
             # Clean up inf/NaN
             rs_scores = rs_scores.replace([np.inf, -np.inf], np.nan).fillna(0)
             
+            # Store component scores for debugging/logging
+            self.rs_w_df = rs_w
+            self.rs_m_df = rs_m
+            self.rs_q_df = rs_q
+            
             calc_time = (pd.Timestamp.now() - start_time).total_seconds()
             total_calcs = rs_scores.shape[0] * rs_scores.shape[1]
             
@@ -1221,6 +1242,73 @@ class RSStrategyBacktester:
         
         This is 20-30x faster than the original generate_signals method
         """
+        # DEBUG LOGGING: Print detailed RS breakdown for all stocks on this date
+        # Matching user's requested "Momentum Calculation" format
+        if date in rs_scores_df.index:
+            date_scores = rs_scores_df.loc[date].dropna().sort_values(ascending=False)
+            
+            # Retrieve index price safely
+            index_price = 0.0
+            try:
+                if isinstance(index_data, pd.DataFrame):
+                    # Check if date is in columns or already index
+                    if 'date' in index_data.columns:
+                        temp_idx_df = index_data.set_index('date')
+                    else:
+                        temp_idx_df = index_data
+                        
+                    if 'adjusted_close' in temp_idx_df.columns:
+                        idx_series = temp_idx_df['adjusted_close']
+                    elif 'adj_close' in temp_idx_df.columns:
+                        idx_series = temp_idx_df['adj_close']
+                    elif 'close' in temp_idx_df.columns:
+                        idx_series = temp_idx_df['close']
+                    else:
+                        idx_series = temp_idx_df.iloc[:, 0] # Fallback
+                    
+                    if date in idx_series.index:
+                         index_price = float(idx_series.loc[date])
+                else:
+                    # Assuming series
+                    if date in index_data.index:
+                        index_price = float(index_data.loc[date])
+            except:
+                pass
+
+            print(f"📊 RS Momentum Calculation for {date.strftime('%Y-%m-%d')}:")
+            print(f"   Note: Using Relative Strength (RS) score instead of 52-week High/Low distance")
+            print(f"   Benchmark Index Price: ₹{index_price:.2f}")
+            print(f"   ✅ Stocks Ranked by RS Score (Highest to Lowest):")
+            
+            rank = 1
+            for symbol, score in date_scores.items():
+                try:
+                    # Get component RS scores
+                    w_score = self.rs_w_df.loc[date, symbol] if hasattr(self, 'rs_w_df') and date in self.rs_w_df.index else 0
+                    m_score = self.rs_m_df.loc[date, symbol] if hasattr(self, 'rs_m_df') and date in self.rs_m_df.index else 0
+                    q_score = self.rs_q_df.loc[date, symbol] if hasattr(self, 'rs_q_df') and date in self.rs_q_df.index else 0
+                    
+                    # Get stock price safely
+                    stock_price = 0.0
+                    try:
+                        if isinstance(stock_data.index, pd.MultiIndex):
+                             if (symbol, date) in stock_data.index:
+                                stock_price = float(stock_data.loc[(symbol, date), 'adjusted_close'])
+                        else:
+                            # Flat df
+                            mask = (stock_data['date'] == date) & (stock_data['symbol'] == symbol)
+                            if mask.any():
+                                stock_price = float(stock_data.loc[mask, 'adjusted_close'].iloc[0])
+                    except:
+                        pass
+                    
+                    print(f"      {rank}. {symbol}: RS Score={score:.4f}, Price=₹{stock_price:.2f}")
+                    print(f"         Breakdown: Week={w_score:.3f}, Month={m_score:.3f}, Quarter={q_score:.3f}")
+                    rank += 1
+                    
+                except Exception:
+                    continue
+        
         # Use vectorized method to get top stocks
         top_stocks = self.get_top_rs_stocks_vectorized(date, rs_scores_df, n=self.max_positions)
         
@@ -2042,6 +2130,17 @@ class RSStrategyBacktester:
                     }
                     self.portfolio_snapshots.append(snapshot)
                     
+                    # Weekly Summary Log (matching user request)
+                    if self.is_friday_or_last_trading_day(date):
+                        week_num = (i // 5) + 1
+                        holdings_summary = [(s, p.quantity) for s, p in self.positions.items()]
+                        print(f"📊 Week {week_num} summary:")
+                        print(f"   Date: {date.strftime('%Y-%m-%d')}")
+                        print(f"   NAV: ₹{portfolio_value:,.2f}")
+                        print(f"   Cash: ₹{self.cash_balance:,.2f}")
+                        print(f"   Holdings: {holdings_summary}")
+                        print("============================================================")
+                    
                     if entries or exits:
                         signal_count += 1
                         
@@ -2558,8 +2657,14 @@ class RSStrategyBacktester:
                 )
                 self.trades.append(trade)
                 
-                print(f"  BUY: {symbol} - Qty: {quantity}, Price: ₹{price:.2f}, Cost: ₹{net_amount:.2f}")
-                print(f"  Cash: ₹{self.cash_balance:.2f}, Buffer: ₹{self.buffer_capital:.2f}")
+                print(f"📋 Purchase calculation:")
+                print(f"   Gross amount: ₹{cost_details['transaction_value']:,.2f}")
+                print(f"   Transaction costs: ₹{cost_details['total_costs']:,.2f}")
+                print(f"   Net amount: ₹{net_amount:,.2f}")
+                print(f"   Units to buy: {quantity}")
+                print(f"✅ Purchase executed: {quantity} units of {symbol} for ₹{net_amount:,.2f}")
+                print(f"💳 Total cost (including fees): ₹{cost_details['total_costs']:,.2f}")
+                print(f"💰 Remaining cash: ₹{self.cash_balance:,.2f}")
                 return True
                 
             elif action == "SELL":

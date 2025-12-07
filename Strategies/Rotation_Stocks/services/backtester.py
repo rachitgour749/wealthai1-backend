@@ -652,7 +652,7 @@ class StockRotationBacktester(RotationStrategy):
         target_weekday = {'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4}[day]
 
         days_ahead = target_weekday - target_date.weekday()
-        if days_ahead <= 0:
+        if days_ahead < 0:
             days_ahead += 7
 
         target_trading_date = target_date + timedelta(days=days_ahead)
@@ -738,7 +738,7 @@ class StockRotationBacktester(RotationStrategy):
         if not result_df.empty:
             # Sort by distance from low for accumulation phase (buy closest to low)
             result_df_sorted = result_df.sort_values('distance_from_low')
-            print(f"   📊 stock Rankings (closest to 52-week low first):")
+            print(f"   📊 Ranked 52 week low stocks in ascending order:")
             for idx, row in result_df_sorted.head().iterrows():
                 print(f"      {idx + 1}. {row['symbol']}: {row['distance_from_low']:.2f}% from low")
 
@@ -746,11 +746,11 @@ class StockRotationBacktester(RotationStrategy):
 
     def calculate_transaction_costs(self, action: str, amount: float, brokerage_percent: float) -> Dict[str, float]:
         """
-        Calculate Indian market transaction costs using centralized calculator.
+        Calculate Indian market transaction costs for STOCKS.
         
-        This method now delegates to the EquitySegment implementation.
+        Uses stock-specific cost calculation with STT on both buy and sell.
         """
-        return self.calculate_delivery_costs(action, amount, brokerage_percent)
+        return self.calculate_stock_delivery_costs(action, amount, brokerage_percent)
     
     
     def add_purchase_record(self, ticker: str, units: int, price: float, date: datetime):
@@ -871,7 +871,8 @@ class StockRotationBacktester(RotationStrategy):
                 open_prices=open_prices,
                 current_holdings=updated_holdings,
                 available_cash=current_cash,
-                brokerage_percent=brokerage_percent
+                brokerage_percent=brokerage_percent,
+                target_allocation=target_capital
             )
             
             buy_transaction = reallocation_result['buy_transaction']
@@ -943,54 +944,65 @@ class StockRotationBacktester(RotationStrategy):
                 break
                 
             ticker = row['symbol']
-            units_held = updated_holdings[ticker]
             price = open_prices[ticker]
             
-            # Calculate how much more we need
-            remaining_target = target_capital - total_raised
-            
-            # Calculate value of current holding
-            holding_value = units_held * price
-            
-            # Determine how many units to sell
-            if holding_value <= remaining_target * 1.1:  # Sell all if close to target or less
-                units_to_sell = units_held
-            else:
-                # Sell partial units to meet target
-                units_to_sell = int(np.ceil(remaining_target / price))
+            # Keep selling from this stock until target is met or stock is exhausted
+            while total_raised < target_capital and ticker in updated_holdings and updated_holdings[ticker] > 0:
+                units_held = updated_holdings[ticker]
+                remaining_target = target_capital - total_raised
                 
-            if units_to_sell > 0:
-                amount = units_to_sell * price
-                costs = self.calculate_transaction_costs('sell', amount, brokerage_percent)
+                # Calculate value of current holding
+                holding_value = units_held * price
                 
-                # Calculate capital gains tax
-                tax_info = self.calculate_capital_gains_tax(ticker, units_to_sell, price, execution_date)
-                capital_gains_tax = tax_info['capital_gains_tax']
-                
-                net_amount = costs['net_amount'] - capital_gains_tax
-                
-                # Update tracking
-                total_raised += net_amount
-                total_capital_gains_tax += capital_gains_tax
-                updated_holdings[ticker] -= units_to_sell
-                
-                if updated_holdings[ticker] == 0:
-                    del updated_holdings[ticker]
+                # Determine how many units to sell
+                if holding_value <= remaining_target * 1.1:  # Sell all if close to target or less
+                    units_to_sell = units_held
+                else:
+                    # Sell partial units to meet target (start with estimate, will iterate if needed)
+                    units_to_sell = max(1, int(np.ceil(remaining_target / price)))
                     
-                # Log transaction
-                self.log_transaction_costs(week_num, execution_date, 'sell', ticker, units_to_sell, price, costs, capital_gains_tax)
+                # Don't sell more than we have
+                units_to_sell = min(units_to_sell, units_held)
                 
-                sell_transactions.append({
-                    'ticker': ticker,
-                    'units': units_to_sell,
-                    'price': price,
-                    'amount': amount,
-                    'net_amount': net_amount,
-                    'costs': costs,
-                    'capital_gains_tax': capital_gains_tax
-                })
-                
-                print(f"      🔻 SOLD {units_to_sell} units of {ticker} @ ₹{price:.2f} = ₹{net_amount:,.2f}")
+                if units_to_sell > 0:
+                    amount = units_to_sell * price
+                    costs = self.calculate_transaction_costs('sell', amount, brokerage_percent)
+                    
+                    # Calculate capital gains tax
+                    tax_info = self.calculate_capital_gains_tax(ticker, units_to_sell, price, execution_date)
+                    capital_gains_tax = tax_info['capital_gains_tax']
+                    
+                    net_amount = costs['net_amount'] - capital_gains_tax
+                    
+                    # Update tracking
+                    total_raised += net_amount
+                    total_capital_gains_tax += capital_gains_tax
+                    updated_holdings[ticker] -= units_to_sell
+                    
+                    if updated_holdings[ticker] == 0:
+                        del updated_holdings[ticker]
+                        
+                    # Log transaction
+                    self.log_transaction_costs(week_num, execution_date, 'sell', ticker, units_to_sell, price, costs, capital_gains_tax)
+                    
+                    sell_transactions.append({
+                        'ticker': ticker,
+                        'units': units_to_sell,
+                        'price': price,
+                        'amount': amount,
+                        'net_amount': net_amount,
+                        'costs': costs,
+                        'capital_gains_tax': capital_gains_tax
+                    })
+                    
+                    print(f"📋 Sale calculation:")
+                    print(f"   Gross amount: ₹{amount:,.2f}")
+                    print(f"   Transaction costs: ₹{costs['total_costs']:,.2f}")
+                    print(f"   Capital Gains Tax: ₹{capital_gains_tax:,.2f}")
+                    print(f"   Net proceeds: ₹{net_amount:,.2f}")
+                    print(f"   Units to sell: {units_to_sell}")
+                    print(f"🔻 Sale executed: {units_to_sell} units of {ticker} for ₹{net_amount:,.2f}")
+                    print(f"💰 Remaining cash: ₹{cash + total_raised:,.2f}")
                 
         return {
             'total_raised': total_raised,
@@ -1001,7 +1013,7 @@ class StockRotationBacktester(RotationStrategy):
 
     def execute_reallocation_process(self, week_num: int, execution_date: datetime, high_low_data: pd.DataFrame,
                                    open_prices: pd.Series, current_holdings: Dict[str, int], available_cash: float,
-                                   brokerage_percent: float) -> Dict:
+                                   brokerage_percent: float, target_allocation: float = None) -> Dict:
         """
         Execute Reallocation Process: Buy stock with smallest distance from 52-week low
         """
@@ -1027,11 +1039,25 @@ class StockRotationBacktester(RotationStrategy):
         
         print(f"   📈 Top Buy Candidate: {ticker} ({top_candidate['distance_from_low']:.2f}% from low)")
         
-        # Calculate max units we can buy
-        # Estimate costs: price * units * (1 + brokerage_percent/100 + other_charges)
-        estimated_cost_per_unit = price * (1 + brokerage_percent/100 + 0.002) # approx 0.2% other charges
-        units_to_buy = int(remaining_cash / estimated_cost_per_unit)
+        # Determine investable capital
+        # If target_allocation provided, use IT for sizing (matching ETF logic: try to buy fixed amount)
+        # If insufficient cash, the subsequent check will prevent execution (All-or-Nothing)
+        if target_allocation is not None:
+             investable_capital = target_allocation
+        else:
+             investable_capital = available_cash
         
+        # Calculate max units accurately (Iterative approach to maximize usage)
+        # Start with theoretical max (ignoring costs) and decrement until it fits including actual costs
+        units_to_buy = int(investable_capital / price)
+        
+        while units_to_buy > 0:
+            amount = units_to_buy * price
+            costs = self.calculate_transaction_costs('buy', amount, brokerage_percent)
+            if costs['net_amount'] <= investable_capital:
+                break
+            units_to_buy -= 1
+
         if units_to_buy > 0:
             amount = units_to_buy * price
             costs = self.calculate_transaction_costs('buy', amount, brokerage_percent)
@@ -1056,9 +1082,15 @@ class StockRotationBacktester(RotationStrategy):
                     'costs': costs
                 }
                 
-                print(f"      ✅ BOUGHT {units_to_buy} units of {ticker} @ ₹{price:.2f} = ₹{costs['net_amount']:,.2f}")
-            else:
-                print(f"      ⚠️ Insufficient cash for calculated units (Need ₹{costs['net_amount']:,.2f}, Have ₹{remaining_cash:,.2f})")
+                # Enhanced Logging for Buy (matching detailed style)
+                print(f"📋 Purchase calculation:")
+                print(f"   Gross amount: ₹{amount:,.0f}")
+                print(f"   Transaction costs: ₹{costs['total_costs']:,.2f}")
+                print(f"   Net for units: ₹{remaining_cash - costs['total_costs']:,.0f}") # Approximate Net available
+                print(f"   Units to buy: {units_to_buy}")
+                print(f"✅ Purchase executed: {units_to_buy} units of {ticker} for ₹{costs['net_amount']:,.2f}")
+                print(f"💳 Total cost (including fees): ₹{costs['total_costs']:,.2f}")
+                print(f"💰 Remaining cash: ₹{remaining_cash:,.2f}")
         else:
             print(f"      ⚠️ Insufficient cash to buy even 1 unit of {ticker}")
             
@@ -1247,24 +1279,34 @@ class StockRotationBacktester(RotationStrategy):
             
             # Simulation Loop
             while current_date <= end_date_dt:
-                print(f"\n📅 Week {week_num}: {current_date.strftime('%Y-%m-%d')}")
+                # Phase Logging (matching detailed style)
+                is_accumulation = week_num <= accumulation_weeks
+                print(f"\n🔄 Week {week_num} - {'ACCUMULATION' if is_accumulation else 'CHURNING'} PHASE")
                 
-                # Get current prices
+                # Get current prices (Execution Day Prices)
                 try:
                     current_prices = open_df.loc[current_date]
                 except KeyError:
                     print(f"   ⚠️ No price data for {current_date}, skipping week")
                     current_date = current_date + timedelta(days=7)
                     continue
+
+                # Signal Date Logic (Previous trading day, usually Friday)
+                # Look back from execution date (Monday) to find previous Friday
+                search_date = current_date - timedelta(days=1)
+                signal_date = self.get_last_trading_day(close_df, search_date, 'Friday')
                 
-                # 1. Add Capital (Accumulation Phase)
-                if week_num <= accumulation_weeks:
+                # Log Dates (matching user request)
+                if signal_date:
+                    print(f"📅 Signal Day: {signal_date.strftime('%A, %Y-%m-%d')}")
+                print(f"💼 Execution Day: {current_date.strftime('%A, %Y-%m-%d')}")
+                if is_accumulation:
+                    print(f"📈 Accumulation Phase - Week {week_num}")
+                    print(f"💰 Weekly capital allocation: ₹{capital_per_week:,.0f}")
                     cash += capital_per_week
-                    print(f"   💰 Added capital: ₹{capital_per_week:,.2f} (Total Cash: ₹{cash:,.2f})")
                 
                 # 2. Calculate Momentum (52-week High/Low)
-                # Use previous Friday for signal generation
-                signal_date = self.get_next_trading_day(close_df, current_date, 'Friday')
+                # Use signal_date already calculated above
                 
                 if signal_date:
                     high_low_data = self.compute_52_week_high_low(close_df, signal_date)
@@ -1280,7 +1322,8 @@ class StockRotationBacktester(RotationStrategy):
                                 open_prices=current_prices,
                                 current_holdings=holdings,
                                 available_cash=cash,
-                                brokerage_percent=brokerage_percent
+                                brokerage_percent=brokerage_percent,
+                                target_allocation=capital_per_week
                             )
                             
                             buy_transaction = reallocation_result['buy_transaction']
@@ -1323,6 +1366,21 @@ class StockRotationBacktester(RotationStrategy):
                 # Update state
                 self.current_cash = cash
                 self.current_holdings = holdings
+                
+                # Weekly Summary Log (matching user request)
+                nav_display = self.calculate_nav(holdings, current_prices, cash)
+                holdings_summary = [(s, qty) for s, qty in holdings.items()]
+                
+                # Weekly Summary Log (matching user request)
+                nav_display = self.calculate_nav(holdings, current_prices, cash)
+                holdings_summary = [(s, qty) for s, qty in holdings.items() if qty > 0]
+                
+                print(f"📊 Week {week_num} summary:")
+                print(f"   Action: {'buy' if is_accumulation else 'churn'}")
+                print(f"   NAV: ₹{nav_display:,.0f}")
+                print(f"   Cash: ₹{cash:,.0f}")
+                print(f"   Holdings: {holdings_summary}")
+                print("============================================================")
                 self.total_weeks = week_num
                 
                 # Move to next week
