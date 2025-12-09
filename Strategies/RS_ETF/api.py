@@ -394,6 +394,7 @@ async def run_backtest(backtest_request: BacktestRequest, user_id: str = Query(.
             ]
             performance_data["rs_strategy"] = [snapshot.get('total_value', 0) for snapshot in portfolio_snapshots]
             performance_data["cumulative_investment"] = [backtest_request.total_capital] * len(portfolio_snapshots)
+            performance_data["benchmark_buyhold"] = results.get('benchmark_buyhold', [])
         
         # Transform results to match frontend expectations (ETF-like structure)
         response_data = {
@@ -412,6 +413,8 @@ async def run_backtest(backtest_request: BacktestRequest, user_id: str = Query(.
                 'total_trades': results.get('total_trades', 0),
                 'final_capital': results.get('final_capital', 0),
             },
+            "benchmark_metrics": results.get('benchmark_metrics', {}),
+            "alpha_pct": results.get('alpha_pct', 0),
             "backtest_result": {
                 'total_investment': backtest_request.total_capital,
                 'final_portfolio_value': results.get('final_capital', 0),

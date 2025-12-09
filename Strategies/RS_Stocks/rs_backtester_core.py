@@ -12,6 +12,12 @@ from dataclasses import dataclass
 import math
 from enum import Enum
 
+# Import benchmark calculator
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from benchmark_calculator import BenchmarkCalculator
+
 class MarketRegime(Enum):
     BULL = "bull"
     BEAR = "bear"
@@ -98,6 +104,17 @@ class Trade:
     gst: Optional[float] = None
     total_costs: Optional[float] = None
     net_amount: Optional[float] = None
+    
+    # NAV and Capital Gains tracking
+    portfolio_nav: Optional[float] = None  # Portfolio NAV at trade time
+    buy_price: Optional[float] = None  # Original buy price (for SELL trades)
+    capital_gain: Optional[float] = None  # Total gain/loss in ₹
+    capital_gain_pct: Optional[float] = None  # Gain/loss percentage
+    holding_period_days: Optional[int] = None  # Days held (for SELL trades)
+    
+    # Tax calculation (20% STCG for short-term)
+    capital_gains_tax: Optional[float] = None  # Tax amount (20% of gain if positive)
+    net_profit_after_tax: Optional[float] = None  # Profit after deducting tax
 
 @dataclass
 class Position:
@@ -873,43 +890,59 @@ class RSStrategyBacktester:
             quarter_ago_index_date = available_index_dates[current_index_index - self.lookback_quarters]
             
             # DEBUG: Print current and historical prices for first calculation
-            if self._debug_count <= 4:
-                print(f"    Current prices:")
-                print(f"      Stock: ₹{current_stock_price:.2f}, Index: ₹{current_index_price:.2f}")
-                print(f"    Historical dates and prices:")
-                print(f"      Week ago: {week_ago_date} - Stock: ₹{stock_prices.loc[week_ago_date]:.2f}, Index: ₹{index_prices.loc[week_ago_index_date]:.2f}")
-                print(f"      Month ago: {month_ago_date} - Stock: ₹{stock_prices.loc[month_ago_date]:.2f}, Index: ₹{index_prices.loc[month_ago_index_date]:.2f}")
-                print(f"      Quarter ago: {quarter_ago_date} - Stock: ₹{stock_prices.loc[quarter_ago_date]:.2f}, Index: ₹{index_prices.loc[quarter_ago_index_date]:.2f}")
+            # DEBUG: Print current and historical prices
+            print(f"    Current prices:")
+            print(f"      Stock: ₹{current_stock_price:.2f}, Index: ₹{current_index_price:.2f}")
+            print(f"    Historical dates and prices:")
+            print(f"      Week ago: {week_ago_date} - Stock: ₹{stock_prices.loc[week_ago_date]:.2f}, Index: ₹{index_prices.loc[week_ago_index_date]:.2f}")
+            print(f"      Month ago: {month_ago_date} - Stock: ₹{stock_prices.loc[month_ago_date]:.2f}, Index: ₹{index_prices.loc[month_ago_index_date]:.2f}")
+            print(f"      Quarter ago: {quarter_ago_date} - Stock: ₹{stock_prices.loc[quarter_ago_date]:.2f}, Index: ₹{index_prices.loc[quarter_ago_index_date]:.2f}")
             
             # Calculate RS for each period using actual historical data
-            rs_w = self.calculate_single_rs(
-                current_stock_price, stock_prices.loc[week_ago_date],
-                current_index_price, index_prices.loc[week_ago_index_date]
-            )
-            rs_m = self.calculate_single_rs(
-                current_stock_price, stock_prices.loc[month_ago_date],
-                current_index_price, index_prices.loc[month_ago_index_date]
-            )
-            rs_q = self.calculate_single_rs(
-                current_stock_price, stock_prices.loc[quarter_ago_date],
-                current_index_price, index_prices.loc[quarter_ago_index_date]
-            )
+            print(f"    RS Calculation Breakdown:")
             
-            # DEBUG: Print RS values for first calculation
-            if self._debug_count <= 4:
-                print(f"    RS values: week={rs_w:.3f}, month={rs_m:.3f}, quarter={rs_q:.3f}")
+            # WEEK Calculation
+            stock_past_w = stock_prices.loc[week_ago_date]
+            index_past_w = index_prices.loc[week_ago_index_date]
+            stock_ret_w = current_stock_price / stock_past_w
+            index_ret_w = current_index_price / index_past_w
+            rs_w = self.calculate_single_rs(current_stock_price, stock_past_w, current_index_price, index_past_w)
+            print(f"      WEEK (5 days):")
+            print(f"        Stock Return = Current/Past = ₹{current_stock_price:.2f} / ₹{stock_past_w:.2f} = {stock_ret_w:.6f}")
+            print(f"        Index Return = Current/Past = ₹{current_index_price:.2f} / ₹{index_past_w:.2f} = {index_ret_w:.6f}")
+            print(f"        RS = (Stock Return / Index Return) - 1 = ({stock_ret_w:.6f} / {index_ret_w:.6f}) - 1 = {rs_w:.6f}")
+
+            # MONTH Calculation
+            stock_past_m = stock_prices.loc[month_ago_date]
+            index_past_m = index_prices.loc[month_ago_index_date]
+            stock_ret_m = current_stock_price / stock_past_m
+            index_ret_m = current_index_price / index_past_m
+            rs_m = self.calculate_single_rs(current_stock_price, stock_past_m, current_index_price, index_past_m)
+            print(f"      MONTH (20 days):")
+            print(f"        Stock Return = Current/Past = ₹{current_stock_price:.2f} / ₹{stock_past_m:.2f} = {stock_ret_m:.6f}")
+            print(f"        Index Return = Current/Past = ₹{current_index_price:.2f} / ₹{index_past_m:.2f} = {index_ret_m:.6f}")
+            print(f"        RS = (Stock Return / Index Return) - 1 = ({stock_ret_m:.6f} / {index_ret_m:.6f}) - 1 = {rs_m:.6f}")
+
+            # QUARTER Calculation
+            stock_past_q = stock_prices.loc[quarter_ago_date]
+            index_past_q = index_prices.loc[quarter_ago_index_date]
+            stock_ret_q = current_stock_price / stock_past_q
+            index_ret_q = current_index_price / index_past_q
+            rs_q = self.calculate_single_rs(current_stock_price, stock_past_q, current_index_price, index_past_q)
+            print(f"      QUARTER (60 days):")
+            print(f"        Stock Return = Current/Past = ₹{current_stock_price:.2f} / ₹{stock_past_q:.2f} = {stock_ret_q:.6f}")
+            print(f"        Index Return = Current/Past = ₹{current_index_price:.2f} / ₹{index_past_q:.2f} = {index_ret_q:.6f}")
+            print(f"        RS = (Stock Return / Index Return) - 1 = ({stock_ret_q:.6f} / {index_ret_q:.6f}) - 1 = {rs_q:.6f}")
+            
+            print(f"    RS values: week={rs_w:.3f}, month={rs_m:.3f}, quarter={rs_q:.3f}")
             
             # Return None if any RS calculation failed
             if any(rs is None for rs in [rs_w, rs_m, rs_q]):
-                if self._debug_count <= 3:
-                    print(f"      FAILED: One or more RS calculations returned None")
+                print(f"      FAILED: One or more RS calculations returned None")
                 return None
             
             # Calculate composite RS score
             rs_score = (rs_w + rs_m + rs_q) / 3
-            
-            if self._debug_count <= 1:
-                print(f"    Final RS score: {rs_score:.3f}")
             
             return rs_score
             
@@ -985,8 +1018,8 @@ class RSStrategyBacktester:
             rs_m = stock_returns_m.sub(index_returns_m, axis=0)
             rs_q = stock_returns_q.sub(index_returns_q, axis=0)
             
-            # Weighted average: 40% weekly, 30% monthly, 30% quarterly
-            rs_scores = 0.4 * rs_w + 0.3 * rs_m + 0.3 * rs_q
+            # Simple Equal-Weight Average (Week + Month + Quarter) / 3
+            rs_scores = (rs_w + rs_m + rs_q) / 3
             
             # Clean up inf/NaN
             rs_scores = rs_scores.replace([np.inf, -np.inf], np.nan).fillna(0)
@@ -1278,7 +1311,11 @@ class RSStrategyBacktester:
             print(f"📊 RS Momentum Calculation for {date.strftime('%Y-%m-%d')}:")
             print(f"   Note: Using Relative Strength (RS) score instead of 52-week High/Low distance")
             print(f"   Benchmark Index Price: ₹{index_price:.2f}")
-            print(f"   ✅ Stocks Ranked by RS Score (Highest to Lowest):")
+            print(f"   ✅ Stocks Ranked by RS Score (Equal Weight) - Highest to Lowest:")
+            print(f"   Note: Breakdown values show Outperformance (Excess Return vs Index)")
+            print(f"         Week: 1-week return (5 days) outperformance")
+            print(f"         Month: 1-month return (20 days) outperformance")
+            print(f"         Quarter: 1-quarter return (60 days) outperformance")
             
             rank = 1
             for symbol, score in date_scores.items():
@@ -1302,8 +1339,33 @@ class RSStrategyBacktester:
                     except:
                         pass
                     
+                    # Lookup Past Prices
+                    past_str = ""
+                    try:
+                        sym_df = stock_data[stock_data['symbol'] == symbol]
+                        if not sym_df.empty:
+                            sym_df = sym_df.sort_values('date').reset_index(drop=True)
+                            curr_matches = sym_df.index[sym_df['date'] == date].tolist()
+                            if curr_matches:
+                                curr_idx = curr_matches[0]
+                                parts = []
+                                for name, days in [("Week", 5), ("Month", 20), ("Quarter", 60)]:
+                                     target = curr_idx - days
+                                     if target >= 0:
+                                         row = sym_df.iloc[target]
+                                         p_d = row['date']
+                                         p_p = float(row['adjusted_close'])
+                                         parts.append(f"{name}: {p_d.strftime('%Y-%m-%d')}@₹{p_p:.2f}")
+                                     else:
+                                         parts.append(f"{name}: N/A")
+                                past_str = ", ".join(parts)
+                    except:
+                        pass
+
                     print(f"      {rank}. {symbol}: RS Score={score:.4f}, Price=₹{stock_price:.2f}")
-                    print(f"         Breakdown: Week={w_score:.3f}, Month={m_score:.3f}, Quarter={q_score:.3f}")
+                    if past_str:
+                        print(f"         History: {past_str}")
+                    print(f"         Breakdown (Outperf): Week (5d)={w_score:.3f}, Month (20d)={m_score:.3f}, Quarter (60d)={q_score:.3f}")
                     rank += 1
                     
                 except Exception:
@@ -1846,7 +1908,7 @@ class RSStrategyBacktester:
             'rs_score': trade.rs_score,
             'rs_rank': trade.rs_rank,
             
-            # Transaction cost fields - CRITICAL FIX for saving cost data
+            # Transaction cost fields
             'transaction_value': trade.transaction_value,
             'brokerage': trade.brokerage,
             'stt': trade.stt,
@@ -1855,7 +1917,16 @@ class RSStrategyBacktester:
             'sebi_charges': trade.sebi_charges,
             'gst': trade.gst,
             'total_costs': trade.total_costs,
-            'net_amount': trade.net_amount
+            'net_amount': trade.net_amount,
+            
+            # NAV and Capital Gains fields
+            'portfolio_nav': trade.portfolio_nav,
+            'buy_price': trade.buy_price,
+            'capital_gain': trade.capital_gain,
+            'capital_gain_pct': trade.capital_gain_pct,
+            'holding_period_days': trade.holding_period_days,
+            'capital_gains_tax': trade.capital_gains_tax,
+            'net_profit_after_tax': trade.net_profit_after_tax
         }
         # Apply comprehensive JSON-safe conversion
         return self.convert_to_json_safe(trade_dict)
@@ -2305,6 +2376,38 @@ class RSStrategyBacktester:
                 }
             }
             
+            # Calculate benchmark buy-and-hold metrics
+            print("=== CALCULATING BENCHMARK METRICS ===")
+            try:
+                trading_dates = [snap['date'] for snap in self.portfolio_snapshots]
+                benchmark_calc = BenchmarkCalculator(
+                    initial_capital=self.total_capital,
+                    index_data=self.index_data,
+                    trading_dates=trading_dates
+                )
+                benchmark_metrics = benchmark_calc.calculate_benchmark_metrics(risk_free_rate)
+                benchmark_values = benchmark_calc.get_benchmark_values_array()
+                
+                print(f"DEBUG: Benchmark values array length: {len(benchmark_values)}")
+                print(f"DEBUG: First 3 benchmark values: {benchmark_values[:3] if len(benchmark_values) >= 3 else benchmark_values}")
+                
+                # Add benchmark data to metrics
+                metrics['benchmark_metrics'] = benchmark_metrics
+                metrics['benchmark_buyhold'] = benchmark_values
+                metrics['alpha_pct'] = safe_float(cagr - benchmark_metrics['cagr_pct'])
+                
+                print(f"Benchmark Total Return: {benchmark_metrics['total_return_pct']:.2f}%")
+                print(f"Benchmark CAGR: {benchmark_metrics['cagr_pct']:.2f}%")
+                print(f"Strategy Alpha: {metrics['alpha_pct']:.2f}%")
+                print(f"DEBUG: benchmark_buyhold in metrics: {len(metrics.get('benchmark_buyhold', []))} values")
+            except Exception as e:
+                print(f"Error calculating benchmark metrics: {e}")
+                import traceback
+                traceback.print_exc()
+                metrics['benchmark_metrics'] = {}
+                metrics['benchmark_buyhold'] = []
+                metrics['alpha_pct'] = 0.0
+            
             print(f"Final metrics calculated: {metrics}")
             return metrics
             
@@ -2571,6 +2674,35 @@ class RSStrategyBacktester:
             print(f"Error calculating trade P&L: {e}")
             return 0.0
     
+    def calculate_portfolio_nav(self, date: datetime, stock_data: pd.DataFrame = None) -> float:
+        """Calculate total portfolio NAV (positions + cash + buffer)"""
+        try:
+            positions_value = 0.0
+            
+            # Calculate value of all positions
+            for symbol, position in self.positions.items():
+                try:
+                    # Try to get current price from stock_data if available
+                    if stock_data is not None and date in stock_data.index and symbol in stock_data.columns:
+                        current_price = stock_data.loc[date, symbol]['adjusted_close']
+                    else:
+                        # Fallback to position's current price
+                        current_price = position.current_price
+                    
+                    positions_value += position.quantity * current_price
+                except (KeyError, TypeError, AttributeError):
+                    # Use position's stored price if data not available
+                    positions_value += position.quantity * position.current_price
+            
+            # Total NAV = positions + cash + buffer
+            total_nav = positions_value + self.cash_balance + self.buffer_capital
+            return round(total_nav, 2)
+            
+        except Exception as e:
+            print(f"Error calculating portfolio NAV: {e}")
+            # Fallback to total capital
+            return self.total_capital
+    
     def execute_trade(self, date: datetime, symbol: str, action: str, price: float, reason: str, rs_score: float = None, rs_rank: int = None):
         """Execute a trade with proper Indian market cost calculation and buffer capital system"""
         try:
@@ -2634,7 +2766,10 @@ class RSStrategyBacktester:
                 
                 self.positions[symbol] = position
                 
-                # Record trade with detailed cost breakdown
+                # Calculate current portfolio NAV
+                portfolio_nav = self.calculate_portfolio_nav(date)
+                
+                # Record trade with detailed cost breakdown and NAV
                 trade = Trade(
                     date=date,
                     symbol=symbol,
@@ -2653,7 +2788,14 @@ class RSStrategyBacktester:
                     sebi_charges=cost_details['sebi_charges'],
                     gst=cost_details['gst'],
                     total_costs=cost_details['total_costs'],
-                    net_amount=net_amount
+                    net_amount=net_amount,
+                    portfolio_nav=portfolio_nav,
+                    buy_price=price,  # Store buy price for reference
+                    capital_gain=0.0,
+                    capital_gain_pct=0.0,
+                    holding_period_days=0,
+                    capital_gains_tax=0.0,
+                    net_profit_after_tax=0.0
                 )
                 self.trades.append(trade)
                 
@@ -2664,6 +2806,8 @@ class RSStrategyBacktester:
                 print(f"   Units to buy: {quantity}")
                 print(f"✅ Purchase executed: {quantity} units of {symbol} for ₹{net_amount:,.2f}")
                 print(f"💳 Total cost (including fees): ₹{cost_details['total_costs']:,.2f}")
+                print(f"📊 Portfolio NAV: ₹{portfolio_nav:,.2f}")
+                print(f"💰 Buy Price: ₹{price:,.2f}")
                 print(f"💰 Remaining cash: ₹{self.cash_balance:,.2f}")
                 return True
                 
@@ -2700,7 +2844,20 @@ class RSStrategyBacktester:
                 # Remove position
                 del self.positions[symbol]
                 
-                # Record trade with detailed cost breakdown
+                # Calculate capital gains and holding period
+                buy_price = position.buy_price
+                capital_gain = (price - buy_price) * quantity
+                capital_gain_pct = ((price - buy_price) / buy_price) * 100 if buy_price > 0 else 0.0
+                holding_period_days = (date - position.buy_date).days
+                
+                # Calculate 20% STCG tax (only on positive gains)
+                capital_gains_tax = max(0, capital_gain * 0.20) if capital_gain > 0 else 0.0
+                net_profit_after_tax = capital_gain - capital_gains_tax
+                
+                # Calculate current portfolio NAV
+                portfolio_nav = self.calculate_portfolio_nav(date)
+                
+                # Record trade with detailed cost breakdown, capital gains, and tax
                 trade = Trade(
                     date=date,
                     symbol=symbol,
@@ -2719,12 +2876,38 @@ class RSStrategyBacktester:
                     sebi_charges=cost_details['sebi_charges'],
                     gst=cost_details['gst'],
                     total_costs=cost_details['total_costs'],
-                    net_amount=net_amount
+                    net_amount=net_amount,
+                    portfolio_nav=portfolio_nav,
+                    buy_price=buy_price,
+                    capital_gain=round(capital_gain, 2),
+                    capital_gain_pct=round(capital_gain_pct, 2),
+                    holding_period_days=holding_period_days,
+                    capital_gains_tax=round(capital_gains_tax, 2),
+                    net_profit_after_tax=round(net_profit_after_tax, 2)
                 )
                 self.trades.append(trade)
                 
-                print(f"  SELL: {symbol} - Qty: {quantity}, Price: ₹{price:.2f}, P&L: ₹{pnl:.2f} ({pnl_pct:.1f}%)")
-                print(f"  Cash: ₹{self.cash_balance:.2f}, Buffer: ₹{self.buffer_capital:.2f}")
+                print(f"")
+                print(f"💰 SELL EXECUTED: {symbol}")
+                print(f"   Quantity: {quantity} units")
+                print(f"   Sell Price: ₹{price:,.2f}")
+                print(f"   Buy Price: ₹{buy_price:,.2f}")
+                print(f"   Holding Period: {holding_period_days} days")
+                print(f"")
+                print(f"📊 CAPITAL GAINS BREAKDOWN:")
+                print(f"   Gross Capital Gain: ₹{capital_gain:,.2f} ({capital_gain_pct:.2f}%)")
+                if capital_gain > 0:
+                    print(f"   STCG Tax (20%): -₹{capital_gains_tax:,.2f}")
+                    print(f"   Net Profit After Tax: ₹{net_profit_after_tax:,.2f}")
+                else:
+                    print(f"   STCG Tax: ₹0.00 (No tax on losses)")
+                    print(f"   Net Loss: ₹{capital_gain:,.2f}")
+                print(f"")
+                print(f"📈 PORTFOLIO STATUS:")
+                print(f"   Portfolio NAV: ₹{portfolio_nav:,.2f}")
+                print(f"   Cash Balance: ₹{self.cash_balance:,.2f}")
+                print(f"   Buffer Capital: ₹{self.buffer_capital:,.2f}")
+                print(f"")
                 return True
                 
         except Exception as e:

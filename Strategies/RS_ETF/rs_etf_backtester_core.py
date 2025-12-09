@@ -12,6 +12,12 @@ from dataclasses import dataclass
 import math
 from enum import Enum
 
+# Import benchmark calculator
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from benchmark_calculator import BenchmarkCalculator
+
 class MarketRegime(Enum):
     BULL = "bull"
     BEAR = "bear"
@@ -98,6 +104,15 @@ class Trade:
     gst: Optional[float] = None
     total_costs: Optional[float] = None
     net_amount: Optional[float] = None
+
+    # NAV and Capital Gains Tracking
+    portfolio_nav: Optional[float] = None
+    buy_price: Optional[float] = None
+    capital_gain: Optional[float] = None
+    capital_gain_pct: Optional[float] = None
+    holding_period_days: Optional[int] = None
+    capital_gains_tax: Optional[float] = None
+    net_profit_after_tax: Optional[float] = None
 
 @dataclass
 class Position:
@@ -663,7 +678,7 @@ class RSETFStrategyBacktester:
             self.last_trading_days.add(last_date)
     
     def calculate_rs_score(self, etf_prices: pd.Series, index_prices: pd.Series, 
-                          current_date: datetime) -> Optional[float]:
+                          current_date: datetime, symbol: str = None) -> Optional[float]:
         """Calculate Relative Strength score for an ETF with robust data validation"""
         try:
             # Get available trading dates from actual data
@@ -685,26 +700,22 @@ class RSETFStrategyBacktester:
             # Calculate required lookback periods
             max_lookback = max(self.lookback_weeks, self.lookback_months, self.lookback_quarters)
             
-            # DEBUG: Print debug info for first few calculations
-            if hasattr(self, '_debug_count'):
-                self._debug_count = getattr(self, '_debug_count', 0) + 1
-            else:
-                self._debug_count = 1
-                
-            if self._debug_count <= 3:  # Print for first 3 calculations        
-                print(f"  DEBUG RS Calculation:")
-                print(f"    Date: {current_date}")
-                print(f"    ETF data: {len(available_etf_dates)} dates, first: {available_etf_dates[0]}, last: {available_etf_dates[-1]}")              
-                print(f"    Index data: {len(available_index_dates)} dates, first: {available_index_dates[0]}, last: {available_index_dates[-1]}")              
-                print(f"    Current ETF index: {current_etf_index}")        
-                print(f"    Current index position: {current_index_index}")     
-                print(f"    Max lookback required: {max_lookback}")
-                print(f"    Lookback periods: week={self.lookback_weeks}, month={self.lookback_months}, quarter={self.lookback_quarters}")                      
+            # DEBUG: Detailed Logging
+            print(f"  DEBUG RS Calculation:")
+            print(f"    Date: {current_date}")
+            print(f"    Week: 1-week return (5 days) outperformance")
+            print(f"    Month: 1-month return (20 days) outperformance")
+            print(f"    Quarter: 1-quarter return (60 days) outperformance")
+            print(f"    ETF data: {len(available_etf_dates)} dates, first: {available_etf_dates[0]}, last: {available_etf_dates[-1]}")              
+            print(f"    Index data: {len(available_index_dates)} dates, first: {available_index_dates[0]}, last: {available_index_dates[-1]}")              
+            print(f"    Current ETF index: {current_etf_index}")        
+            print(f"    Current index position: {current_index_index}")     
+            print(f"    Max lookback required: {max_lookback}")
+            print(f"    Lookback periods: week={self.lookback_weeks}, month={self.lookback_months}, quarter={self.lookback_quarters}")                      
 
             # Check if we have enough historical data
             if current_etf_index < max_lookback or current_index_index < max_lookback:                                                                        
-                if self._debug_count <= 3:
-                    print(f"      FAILED: Not enough historical data (need {max_lookback}, have ETF:{current_etf_index}, index:{current_index_index})")     
+                print(f"      FAILED: Not enough historical data (need {max_lookback}, have ETF:{current_etf_index}, index:{current_index_index})")     
                 return None
 
             # Get historical dates using actual available data
@@ -713,54 +724,49 @@ class RSETFStrategyBacktester:
             quarter_ago_date = available_etf_dates[current_etf_index - self.lookback_quarters]                                                              
 
             # Verify index dates are available for the same periods
-            week_ago_index_date = available_index_dates[current_index_index - self.lookback_weeks]                                                              
-            month_ago_index_date = available_index_dates[current_index_index - self.lookback_months]                                                            
-            quarter_ago_index_date = available_index_dates[current_index_index - self.lookback_quarters]                                                        
-
-            # DEBUG: Print current and historical prices for first calculation  
-            if self._debug_count <= 4:
-                print(f"    Current prices:")
-                print(f"      ETF: ₹{current_etf_price:.2f}, Index: ₹{current_index_price:.2f}")                                                            
-                print(f"    Historical dates and prices:")
-                print(f"      Week ago: {week_ago_date} - ETF: ₹{etf_prices.loc[week_ago_date]:.2f}, Index: ₹{index_prices.loc[week_ago_index_date]:.2f}")  
-                print(f"      Month ago: {month_ago_date} - ETF: ₹{etf_prices.loc[month_ago_date]:.2f}, Index: ₹{index_prices.loc[month_ago_index_date]:.2f}")                                                                              
-                print(f"      Quarter ago: {quarter_ago_date} - ETF: ₹{etf_prices.loc[quarter_ago_date]:.2f}, Index: ₹{index_prices.loc[quarter_ago_index_date]:.2f}")                                                                      
-
-            # Calculate RS for each period using actual historical data
-            rs_w = self.calculate_single_rs(
-                current_etf_price, etf_prices.loc[week_ago_date],
-                current_index_price, index_prices.loc[week_ago_index_date]      
-            )
-            rs_m = self.calculate_single_rs(
-                current_etf_price, etf_prices.loc[month_ago_date],
-                current_index_price, index_prices.loc[month_ago_index_date]     
-            )
-            rs_q = self.calculate_single_rs(
-                current_etf_price, etf_prices.loc[quarter_ago_date],        
-                current_index_price, index_prices.loc[quarter_ago_index_date]   
-            )
+            week_ago_index = available_index_dates[current_index_index - self.lookback_weeks]
+            month_ago_index = available_index_dates[current_index_index - self.lookback_months]
+            quarter_ago_index = available_index_dates[current_index_index - self.lookback_quarters]
             
-            # DEBUG: Print RS values for first calculation
-            if self._debug_count <= 4:
-                print(f"    RS values: week={rs_w:.3f}, month={rs_m:.3f}, quarter={rs_q:.3f}")
+            # WEEK (Outperformance)
+            etf_past_w = float(etf_prices.loc[week_ago_date])
+            index_past_w = float(index_prices.loc[week_ago_index])
+            etf_ret_w = (current_etf_price / etf_past_w) - 1
+            index_ret_w = (current_index_price / index_past_w) - 1
+            rs_w = etf_ret_w - index_ret_w
+            print(f"      Week (5d): Date={week_ago_date.strftime('%Y-%m-%d')}, Price=₹{etf_past_w:.2f}, ETF={etf_ret_w:.2%}, Index={index_ret_w:.2%}, Outperf={rs_w:.4f}")
+
+            # MONTH
+            etf_past_m = float(etf_prices.loc[month_ago_date])
+            index_past_m = float(index_prices.loc[month_ago_index])
+            etf_ret_m = (current_etf_price / etf_past_m) - 1
+            index_ret_m = (current_index_price / index_past_m) - 1
+            rs_m = etf_ret_m - index_ret_m
+            print(f"      Month (20d): Date={month_ago_date.strftime('%Y-%m-%d')}, Price=₹{etf_past_m:.2f}, ETF={etf_ret_m:.2%}, Index={index_ret_m:.2%}, Outperf={rs_m:.4f}")
+
+            # QUARTER
+            etf_past_q = float(etf_prices.loc[quarter_ago_date])
+            index_past_q = float(index_prices.loc[quarter_ago_index])
+            etf_ret_q = (current_etf_price / etf_past_q) - 1
+            index_ret_q = (current_index_price / index_past_q) - 1
+            rs_q = etf_ret_q - index_ret_q
+            print(f"      Quarter (60d): Date={quarter_ago_date.strftime('%Y-%m-%d')}, Price=₹{etf_past_q:.2f}, ETF={etf_ret_q:.2%}, Index={index_ret_q:.2%}, Outperf={rs_q:.4f}")
+            print(f"    RS values: week={rs_w:.3f}, month={rs_m:.3f}, quarter={rs_q:.3f}")
             
             # Return None if any RS calculation failed
             if any(rs is None for rs in [rs_w, rs_m, rs_q]):
-                if self._debug_count <= 3:
-                    print(f"      FAILED: One or more RS calculations returned None")
+                print(f"      FAILED: One or more RS calculations returned None")
                 return None
             
-            # Calculate composite RS score
+            # Simple Equal-Weight Average (Week + Month + Quarter) / 3
             rs_score = (rs_w + rs_m + rs_q) / 3
             
-            if self._debug_count <= 1:
-                print(f"    Final RS score: {rs_score:.3f}")
+            print(f"    Final RS score (Equal Weight): {rs_score:.4f}")
             
             return rs_score
             
         except (KeyError, IndexError, ValueError, ZeroDivisionError) as e:
-            if hasattr(self, '_debug_count') and self._debug_count <= 3:
-                print(f"      FAILED: Exception - {str(e)}")
+            print(f"      FAILED: Exception - {str(e)}")
             return None
     
     def calculate_single_rs(self, etf_current: float, etf_past: float,
@@ -813,13 +819,12 @@ class RSETFStrategyBacktester:
         for i, symbol in enumerate(symbols):
             try:
                 etf_prices = etf_data.loc[symbol]['adjusted_close']
-                rs_score = self.calculate_rs_score(etf_prices, index_data['adjusted_close'], signal_date)
+                rs_score = self.calculate_rs_score(etf_prices, index_data['adjusted_close'], signal_date, symbol)
                 
                 if rs_score is not None:
                     valid_symbols += 1
-                    # Debug: Print RS scores for first few symbols only
-                    if valid_symbols <= 3:
-                        print(f"    {symbol}: RS Score = {rs_score:.3f}")
+                    # Print RS score for ALL ETFs (removed limitation)
+                    print(f"    {symbol}: RS Score = {rs_score:.3f}")
 
                     # Get additional ranking criteria
                     current_price = etf_prices.loc[signal_date]
@@ -846,8 +851,8 @@ class RSETFStrategyBacktester:
                     
             except (KeyError, IndexError) as e:
                 failed_symbols += 1
-                if failed_symbols <= 3:  # Show first few failures for debugging
-                    print(f"    {symbol}: Failed - {str(e)}")
+                # Print failure for ALL ETFs (removed limitation)
+                print(f"    {symbol}: Failed - '{str(e)}'")
                 continue
         
         print(f"  Valid RS calculations: {valid_symbols}, Failed: {failed_symbols}")
@@ -874,7 +879,7 @@ class RSETFStrategyBacktester:
     def generate_signals(self, etf_data: pd.DataFrame, index_data: pd.DataFrame,
                         signal_date: datetime) -> Tuple[List[str], List[str]]:
         """Generate buy and sell signals for a given date"""
-        # No price filtering - all stocks eligible for RS ranking
+        # No price filtering - all ETFs eligible for RS ranking
         rankings = self.rank_etfs(etf_data, index_data, signal_date)
         
         if rankings.empty:
@@ -886,8 +891,8 @@ class RSETFStrategyBacktester:
         print(f"  ETFs with positive RS: {len(positive_rs)}")
         
         # Select top positions for better diversification
-        top_stocks = positive_rs.head(self.dynamic_params.max_positions)
-        target_symbols = top_stocks['symbol'].tolist()
+        top_etfs = positive_rs.head(self.dynamic_params.max_positions)
+        target_symbols = top_etfs['symbol'].tolist()
         print(f"  Target symbols: {target_symbols}")
         
         # Current positions
@@ -900,7 +905,7 @@ class RSETFStrategyBacktester:
             if symbol not in target_symbols:
                 exits.append(symbol)
                 print(f"    Exit signal: {symbol} (not in targets)")
-
+        
         # Determine entries (new ETFs to buy)
         entries = []
         for symbol in target_symbols:
@@ -1717,6 +1722,37 @@ class RSETFStrategyBacktester:
             print(f"Error calculating portfolio value: {e}")
             return self.cash_balance + self.buffer_capital
     
+    def trade_to_dict(self, trade: Trade) -> Dict:
+        """Convert Trade object to dictionary for API response"""
+        return {
+            'date': trade.date.isoformat(),
+            'symbol': trade.symbol,
+            'action': trade.action,
+            'quantity': trade.quantity,
+            'price': trade.price,
+            'amount': trade.amount,
+            'reason': trade.reason,
+            'rs_score': trade.rs_score,
+            'rs_rank': trade.rs_rank,
+            'transaction_value': trade.transaction_value,
+            'brokerage': trade.brokerage,
+            'stt': trade.stt,
+            'stamp_duty': trade.stamp_duty,
+            'exchange_charges': trade.exchange_charges,
+            'sebi_charges': trade.sebi_charges,
+            'gst': trade.gst,
+            'total_costs': trade.total_costs,
+            'net_amount': trade.net_amount,
+            # New fields
+            'portfolio_nav': trade.portfolio_nav,
+            'buy_price': trade.buy_price,
+            'capital_gain': trade.capital_gain,
+            'capital_gain_pct': trade.capital_gain_pct,
+            'holding_period_days': trade.holding_period_days,
+            'capital_gains_tax': trade.capital_gains_tax,
+            'net_profit_after_tax': trade.net_profit_after_tax
+        }
+
     def calculate_metrics(self, risk_free_rate: float = 6.0) -> Dict:
         """Calculate comprehensive performance metrics"""
         try:
@@ -1831,6 +1867,32 @@ class RSETFStrategyBacktester:
                     'compounding_factor': safe_float(rule_72_metrics['compounding_factor'])
                 }
             }
+            
+            # Calculate benchmark buy-and-hold metrics
+            print("=== CALCULATING BENCHMARK METRICS ===")
+            try:
+                trading_dates = [snap['date'] for snap in self.portfolio_snapshots]
+                benchmark_calc = BenchmarkCalculator(
+                    initial_capital=self.total_capital,
+                    index_data=self.index_data,
+                    trading_dates=trading_dates
+                )
+                benchmark_metrics = benchmark_calc.calculate_benchmark_metrics(risk_free_rate)
+                benchmark_values = benchmark_calc.get_benchmark_values_array()
+                
+                # Add benchmark data to metrics
+                metrics['benchmark_metrics'] = benchmark_metrics
+                metrics['benchmark_buyhold'] = benchmark_values
+                metrics['alpha_pct'] = safe_float(cagr - benchmark_metrics['cagr_pct'])
+                
+                print(f"Benchmark Total Return: {benchmark_metrics['total_return_pct']:.2f}%")
+                print(f"Benchmark CAGR: {benchmark_metrics['cagr_pct']:.2f}%")
+                print(f"Strategy Alpha: {metrics['alpha_pct']:.2f}%")
+            except Exception as e:
+                print(f"Error calculating benchmark metrics: {e}")
+                metrics['benchmark_metrics'] = {}
+                metrics['benchmark_buyhold'] = []
+                metrics['alpha_pct'] = 0.0
             
             print(f"Final metrics calculated: {metrics}")
             return metrics
@@ -2097,7 +2159,36 @@ class RSETFStrategyBacktester:
         except Exception as e:
             print(f"Error calculating trade P&L: {e}")
             return 0.0
-    
+
+    def calculate_portfolio_nav(self, date: datetime, stock_data: pd.DataFrame = None) -> float:
+        """Calculate total portfolio NAV (positions + cash + buffer)"""
+        try:
+            positions_value = 0.0
+            
+            # Calculate value of all positions
+            for symbol, position in self.positions.items():
+                try:
+                    # Try to get current price from stock_data if available
+                    if stock_data is not None and date in stock_data.index and symbol in stock_data.columns:
+                        current_price = stock_data.loc[date, symbol]['adjusted_close']
+                    else:
+                        # Fallback to position's current price
+                        current_price = position.current_price
+                    
+                    positions_value += position.quantity * current_price
+                except (KeyError, TypeError, AttributeError):
+                    # Use position's stored price if data not available
+                    positions_value += position.quantity * position.current_price
+            
+            # Total NAV = positions + cash + buffer
+            total_nav = positions_value + self.cash_balance + self.buffer_capital
+            return round(total_nav, 2)
+            
+        except Exception as e:
+            print(f"Error calculating portfolio NAV: {e}")
+            # Fallback to total capital
+            return self.total_capital
+
     def execute_trade(self, date: datetime, symbol: str, action: str, price: float, reason: str, rs_score: float = None, rs_rank: int = None):
         """Execute a trade with proper Indian market cost calculation and buffer capital system"""
         try:
@@ -2111,8 +2202,8 @@ class RSETFStrategyBacktester:
                 print(f"  Invalid price for {symbol}: {price}")
                 return False
             if action == "BUY":
-                # Fixed position size (₹9,000 per stock)
-                fixed_position_size = self.per_trade_allocation  # This should be ₹9,000
+                # Fixed position size
+                fixed_position_size = self.per_trade_allocation
                 
                 # Check if we have enough capital (cash + buffer)
                 total_available = self.cash_balance + self.buffer_capital
@@ -2161,7 +2252,10 @@ class RSETFStrategyBacktester:
                 
                 self.positions[symbol] = position
                 
-                # Record trade with detailed cost breakdown
+                # Calculate current portfolio NAV
+                portfolio_nav = self.calculate_portfolio_nav(date)
+                
+                # Record trade with detailed cost breakdown and NAV
                 trade = Trade(
                     date=date,
                     symbol=symbol,
@@ -2180,12 +2274,27 @@ class RSETFStrategyBacktester:
                     sebi_charges=cost_details['sebi_charges'],
                     gst=cost_details['gst'],
                     total_costs=cost_details['total_costs'],
-                    net_amount=net_amount
+                    net_amount=net_amount,
+                    portfolio_nav=portfolio_nav,
+                    buy_price=price,  # Store buy price for reference
+                    capital_gain=0.0,
+                    capital_gain_pct=0.0,
+                    holding_period_days=0,
+                    capital_gains_tax=0.0,
+                    net_profit_after_tax=0.0
                 )
                 self.trades.append(trade)
                 
-                print(f"  BUY: {symbol} - Qty: {quantity}, Price: ₹{price:.2f}, Cost: ₹{net_amount:.2f}")
-                print(f"  Cash: ₹{self.cash_balance:.2f}, Buffer: ₹{self.buffer_capital:.2f}")
+                print(f"📋 Purchase calculation:")
+                print(f"   Gross amount: ₹{cost_details['transaction_value']:,.2f}")
+                print(f"   Transaction costs: ₹{cost_details['total_costs']:,.2f}")
+                print(f"   Net amount: ₹{net_amount:,.2f}")
+                print(f"   Units to buy: {quantity}")
+                print(f"✅ Purchase executed: {quantity} units of {symbol} for ₹{net_amount:,.2f}")
+                print(f"💳 Total cost (including fees): ₹{cost_details['total_costs']:,.2f}")
+                print(f"📊 Portfolio NAV: ₹{portfolio_nav:,.2f}")
+                print(f"💰 Buy Price: ₹{price:,.2f}")
+                print(f"💰 Remaining cash: ₹{self.cash_balance:,.2f}")
                 return True
                 
             elif action == "SELL":
@@ -2221,7 +2330,20 @@ class RSETFStrategyBacktester:
                 # Remove position
                 del self.positions[symbol]
                 
-                # Record trade with detailed cost breakdown
+                # Calculate capital gains and holding period
+                buy_price = position.buy_price
+                capital_gain = (price - buy_price) * quantity
+                capital_gain_pct = ((price - buy_price) / buy_price) * 100 if buy_price > 0 else 0.0
+                holding_period_days = (date - position.buy_date).days
+                
+                # Calculate 20% STCG tax (only on positive gains)
+                capital_gains_tax = max(0, capital_gain * 0.20) if capital_gain > 0 else 0.0
+                net_profit_after_tax = capital_gain - capital_gains_tax
+                
+                # Calculate current portfolio NAV
+                portfolio_nav = self.calculate_portfolio_nav(date)
+                
+                # Record trade with detailed cost breakdown, capital gains, and tax
                 trade = Trade(
                     date=date,
                     symbol=symbol,
@@ -2240,18 +2362,44 @@ class RSETFStrategyBacktester:
                     sebi_charges=cost_details['sebi_charges'],
                     gst=cost_details['gst'],
                     total_costs=cost_details['total_costs'],
-                    net_amount=net_amount
+                    net_amount=net_amount,
+                    portfolio_nav=portfolio_nav,
+                    buy_price=buy_price,
+                    capital_gain=round(capital_gain, 2),
+                    capital_gain_pct=round(capital_gain_pct, 2),
+                    holding_period_days=holding_period_days,
+                    capital_gains_tax=round(capital_gains_tax, 2),
+                    net_profit_after_tax=round(net_profit_after_tax, 2)
                 )
                 self.trades.append(trade)
                 
-                print(f"  SELL: {symbol} - Qty: {quantity}, Price: ₹{price:.2f}, P&L: ₹{pnl:.2f} ({pnl_pct:.1f}%)")
-                print(f"  Cash: ₹{self.cash_balance:.2f}, Buffer: ₹{self.buffer_capital:.2f}")
+                print(f"")
+                print(f"💰 SELL EXECUTED: {symbol}")
+                print(f"   Quantity: {quantity} units")
+                print(f"   Sell Price: ₹{price:,.2f}")
+                print(f"   Buy Price: ₹{buy_price:,.2f}")
+                print(f"   Holding Period: {holding_period_days} days")
+                print(f"")
+                print(f"📊 CAPITAL GAINS BREAKDOWN:")
+                print(f"   Gross Capital Gain: ₹{capital_gain:,.2f} ({capital_gain_pct:.2f}%)")
+                if capital_gain > 0:
+                    print(f"   STCG Tax (20%): -₹{capital_gains_tax:,.2f}")
+                    print(f"   Net Profit After Tax: ₹{net_profit_after_tax:,.2f}")
+                else:
+                    print(f"   STCG Tax: ₹0.00 (No tax on losses)")
+                    print(f"   Net Loss: ₹{capital_gain:,.2f}")
+                print(f"")
+                print(f"📈 PORTFOLIO STATUS:")
+                print(f"   Portfolio NAV: ₹{portfolio_nav:,.2f}")
+                print(f"   Cash Balance: ₹{self.cash_balance:,.2f}")
+                print(f"   Buffer Capital: ₹{self.buffer_capital:,.2f}")
+                print(f"")
                 return True
                 
         except Exception as e:
             print(f"Error executing trade {action} {symbol}: {e}")
             return False
-    
+
     def check_daily_stop_loss(self, etf_data: pd.DataFrame, current_date: datetime) -> List[str]:
         """Check stop loss for all positions and return ETFs to sell"""
         stop_loss_exits = []
