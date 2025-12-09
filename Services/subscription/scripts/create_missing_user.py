@@ -5,7 +5,7 @@ import os
 # Add parent directory to path to allow imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from Services.Subscription.database import SubscriptionManager
+from Services.subscription.database import SubscriptionManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

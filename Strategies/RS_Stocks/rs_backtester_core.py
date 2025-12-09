@@ -1399,11 +1399,11 @@ class RSStrategyBacktester:
         
         # Indian market specific costs
         if action == "BUY":
-            stamp_duty = transaction_value * 0.015 / 100 # 0.005%
-            stt = transaction_value * 0.10 / 100
+            stamp_duty = transaction_value * 0.015 / 100 # 0.015%
+            stt = transaction_value * 0.10 / 100 # 0.1%
         else:  # SELL
             stamp_duty = 0  # No stamp duty on sell
-            stt = transaction_value * 0.10 / 100  # 0.001%
+            stt = transaction_value * 0.10 / 100  # 0.1%
         
         # Common costs
         exchange_charges = (transaction_value * 0.00297) * 0.18  # 0.00345%
@@ -2844,15 +2844,15 @@ class RSStrategyBacktester:
                 # Remove position
                 del self.positions[symbol]
                 
-                # Calculate capital gains and holding period
+                # Calculate holding period only
                 buy_price = position.buy_price
-                capital_gain = (price - buy_price) * quantity
-                capital_gain_pct = ((price - buy_price) / buy_price) * 100 if buy_price > 0 else 0.0
                 holding_period_days = (date - position.buy_date).days
                 
-                # Calculate 20% STCG tax (only on positive gains)
-                capital_gains_tax = max(0, capital_gain * 0.20) if capital_gain > 0 else 0.0
-                net_profit_after_tax = capital_gain - capital_gains_tax
+                # Capital gains calculation removed as per request
+                capital_gain = 0.0
+                capital_gain_pct = 0.0
+                capital_gains_tax = 0.0
+                net_profit_after_tax = 0.0
                 
                 # Calculate current portfolio NAV
                 portfolio_nav = self.calculate_portfolio_nav(date)
@@ -2894,15 +2894,7 @@ class RSStrategyBacktester:
                 print(f"   Buy Price: ₹{buy_price:,.2f}")
                 print(f"   Holding Period: {holding_period_days} days")
                 print(f"")
-                print(f"📊 CAPITAL GAINS BREAKDOWN:")
-                print(f"   Gross Capital Gain: ₹{capital_gain:,.2f} ({capital_gain_pct:.2f}%)")
-                if capital_gain > 0:
-                    print(f"   STCG Tax (20%): -₹{capital_gains_tax:,.2f}")
-                    print(f"   Net Profit After Tax: ₹{net_profit_after_tax:,.2f}")
-                else:
-                    print(f"   STCG Tax: ₹0.00 (No tax on losses)")
-                    print(f"   Net Loss: ₹{capital_gain:,.2f}")
-                print(f"")
+
                 print(f"📈 PORTFOLIO STATUS:")
                 print(f"   Portfolio NAV: ₹{portfolio_nav:,.2f}")
                 print(f"   Cash Balance: ₹{self.cash_balance:,.2f}")

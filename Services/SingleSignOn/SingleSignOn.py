@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 
 from Databases.app_data_db_connection import create_connection, get_session
-from Services.Subscription.subscription_models import ProductSubscription, Subscription
-from Services.Subscription.subscription_schemas import ProductCode, SubscriptionStatus
+from Services.subscription.subscription_models import ProductSubscription, Subscription
+from Services.subscription.subscription_schemas import ProductCode, SubscriptionStatus
 
 logger = logging.getLogger(__name__)
 
@@ -123,14 +123,13 @@ async def single_sign_on(userid: str) -> Dict[str, Any]:
         user_email = userid.lower()
 
         # Get TRADEAI product subscription using raw SQL to avoid column mismatch issues
-        # Query only the columns that exist in the database (avoiding trial_start_date, trial_end_date, paid_start_date, paid_end_date)
+        # Querying product_manager instead of product_subscriptions
         query = text("""
-            SELECT id, user_email, product_code::text, subscription_type::text, status::text, plan_code,
+            SELECT id, user_email, product_code, subscription_type, status,
                    COALESCE(subscription_start_date, NULL) as subscription_start_date,
                    COALESCE(subscription_end_date, NULL) as subscription_end_date,
-                   payment_id, payment_status, bundle_id, is_bundle_subscription,
-                   chatai_key, total_tokens, used_tokens, created_at, updated_at, product_metadata
-            FROM product_subscriptions
+                   chatai_key, total_tokens, used_tokens, created_at, updated_at
+            FROM product_manager
             WHERE user_email = :user_email AND product_code = :product_code
             ORDER BY updated_at DESC
             LIMIT 1
@@ -155,19 +154,21 @@ async def single_sign_on(userid: str) -> Dict[str, Any]:
                 self.product_code = row[2]
                 self.subscription_type = row[3]
                 self.status = row[4]
-                self.plan_code = row[5]
-                self.subscription_start_date = row[6]
-                self.subscription_end_date = row[7]
-                self.payment_id = row[8]
-                self.payment_status = row[9]
-                self.bundle_id = row[10]
-                self.is_bundle_subscription = row[11]
-                self.chatai_key = row[12]
-                self.total_tokens = row[13]
-                self.used_tokens = row[14]
-                self.created_at = row[15]
-                self.updated_at = row[16]
-                self.product_metadata = row[17]
+                self.subscription_start_date = row[5]
+                self.subscription_end_date = row[6]
+                self.chatai_key = row[7]
+                self.total_tokens = row[8]
+                self.used_tokens = row[9]
+                self.created_at = row[10]
+                self.updated_at = row[11]
+                
+                # Default values for fields missing in product_manager
+                self.plan_code = None
+                self.payment_id = None
+                self.payment_status = None
+                self.bundle_id = None
+                self.is_bundle_subscription = False
+                self.product_metadata = None
         
         trad_ai_subscription = SubscriptionData(result)
 

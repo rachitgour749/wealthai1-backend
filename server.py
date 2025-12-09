@@ -97,7 +97,7 @@ sys.path.extend([
     os.path.join(BASE_DIR, 'Strategies', 'customStrategy'),
     os.path.join(BASE_DIR, 'Strategies', 'SuperTrend'),
     os.path.join(BASE_DIR, 'Services', 'webhook'),
-    os.path.join(BASE_DIR, 'Services', 'Subscription'),
+    os.path.join(BASE_DIR, 'Services', 'subscription'),
     os.path.join(BASE_DIR, 'Services', 'Deployments_helper'),
     os.path.join(BASE_DIR, 'Services', 'SingleSignOn'),
 ])
