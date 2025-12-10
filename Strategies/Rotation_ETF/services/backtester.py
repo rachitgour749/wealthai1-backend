@@ -1077,11 +1077,15 @@ class ETFRotationBacktester(RotationStrategy):
     def calculate_capital_gains_tax(self, ticker: str, units_to_sell: int, sell_price: float,
                                     sell_date: datetime) -> Dict:
         """
-        Calculate capital gains tax using centralized calculator with FIFO logic.
-        
-        This method now delegates to the EquitySegment implementation.
+        Calculate capital gains tax.
+        DISABLED: Returns 0 tax as per requirement.
         """
-        return self.calculate_capital_gains(ticker, units_to_sell, sell_price, sell_date)
+        return {
+            'short_term_gain': 0.0,
+            'long_term_gain': 0.0,
+            'capital_gains_tax': 0.0,
+            'is_short_term': False
+        }
 
     def log_transaction_costs(self, week: int, date: datetime, action: str, ticker: str, units: int, price: float,
                               costs: Dict, capital_gains_tax: float = 0):

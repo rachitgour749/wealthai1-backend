@@ -268,7 +268,7 @@ class RSETFStrategyBacktester:
         
         # Use raw SQL to query etf_data table with symbol filtering
         sql = f"""
-        SELECT symbol, date, adjusted_close
+        SELECT symbol, date, adjusted_close, open
         FROM etf_data 
         WHERE date >= %s AND date <= %s {symbol_limit}
         ORDER BY symbol, date
@@ -678,44 +678,33 @@ class RSETFStrategyBacktester:
             self.last_trading_days.add(last_date)
     
     def calculate_rs_score(self, etf_prices: pd.Series, index_prices: pd.Series, 
-                          current_date: datetime, symbol: str = None) -> Optional[float]:
+                          current_date: datetime, symbol: str = None) -> Optional[Tuple[float, float, float, float]]:
         """Calculate Relative Strength score for an ETF with robust data validation"""
         try:
             # Get available trading dates from actual data
             available_etf_dates = sorted(etf_prices.index)
-            available_index_dates = sorted(index_prices.index)
-
-            # Find current date index in both datasets
+            
+            # Find current date index
             try:
                 current_etf_index = available_etf_dates.index(current_date) 
-                current_index_index = available_index_dates.index(current_date) 
             except ValueError:
-                # Current date not found in data
                 return None
 
             # Get current prices
             current_etf_price = etf_prices.loc[current_date]
-            current_index_price = index_prices.loc[current_date]
+            current_index_price = index_prices.loc[current_date] if current_date in index_prices.index else None
+            
+            if current_index_price is None:
+                return None
+            
+            # Use fixed lookback periods for index (assuming index data is complete/aligned or handled by caller)
+            # For ETFs, we use the finding by index method since we have the list of available dates
             
             # Calculate required lookback periods
             max_lookback = max(self.lookback_weeks, self.lookback_months, self.lookback_quarters)
             
-            # DEBUG: Detailed Logging
-            print(f"  DEBUG RS Calculation:")
-            print(f"    Date: {current_date}")
-            print(f"    Week: 1-week return (5 days) outperformance")
-            print(f"    Month: 1-month return (20 days) outperformance")
-            print(f"    Quarter: 1-quarter return (60 days) outperformance")
-            print(f"    ETF data: {len(available_etf_dates)} dates, first: {available_etf_dates[0]}, last: {available_etf_dates[-1]}")              
-            print(f"    Index data: {len(available_index_dates)} dates, first: {available_index_dates[0]}, last: {available_index_dates[-1]}")              
-            print(f"    Current ETF index: {current_etf_index}")        
-            print(f"    Current index position: {current_index_index}")     
-            print(f"    Max lookback required: {max_lookback}")
-            print(f"    Lookback periods: week={self.lookback_weeks}, month={self.lookback_months}, quarter={self.lookback_quarters}")                      
-
             # Check if we have enough historical data
-            if current_etf_index < max_lookback or current_index_index < max_lookback:                                                                        
-                print(f"      FAILED: Not enough historical data (need {max_lookback}, have ETF:{current_etf_index}, index:{current_index_index})")     
+            if current_etf_index < max_lookback:                                                                        
                 return None
 
             # Get historical dates using actual available data
@@ -723,50 +712,40 @@ class RSETFStrategyBacktester:
             month_ago_date = available_etf_dates[current_etf_index - self.lookback_months]                                                                  
             quarter_ago_date = available_etf_dates[current_etf_index - self.lookback_quarters]                                                              
 
-            # Verify index dates are available for the same periods
-            week_ago_index = available_index_dates[current_index_index - self.lookback_weeks]
-            month_ago_index = available_index_dates[current_index_index - self.lookback_months]
-            quarter_ago_index = available_index_dates[current_index_index - self.lookback_quarters]
+            # Get Past Prices (handle missing index data gracefully if needed, but assuming alignment here for simplicity or tight coupling)
+            # Actually, standard way is to find the index price at those specific dates.
+            # If dates don't exist in index, we might need logic. Assuming index_data is dense.
             
+            if week_ago_date not in index_prices.index or month_ago_date not in index_prices.index or quarter_ago_date not in index_prices.index:
+                 return None
+
             # WEEK (Outperformance)
             etf_past_w = float(etf_prices.loc[week_ago_date])
-            index_past_w = float(index_prices.loc[week_ago_index])
+            index_past_w = float(index_prices.loc[week_ago_date])
             etf_ret_w = (current_etf_price / etf_past_w) - 1
             index_ret_w = (current_index_price / index_past_w) - 1
             rs_w = etf_ret_w - index_ret_w
-            print(f"      Week (5d): Date={week_ago_date.strftime('%Y-%m-%d')}, Price=₹{etf_past_w:.2f}, ETF={etf_ret_w:.2%}, Index={index_ret_w:.2%}, Outperf={rs_w:.4f}")
 
             # MONTH
             etf_past_m = float(etf_prices.loc[month_ago_date])
-            index_past_m = float(index_prices.loc[month_ago_index])
+            index_past_m = float(index_prices.loc[month_ago_date])
             etf_ret_m = (current_etf_price / etf_past_m) - 1
             index_ret_m = (current_index_price / index_past_m) - 1
             rs_m = etf_ret_m - index_ret_m
-            print(f"      Month (20d): Date={month_ago_date.strftime('%Y-%m-%d')}, Price=₹{etf_past_m:.2f}, ETF={etf_ret_m:.2%}, Index={index_ret_m:.2%}, Outperf={rs_m:.4f}")
 
             # QUARTER
             etf_past_q = float(etf_prices.loc[quarter_ago_date])
-            index_past_q = float(index_prices.loc[quarter_ago_index])
+            index_past_q = float(index_prices.loc[quarter_ago_date])
             etf_ret_q = (current_etf_price / etf_past_q) - 1
             index_ret_q = (current_index_price / index_past_q) - 1
             rs_q = etf_ret_q - index_ret_q
-            print(f"      Quarter (60d): Date={quarter_ago_date.strftime('%Y-%m-%d')}, Price=₹{etf_past_q:.2f}, ETF={etf_ret_q:.2%}, Index={index_ret_q:.2%}, Outperf={rs_q:.4f}")
-            print(f"    RS values: week={rs_w:.3f}, month={rs_m:.3f}, quarter={rs_q:.3f}")
-            
-            # Return None if any RS calculation failed
-            if any(rs is None for rs in [rs_w, rs_m, rs_q]):
-                print(f"      FAILED: One or more RS calculations returned None")
-                return None
             
             # Simple Equal-Weight Average (Week + Month + Quarter) / 3
             rs_score = (rs_w + rs_m + rs_q) / 3
             
-            print(f"    Final RS score (Equal Weight): {rs_score:.4f}")
-            
-            return rs_score
+            return (rs_score, rs_w, rs_m, rs_q)
             
         except (KeyError, IndexError, ValueError, ZeroDivisionError) as e:
-            print(f"      FAILED: Exception - {str(e)}")
             return None
     
     def calculate_single_rs(self, etf_current: float, etf_past: float,
@@ -814,18 +793,37 @@ class RSETFStrategyBacktester:
         universe_size = len(symbols)
         print(f"Custom ETF universe size: {universe_size} ETFs and date: {signal_date.strftime('%Y-%m-%d (%A)')} ,day:{signal_date.weekday()}")
         
-        print(f"Processing {universe_size} custom selected symbols for RS calculation")
-        
+        print(f"📊 RS Momentum Calculation for {signal_date.strftime('%Y-%m-%d')}:")
+        print(f"   Note: Using Relative Strength (RS) score (Equal Weight)")
+        print(f"   Note: Breakdown values show Outperformance (Excess Return vs Index)")
+        print(f"         Week: 1-week return (5 days) outperformance")
+        print(f"         Month: 1-month return (20 days) outperformance")
+        print(f"         Quarter: 1-quarter return (60 days) outperformance")
+
         for i, symbol in enumerate(symbols):
             try:
                 etf_prices = etf_data.loc[symbol]['adjusted_close']
-                rs_score = self.calculate_rs_score(etf_prices, index_data['adjusted_close'], signal_date, symbol)
+                result = self.calculate_rs_score(etf_prices, index_data['adjusted_close'], signal_date, symbol)
                 
-                if rs_score is not None:
+                if result is not None:
+                    rs_score, rs_w, rs_m, rs_q = result
                     valid_symbols += 1
-                    # Print RS score for ALL ETFs (removed limitation)
-                    print(f"    {symbol}: RS Score = {rs_score:.3f}")
-
+                    
+                    # Log the score immediately as we process
+                    # We will re-print sorted later, but this confirms calculation
+                    # Actually, better to store and print RANKED list at the end or here? 
+                    # The user example shows Ranked list. The loop iterates symbols in arbitrary order.
+                    # So we should collect then print. But we can print individual items as processed if debugging.
+                    # User request: "Stocks Ranked by RS Score". The loop is NOT ranked yet.
+                    # So I should silence per-item print here and print sorted list later?
+                    # BUT `rank_etfs` returns a DF. The sorting happens at end of function.
+                    # The previous code printed "    {symbol}: RS Score = ..." immediately.
+                    # User wants: "   Stocks Ranked by RS Score..."
+                    # This function constructs the rankings. The printing should ideally happen AFTER sorting.
+                    # However, to avoid major structural changes, I will collect them and print top N entries at end of function or outside?
+                    # The `generate_signals` calls this. 
+                    # Let's keep it simple: Just calculate here.
+                    
                     # Get additional ranking criteria
                     current_price = etf_prices.loc[signal_date]
                     
@@ -842,6 +840,9 @@ class RSETFStrategyBacktester:
                     rankings.append({
                         'symbol': symbol,
                         'rs_score': rs_score,
+                        'rs_w': rs_w,
+                        'rs_m': rs_m,
+                        'rs_q': rs_q,
                         'current_price': current_price,
                         'volatility': volatility,
                         'market_cap': market_cap
@@ -851,8 +852,6 @@ class RSETFStrategyBacktester:
                     
             except (KeyError, IndexError) as e:
                 failed_symbols += 1
-                # Print failure for ALL ETFs (removed limitation)
-                print(f"    {symbol}: Failed - '{str(e)}'")
                 continue
         
         print(f"  Valid RS calculations: {valid_symbols}, Failed: {failed_symbols}")
@@ -873,6 +872,13 @@ class RSETFStrategyBacktester:
         ], ascending=[False, True])
         
         df['rank'] = range(1, len(df) + 1)
+        
+        # Print Ranked List matching user request format
+        print(f"   ✅ ETFs Ranked by RS Score (Equal Weight) - Highest to Lowest:")
+        
+        for index, row in df.iterrows():
+            print(f"      {int(row['rank'])}. {row['symbol']}: RS Score={row['rs_score']:.4f}, Price=₹{row['current_price']:.2f}")
+            print(f"         Breakdown (Outperf): Week (5d)={row['rs_w']:.3f}, Month (20d)={row['rs_m']:.3f}, Quarter (60d)={row['rs_q']:.3f}")
         
         return df
     
@@ -1619,6 +1625,17 @@ class RSETFStrategyBacktester:
                         self.pending_exits = exits
                         self.signal_date = date
                         print(f"📅 SIGNAL DAY: Friday {date.strftime('%Y-%m-%d (%A)')} - Generated {len(entries)} entries, {len(exits)} exits")
+
+                        # Weekly Summary Log (matching RS_Stocks enhancement)
+                        week_num = (i // 5) + 1
+                        holdings_summary = [(s, p.quantity) for s, p in self.positions.items()]
+                        print(f"📊 Week {week_num} summary:")
+                        print(f"   Date: {date.strftime('%Y-%m-%d')}")
+                        print(f"   NAV: ₹{current_portfolio_value:,.2f}")
+                        print(f"   Cash: ₹{self.cash_balance:,.2f}")
+                        print(f"   Holdings Value: ₹{current_portfolio_value - self.cash_balance:,.2f}")
+                        print(f"   Holdings: {holdings_summary}")
+                        print("============================================================")
                     
                     # Execute trades on Monday (or next available trading day if Monday is holiday)
                     if hasattr(self, 'pending_entries') and self.pending_entries is not None:
@@ -1634,9 +1651,15 @@ class RSETFStrategyBacktester:
                             print(f"🔄 EXECUTION DAY: Monday {date.strftime('%Y-%m-%d (%A)')} - Executing {len(self.pending_exits)} exits and {len(self.pending_entries)} entries")
                             
                             # SELL FIRST to free up cash before buying new positions
+                            # SELL FIRST to free up cash before buying new positions
                             for symbol in self.pending_exits:
                                 try:
-                                    price_data = etf_data.loc[symbol, execution_day]['adjusted_close']
+                                    # Use OPEN price for execution as per request
+                                    if 'open' in etf_data.columns:
+                                        price_data = etf_data.loc[symbol, execution_day]['open']
+                                    else:
+                                        price_data = etf_data.loc[symbol, execution_day]['adjusted_close']
+                                        
                                     price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
                                     self.execute_trade(execution_day, symbol, "SELL", price, "RS Exit")
                                 except (KeyError, IndexError):
@@ -1645,7 +1668,12 @@ class RSETFStrategyBacktester:
                             # THEN BUY using freed cash (and buffer only if needed)
                             for symbol in self.pending_entries:
                                 try:
-                                    price_data = etf_data.loc[symbol, execution_day]['adjusted_close']
+                                    # Use OPEN price for execution as per request
+                                    if 'open' in etf_data.columns:
+                                        price_data = etf_data.loc[symbol, execution_day]['open']
+                                    else:
+                                        price_data = etf_data.loc[symbol, execution_day]['adjusted_close']
+                                        
                                     price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
                                     self.execute_trade(execution_day, symbol, "BUY", price, "RS Signal")
                                 except (KeyError, IndexError):
@@ -2421,6 +2449,8 @@ class RSETFStrategyBacktester:
                 print(f"   Portfolio NAV: ₹{portfolio_nav:,.2f}")
                 print(f"   Cash Balance: ₹{self.cash_balance:,.2f}")
                 print(f"   Buffer Capital: ₹{self.buffer_capital:,.2f}")
+                print(f"   Holdings Value: ₹{portfolio_nav - self.cash_balance - self.buffer_capital:,.2f}")
+                print(f"")
                 print(f"")
                 return True
                 

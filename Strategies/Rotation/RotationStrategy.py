@@ -93,8 +93,8 @@ class RotationStrategy(EquitySegment):
                 costs = self.calculate_delivery_costs('sell', amount)
                 
                 # Calculate tax
-                tax_info = self.calculate_capital_gains(symbol, qty, price, current_date)
-                tax = tax_info['capital_gains_tax']
+                # tax_info = self.calculate_capital_gains(symbol, qty, price, current_date)
+                tax = 0.0 # Disabled as per request
                 
                 # Update cash
                 net_proceeds = costs['net_amount'] - tax

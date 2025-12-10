@@ -15,7 +15,7 @@ except ImportError:
 class AIService:
     def __init__(self):
         # Use the provided Gemini API key
-        self.gemini_api_key = 'AIzaSyCDMbL_TauFHHD_4n5sXfU2pvZJ7BaaEDg'
+        self.gemini_api_key = 'AIzaSyDAjctw1OWrqUa-yLfzWPi02uh4AGErUDE'
         self.logger = logging.getLogger(__name__)
         self.logger.info(f"Gemini API Key loaded: {self.gemini_api_key[:10]}...")
         

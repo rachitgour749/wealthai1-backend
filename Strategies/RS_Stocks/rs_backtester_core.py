@@ -1097,7 +1097,7 @@ class RSStrategyBacktester:
         from sqlalchemy import text
         
         query = text("""
-            SELECT symbol, date, adj_close as adjusted_close
+            SELECT symbol, date, adj_close as adjusted_close, open
             FROM stock_data 
             WHERE symbol = ANY(:symbols)
             AND date BETWEEN :start_date AND :end_date
@@ -1110,7 +1110,7 @@ class RSStrategyBacktester:
             "end_date": end_date
         })
         
-        df = pd.DataFrame(result.fetchall(), columns=['symbol', 'date', 'adjusted_close'])
+        df = pd.DataFrame(result.fetchall(), columns=['symbol', 'date', 'adjusted_close', 'open'])
         
         if df.empty:
             raise ValueError(f"No data for {data_start_date} to {end_date}")
@@ -1339,32 +1339,9 @@ class RSStrategyBacktester:
                     except:
                         pass
                     
-                    # Lookup Past Prices
-                    past_str = ""
-                    try:
-                        sym_df = stock_data[stock_data['symbol'] == symbol]
-                        if not sym_df.empty:
-                            sym_df = sym_df.sort_values('date').reset_index(drop=True)
-                            curr_matches = sym_df.index[sym_df['date'] == date].tolist()
-                            if curr_matches:
-                                curr_idx = curr_matches[0]
-                                parts = []
-                                for name, days in [("Week", 5), ("Month", 20), ("Quarter", 60)]:
-                                     target = curr_idx - days
-                                     if target >= 0:
-                                         row = sym_df.iloc[target]
-                                         p_d = row['date']
-                                         p_p = float(row['adjusted_close'])
-                                         parts.append(f"{name}: {p_d.strftime('%Y-%m-%d')}@₹{p_p:.2f}")
-                                     else:
-                                         parts.append(f"{name}: N/A")
-                                past_str = ", ".join(parts)
-                    except:
-                        pass
 
+                    # Print score and breakdown
                     print(f"      {rank}. {symbol}: RS Score={score:.4f}, Price=₹{stock_price:.2f}")
-                    if past_str:
-                        print(f"         History: {past_str}")
                     print(f"         Breakdown (Outperf): Week (5d)={w_score:.3f}, Month (20d)={m_score:.3f}, Quarter (60d)={q_score:.3f}")
                     rank += 1
                     
@@ -2164,7 +2141,12 @@ class RSStrategyBacktester:
                             # SELL FIRST to free up cash before buying new positions
                             for symbol in self.pending_exits:
                                 try:
-                                    price_data = stock_data.loc[symbol, execution_day]['adjusted_close']
+                                    # Use OPEN price for execution as per request
+                                    if 'open' in stock_data.columns:
+                                        price_data = stock_data.loc[symbol, execution_day]['open']
+                                    else:
+                                        price_data = stock_data.loc[symbol, execution_day]['adjusted_close']
+                                        
                                     price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
                                     self.execute_trade(execution_day, symbol, "SELL", price, "RS Exit")
                                 except (KeyError, IndexError):
@@ -2173,7 +2155,12 @@ class RSStrategyBacktester:
                             # THEN BUY using freed cash (and buffer only if needed)
                             for symbol in self.pending_entries:
                                 try:
-                                    price_data = stock_data.loc[symbol, execution_day]['adjusted_close']
+                                    # Use OPEN price for execution as per request
+                                    if 'open' in stock_data.columns:
+                                        price_data = stock_data.loc[symbol, execution_day]['open']
+                                    else:
+                                        price_data = stock_data.loc[symbol, execution_day]['adjusted_close']
+                                        
                                     price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
                                     self.execute_trade(execution_day, symbol, "BUY", price, "RS Signal")
                                 except (KeyError, IndexError):
@@ -2209,6 +2196,7 @@ class RSStrategyBacktester:
                         print(f"   Date: {date.strftime('%Y-%m-%d')}")
                         print(f"   NAV: ₹{portfolio_value:,.2f}")
                         print(f"   Cash: ₹{self.cash_balance:,.2f}")
+                        print(f"   Holdings Value: ₹{portfolio_value - self.cash_balance:,.2f}")
                         print(f"   Holdings: {holdings_summary}")
                         print("============================================================")
                     
@@ -2899,6 +2887,7 @@ class RSStrategyBacktester:
                 print(f"   Portfolio NAV: ₹{portfolio_nav:,.2f}")
                 print(f"   Cash Balance: ₹{self.cash_balance:,.2f}")
                 print(f"   Buffer Capital: ₹{self.buffer_capital:,.2f}")
+                print(f"   Holdings Value: ₹{portfolio_nav - self.cash_balance - self.buffer_capital:,.2f}")
                 print(f"")
                 return True
                 
