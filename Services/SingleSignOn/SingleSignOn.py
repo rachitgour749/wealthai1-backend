@@ -226,7 +226,7 @@ async def single_sign_on(userid: str) -> Dict[str, Any]:
                 "email": user_email,
                 "allowed_accounts": allowed_accounts,
                 "is_active": is_active,
-                "subscribed_plan": plan_name,
+                "subscribed_plan": trad_ai_subscription.subscription_type,
                 "subscription_start_date": _format_date_dd_mm_yyyy(subscription_start_date),
                 "subscription_end_date": _format_date_dd_mm_yyyy(subscription_end_date),
             }

@@ -6,8 +6,10 @@ Handles automatic trial creation when users login via Google OAuth
 from fastapi import HTTPException, Depends, Header
 from typing import Optional, Dict, Any
 import logging
+import hashlib
 
 from .subscription_service import subscription_service
+from ..database import subscription_manager
 from ..subscription_schemas import SubscriptionRequest, SubscriptionPlan, SubscriptionStatus
 
 logger = logging.getLogger(__name__)
@@ -17,6 +19,11 @@ class GoogleAuthIntegration:
     
     def __init__(self):
         self.service = subscription_service
+        self.db_manager = subscription_manager
+
+    def _hash_token(self, token: str) -> str:
+        """Create a SHA256 hash of the token"""
+        return hashlib.sha256(token.encode()).hexdigest()
     
     def extract_user_from_google_token(self, authorization: str) -> Dict[str, str]:
         """
@@ -59,10 +66,22 @@ class GoogleAuthIntegration:
             user_email = user_info["email"]
             user_name = user_info["name"]
             
+            # Hash the token and update DB to invalidate other sessions (if any)
+            token = authorization.replace("Bearer ", "")
+            token_hash = self._hash_token(token)
+            
+            # Note: We update the hash AFTER creating/getting the user below, 
+            # or we can do it as part of the flow. 
+            # Actually, calculate it here, pass to creation/update logic.
+
             logger.info(f"Handling Google login for user: {user_email}")
             
             # Check if user already has a subscription
             existing_status = await self.service.get_subscription_status(user_email)
+            
+            # Enforce single session: Update the active token hash
+            # This invalidates any other session for this user
+            self.db_manager.update_user_token_hash(user_email, token_hash)
             
             if existing_status.status == SubscriptionStatus.TRIAL and existing_status.is_trial_active:
                 # User already has an active trial
@@ -96,7 +115,11 @@ class GoogleAuthIntegration:
                     plan=SubscriptionPlan.FREE
                 )
                 
+                # We need to make sure create_subscription handles the token hash or we update it after
+                # Since create_subscription in service doesn't take hash yet, we'll update it after creation
                 await self.service.create_subscription(subscription_request)
+                self.db_manager.update_user_token_hash(user_email, token_hash)
+
                 refreshed_status = await self.service.get_subscription_status(user_email)
                 
                 return {
@@ -116,9 +139,21 @@ class GoogleAuthIntegration:
     async def get_user_subscription_info(self, authorization: str) -> Dict[str, Any]:
         """Get user's subscription information from Google token"""
         try:
+            token = authorization.replace("Bearer ", "")
             user_info = self.extract_user_from_google_token(authorization)
             user_email = user_info["email"]
             
+            # Session Check: Verify token hash matches active session
+            user_details = self.db_manager.get_user_details(user_email)
+            if user_details and user_details.active_token_hash:
+                current_token_hash = self._hash_token(token)
+                if user_details.active_token_hash != current_token_hash:
+                    logger.warning(f"Session invalidated for user {user_email}. Multiple checks detected.")
+                    raise HTTPException(
+                        status_code=401, 
+                        detail="Session expired. You have logged in from another device/browser."
+                    )
+
             subscription_status = await self.service.get_subscription_status(user_email)
             
             return {
@@ -147,7 +182,16 @@ async def get_current_user_from_google_token(
     if not authorization:
         raise HTTPException(status_code=401, detail="Authorization header required")
     
-    return google_auth_integration.extract_user_from_google_token(authorization)
+    # We use get_user_subscription_info here instead of just extracting,
+    # because it contains the critical session verification logic.
+    # We discard the extra subscription info and just return the user dict to match signature.
+    full_info = await google_auth_integration.get_user_subscription_info(authorization)
+    
+    return {
+        "email": full_info["user_email"],
+        "name": full_info["user_name"],
+        # Add other fields if needed, matching original extract_user_from_google_token return
+    }
 
 async def get_user_with_subscription(
     authorization: Optional[str] = Header(None)

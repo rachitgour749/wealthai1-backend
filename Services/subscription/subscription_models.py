@@ -14,6 +14,7 @@ class UserDetails(Base):
     user_email = Column(String(255), primary_key=True)
     user_name = Column(String(255), nullable=True)
     phone_no = Column(String(50), nullable=True)
+    active_token_hash = Column(String(64), nullable=True)  # SHA256 Hash of the active JWT/Token
     status = Column(String(20), default="TRIAL")  # TRIAL/PAID
     created_at = Column(DateTime(timezone=True), default=func.now())
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())

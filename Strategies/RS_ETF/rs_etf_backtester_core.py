@@ -2378,18 +2378,24 @@ class RSETFStrategyBacktester:
                 pnl = (price - position.buy_price) * quantity
                 pnl_pct = ((price - position.buy_price) / position.buy_price) * 100
                 
-                # Adjust buffer capital based on P&L
-                if pnl > 0:
-                    # Profit: Add to buffer
-                    self.buffer_capital += pnl
-                    print(f"  Profit: ₹{pnl:.2f} added to buffer")
-                else:
-                    # Loss: Subtract from buffer
-                    self.buffer_capital += pnl  # pnl is negative, so this subtracts
-                    print(f"  Loss: ₹{abs(pnl):.2f} subtracted from buffer")
+                # Adjust buffer capital based on P&L (Segregate Principal and Profit)
+                # Strategy: 
+                # 1. Principal (Cost Basis) -> Return to Cash Balance
+                # 2. Net Profit/Loss (Net Amount - Cost Basis) -> Adjust Buffer Capital
                 
-                # Add proceeds to cash
-                self.cash_balance += net_amount
+                cost_basis = position.buy_price * quantity
+                net_pnl = net_amount - cost_basis
+                
+                # Update Buffer (Profit/Loss)
+                self.buffer_capital += net_pnl
+                
+                # Update Cash (Return Principal)
+                self.cash_balance += cost_basis
+                
+                if net_pnl > 0:
+                    print(f"  Profit: ₹{net_pnl:.2f} added to buffer")
+                else:
+                    print(f"  Loss: ₹{abs(net_pnl):.2f} subtracted from buffer")
                 
                 # Remove position
                 del self.positions[symbol]

@@ -136,6 +136,7 @@ class SubscriptionManager:
         user_name: Optional[str] = None,
         phone_no: Optional[str] = None,
         status: str = "FALSE",
+        active_token_hash: Optional[str] = None,
     ) -> UserDetails:
         session = self.get_session()
         try:
@@ -151,6 +152,9 @@ class SubscriptionManager:
                 if phone_no and user.phone_no != phone_no:
                     user.phone_no = phone_no
                     updated = True
+                if active_token_hash:
+                    user.active_token_hash = active_token_hash
+                    updated = True
                 if updated:
                     user.updated_at = now
                     session.commit()
@@ -161,6 +165,7 @@ class SubscriptionManager:
                 user_name=user_name,
                 phone_no=phone_no,
                 status=status,
+                active_token_hash=active_token_hash,
                 created_at=now,
                 updated_at=now,
             )
@@ -188,6 +193,26 @@ class SubscriptionManager:
     # -------------------------------------------------------------------------
     # product_manager helpers
     # -------------------------------------------------------------------------
+    def update_user_token_hash(self, user_email: str, token_hash: str) -> bool:
+        """
+        Update the active token hash for a user.
+        Invalidates any previous sessions.
+        """
+        session = self.get_session()
+        try:
+            user = session.query(UserDetails).filter(UserDetails.user_email == user_email.lower()).first()
+            if user:
+                user.active_token_hash = token_hash
+                user.updated_at = utcnow()
+                session.commit()
+                return True
+            return False
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            self.close_session(session)
+
     def user_has_products(self, user_email: str) -> bool:
         session = self.get_session()
         try:
