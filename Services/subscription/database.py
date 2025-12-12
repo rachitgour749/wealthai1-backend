@@ -50,6 +50,12 @@ PRODUCT_CODE_FROM_DB: Dict[str, ProductCode] = {
     "C": ProductCode.CHATAI,  # Old short code for CHATAI
     "CHATAI": ProductCode.CHATAI,
     "AUTOMATIONAI": ProductCode.AUTOMATIONAI,
+    # Map numeric prod_id from prod_master to ProductCode
+    "1": ProductCode.TRADAI,
+    "2": ProductCode.MARKETAI,
+    "3": ProductCode.CHATAI,
+    "4": ProductCode.AUTOMATIONAI,
+
 }
 
 CHATAI_DEFAULT_TOKENS = settings.CHATAI_DEFAULT_TOKENS
@@ -361,6 +367,200 @@ class SubscriptionManager:
     # -------------------------------------------------------------------------
     # Plan helpers (reuse legacy tables)
     # -------------------------------------------------------------------------
+    def get_plan_by_name(self, plan_name: str) -> Dict[str, Any]:
+        """Look up plan by name (case-insensitive)"""
+        session = self.get_session()
+        try:
+            # First try exact match
+            result = session.execute(
+                text(
+                    """
+                    SELECT plan_code, plan_name, extension_days
+                    FROM plan_master
+                    WHERE LOWER(plan_name) = LOWER(:plan_name)
+                    """
+                ),
+                {"plan_name": plan_name.strip()},
+            )
+            row = result.fetchone()
+            
+            # If no exact match, try LIKE for more flexible matching
+            if not row:
+                result = session.execute(
+                    text(
+                        """
+                        SELECT plan_code, plan_name, extension_days
+                        FROM plan_master
+                        WHERE LOWER(plan_name) LIKE LOWER(:plan_name_pattern)
+                        LIMIT 1
+                        """
+                    ),
+                    {"plan_name_pattern": f"%{plan_name.strip()}%"},
+                )
+                row = result.fetchone()
+                
+            if not row:
+                return {"valid": False, "message": f"Plan '{plan_name}' not found"}
+                
+            return {
+                "valid": True,
+                "plan_code": int(row[0]),
+                "plan_name": row[1],
+                "extension_days": int(row[2]) if row[2] else settings.DEFAULT_TRIAL_DAYS,
+            }
+        finally:
+            self.close_session(session)
+
+    def activate_paid_subscription(
+        self,
+        user_email: str,
+        plan_name: str,
+        subscription_id: str,
+    ) -> Dict[str, Any]:
+        """
+        Activate paid subscription based on plan name.
+        Updates user status and product subscriptions.
+        """
+        session = self.get_session()
+        try:
+            email = user_email.lower()
+            
+            # Step 1: Validate Plan
+            plan_info = self.get_plan_by_name(plan_name)
+            if not plan_info["valid"]:
+                raise ValueError(plan_info["message"])
+            
+            plan_code = plan_info["plan_code"]
+            extension_days = plan_info["extension_days"]
+            
+            # Step 2: Fetch mapped products
+            mapping_result = session.execute(
+                text(
+                    """
+                    SELECT prod_code 
+                    FROM plan_prod_mapping 
+                    WHERE plan_code = :plan_code
+                    """
+                ),
+                {"plan_code": plan_code}
+            )
+            prod_rows = mapping_result.fetchall()
+            
+            if not prod_rows:
+                raise ValueError(f"No products mapped to plan '{plan_name}' (Code: {plan_code})")
+                
+            # Determine mapped products
+            target_products = []
+            for row in prod_rows:
+                prod_str = str(int(row[0])) # Convert numeric to string '1', '2' etc.
+                if prod_str in PRODUCT_CODE_FROM_DB:
+                    target_products.append(PRODUCT_CODE_FROM_DB[prod_str])
+            
+            if not target_products:
+                raise ValueError(f"No valid product codes found for plan '{plan_name}'")
+
+            now = utcnow()
+            
+            # Update User Details to PAID
+            user = session.query(UserDetails).filter(UserDetails.user_email == email).first()
+            if not user:
+                # Create user if not exists
+                user = UserDetails(
+                    user_email=email,
+                    status="PAID",
+                    created_at=now,
+                    updated_at=now
+                )
+                session.add(user)
+            else:
+                user.status = "PAID"
+                user.updated_at = now
+            
+            # Step 3: Update products
+            updated_products = []
+            
+            for product_code_enum in target_products:
+                existing_prod = (
+                    session.query(ProductManager)
+                    .filter(
+                        ProductManager.user_email == email,
+                        ProductManager.product_code == product_code_enum.value
+                    )
+                    .first()
+                )
+                
+                # Determine dates
+                start_date = now
+                end_date = now + timedelta(days=extension_days)
+                
+                if existing_prod:
+                    # Logic: 
+                    # If end_date < current -> start=now, end=now+days
+                    # If end_date > current -> start=now, end=remaining+days (i.e. existing_end + days)
+                    
+                    current_end = existing_prod.subscription_end_date
+                    if current_end and current_end > now:
+                        # Active: Extend
+                        start_date = now # Should we keep original start date? Requirement says "subscription_start_date = current date;"
+                        end_date = current_end + timedelta(days=extension_days)
+                    else:
+                        # Expired or None: Reset
+                        start_date = now
+                        end_date = now + timedelta(days=extension_days)
+                    
+                    # Update existing
+                    existing_prod.subscription_type = SubscriptionType.PAID
+                    existing_prod.status = SubscriptionStatus.ACTIVE
+                    existing_prod.subscription_start_date = start_date
+                    existing_prod.subscription_end_date = end_date
+                    existing_prod.updated_at = now
+                    # We could store subscription_id in payment_id or similar if it existed in this model,
+                    # but ProductManager schema shown earlier doesn't have payment_id. 
+                    # We will proceed without storing subscription_id in ProductManager as per current schema.
+                    
+                else:
+                    # Create new
+                    chatai_key = (
+                        f"chatai_{email.replace('@', '_').replace('.', '_')}_{int(now.timestamp())}"
+                        if product_code_enum == ProductCode.CHATAI
+                        else "N/A"
+                    )
+                    total_tokens = CHATAI_DEFAULT_TOKENS if product_code_enum == ProductCode.CHATAI else 0
+                    
+                    existing_prod = ProductManager(
+                        id=str(uuid.uuid4()),
+                        user_email=email,
+                        product_code=product_code_enum.value,
+                        subscription_type=SubscriptionType.PAID,
+                        status=SubscriptionStatus.ACTIVE,
+                        subscription_start_date=start_date,
+                        subscription_end_date=end_date,
+                        chatai_key=chatai_key,
+                        total_token=total_tokens,
+                        used_token=0,
+                        remaining_token=total_tokens,
+                        created_at=now,
+                        updated_at=now
+                    )
+                    session.add(existing_prod)
+                
+                updated_products.append(product_code_enum.value)
+
+            session.commit()
+            
+            return {
+                "success": True, 
+                "plan_name": plan_info["plan_name"],
+                "products_updated": updated_products,
+                "user_status": "PAID"
+            }
+            
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            self.close_session(session)
+
     def validate_plan_code(self, plan_code: int) -> Dict[str, Optional[str]]:
         session = self.get_session()
         try:

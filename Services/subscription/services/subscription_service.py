@@ -12,6 +12,8 @@ from ..subscription_schemas import (
     ProductTrialActivationResponse,
     UserDetailsResponse,
     ProductManagerRecord,
+    ZohoPaymentCallbackRequest,
+    PaymentSuccessParams,
 )
 
 
@@ -156,6 +158,20 @@ class SubscriptionService:
     async def get_user_products(self, user_email: str) -> List[ProductManagerRecord]:
         products = self.db_manager.get_user_products(user_email)
         return [self.db_manager.serialize_product(p) for p in products]
+
+    async def process_payment_callback(self, email: str, plan_name: str, subscription_id: str) -> dict:
+        """Process Zoho payment callback"""
+        try:
+            return self.db_manager.activate_paid_subscription(
+                user_email=email,
+                plan_name=plan_name,
+                subscription_id=subscription_id,
+            )
+        except ValueError as exc:
+            raise ValueError(str(exc)) from exc
+        except Exception as exc:
+            raise Exception(f"Failed to process callback: {exc}") from exc
+
 
 
 subscription_service = SubscriptionService()

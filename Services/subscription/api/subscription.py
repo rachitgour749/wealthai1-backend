@@ -101,6 +101,47 @@ async def list_user_products(email: str):
         logger.error(f"Error fetching products for {email}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch products: {str(e)}")
 
+@subscription_router.get("/paymentSuccess")
+async def zoho_payment_success(
+    emailID: str,
+    planname: str,
+    subscriptionID: str,
+    nextBillingDate: str = None,
+    transactionID: str = None,
+    invoiceNumber: str = None
+):
+    """
+    Handle Zoho Payment Success Callback via Redirection.
+    URL: /api/subscription/paymentSuccess?emailID=...&planname=...
+    """
+    try:
+        logger.info(f"Received Payment Success: {emailID}, Plan: {planname}")
+        logger.info(f"Meta: SubID={subscriptionID}, TransID={transactionID}, NextBill={nextBillingDate}")
+        
+        result = await subscription_service.process_payment_callback(
+            email=emailID,
+            plan_name=planname,
+            subscription_id=subscriptionID
+        )
+        
+        logger.info(f"Payment processed successfully for: {emailID}")
+        return {
+            "status": "success",
+            "message": "Subscription activated successfully",
+            "details": result
+        }
+        
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.error(f"Validation error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error processing payment success: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal processing error")
+
+
+
 # =============================================================================
 # HEALTH CHECK
 # =============================================================================

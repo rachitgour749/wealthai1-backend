@@ -270,3 +270,32 @@ class ProductManagerRecord(BaseModel):
     remaining_token: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+
+
+class ZohoPaymentCallbackRequest(BaseModel):
+    """Request model for Zoho payment callback"""
+    EmailID: str = Field(..., description="User email address")
+    SubscriptionID: str = Field(..., description="Zoho subscription ID")
+    SubscriptionName: str = Field(..., description="Name of the subscription")
+    PlanName: str = Field(..., description="Name of the plan purchased")
+    
+    @validator('EmailID')
+    def validate_email(cls, v):
+        if '@' not in v:
+            raise ValueError('Invalid email format')
+        return v.lower()
+
+
+class PaymentSuccessParams(BaseModel):
+    """
+    Model for validating GET parameters if needed.
+    (Optional usage since arguments are flattened in the endpoint,
+     but good for documentation/internal passing).
+    """
+    emailID: str
+    planname: str
+    subscriptionID: str
+    nextBillingDate: Optional[str] = None
+    transactionID: Optional[str] = None
+    invoiceNumber: Optional[str] = None
+

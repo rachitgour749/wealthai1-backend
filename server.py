@@ -1,7 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from fastapi.routing import APIRoute
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.openapi.utils import get_openapi
+import secrets
 import uvicorn
 import sys
 import os
@@ -320,8 +324,40 @@ app = FastAPI(
     title="WealthAI1 API",
     version="1.0.0",
     lifespan=lifespan,
-    description="High-performance financial backtesting and trading strategy API"
+    description="High-performance financial backtesting and trading strategy API",
+    docs_url=None,       # Disable default docs
+    redoc_url=None,      # Disable default redoc
+    openapi_url=None     # Disable default openapi.json
 )
+
+# =========================
+# SECURITY CONFIGURATION
+# =========================
+security = HTTPBasic()
+
+def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
+    """Authenticate user for Swagger UI access"""
+    # Credentials provided by user
+    correct_username = secrets.compare_digest(credentials.username, "wealthwisers@fintech.gmail.com")
+    correct_password = secrets.compare_digest(credentials.password, "WW@fintech.2025")
+    
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
+@app.get("/docs", include_in_schema=False)
+async def get_documentation(username: str = Depends(get_current_username)):
+    """Protected Swagger UI"""
+    return get_swagger_ui_html(openapi_url="/openapi.json", title="WealthAI1 API - Docs")
+
+@app.get("/openapi.json", include_in_schema=False)
+async def get_open_api_endpoint(username: str = Depends(get_current_username)):
+    """Protected OpenAPI JSON"""
+    return get_openapi(title="WealthAI1 API", version="1.0.0", routes=app.routes)
 
 # =========================
 # CORS MIDDLEWARE
