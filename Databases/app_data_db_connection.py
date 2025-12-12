@@ -151,8 +151,8 @@ def test_connection():
         success = create_connection()
         
         if success:
-            print("\n✓ Database connected successfully!")
-            print("✓ Connection to Neon PostgreSQL established")
+            print("\n[OK] Database connected successfully!")
+            print("[OK] Connection to Neon PostgreSQL established")
             
             # Get some database info
             try:
@@ -174,8 +174,8 @@ def test_connection():
             print("\n" + "="*60)
             return True
         else:
-            print("\n✗ Database connection failed!")
-            print("✗ Please check your connection string and network access")
+            print("\n[FAIL] Database connection failed!")
+            print("[FAIL] Please check your connection string and network access")
             print("\n" + "="*60)
             return False
             

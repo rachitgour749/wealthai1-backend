@@ -718,33 +718,36 @@ def init_saved_strategies_table(db_path: str = None):
         except RuntimeError:
             # Connection doesn't exist, create it
             if not create_connection():
+                error_msg = "Failed to connect to PostgreSQL database"
                 try:
-                    logger.error("Failed to connect to PostgreSQL database")
+                    logger.error(error_msg)
                 except NameError:
-                    print("Failed to connect to PostgreSQL database")
-                return False
+                    print(error_msg)
+                return False, error_msg
         
         # Initialize all tables (including stock_saved_strategy)
         if not init_database():
+            error_msg = "Failed to initialize database tables"
             try:
-                logger.error("Failed to initialize database tables")
+                logger.error(error_msg)
             except NameError:
-                print("Failed to initialize database tables")
-            return False
+                print(error_msg)
+            return False, error_msg
         
         try:
             logger.info("stock_saved_strategy table initialized successfully in PostgreSQL")
         except NameError:
             print("stock_saved_strategy table initialized successfully in PostgreSQL")
-        return True
+        return True, None
     except Exception as e:
+        error_msg = f"Error initializing stock_saved_strategy table: {e}"
         try:
-            logger.error(f"Error initializing stock_saved_strategy table: {e}")
+            logger.error(error_msg)
         except NameError:
-            print(f"Error initializing stock_saved_strategy table: {e}")
+            print(error_msg)
         import traceback
         traceback.print_exc()
-        return False
+        return False, str(e)
 
 # ============================================================================
 # SAVED STRATEGY ROUTES
@@ -755,8 +758,9 @@ async def save_stock_strategy(request: SaveStockStrategyRequest):
     """Save a stock strategy to the database with validation"""
     try:
         # Initialize the table if it doesn't exist
-        if not init_saved_strategies_table():
-            raise HTTPException(status_code=500, detail="Failed to initialize database table")
+        success, error_msg = init_saved_strategies_table()
+        if not success:
+            raise HTTPException(status_code=500, detail=f"Failed to initialize database table: {error_msg}")
         
         # Check if strategy already exists using the backtester core validation
         from ..services.backtester import StockRotationBacktester

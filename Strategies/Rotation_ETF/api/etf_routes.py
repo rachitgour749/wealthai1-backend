@@ -726,19 +726,24 @@ def init_saved_etf_strategies_table(db_path: str = None):
         except RuntimeError:
             # Connection doesn't exist, create it
             if not create_connection():
-                logger.error("❌ Failed to connect to PostgreSQL database")
-                return False
+                error_msg = "Failed to connect to PostgreSQL database"
+                logger.error(error_msg)  # Removed unicode cross
+                return False, error_msg
         
-        # Create table if it doesn't exist
-        if not inspect(db.bind).has_table(ETFSavedStrategy.__tablename__):
-            ETFSavedStrategy.__table__.create(db.bind)
-            logger.info("etf_saved_strategy table initialized successfully in PostgreSQL")
-        return True
+        # Initialize all tables (including etf_saved_strategy) using the centralized init_database
+        if not init_database():
+            error_msg = "Failed to initialize database tables"
+            logger.error(error_msg)
+            return False, error_msg
+            
+        logger.info("etf_saved_strategy table initialized successfully in PostgreSQL")
+        return True, None
     except Exception as e:
-        logger.error(f"Error initializing etf_saved_strategy table: {e}")
+        error_msg = f"Error initializing etf_saved_strategy table: {e}"
+        logger.error(error_msg)
         import traceback
         traceback.print_exc()
-        return False
+        return False, str(e)
 
 # ============================================================================
 # SAVED STRATEGY ROUTES
@@ -749,8 +754,9 @@ async def save_etf_strategy(request: SaveETFStrategyRequest):
     """Save an ETF strategy to the database with validation"""
     try:
         # Initialize the table if it doesn't exist
-        if not init_saved_etf_strategies_table():
-            raise HTTPException(status_code=500, detail="Failed to initialize database table")
+        success, error_msg = init_saved_etf_strategies_table()
+        if not success:
+            raise HTTPException(status_code=500, detail=f"Failed to initialize database table: {error_msg}")
         
         # Check if strategy already exists using the backtester core validation
         from ..services.backtester import ETFRotationBacktester
