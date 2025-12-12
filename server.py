@@ -388,6 +388,7 @@ custom_strategy_router = None
 supertrend_router = None
 webhook_router = None
 subscription_router = None
+payment_router = None
 google_oauth_router = None
 deployment_router = None
 single_sign_on_router = None
@@ -452,6 +453,7 @@ try:
         google_oauth_api = importlib.import_module(f'Services.{SUBSCRIPTION_DIR_NAME}.api.google_oauth_api')
         
         subscription_router = subscription_api.subscription_router
+        payment_router = getattr(subscription_api, 'payment_router', None)
         google_oauth_router = google_oauth_api.google_oauth_router
         
         logger.info("=" * 60)
@@ -460,6 +462,7 @@ try:
         logger.info("✅ google_oauth_router: LOADED")
         logger.info("✅ Subscription endpoints available:")
         logger.info("   - /api/subscription/*")
+        logger.info("   - /paymentSuccess")
         logger.info("   - /api/auth/google-login")
         logger.info("=" * 60)
         
@@ -478,6 +481,7 @@ except Exception as e:
     import traceback
     logger.error(f"Traceback: {traceback.format_exc()}")
     subscription_router = None
+    payment_router = None
     google_oauth_router = None
 
 try:
@@ -550,6 +554,10 @@ if subscription_router:
     app.include_router(subscription_router)
 else:
     logger.error("⚠️  Subscription router not loaded - subscription endpoints will not be available")
+
+if payment_router:
+    app.include_router(payment_router)
+
 if google_oauth_router:
     app.include_router(google_oauth_router)
 else:

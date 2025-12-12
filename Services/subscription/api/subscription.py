@@ -14,6 +14,7 @@ from ..subscription_schemas import (
 
 # Create router
 subscription_router = APIRouter(prefix="/api/subscription", tags=["subscription"])
+payment_router = APIRouter(tags=["payment"]) # New router for root-level endpoints
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -101,7 +102,7 @@ async def list_user_products(email: str):
         logger.error(f"Error fetching products for {email}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch products: {str(e)}")
 
-@subscription_router.get("/paymentSuccess")
+@payment_router.get("/paymentSuccess")
 async def zoho_payment_success(
     emailID: str,
     planname: str,

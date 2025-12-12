@@ -623,21 +623,36 @@ class RSETFStrategyBacktester:
             return self._get_allowed_etf_list()
     
     def _get_allowed_etf_list(self) -> List[str]:
-        """Get the allowed list of ETFs for RS ETF Strategy"""
-        # Hardcoded list of allowed ETFs only
-        return [
-            'NIFTYBEES',
-            'JUNIORBEES',
-            'GOLDBEES',
-            'PSUBNKBEES',
-            'HNGSNGBEES',
-            'MON100',
-            'BANKBEES',
-            'CPSEETF',
-            'INFRABEES',
-            'ITBEES',
-            'PHARMABEES'
-        ]
+        """Get the allowed list of ETFs for RS ETF Strategy - Dynamic from DB"""
+        try:
+            # Query the database for all available unique symbols in etf_data
+            sql = "SELECT DISTINCT symbol FROM etf_data ORDER BY symbol"
+            result = pd.read_sql(sql, self.db.bind)
+            
+            if not result.empty:
+                dynamic_list = result['symbol'].tolist()
+                print(f"Dynamically loaded {len(dynamic_list)} ETFs from database")
+                return dynamic_list
+            else:
+                print("Warning: No ETFs found in database, falling back to default list")
+                raise ValueError("Empty ETF table")
+                
+        except Exception as e:
+            print(f"Error loading dynamic ETF list: {e}")
+            # Fallback to hardcoded list if database query fails
+            return [
+                'NIFTYBEES',
+                'JUNIORBEES',
+                'GOLDBEES',
+                'PSUBNKBEES',
+                'HNGSNGBEES',
+                'MON100',
+                'BANKBEES',
+                'CPSEETF',
+                'INFRABEES',
+                'ITBEES',
+                'PHARMABEES'
+            ]
     def validate_data_range(self, start_date: datetime, end_date: datetime) -> bool:
         """Validate that we have sufficient data for the requested period"""
         try:

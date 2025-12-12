@@ -675,22 +675,25 @@ async def get_stock_costs_breakdown():
                     'transaction_costs': 0,
                     'capital_gains_tax': 0,
                     'total_costs': 0,
+                    'total_brokerage': 0,
                     'transactions': 0
                 }
             
             # Fix: Extract transaction costs from the costs dictionary, not directly from log
             costs = log.get('costs', {})
             transaction_cost = costs.get('total_costs', 0) if costs else 0
+            brokerage = costs.get('brokerage', 0) if costs else 0
             capital_gains_tax = log.get('capital_gains_tax', 0)
             
             yearly_costs[year]['transaction_costs'] += transaction_cost
             yearly_costs[year]['capital_gains_tax'] += capital_gains_tax
             yearly_costs[year]['total_costs'] += transaction_cost + capital_gains_tax
+            yearly_costs[year]['total_brokerage'] += brokerage
             yearly_costs[year]['transactions'] += 1
         
         # Round all values
         for year in yearly_costs:
-            for key in ['transaction_costs', 'capital_gains_tax', 'total_costs']:
+            for key in ['transaction_costs', 'capital_gains_tax', 'total_costs', 'total_brokerage']:
                 yearly_costs[year][key] = round(yearly_costs[year][key], 2)
         
         return {"breakdown": yearly_costs}
