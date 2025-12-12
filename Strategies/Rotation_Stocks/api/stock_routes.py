@@ -45,10 +45,10 @@ def initialize_stock_backtester(db_path: str = "unified_etf_data.sqlite"):
     global stock_backtester
     try:
         stock_backtester = StockRotationBacktester(db_path=db_path)  # db_path ignored, uses PostgreSQL
-        print("✅ Stock Backtester initialized successfully")
+        print("Stock Backtester initialized successfully")
         return True
     except Exception as e:
-        print(f"❌ Error initializing Stock Backtester: {e}")
+        print(f"Error initializing Stock Backtester: {e}")
         stock_backtester = None
         return False
 
@@ -719,29 +719,29 @@ def init_saved_strategies_table(db_path: str = None):
             # Connection doesn't exist, create it
             if not create_connection():
                 try:
-                    logger.error("❌ Failed to connect to PostgreSQL database")
+                    logger.error("Failed to connect to PostgreSQL database")
                 except NameError:
-                    print("❌ Failed to connect to PostgreSQL database")
+                    print("Failed to connect to PostgreSQL database")
                 return False
         
         # Initialize all tables (including stock_saved_strategy)
         if not init_database():
             try:
-                logger.error("❌ Failed to initialize database tables")
+                logger.error("Failed to initialize database tables")
             except NameError:
-                print("❌ Failed to initialize database tables")
+                print("Failed to initialize database tables")
             return False
         
         try:
-            logger.info("✅ stock_saved_strategy table initialized successfully in PostgreSQL")
+            logger.info("stock_saved_strategy table initialized successfully in PostgreSQL")
         except NameError:
-            print("✅ stock_saved_strategy table initialized successfully in PostgreSQL")
+            print("stock_saved_strategy table initialized successfully in PostgreSQL")
         return True
     except Exception as e:
         try:
-            logger.error(f"❌ Error initializing stock_saved_strategy table: {e}")
+            logger.error(f"Error initializing stock_saved_strategy table: {e}")
         except NameError:
-            print(f"❌ Error initializing stock_saved_strategy table: {e}")
+            print(f"Error initializing stock_saved_strategy table: {e}")
         import traceback
         traceback.print_exc()
         return False

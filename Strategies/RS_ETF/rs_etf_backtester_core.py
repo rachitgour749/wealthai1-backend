@@ -2235,8 +2235,12 @@ class RSETFStrategyBacktester:
     def calculate_transaction_costs(self, transaction_value: float, action: str, brokerage_pct: float = None):
         """Calculate detailed Indian market transaction costs"""
         if brokerage_pct is None:
-            # Default brokerage if not provided
-            brokerage_pct = self.config.transaction_cost_pct * 100 if hasattr(self, 'config') and hasattr(self.config, 'transaction_cost_pct') else 0.0
+            # Default brokerage if not provided - use self.transaction_cost_pct which is set in __init__
+            # self.transaction_cost_pct is stored as a fraction (e.g. 0.001), so multiply by 100 to get percentage
+            if hasattr(self, 'transaction_cost_pct'):
+                brokerage_pct = self.transaction_cost_pct * 100
+            else:
+                brokerage_pct = self.config.transaction_cost_pct * 100 if hasattr(self, 'config') and hasattr(self.config, 'transaction_cost_pct') else 0.1
         
         # Base brokerage
         brokerage = transaction_value * (brokerage_pct / 100)

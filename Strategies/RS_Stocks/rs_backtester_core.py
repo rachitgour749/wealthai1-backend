@@ -356,22 +356,59 @@ class RSStrategyBacktester:
                 print(f"No data found for selected stocks: {selected_stocks}")
                 return None, None, 0.0
             
-            # Find the latest start date and earliest end date (common range)
-            start_dates = [data['start_date'] for data in stock_ranges.values()]
-            end_dates = [data['end_date'] for data in stock_ranges.values()]
+            # --- IMPROVED LOGIC: Filter out "bad" stocks before intersection ---
+            
+            # 1. Determine Global Latest Date (reference point)
+            all_end_dates = [data['end_date'] for data in stock_ranges.values()]
+            if not all_end_dates:
+                 return None, None, 0.0
+            global_latest_date = max(all_end_dates)
+            
+            valid_stocks = []
+            stale_stocks = []
+            short_history_stocks = []
+            
+            MIN_HISTORY_DAYS = 365  # Stocks must have at least 1 year of data
+            STALE_THRESHOLD_DAYS = 10 # Data shouldn't be older than 10 days from latest available
+            
+            for stock, data in stock_ranges.items():
+                start_date = data['start_date']
+                end_date = data['end_date']
+                
+                # Check for Staleness
+                days_lag = (global_latest_date - end_date).days
+                if days_lag > STALE_THRESHOLD_DAYS:
+                    stale_stocks.append(stock)
+                    continue
+                    
+                # Check for History Length
+                history_days = (end_date - start_date).days
+                if history_days < MIN_HISTORY_DAYS:
+                    short_history_stocks.append(stock)
+                    continue
+                    
+                valid_stocks.append(stock)
+            
+            print(f"Filtered out {len(stale_stocks)} stale stocks: {stale_stocks}")
+            print(f"Filtered out {len(short_history_stocks)} short-history stocks: {short_history_stocks}")
+            print(f"Remaining valid stocks: {len(valid_stocks)}")
+            
+            if not valid_stocks:
+                print("No valid stocks remained after filtering! Using all stocks as fallback (may fail).")
+                # Fallback: Just use the original list if everything was filtered out, to avoid crash, 
+                # but it will likely produce the same negative result.
+                valid_ranges = stock_ranges.values()
+            else:
+                valid_ranges = [stock_ranges[s] for s in valid_stocks]
+
+            # Find the common intersection of VALID stocks
+            start_dates = [data['start_date'] for data in valid_ranges]
+            end_dates = [data['end_date'] for data in valid_ranges]
             
             latest_start = max(start_dates)
             earliest_end = min(end_dates)
             
-            print(f"📅 RS Strategy Stock Data Ranges:")
-            for stock in selected_stocks:
-                if stock in stock_ranges:
-                    data = stock_ranges[stock]
-                    days_available = (data['end_date'] - data['start_date']).days
-                    years_available = days_available / 365.25
-                    print(f"   {stock:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years_available:.1f} years)")
-            
-            print(f"📊 Common data range: {latest_start.strftime('%Y-%m-%d')} to {earliest_end.strftime('%Y-%m-%d')}")
+            print(f"Common data range (Valid Subset): {latest_start.strftime('%Y-%m-%d')} to {earliest_end.strftime('%Y-%m-%d')}")
             
             # Add buffer for RS strategy calculations (similar to stock strategy)
             # RS strategy needs lookback periods, so add buffer
@@ -379,14 +416,22 @@ class RSStrategyBacktester:
             buffer_days = buffer_weeks * 7
             strategy_start = latest_start + timedelta(days=buffer_days)
             
-            print(f"🎯 RS Strategy Buffer:")
+            print(f"RS Strategy Buffer:")
             print(f"   Buffer period: {buffer_weeks} weeks ({buffer_days} calendar days)")
             print(f"   Strategy start (with buffer): {strategy_start.strftime('%Y-%m-%d')}")
             
             # Ensure we have valid range
             if strategy_start >= earliest_end:
-                print(f"⚠️ Insufficient data with buffer, using latest_start as strategy start")
-                strategy_start = latest_start
+                print(f"Insufficient data with buffer, using latest_start as strategy start")
+                # If still invalid, it means the intersection is fundamentally broken even after filtering.
+                # Try to salvage by just taking a 1-year lookback from earliest_end if possible
+                if (earliest_end - latest_start).days > 365:
+                     strategy_start = latest_start
+                else: 
+                     print("Range is still invalid even with valid subset. Returning default.")
+                     # Return 0 years to signal failure gracefully
+                     return latest_start.strftime('%Y-%m-%d'), earliest_end.strftime('%Y-%m-%d'), 0.0
+
             
             # Calculate years available for backtesting
             years_available = (earliest_end - strategy_start).days / 365.25
@@ -395,7 +440,7 @@ class RSStrategyBacktester:
             start_date_str = strategy_start.strftime('%Y-%m-%d')
             end_date_str = earliest_end.strftime('%Y-%m-%d')
             
-            print(f"✅ Final date range: {start_date_str} to {end_date_str} ({years_available:.1f} years)")
+            print(f"Final date range: {start_date_str} to {end_date_str} ({years_available:.1f} years)")
             
             return start_date_str, end_date_str, years_available
             

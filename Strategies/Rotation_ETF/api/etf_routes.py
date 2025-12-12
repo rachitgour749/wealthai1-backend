@@ -40,10 +40,10 @@ def initialize_etf_backtester(db_path: str = "unified_etf_data.sqlite"):
     global etf_backtester
     try:
         etf_backtester = ETFRotationBacktester(db_path=db_path)  # db_path ignored, uses PostgreSQL
-        print("✅ ETF Backtester initialized successfully")
+        print("ETF Backtester initialized successfully")
         return True
     except Exception as e:
-        print(f"❌ Error initializing ETF Backtester: {e}")
+        print(f"Error initializing ETF Backtester: {e}")
         etf_backtester = None
         return False
 
@@ -729,15 +729,13 @@ def init_saved_etf_strategies_table(db_path: str = None):
                 logger.error("❌ Failed to connect to PostgreSQL database")
                 return False
         
-        # Initialize all tables (including etf_saved_strategy)
-        if not init_database():
-            logger.error("❌ Failed to initialize database tables")
-            return False
-        
-        logger.info("✅ etf_saved_strategy table initialized successfully in PostgreSQL")
+        # Create table if it doesn't exist
+        if not inspect(db.bind).has_table(ETFSavedStrategy.__tablename__):
+            ETFSavedStrategy.__table__.create(db.bind)
+            logger.info("etf_saved_strategy table initialized successfully in PostgreSQL")
         return True
     except Exception as e:
-        logger.error(f"❌ Error initializing etf_saved_strategy table: {e}")
+        logger.error(f"Error initializing etf_saved_strategy table: {e}")
         import traceback
         traceback.print_exc()
         return False
