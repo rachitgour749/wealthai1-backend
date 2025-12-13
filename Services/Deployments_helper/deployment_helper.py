@@ -1219,9 +1219,9 @@ async def update_rs_client_information(request: dict):
                 "message": "user_id is required"
             }
         
-        # Update client information
+        # Try updating RS Stock Instance first
         result = session.execute(text("""
-            UPDATE saved_rs_strategies 
+            UPDATE rs_stock_instance 
             SET client_information_json = :client_info
             WHERE id = :strategy_id AND user_id = :user_id
         """), {
@@ -1229,6 +1229,18 @@ async def update_rs_client_information(request: dict):
             "strategy_id": strategy_id,
             "user_id": user_id
         })
+        
+        # If not found in RS Stock, try RS ETF since this endpoint might be used for both
+        if result.rowcount == 0:
+            result = session.execute(text("""
+                UPDATE rs_etf_instance 
+                SET client_information_json = :client_info
+                WHERE id = :strategy_id AND user_id = :user_id
+            """), {
+                "client_info": client_information_json,
+                "strategy_id": strategy_id,
+                "user_id": user_id
+            })
         
         if result.rowcount == 0:
             return {
