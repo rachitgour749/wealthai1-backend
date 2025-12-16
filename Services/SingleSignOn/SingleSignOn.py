@@ -3,6 +3,7 @@ import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict
+import hashlib
 
 from fastapi import APIRouter, HTTPException
 from sqlalchemy.orm import Session
@@ -106,8 +107,10 @@ def _is_subscription_active(subscription) -> bool:
         return False
 
 
+from fastapi import APIRouter, HTTPException, Request
+
 @router.get("/{userid}")
-async def single_sign_on(userid: str) -> Dict[str, Any]:
+async def single_sign_on(userid: str, request: Request) -> Dict[str, Any]:
     """
     Validate user access for TRADEAI product and return subscription details in the requested format.
     """
@@ -128,7 +131,7 @@ async def single_sign_on(userid: str) -> Dict[str, Any]:
             SELECT id, user_email, product_code, subscription_type, status,
                    COALESCE(subscription_start_date, NULL) as subscription_start_date,
                    COALESCE(subscription_end_date, NULL) as subscription_end_date,
-                   chatai_key, total_tokens, used_tokens, created_at, updated_at
+                   chatai_key, total_tokens, used_tokens, created_at, updated_at, plan_name
             FROM product_manager
             WHERE user_email = :user_email AND product_code = :product_code
             ORDER BY updated_at DESC
@@ -161,6 +164,7 @@ async def single_sign_on(userid: str) -> Dict[str, Any]:
                 self.used_tokens = row[9]
                 self.created_at = row[10]
                 self.updated_at = row[11]
+                self.plan_name = row[12] # Mapped from query
                 
                 # Default values for fields missing in product_manager
                 self.plan_code = None
@@ -217,7 +221,17 @@ async def single_sign_on(userid: str) -> Dict[str, Any]:
             logger.warning("Error parsing product_metadata for allowed_accounts: %s", exc)
             # Keep default value of 10
         
-        # Build response in the requested format
+        auth_header = request.headers.get("Authorization")
+        if auth_header:
+            try:
+                # Lazy import to avoid circular dependency
+                from Services.subscription.database import subscription_manager
+                token = auth_header.replace("Bearer ", "").strip()
+                # token_hash = hashlib.sha256(token.encode()).hexdigest() # REMOVED: Store Raw Token
+                subscription_manager.update_user_token_hash(user_email, token) # Raw Token
+            except Exception as e:
+                logger.error(f"Failed to update token hash for {user_email}: {e}")
+        
         response_payload = {
             "status": "success",
             "message": "User information fetched successfully",
@@ -226,7 +240,7 @@ async def single_sign_on(userid: str) -> Dict[str, Any]:
                 "email": user_email,
                 "allowed_accounts": allowed_accounts,
                 "is_active": is_active,
-                "subscribed_plan": trad_ai_subscription.subscription_type,
+                "subscribed_plan": trad_ai_subscription.plan_name or trad_ai_subscription.subscription_type, # Use plan_name, fallback to type
                 "subscription_start_date": _format_date_dd_mm_yyyy(subscription_start_date),
                 "subscription_end_date": _format_date_dd_mm_yyyy(subscription_end_date),
             }

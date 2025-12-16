@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Header
 from fastapi.responses import JSONResponse
 from typing import Optional, Dict, Any
 import logging
+import hashlib # Added for token hashing
 from datetime import datetime
 try:
     from google.oauth2 import id_token
@@ -26,6 +27,7 @@ except ImportError:
 import os
 
 from ..services.subscription_service import subscription_service
+from ..database import subscription_manager
 from ..subscription_schemas import (
     SubscriptionRequest,
     SubscriptionPlan,
@@ -157,6 +159,15 @@ class GoogleOAuthHandler:
             
             logger.info(f"Processing Google login for user: {user_email}")
             
+            # STORE RAW TOKEN: As requested by user
+            try:
+                # token_hash = hashlib.sha256(token.encode()).hexdigest() # OLD: Hashed
+                subscription_manager.update_user_token_hash(user_email, token) # NEW: Raw Token
+                logger.info(f"Updated token for {user_email}")
+            except Exception as e:
+                logger.error(f"Failed to update token for {user_email}: {e}")
+                # Proceeding anyway, but auth might fail later depending on middleware strictness
+            
             # Check if user already has a subscription in database
             # We use get_user_details to check for existence in user_details table
             existing_user = await self.service.get_user_details(user_email)
@@ -173,6 +184,7 @@ class GoogleOAuthHandler:
                     "status": existing_user.status,
                     "phone_no": existing_user.phone_no,
                     "is_new_user": False,
+                    "token": token, # Return token to frontend
                     "message": "Welcome back!"
                 }
             else:
@@ -197,6 +209,7 @@ class GoogleOAuthHandler:
                     "status": new_user.status,
                     "phone_no": new_user.phone_no,
                     "is_new_user": True,
+                    "token": token, # Return token to frontend
                     "message": "Welcome to WealthAI! Your account has been created."
                 }
                 

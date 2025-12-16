@@ -356,11 +356,52 @@ async def get_documentation(username: str = Depends(get_current_username)):
 
 @app.get("/openapi.json", include_in_schema=False)
 async def get_open_api_endpoint(username: str = Depends(get_current_username)):
-    """Protected OpenAPI JSON"""
-    return get_openapi(title="WealthAI1 API", version="1.0.0", routes=app.routes)
+    """Protected OpenAPI JSON with Bearer Auth configuration"""
+    openapi_schema = get_openapi(title="WealthAI1 API", version="1.0.0", routes=app.routes)
+    
+    # Configure Bearer Authentication Scheme
+    if "components" not in openapi_schema:
+        openapi_schema["components"] = {}
+        
+    openapi_schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "Google-Token",
+            "description": "Enter your Google OAuth Token"
+        }
+    }
+    
+    # Apply security globally to all operations
+    openapi_schema["security"] = [{"BearerAuth": []}]
+    
+    return openapi_schema
 
 # =========================
-# CORS MIDDLEWARE
+# SINGLE SESSION MIDDLEWARE
+# =========================
+try:
+    from Middleware.auth_middleware import SingleSessionMiddleware
+    app.add_middleware(
+        SingleSessionMiddleware,
+        exempt_paths=[
+            "/single-sign-on", # Exempt SSO to allow login/token update
+            "/api/auth", # Exempt Google OAuth
+            "/paymentSuccess", # Exempt payment callback
+            "/docs",
+            "/redoc",
+            "/openapi.json",
+            "/health_check",
+            "/"
+        ]
+    )
+    logger.info("✅ SingleSessionMiddleware added")
+except Exception as e:
+    logger.error(f"Failed to add SingleSessionMiddleware: {e}")
+
+
+# =========================
+# CORS MIDDLEWARE (Must be last/outermost to handle 401s)
 # =========================
 app.add_middleware(
     CORSMiddleware,
@@ -372,9 +413,10 @@ app.add_middleware(
         "https://trade.wealthai1.in",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
     allow_headers=["*"],
+    allow_methods=["*"], # Explicitly allow all methods
 )
+
 
 # =========================
 # ROUTE IMPORTS (Lazy - only import routers, not initialization)

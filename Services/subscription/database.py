@@ -356,6 +356,7 @@ class SubscriptionManager:
             status=product.status,
             subscription_start_date=product.subscription_start_date,
             subscription_end_date=product.subscription_end_date,
+            plan_name=product.plan_name,
             chatai_key=product.chatai_key,
             total_token=total_token,
             used_token=used_token,
@@ -514,6 +515,7 @@ class SubscriptionManager:
                     existing_prod.subscription_start_date = start_date
                     existing_prod.subscription_end_date = end_date
                     existing_prod.updated_at = now
+                    existing_prod.plan_name = plan_info["plan_name"]
                     # We could store subscription_id in payment_id or similar if it existed in this model,
                     # but ProductManager schema shown earlier doesn't have payment_id. 
                     # We will proceed without storing subscription_id in ProductManager as per current schema.
@@ -540,7 +542,8 @@ class SubscriptionManager:
                         used_token=0,
                         remaining_token=total_tokens,
                         created_at=now,
-                        updated_at=now
+                        updated_at=now,
+                        plan_name=plan_info["plan_name"]
                     )
                     session.add(existing_prod)
                 

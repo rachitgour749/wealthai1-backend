@@ -264,6 +264,7 @@ class ProductManagerRecord(BaseModel):
     status: SubscriptionStatus
     subscription_start_date: Optional[datetime]
     subscription_end_date: Optional[datetime]
+    plan_name: Optional[str] = None
     chatai_key: Optional[str] = None
     total_token: Optional[str] = None
     used_token: Optional[str] = None

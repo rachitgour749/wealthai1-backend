@@ -34,6 +34,8 @@ class ProductManager(Base):
     # Subscription dates
     subscription_start_date = Column(DateTime(timezone=True), nullable=True)
     subscription_end_date = Column(DateTime(timezone=True), nullable=True)
+
+    plan_name = Column(String(100), nullable=True)
     
     # ChatAI Token Tracking Fields
     chatai_key = Column(String(100), nullable=True)
