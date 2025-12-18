@@ -24,42 +24,7 @@ MARKET_DATA_DATABASE_URL = "postgresql://neondb_owner:npg_WgVhOYtnP12l@ep-solita
 Base = declarative_base()
 
 
-# ETF Unified Data Model (DEPRECATED - use ETFData instead)
-# Kept for backward compatibility during migration
-class ETFUnified(Base):
-    """Model for ETF unified market data (DEPRECATED - use ETFData)"""
-    __tablename__ = "etf_unified"
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    symbol = Column(String, nullable=False, index=True)
-    date = Column(String, nullable=False, index=True)  # Stored as YYYY-MM-DD string
-    open_price = Column(Float)
-    high_price = Column(Float)
-    low_price = Column(Float)
-    close_price = Column(Float)
-    volume = Column(Integer)
-    adj_close = Column(Float)
-    created_at = Column(DateTime, server_default=func.now())
-    
-    __table_args__ = (
-        UniqueConstraint('symbol', 'date', name='uq_etf_unified_symbol_date'),
-    )
-
-
-# ETF Metadata Model
-class ETFMetadata(Base):
-    """Model for ETF metadata"""
-    __tablename__ = "etf_metadata"
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    symbol = Column(String, nullable=False, unique=True, index=True)
-    start_date = Column(String)  # YYYY-MM-DD
-    end_date = Column(String)  # YYYY-MM-DD
-    years_available = Column(Float)
-    total_records = Column(Integer)
-    data_source = Column(String, default='database')
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+# Deprecated models removed - metadata now calculated directly from etf_data and stock_data tables
 
 
 # Stock Data Model (for stock_data table)
@@ -137,18 +102,7 @@ class IndexData(Base):
     )
 
 
-# Nifty 500 Metadata Model
-class Nifty500Metadata(Base):
-    """Model for Nifty 500 metadata"""
-    __tablename__ = "nifty500_metadata"
-    
-    symbol = Column(String, primary_key=True, nullable=False, index=True)
-    start_date = Column(String)  # DATE as string
-    end_date = Column(String)    # DATE as string
-    total_records = Column(Integer)
-    last_updated = Column(String)  # DATE as string
-    data_source = Column(String)
-    years_available = Column(Float)
+# Nifty500Metadata model removed - metadata now calculated directly from stock_data table
 
 
 # Global engine and session maker

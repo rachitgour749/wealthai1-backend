@@ -186,6 +186,22 @@ async def get_etf_overview():
 async def calculate_etf_metrics(request: BacktestRequest):
     """Calculate performance metrics for ETF rotation strategy"""
     try:
+        import math
+        
+        # Helper function to recursively sanitize NaN/inf values
+        def sanitize_data(obj):
+            """Recursively convert NaN/inf to 0 in nested structures"""
+            if isinstance(obj, dict):
+                return {k: sanitize_data(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [sanitize_data(item) for item in obj]
+            elif isinstance(obj, (int, float)):
+                if math.isnan(obj) or math.isinf(obj):
+                    return 0
+                return obj
+            else:
+                return obj
+        
         if etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
@@ -238,13 +254,16 @@ async def calculate_etf_metrics(request: BacktestRequest):
                 benchmark_navs = etf_backtester.nifty50_df['nav'].tolist()
                 performance_data["benchmark_buyhold"] = benchmark_navs
         
-        return {
+        # Sanitize all data before returning
+        response_data = {
             "success": True,
-            "etf_metrics": etf_metrics,
-            "benchmark_metrics": benchmark_metrics,
-            "backtest_result": result,
-            "performance_data": performance_data
+            "etf_metrics": sanitize_data(etf_metrics),
+            "benchmark_metrics": sanitize_data(benchmark_metrics),
+            "backtest_result": sanitize_data(result),
+            "performance_data": sanitize_data(performance_data)
         }
+        
+        return response_data
         
     except Exception as e:
         print(f"Error calculating ETF metrics: {e}")
@@ -254,6 +273,22 @@ async def calculate_etf_metrics(request: BacktestRequest):
 async def get_etf_metrics_table():
     """Get formatted metrics comparison table for ETFs"""
     try:
+        import math
+        
+        # Helper function to recursively sanitize NaN/inf values
+        def sanitize_data(obj):
+            """Recursively convert NaN/inf to 0 in nested structures"""
+            if isinstance(obj, dict):
+                return {k: sanitize_data(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [sanitize_data(item) for item in obj]
+            elif isinstance(obj, (int, float)):
+                if math.isnan(obj) or math.isinf(obj):
+                    return 0
+                return obj
+            else:
+                return obj
+        
         if etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
@@ -270,7 +305,8 @@ async def get_etf_metrics_table():
         formatted_table = etf_backtester.create_formatted_metrics_table(etf_metrics, benchmark_metrics)
         
         if not formatted_table.empty:
-            return {"metrics_table": formatted_table.to_dict('records')}
+            table_data = formatted_table.to_dict('records')
+            return {"metrics_table": sanitize_data(table_data)}
         else:
             return {"metrics_table": []}
             
@@ -302,11 +338,27 @@ async def get_etf_transaction_costs_summary():
 async def get_etf_transaction_log():
     """Get transaction log from the latest ETF backtest"""
     try:
+        import math
+        
         if etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
         if not hasattr(etf_backtester, 'portfolio_log') or not etf_backtester.portfolio_log:
             return {"transaction_log": [], "trading_summary": {}}
+        
+        # Helper function to recursively sanitize NaN/inf values
+        def sanitize_data(obj):
+            """Recursively convert NaN/inf to 0 in nested structures"""
+            if isinstance(obj, dict):
+                return {k: sanitize_data(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [sanitize_data(item) for item in obj]
+            elif isinstance(obj, (int, float)):
+                if math.isnan(obj) or math.isinf(obj):
+                    return 0
+                return obj
+            else:
+                return obj
         
         # Convert portfolio log to frontend format
         transaction_log = []
@@ -380,6 +432,9 @@ async def get_etf_transaction_log():
                     'nav': log.get('nav', 0)
                 })
         
+        # Sanitize all data to remove NaN values
+        transaction_log = sanitize_data(transaction_log)
+        
         # Calculate trading summary
         total_trades = len(transaction_log)
         buy_trades = len([t for t in transaction_log if t['action'] == 'BUY'])
@@ -411,6 +466,46 @@ async def get_etf_transaction_log():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error loading ETF transaction log: {str(e)}")
+
+@etf_router.get("/debug/portfolio-log")
+async def debug_portfolio_log():
+    """Debug endpoint to inspect raw portfolio_log data"""
+    try:
+        import math
+        
+        if etf_backtester is None:
+            raise HTTPException(status_code=500, detail="ETF backtester not initialized")
+        
+        if not hasattr(etf_backtester, 'portfolio_log') or not etf_backtester.portfolio_log:
+            return {"portfolio_log": [], "count": 0}
+        
+        # Helper function to handle NaN values
+        def safe_float(value):
+            if isinstance(value, (int, float)):
+                if math.isnan(value) or math.isinf(value):
+                    return None
+                return value
+            return value
+        
+        # Return simplified view of portfolio_log
+        debug_data = []
+        for i, log in enumerate(etf_backtester.portfolio_log):
+            debug_data.append({
+                'index': i,
+                'week': log.get('week', 0),
+                'execution_date': log.get('execution_date', '').strftime('%Y-%m-%d %A') if hasattr(log.get('execution_date', ''), 'strftime') else str(log.get('execution_date', '')),
+                'signal_date': log.get('signal_date', '').strftime('%Y-%m-%d %A') if hasattr(log.get('signal_date', ''), 'strftime') else str(log.get('signal_date', '')),
+                'action': log.get('action', 'NONE'),
+                'ticker': log.get('ticker', ''),
+                'nav': safe_float(log.get('nav', 0))
+            })
+        
+        return {
+            "portfolio_log": debug_data,
+            "count": len(debug_data)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error in debug endpoint: {str(e)}")
 
 @etf_router.get("/transaction-costs")
 async def get_etf_transaction_costs():

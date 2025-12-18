@@ -1,0 +1,29 @@
+{
+    "description": "Configuration for RS (Relative Strength) Strategies - Controls both RS_ETF and RS_Stocks",
+    "version": "1.0",
+    "stop_loss_settings": {
+        "daily_stop_loss_check": true,
+        "description": "If true, stop loss is checked daily. If false, stop loss is checked only on signal generation day (Friday/last trading day of week)",
+        "note": "Daily check provides better risk protection but may increase trading frequency. Weekly check aligns with the strategy's weekly rebalancing philosophy."
+    },
+    "strategy_defaults": {
+        "stop_loss_pct": 15.0,
+        "capital_reset_threshold_pct": 25.0,
+        "buffer_capital_pct": 10.0,
+        "max_positions": 20,
+        "transaction_cost_pct": 0.1
+    },
+    "signal_generation": {
+        "frequency": "weekly",
+        "signal_day": "friday_or_last_trading_day",
+        "execution_day": "next_monday"
+    },
+    "risk_management": {
+        "enable_capital_reset": true,
+        "enable_stop_loss": true,
+        "stop_loss_execution": {
+            "daily": "Execute stop loss exits immediately when triggered",
+            "weekly": "Accumulate stop loss exits and execute on Monday with other signals"
+        }
+    }
+}

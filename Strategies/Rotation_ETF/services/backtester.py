@@ -9,13 +9,14 @@ from Databases.market_data_db_connection import (
     create_connection as create_market_data_connection,
     get_session as get_market_data_session,
     init_database as init_market_data_database,
-    ETFData,  # Primary ETF data model (uses etf_data table)
-    ETFUnified,  # Deprecated, kept for backward compatibility
-    ETFMetadata  # Metadata model (uses etf_metadata table)
+    ETFData  # Primary ETF data model (uses etf_data table) - metadata calculated from this
 )
 
 # Import base class for OOP refactoring
 from Strategies.Rotation.RotationStrategy import RotationStrategy
+
+# Import centralized logging system
+from Strategies.utilities.logging_config import StrategyLogger
 
 try:
     import plotly.graph_objects as go
@@ -57,9 +58,11 @@ class ETFRotationBacktester(RotationStrategy):
         self._data_cache = {}
         self._verbose = False  # Set to True for debugging
         
+        # Initialize centralized logger
+        self.logger = StrategyLogger('Rotation_ETF')
+        
         # Strategy-specific table configuration (must be set before method calls)
-        self.metadata_table = "etf_metadata"  # Use etf_metadata for ETF metadata
-        self.data_table = "etf_data"  # ETFs are stored in etf_data table
+        self.data_table = "etf_data"  # ETFs are stored in etf_data table (metadata calculated from this)
         
         self.available_databases = []  # Not needed for PostgreSQL
         
@@ -79,10 +82,6 @@ class ETFRotationBacktester(RotationStrategy):
         """Return the SQLAlchemy model for ETF data"""
         return ETFData
     
-    def _get_metadata_model(self):
-        """Return the SQLAlchemy model for ETF metadata"""
-        return ETFMetadata
-        
     def set_verbose(self, verbose: bool = True):
         """Enable or disable verbose logging for debugging"""
         self._verbose = verbose
@@ -164,398 +163,101 @@ class ETFRotationBacktester(RotationStrategy):
         return []
 
     def load_metadata(self) -> Dict[str, Dict]:
-        """Load ETF metadata from PostgreSQL database"""
+        """Load ETF metadata by calculating directly from etf_data table"""
         session = None
         try:
             session = self._get_session()
-
-            # Try to load from etf_metadata table first
-            from sqlalchemy import text
-            result = session.execute(text("""
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_schema = 'public' AND LOWER(table_name) = 'etf_metadata'
-            """))
-
-            metadata_table_exists = result.fetchone() is not None
-
-            if metadata_table_exists:
-                # Check if metadata table has any records
-                count_result = session.execute(text("SELECT COUNT(*) as count FROM etf_metadata"))
-                metadata_count = count_result.fetchone()[0]
-
-                if metadata_count > 0:
-                    # Load from metadata table using raw SQL (to avoid ORM model mismatch)
-                    # Loading ETF metadata (silent)
-
-                    # First, get the actual column names from the table
-                    columns_result = session.execute(text("""
-                        SELECT column_name 
-                        FROM information_schema.columns
-                        WHERE table_schema = 'public' 
-                        AND table_name = 'etf_metadata'
-                        ORDER BY ordinal_position
-                    """))
-                    column_names = [row[0] for row in columns_result.fetchall()]
-                    # Metadata columns retrieved (silent)
-
-                    # Build query based on actual columns
-                    # Map common column name variations
-                    symbol_col = None
-                    start_date_col = None
-                    end_date_col = None
-                    years_col = None
-                    records_col = None
-                    source_col = None
-
-                    for col in column_names:
-                        col_lower = col.lower()
-                        if 'symbol' in col_lower:
-                            symbol_col = col
-                        elif 'start' in col_lower and 'date' in col_lower:
-                            start_date_col = col
-                        elif 'end' in col_lower and 'date' in col_lower:
-                            end_date_col = col
-                        elif 'year' in col_lower:
-                            years_col = col
-                        elif 'record' in col_lower or 'count' in col_lower:
-                            records_col = col
-                        elif 'source' in col_lower:
-                            source_col = col
-
-                    if not symbol_col:
-                        logger.error("Could not find symbol column in etf_metadata table")
-                        # Fall back to calculating from data table
-                    else:
-                        # Build SELECT query with available columns
-                        select_cols = [symbol_col]
-                        if start_date_col:
-                            select_cols.append(f"{start_date_col} as start_date")
-                        if end_date_col:
-                            select_cols.append(f"{end_date_col} as end_date")
-                        if years_col:
-                            select_cols.append(f"{years_col} as years_available")
-                        if records_col:
-                            select_cols.append(f"{records_col} as total_records")
-                        if source_col:
-                            select_cols.append(f"{source_col} as data_source")
-
-                        query_str = f"SELECT {', '.join(select_cols)} FROM etf_metadata"
-                        # Querying metadata (silent)
-
-                        try:
-                            metadata_result = session.execute(text(query_str))
-                            metadata_rows = metadata_result.fetchall()
-                            # Metadata rows retrieved (silent)
-
-                            metadata = {}
-                            for row in metadata_rows:
-                                try:
-                                    # Access by index (symbol is always first)
-                                    symbol = row[0]
-
-                                    # Build metadata dict with available fields
-                                    meta_dict = {
-                                        'start_date': None,
-                                        'end_date': None,
-                                        'years_available': 0,
-                                        'total_records': 0,
-                                        'data_source': 'database'
-                                    }
-
-                                    idx = 1
-                                    if start_date_col:
-                                        meta_dict['start_date'] = str(row[idx]) if idx < len(row) and row[idx] else None
-                                        idx += 1
-                                    if end_date_col:
-                                        meta_dict['end_date'] = str(row[idx]) if idx < len(row) and row[idx] else None
-                                        idx += 1
-                                    if years_col:
-                                        meta_dict['years_available'] = float(row[idx]) if idx < len(row) and row[
-                                            idx] else 0
-                                        idx += 1
-                                    if records_col:
-                                        meta_dict['total_records'] = int(row[idx]) if idx < len(row) and row[idx] else 0
-                                        idx += 1
-                                    if source_col:
-                                        meta_dict['data_source'] = str(row[idx]) if idx < len(row) and row[
-                                            idx] else 'database'
-
-                                    metadata[symbol] = meta_dict
-                                except Exception as row_error:
-                                    # Skip invalid rows silently
-                                    continue
-
-                            # Metadata loaded successfully (silent - no log needed)
-                            if len(metadata) > 0:
-                                return metadata
-                            else:
-                                if self._verbose:
-                                    print(
-                                        "[DEBUG] etf_metadata table has records but couldn't parse them, falling back to calculating from data table")
-                        except Exception as query_error:
-                            # Query error - will fallback to data table calculation
-                            pass
-                            # Fall back to calculating from data table
-                else:
-                    if self._verbose:
-                        print(
-                            "[DEBUG] etf_metadata table exists but has 0 records, falling back to calculating from data table")
-            else:
-                if self._verbose:
-                    print("[DEBUG] etf_metadata table not found, calculating from data table")
-
-            # Fallback: calculate metadata from data table
+            
+            # Calculate metadata directly from etf_data table
             metadata = self.calculate_metadata_from_data(session)
             if self._verbose:
-                print(f"[DEBUG] Calculated metadata for {len(metadata)} ETFs from data table")
-
+                self.logger.debug(f"Calculated metadata for {len(metadata)} ETFs from etf_data table")
+            
             return metadata
-
+            
         except Exception as e:
             import traceback
             error_details = traceback.format_exc()
-            print(f"[ERROR] Error loading ETF metadata: {e}")
-            print(f"[ERROR] Traceback: {error_details}")
+            self.logger.error(f"Error loading ETF metadata: {e}")
+            self.logger.error(f"Traceback: {error_details}")
             return {}
         finally:
             if session:
                 session.close()
 
     def calculate_metadata_from_data(self, session) -> Dict[str, Dict]:
-        """Calculate metadata from ETF data table if metadata table doesn't exist"""
+        """Calculate metadata directly from etf_data table"""
         try:
-            from sqlalchemy import text, func
-            from sqlalchemy.orm import Session
-
-            # First, list all tables to see what's available
-            all_tables = session.execute(text("""
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_schema = 'public' 
-                AND table_name LIKE '%etf%'
-                ORDER BY table_name
-            """))
-            available_tables = [row[0] for row in all_tables.fetchall()]
-            print(f"[DEBUG] Available ETF-related tables: {available_tables}")
-
-            # Try to find the correct table name (case-insensitive check)
-            table_name = None
-            for candidate in ['etf_data', 'ETF_DATA', 'etf_unified', 'ETF_UNIFIED']:
-                table_check = session.execute(text("""
-                    SELECT table_name 
-                    FROM information_schema.tables 
-                    WHERE table_schema = 'public' 
-                    AND LOWER(table_name) = LOWER(:table_name)
-                """), {"table_name": candidate})
-                if table_check.fetchone():
-                    # Get the actual table name (case-sensitive)
-                    actual_name = session.execute(text("""
-                        SELECT table_name 
-                        FROM information_schema.tables 
-                        WHERE table_schema = 'public' 
-                        AND LOWER(table_name) = LOWER(:table_name)
-                    """), {"table_name": candidate}).fetchone()[0]
-                    table_name = actual_name
-                    print(f"[DEBUG] Found table: {table_name}")
-                    break
-
-            if not table_name:
-                print("[ERROR] No ETF data table found. Available tables:", available_tables)
-                # List all tables in the database
-                all_db_tables = session.execute(text("""
-                    SELECT table_name 
-                    FROM information_schema.tables 
-                    WHERE table_schema = 'public'
-                    ORDER BY table_name
-                """))
-                all_table_names = [row[0] for row in all_db_tables.fetchall()]
-                print(f"[DEBUG] All tables in database: {all_table_names}")
-                return {}
-
-            # Check column names to determine which table structure we're using
-            columns_check = session.execute(text("""
-                SELECT column_name, data_type
-                FROM information_schema.columns
-                WHERE table_schema = 'public' 
-                AND table_name = :table_name
-                ORDER BY ordinal_position
-            """), {"table_name": table_name})
-            columns = {row[0]: row[1] for row in columns_check.fetchall()}
-            print(f"[DEBUG] Table {table_name} columns: {list(columns.keys())}")
-
-            # Determine which columns to use based on table structure
-            if 'open_price' in columns or 'close_price' in columns:
-                # Using etf_unified structure
-                date_col = 'date'
-                symbol_col = 'symbol'
-                open_col = 'open_price'
-                close_col = 'close_price'
-                print("[DEBUG] Using etf_unified table structure")
-            else:
-                # Using etf_data structure
-                date_col = 'date'
-                symbol_col = 'symbol'
-                open_col = 'open'
-                close_col = 'close'
-                print("[DEBUG] Using etf_data table structure")
-
-            # Check if table has any data
-            count_check = session.execute(text(f"SELECT COUNT(*) as count FROM \"{table_name}\""))
+            from sqlalchemy import text
+            
+            # Use etf_data table directly
+            table_name = 'etf_data'
+            
+            # Check if table exists and has data
+            count_check = session.execute(text(f"SELECT COUNT(*) as count FROM {table_name}"))
             total_count = count_check.fetchone()[0]
-
+            
             if total_count == 0:
-                print(f"[WARNING] {table_name} table exists but is empty")
+                self.logger.info(f"{table_name} table exists but is empty")
                 return {}
-
+            
             if self._verbose:
-                print(f"[DEBUG] Found {total_count} total records in {table_name} table")
-
-            # Determine date column type and build appropriate query
-            date_type = str(columns.get('date', '')).lower()
-            is_text_date = 'character' in date_type or 'text' in date_type or 'varchar' in date_type
-
-            print(f"[DEBUG] Date column type: {date_type}, is_text_date: {is_text_date}")
-
-            try:
-                if is_text_date:
-                    # Date is stored as text, need to convert
-                    query_str = f"""
-                        SELECT 
-                            {symbol_col} as symbol,
-                            MIN({date_col}) as start_date,
-                            MAX({date_col}) as end_date,
-                            COUNT(*) as total_records,
-                            ROUND(EXTRACT(EPOCH FROM (MAX({date_col}::date) - MIN({date_col}::date))) / 86400.0 / 365.25, 1) as years_available
-                        FROM "{table_name}"
-                        GROUP BY {symbol_col}
-                        ORDER BY {symbol_col}
-                    """
-                else:
-                    # Date is stored as date/timestamp
-                    query_str = f"""
-                        SELECT 
-                            {symbol_col} as symbol,
-                            MIN({date_col}::text) as start_date,
-                            MAX({date_col}::text) as end_date,
-                            COUNT(*) as total_records,
-                            ROUND(EXTRACT(EPOCH FROM (MAX({date_col}) - MIN({date_col}))) / 86400.0 / 365.25, 1) as years_available
-                        FROM "{table_name}"
-                        GROUP BY {symbol_col}
-                        ORDER BY {symbol_col}
-                    """
-
-                print(f"[DEBUG] Executing query...")
-                query = text(query_str)
-                result = session.execute(query)
-                rows = result.fetchall()
-
-                print(f"[DEBUG] Query returned {len(rows)} distinct ETF symbols")
-
-                if len(rows) == 0:
-                    print("[WARNING] Query returned 0 rows. Trying simpler query...")
-                    # Try a simpler query to see if we can get any data
-                    simple_query = text(f'SELECT DISTINCT {symbol_col} FROM "{table_name}" LIMIT 10')
-                    simple_result = session.execute(simple_query)
-                    simple_rows = simple_result.fetchall()
-                    print(f"[DEBUG] Simple query returned {len(simple_rows)} symbols: {[r[0] for r in simple_rows]}")
-                    # If simple query works, use it as fallback
-                    if len(simple_rows) > 0:
-                        metadata = {}
-                        for row in simple_rows:
-                            symbol = row[0]
-                            metadata[symbol] = {
-                                'start_date': None,
-                                'end_date': None,
-                                'years_available': 0,
-                                'total_records': 0,
-                                'data_source': 'OHLCV'
-                            }
-                        print(f"[DEBUG] Using simple query result: {len(metadata)} symbols")
-                        return metadata
-
-                metadata = {}
-                for idx, row in enumerate(rows):
-                    try:
-                        # Try attribute access first, then fall back to index
-                        if hasattr(row, '_mapping') or hasattr(row, 'keys'):
-                            # SQLAlchemy Row object with named access
-                            try:
-                                symbol = row.symbol
-                                start_date = row.start_date
-                                end_date = row.end_date
-                                total_records = row.total_records
-                                years_available = row.years_available
-                            except AttributeError:
-                                # Fall back to index access
-                                symbol = row[0]
-                                start_date = row[1]
-                                end_date = row[2]
-                                total_records = row[3]
-                                years_available = row[4]
-                        else:
-                            # Tuple-like access
-                            symbol = row[0]
-                            start_date = row[1]
-                            end_date = row[2]
-                            total_records = row[3]
-                            years_available = row[4]
-
-                        metadata[symbol] = {
-                            'start_date': str(start_date) if start_date else None,
-                            'end_date': str(end_date) if end_date else None,
-                            'years_available': float(years_available) if years_available else 0,
-                            'total_records': int(total_records) if total_records else 0,
-                            'data_source': 'OHLCV'
-                        }
-                    except Exception as row_error:
-                        print(f"[ERROR] Error processing row {idx}: {row_error}, row type: {type(row)}, row: {row}")
-                        import traceback
-                        print(f"[ERROR] Row error traceback: {traceback.format_exc()}")
-                        continue
-
-                print(f"[DEBUG] Successfully processed {len(metadata)} ETFs into metadata dictionary")
-                if len(metadata) == 0 and len(rows) > 0:
-                    print(f"[ERROR] Failed to process any rows! First row sample: {rows[0] if rows else 'N/A'}")
-                return metadata
-
-            except Exception as query_error:
-                print(f"[ERROR] Error executing metadata query: {query_error}")
-                import traceback
-                print(f"[ERROR] Traceback: {traceback.format_exc()}")
-                # Try a fallback simple query
+                self.logger.debug(f"Found {total_count} total records in {table_name} table")
+            
+            # Query metadata from etf_data - date column is of type DATE
+            # Fix: Cast dates to timestamp to get proper interval for EXTRACT
+            query_str = """
+                SELECT 
+                    symbol,
+                    MIN(date)::text as start_date,
+                    MAX(date)::text as end_date,
+                    COUNT(*) as total_records,
+                    ROUND(EXTRACT(EPOCH FROM (MAX(date)::timestamp - MIN(date)::timestamp)) / 86400.0 / 365.25, 1) as years_available
+                FROM etf_data
+                GROUP BY symbol
+                ORDER BY symbol
+            """
+            
+            self.logger.debug("Executing metadata query from etf_data...")
+            result = session.execute(text(query_str))
+            rows = result.fetchall()
+            
+            self.logger.debug(f"Query returned {len(rows)} distinct ETF symbols")
+            
+            metadata = {}
+            for row in rows:
                 try:
-                    print("[DEBUG] Attempting fallback query...")
-                    fallback_query = text(f"""
-                        SELECT DISTINCT 
-                            {symbol_col} as symbol
-                        FROM "{table_name}"
-                        ORDER BY {symbol_col}
-                    """)
-                    fallback_result = session.execute(fallback_query)
-                    fallback_rows = fallback_result.fetchall()
-
-                    metadata = {}
-                    for row in fallback_rows:
-                        symbol = row.symbol if hasattr(row, 'symbol') else row[0]
-                        metadata[symbol] = {
-                            'start_date': None,
-                            'end_date': None,
-                            'years_available': 0,
-                            'total_records': 0,
-                            'data_source': 'OHLCV'
-                        }
-                    print(f"[DEBUG] Fallback query returned {len(metadata)} symbols")
-                    return metadata
-                except Exception as fallback_error:
-                    print(f"[ERROR] Fallback query also failed: {fallback_error}")
-                    return {}
-
+                    symbol = row[0]
+                    start_date = row[1]
+                    end_date = row[2]
+                    total_records = row[3]
+                    years_available = row[4]
+                    
+                    metadata[symbol] = {
+                        'start_date': str(start_date) if start_date else None,
+                        'end_date': str(end_date) if end_date else None,
+                        'years_available': float(years_available) if years_available else 0,
+                        'total_records': int(total_records) if total_records else 0,
+                        'data_source': 'etf_data'
+                    }
+                except Exception as row_error:
+                    self.logger.error(f"Error processing row: {row_error}")
+                    continue
+            
+            self.logger.debug(f"Successfully processed {len(metadata)} ETFs from etf_data")
+            return metadata
+            
         except Exception as e:
             import traceback
-            error_details = traceback.format_exc()
-            print(f"[ERROR] Error calculating metadata: {e}")
-            print(f"[ERROR] Traceback: {error_details}")
+            self.logger.error(f"Error calculating metadata from etf_data: {e}")
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
+            
+            # Rollback the session to clear the failed transaction
+            try:
+                session.rollback()
+            except:
+                pass
+            
             return {}
 
     def generate_asset_description(self, symbol: str) -> str:
@@ -688,7 +390,7 @@ class ETFRotationBacktester(RotationStrategy):
     def calculate_common_date_range(self, selected_etfs: List[str]) -> Tuple[Optional[str], Optional[str], float]:
         """Calculate common date range for selected ETFs by querying etf_data table directly"""
         if not selected_etfs:
-            print("[ERROR] No ETFs provided for date range calculation")
+            self.logger.error("No ETFs provided for date range calculation")
             return None, None, 0.0
         
         session = None
@@ -696,7 +398,7 @@ class ETFRotationBacktester(RotationStrategy):
             session = self._get_session()
             from sqlalchemy import text
             
-            print(f"[DEBUG] Querying etf_data table for date ranges of: {selected_etfs}")
+            self.logger.debug(f"Querying etf_data table for date ranges of: {selected_etfs}")
             
             # Build placeholders for IN clause
             placeholders = ','.join([f':ticker_{i}' for i in range(len(selected_etfs))])
@@ -721,7 +423,7 @@ class ETFRotationBacktester(RotationStrategy):
             rows = result.fetchall()
             
             if not rows:
-                print(f"[ERROR] No data found in etf_data table for: {selected_etfs}")
+                self.logger.error(f"No data found in etf_data table for: {selected_etfs}")
                 return None, None, 0.0
             
             # Parse results
@@ -750,10 +452,10 @@ class ETFRotationBacktester(RotationStrategy):
             # Check if all requested ETFs were found
             missing_etfs = [etf for etf in selected_etfs if etf not in etf_date_ranges]
             if missing_etfs:
-                print(f"[WARNING] No data found for: {missing_etfs}")
+                self.logger.info(f"No data found for: {missing_etfs}")
             
             if not etf_date_ranges:
-                print(f"[ERROR] None of the requested ETFs found in etf_data table: {selected_etfs}")
+                self.logger.error(f"None of the requested ETFs found in etf_data table: {selected_etfs}")
                 return None, None, 0.0
             
             # Calculate common date range
@@ -764,40 +466,40 @@ class ETFRotationBacktester(RotationStrategy):
             latest_start = max(start_dates)
             common_end = min(end_dates)
             
-            print(f"📅 ETF Data Ranges (from etf_data table):")
+            self.logger.info(f"📅 ETF Data Ranges (from etf_data table):")
             for symbol, data in etf_date_ranges.items():
                 years = data['years_available']
-                print(f"   {symbol:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years:.1f} years, {data['total_records']} records)")
+                self.logger.info(f"   {symbol:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years:.1f} years, {data['total_records']} records)")
             
-            print(f"📊 Common data range: {latest_start.strftime('%Y-%m-%d')} to {common_end.strftime('%Y-%m-%d')}")
+            self.logger.info(f"📊 Common data range: {latest_start.strftime('%Y-%m-%d')} to {common_end.strftime('%Y-%m-%d')}")
             
             # OPTIMIZED BUFFER: Use 60 weeks (420 days) for 252+ trading days
             buffer_weeks = 53
             buffer_days = buffer_weeks * 7  # 420 calendar days (~300 trading days)
             strategy_start = latest_start + timedelta(days=buffer_days)
             
-            print(f"🎯 Enhanced Buffer Strategy:")
-            print(f"   Buffer period: {buffer_weeks} weeks ({buffer_days} calendar days)")
-            print(f"   Expected trading days: ~{int(buffer_days * 5 / 7)} days")
-            print(f"   Required for momentum: 252 trading days")
-            print(f"   Safety margin: ~{int(buffer_days * 5 / 7) - 252} trading days")
-            print(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
+            self.logger.info(f"🎯 Enhanced Buffer Strategy:")
+            self.logger.info(f"   Buffer period: {buffer_weeks} weeks ({buffer_days} calendar days)")
+            self.logger.info(f"   Expected trading days: ~{int(buffer_days * 5 / 7)} days")
+            self.logger.info(f"   Required for momentum: 252 trading days")
+            self.logger.info(f"   Safety margin: ~{int(buffer_days * 5 / 7) - 252} trading days")
+            self.logger.info(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
             
             # Ensure we have at least 1 year of backtest data after the strategy start
             if strategy_start >= common_end:
-                print(f"❌ Insufficient data even with {buffer_weeks}-week buffer:")
-                print(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
-                print(f"   Data ends: {common_end.strftime('%Y-%m-%d')}")
+                self.logger.info(f"❌ Insufficient data even with {buffer_weeks}-week buffer:")
+                self.logger.info(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
+                self.logger.info(f"   Data ends: {common_end.strftime('%Y-%m-%d')}")
                 shortage_days = (strategy_start - common_end).days
-                print(f"   Shortage: {shortage_days} days")
+                self.logger.info(f"   Shortage: {shortage_days} days")
                 
                 # Try with maximum possible buffer
                 max_possible_days = (common_end - latest_start).days - 365  # Reserve 1 year for backtesting
                 if max_possible_days > 252:  # At least need 252 trading days
                     alt_strategy_start = latest_start + timedelta(days=max_possible_days)
-                    print(f"🔄 Alternative with maximum buffer:")
-                    print(f"   Maximum buffer: {max_possible_days} days ({max_possible_days / 7:.1f} weeks)")
-                    print(f"   Alternative start: {alt_strategy_start.strftime('%Y-%m-%d')}")
+                    self.logger.info(f"🔄 Alternative with maximum buffer:")
+                    self.logger.info(f"   Maximum buffer: {max_possible_days} days ({max_possible_days / 7:.1f} weeks)")
+                    self.logger.info(f"   Alternative start: {alt_strategy_start.strftime('%Y-%m-%d')}")
                     
                     years_available = (common_end - alt_strategy_start).days / 365.25
                     return alt_strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
@@ -807,22 +509,22 @@ class ETFRotationBacktester(RotationStrategy):
             # Check if we have sufficient backtest period
             years_available = (common_end - strategy_start).days / 365.25
             
-            print(f"📈 Backtest Feasibility:")
+            self.logger.info(f"📈 Backtest Feasibility:")
             if years_available >= 10:
-                print(f"   ✅ Excellent: {years_available:.1f} years provides statistically robust results")
+                self.logger.info(f"   ✅ Excellent: {years_available:.1f} years provides statistically robust results")
             elif years_available >= 5:
-                print(f"   ✅ Good: {years_available:.1f} years allows reasonable strategy validation")
+                self.logger.info(f"   ✅ Good: {years_available:.1f} years allows reasonable strategy validation")
             elif years_available >= 2:
-                print(f"   ⚠️ Fair: {years_available:.1f} years provides basic validation")
+                self.logger.info(f"   ⚠️ Fair: {years_available:.1f} years provides basic validation")
             else:
-                print(f"   ⚠️ Limited: {years_available:.1f} years may not be reliable")
+                self.logger.info(f"   ⚠️ Limited: {years_available:.1f} years may not be reliable")
             
             return strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
             
         except Exception as e:
-            print(f"[ERROR] Error calculating date range from etf_data table: {e}")
+            self.logger.error(f"Error calculating date range from etf_data table: {e}")
             import traceback
-            print(f"[ERROR] Traceback: {traceback.format_exc()}")
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
             return None, None, 0.0
         finally:
             if session:
@@ -837,7 +539,7 @@ class ETFRotationBacktester(RotationStrategy):
         cache_key = f"{','.join(sorted(tickers))}_{buffer_start_date}_{end_date}"
         if cache_key in self._data_cache:
             if self._verbose:
-                print(f"📦 Using cached data for {len(tickers)} ETFs")
+                self.logger.info(f"📦 Using cached data for {len(tickers)} ETFs")
             return self._data_cache[cache_key]
 
         session = None
@@ -846,10 +548,10 @@ class ETFRotationBacktester(RotationStrategy):
             from sqlalchemy import text
 
             if self._verbose:
-                print(f"📊 Loading data with historical buffer:")
-                print(f"   Strategy period: {start_date} to {end_date}")
-                print(f"   Data loading period: {buffer_start_date} to {end_date}")
-                print(f"   Buffer: 400 calendar days (~252 trading days) for momentum calculations")
+                self.logger.progress(f"📊 Loading data with historical buffer:")
+                self.logger.info(f"   Strategy period: {start_date} to {end_date}")
+                self.logger.progress(f"   Data loading period: {buffer_start_date} to {end_date}")
+                self.logger.info(f"   Buffer: 400 calendar days (~252 trading days) for momentum calculations")
 
             # Use etf_data table - column names match directly
             # Get available symbols using proper parameterization
@@ -875,7 +577,7 @@ class ETFRotationBacktester(RotationStrategy):
             missing_tickers = [t for t in tickers if t not in available_tickers]
 
             if missing_tickers and self._verbose:
-                print(f"⚠️ Missing data for: {', '.join(missing_tickers)}")
+                self.logger.info(f"⚠️ Missing data for: {', '.join(missing_tickers)}")
 
             if not available_tickers:
                 raise ValueError("No data available for any of the selected ETFs")
@@ -914,7 +616,7 @@ class ETFRotationBacktester(RotationStrategy):
                 raise ValueError(f"No data found for the selected date range {start_date} to {end_date}")
 
             if self._verbose:
-                print(f"✅ Loaded data for {len(available_tickers)} ETFs: {', '.join(available_tickers)}")
+                self.logger.progress(f"✅ Loaded data for {len(available_tickers)} ETFs: {', '.join(available_tickers)}")
 
             df['date'] = pd.to_datetime(df['date'])
 
@@ -930,7 +632,7 @@ class ETFRotationBacktester(RotationStrategy):
             return data_dict
 
         except Exception as e:
-            print(f"Error loading data: {e}")
+            self.logger.progress(f"Error loading data: {e}")
             return {}
         finally:
             if session:
@@ -979,23 +681,23 @@ class ETFRotationBacktester(RotationStrategy):
         required_trading_days = 252
         available_days = len(historical_data)
 
-        print(f"📊 Momentum Calculation for {current_date.strftime('%Y-%m-%d')}:")
-        print(f"   Available historical data: {available_days} days")
-        print(f"   Required for 52-week calc: {required_trading_days} days")
+        self.logger.progress(f"📊 Momentum Calculation for {current_date.strftime('%Y-%m-%d')}:")
+        self.logger.info(f"   Available historical data: {available_days} days")
+        self.logger.info(f"   Required for 52-week calc: {required_trading_days} days")
 
         if available_days < required_trading_days:
             # Insufficient data for proper 52-week calculation
-            print(f"   ❌ Insufficient data: {available_days} < {required_trading_days} required")
-            print(f"   📋 Available ETFs: {list(historical_data.columns)}")
-            print(f"   🔄 Strategy will use fallback logic during accumulation")
+            self.logger.info(f"   ❌ Insufficient data: {available_days} < {required_trading_days} required")
+            self.logger.info(f"   📋 Available ETFs: {list(historical_data.columns)}")
+            self.logger.progress(f"   🔄 Strategy will use fallback logic during accumulation")
             return pd.DataFrame()
 
         # Use exactly 252 trading days as per PDF specification
         window_data = historical_data.tail(252)
-        print(f"   ✅ Using exactly {len(window_data)} trading days for momentum")
+        self.logger.progress(f"   ✅ Using exactly {len(window_data)} trading days for momentum")
 
         if window_data.empty:
-            print("   ❌ Window data is empty after filtering")
+            self.logger.info("   ❌ Window data is empty after filtering")
             return pd.DataFrame()
 
         # Calculate 52-week highs and lows as per PDF specification
@@ -1003,9 +705,9 @@ class ETFRotationBacktester(RotationStrategy):
         lows_52w = window_data.min()  # Minimum closing price in trailing 252 trading days
         current_prices = historical_data.iloc[-1] if not historical_data.empty else pd.Series()
 
-        print(f"   📈 52-week highs calculated for {len(highs_52w)} ETFs")
-        print(f"   📉 52-week lows calculated for {len(lows_52w)} ETFs")
-        print(f"   💰 Current prices available for {len(current_prices)} ETFs")
+        self.logger.progress(f"   📈 52-week highs calculated for {len(highs_52w)} ETFs")
+        self.logger.progress(f"   📉 52-week lows calculated for {len(lows_52w)} ETFs")
+        self.logger.progress(f"   💰 Current prices available for {len(current_prices)} ETFs")
 
         # Create result DataFrame with exact PDF specification calculations
         result_data = []
@@ -1032,25 +734,25 @@ class ETFRotationBacktester(RotationStrategy):
                     })
 
                     valid_etfs += 1
-                    print(
+                    self.logger.progress(
                         f"   ✅ {symbol}: High=₹{highs_52w[symbol]:.2f}, Low=₹{lows_52w[symbol]:.2f}, Current=₹{current_prices[symbol]:.2f}")
-                    print(
+                    self.logger.progress(
                         f"       Distance from Low: {distance_from_low:.2f}%, Distance from High: {distance_from_high:.2f}%")
                 else:
-                    print(
+                    self.logger.info(
                         f"   ❌ {symbol}: Data integrity issue - high ({highs_52w[symbol]:.2f}) < low ({lows_52w[symbol]:.2f})")
             else:
-                print(f"   ❌ {symbol}: Invalid data - contains NaN or zero values")
+                self.logger.info(f"   ❌ {symbol}: Invalid data - contains NaN or zero values")
 
         result_df = pd.DataFrame(result_data)
-        print(f"   🎯 Final momentum result: {len(result_df)} valid ETFs with proper 52-week data")
+        self.logger.progress(f"   🎯 Final momentum result: {len(result_df)} valid ETFs with proper 52-week data")
 
         if not result_df.empty:
             # Sort by distance from low for accumulation phase (buy closest to low)
             result_df_sorted = result_df.sort_values('distance_from_low')
-            print(f"   📊 ETF Rankings (closest to 52-week low first):")
+            self.logger.progress(f"   📊 ETF Rankings (closest to 52-week low first):")
             for idx, row in result_df_sorted.head().iterrows():
-                print(f"      {idx + 1}. {row['symbol']}: {row['distance_from_low']:.2f}% from low")
+                self.logger.info(f"      {idx + 1}. {row['symbol']}: {row['distance_from_low']:.2f}% from low")
 
         return result_df
 
@@ -1141,8 +843,8 @@ class ETFRotationBacktester(RotationStrategy):
         1. Capital Raising Process: Sell ETfs with smallest distance from 52-week high
         2. Reallocation Process: Buy ETF with smallest distance from 52-week low
         """
-        print(f"🔄 Executing Churning Phase - Week {week_num}")
-        print(f"💰 Target capital to raise: ₹{target_capital:,.0f}")
+        self.logger.progress(f"🔄 Executing Churning Phase - Week {week_num}")
+        self.logger.progress(f"💰 Target capital to raise: ₹{target_capital:,.0f}")
 
         # Initialize tracking variables
         total_raised = 0
@@ -1151,7 +853,7 @@ class ETFRotationBacktester(RotationStrategy):
         updated_holdings = current_holdings.copy()
 
         # ===== CAPITAL RAISING PROCESS =====
-        print("📊 Starting Capital Raising Process...")
+        self.logger.progress("📊 Starting Capital Raising Process...")
         capital_raising_result = self.execute_capital_raising_process(
             week_num=week_num,
             execution_date=execution_date,
@@ -1172,8 +874,8 @@ class ETFRotationBacktester(RotationStrategy):
 
         # ===== REALLOCATION PROCESS =====
         if total_raised > 0:
-            print(f"💰 Total capital raised: ₹{total_raised:,.0f}")
-            print("🎯 Starting Reallocation Process...")
+            self.logger.progress(f"💰 Total capital raised: ₹{total_raised:,.0f}")
+            self.logger.progress("🎯 Starting Reallocation Process...")
 
             reallocation_result = self.execute_reallocation_process(
                 week_num=week_num,
@@ -1247,7 +949,7 @@ class ETFRotationBacktester(RotationStrategy):
                 'total_raised': total_raised
             }
         else:
-            print("⚠️ No capital raised - skipping reallocation")
+            self.logger.info("⚠️ No capital raised - skipping reallocation")
             return {
                 'action': 'none',
                 'ticker': 'N/A',
@@ -1278,7 +980,7 @@ class ETFRotationBacktester(RotationStrategy):
             sell_units = min(available_units, required_units_for_remaining_capital)
             execute_sell_with_costs_and_taxes()
         """
-        print("🔴 CAPITAL RAISING PROCESS")
+        self.logger.info("🔴 CAPITAL RAISING PROCESS")
 
         total_raised = 0
         sell_transactions = []
@@ -1289,31 +991,31 @@ class ETFRotationBacktester(RotationStrategy):
         # PDF: etfs_ranked_by_distance_from_high = sort_ascending(distance_from_52w_high)  # Closest to high first
         sorted_for_sell = high_low_data.sort_values('distance_from_high', ascending=True).reset_index(drop=True)
 
-        print(f"📊 Selling priority (closest to 52-week high first):")
+        self.logger.trade(f"📊 Selling priority (closest to 52-week high first):")
         for idx, row in sorted_for_sell.head().iterrows():
-            print(f"   {idx + 1}. {row['symbol']}: {row['distance_from_high']:.2f}% from high")
+            self.logger.info(f"   {idx + 1}. {row['symbol']}: {row['distance_from_high']:.2f}% from high")
 
         # Step 2: Sell from ETFs closest to 52-week high until target capital is raised
         # NEW LOGIC: Continue selling from same ETF until target reached or ETF exhausted
         for _, etf_row in sorted_for_sell.iterrows():
             if total_raised >= target_capital:
-                print(f"✅ Target capital reached: ₹{total_raised:,.0f} >= ₹{target_capital:,.0f}")
+                self.logger.progress(f"✅ Target capital reached: ₹{total_raised:,.0f} >= ₹{target_capital:,.0f}")
                 break
 
             ticker = etf_row['symbol']
 
             # Check if we have holdings in this ETF
             if ticker not in updated_holdings or updated_holdings[ticker] <= 0:
-                print(f"⚠️ No holdings in {ticker} - skipping to next ETF")
+                self.logger.info(f"⚠️ No holdings in {ticker} - skipping to next ETF")
                 continue
 
             # Check if we have valid price data
             if ticker not in open_prices.index or pd.isna(open_prices[ticker]):
-                print(f"⚠️ No valid price for {ticker} - skipping")
+                self.logger.info(f"⚠️ No valid price for {ticker} - skipping")
                 continue
 
             price = open_prices[ticker]
-            print(f"🔄 Processing {ticker} - Available units: {updated_holdings[ticker]}")
+            self.logger.progress(f"🔄 Processing {ticker} - Available units: {updated_holdings[ticker]}")
 
             # CONTINUOUS SELLING LOOP - Keep selling from same ETF until target reached or ETF exhausted
             while total_raised < target_capital and updated_holdings.get(ticker, 0) > 0:
@@ -1326,7 +1028,7 @@ class ETFRotationBacktester(RotationStrategy):
 
                 # Safety check: don't sell more than available
                 if units_to_sell <= 0 or units_to_sell > available_units:
-                    print(f"⚠️ Invalid units calculation for {ticker}: {units_to_sell} (available: {available_units})")
+                    self.logger.info(f"⚠️ Invalid units calculation for {ticker}: {units_to_sell} (available: {available_units})")
                     break
 
                 # Execute sell transaction
@@ -1349,25 +1051,25 @@ class ETFRotationBacktester(RotationStrategy):
                     # Record transaction
                     sell_transactions.append(sell_result)
 
-                    print(f"🔴 Sold {units_to_sell} units of {ticker} @ ₹{price:.2f}")
-                    print(f"   Net proceeds: ₹{sell_result['net_proceeds']:,.0f} (after costs & tax)")
-                    print(f"   Capital gains tax: ₹{sell_result['capital_gains_tax']:,.2f}")
-                    print(f"   Remaining units: {updated_holdings[ticker]}")
-                    print(f"   Total raised so far: ₹{total_raised:,.0f}")
+                    self.logger.trade(f"🔴 Sold {units_to_sell} units of {ticker} @ ₹{price:.2f}")
+                    self.logger.trade(f"   Net proceeds: ₹{sell_result['net_proceeds']:,.0f} (after costs & tax)")
+                    self.logger.trade(f"   Capital gains tax: ₹{sell_result['capital_gains_tax']:,.2f}")
+                    self.logger.info(f"   Remaining units: {updated_holdings[ticker]}")
+                    self.logger.info(f"   Total raised so far: ₹{total_raised:,.0f}")
 
                     # Check if target reached
                     if total_raised >= target_capital:
-                        print(f"✅ Target capital reached: ₹{total_raised:,.0f} >= ₹{target_capital:,.0f}")
+                        self.logger.progress(f"✅ Target capital reached: ₹{total_raised:,.0f} >= ₹{target_capital:,.0f}")
                         break
                 else:
-                    print(f"❌ Failed to sell {ticker}: {sell_result.get('error', 'Unknown error')}")
+                    self.logger.error(f"❌ Failed to sell {ticker}: {sell_result.get('error', 'Unknown error')}")
                     break  # Exit the while loop if sell fails
 
             # Check if we need to move to next ETF
             if total_raised < target_capital and updated_holdings.get(ticker, 0) == 0:
-                print(f"📦 {ticker} exhausted - moving to next priority ETF")
+                self.logger.info(f"📦 {ticker} exhausted - moving to next priority ETF")
             elif total_raised >= target_capital:
-                print(f"🎯 Target reached with {ticker} - stopping")
+                self.logger.progress(f"🎯 Target reached with {ticker} - stopping")
                 break
 
         return {
@@ -1390,7 +1092,7 @@ class ETFRotationBacktester(RotationStrategy):
         available_capital = total_raised_from_sells
         execute_purchase_with_costs()
         """
-        print("🟢 REALLOCATION PROCESS")
+        self.logger.info("🟢 REALLOCATION PROCESS")
 
         # Step 1: Select target ETF with smallest distance from 52-week low
         # PDF: target_etf = ETF_with_smallest_distance_from_52w_low
@@ -1398,11 +1100,11 @@ class ETFRotationBacktester(RotationStrategy):
         target_etf = sorted_for_buy.iloc[0]['symbol']
         distance_from_low = sorted_for_buy.iloc[0]['distance_from_low']
 
-        print(f"🎯 Reallocation target: {target_etf} ({distance_from_low:.2f}% from 52-week low)")
+        self.logger.progress(f"🎯 Reallocation target: {target_etf} ({distance_from_low:.2f}% from 52-week low)")
 
         # Step 2: Check if target ETF has valid price
         if target_etf not in open_prices.index or pd.isna(open_prices[target_etf]):
-            print(f"❌ Invalid price for target ETF {target_etf}")
+            self.logger.info(f"❌ Invalid price for target ETF {target_etf}")
             return {
                 'holdings': current_holdings,
                 'cash': cash,
@@ -1418,7 +1120,7 @@ class ETFRotationBacktester(RotationStrategy):
         units = int(net_amount_for_units / price) if price > 0 else 0
 
         if units <= 0:
-            print(f"❌ Cannot buy {target_etf}: insufficient capital after costs")
+            self.logger.info(f"❌ Cannot buy {target_etf}: insufficient capital after costs")
             return {
                 'holdings': current_holdings,
                 'cash': cash,
@@ -1441,8 +1143,8 @@ class ETFRotationBacktester(RotationStrategy):
             updated_holdings[target_etf] = updated_holdings.get(target_etf, 0) + units
             cash -= buy_result['total_cost']
 
-            print(f"🟢 Bought {units} units of {target_etf} @ ₹{price:.2f}")
-            print(f"   Total cost: ₹{buy_result['total_cost']:,.0f}")
+            self.logger.trade(f"🟢 Bought {units} units of {target_etf} @ ₹{price:.2f}")
+            self.logger.trade(f"   Total cost: ₹{buy_result['total_cost']:,.0f}")
 
             return {
                 'holdings': updated_holdings,
@@ -1450,7 +1152,7 @@ class ETFRotationBacktester(RotationStrategy):
                 'buy_transaction': buy_result
             }
         else:
-            print(f"❌ Failed to buy {target_etf}: {buy_result.get('error', 'Unknown error')}")
+            self.logger.error(f"❌ Failed to buy {target_etf}: {buy_result.get('error', 'Unknown error')}")
             return {
                 'holdings': current_holdings,
                 'cash': cash,
@@ -1691,12 +1393,12 @@ class ETFRotationBacktester(RotationStrategy):
         }
 
         is_accumulation = week_num <= accumulation_weeks
-        print(f"🔄 Week {week_num} - {'ACCUMULATION' if is_accumulation else 'CHURNING'} PHASE")
+        self.logger.progress(f"🔄 Week {week_num} - {'ACCUMULATION' if is_accumulation else 'CHURNING'} PHASE")
 
         if is_accumulation:
             # ===== ACCUMULATION PHASE LOGIC =====
-            print(f"📈 Accumulation Phase - Week {week_num}")
-            print(f"💰 Weekly capital allocation: ₹{capital_per_week:,.0f}")
+            self.logger.progress(f"📈 Accumulation Phase - Week {week_num}")
+            self.logger.progress(f"💰 Weekly capital allocation: ₹{capital_per_week:,.0f}")
 
             # Selection Criteria: ETF with smallest distance from 52-week low
             target_etf = None
@@ -1706,10 +1408,10 @@ class ETFRotationBacktester(RotationStrategy):
                 sorted_etfs = high_low_data.sort_values('distance_from_low')
                 target_etf = sorted_etfs.iloc[0]['symbol']
                 distance_from_low = sorted_etfs.iloc[0]['distance_from_low']
-                print(f"📊 Momentum-based selection: {target_etf} ({distance_from_low:.2f}% from 52-week low)")
+                self.logger.progress(f"📊 Momentum-based selection: {target_etf} ({distance_from_low:.2f}% from 52-week low)")
             else:
                 # Fallback strategy when insufficient momentum data (early periods)
-                print("⚠️ Insufficient momentum data - using round-robin fallback selection")
+                self.logger.info("⚠️ Insufficient momentum data - using round-robin fallback selection")
                 available_etfs = [etf for etf in open_prices.index
                                   if not pd.isna(open_prices[etf]) and open_prices[etf] > 0]
 
@@ -1720,12 +1422,12 @@ class ETFRotationBacktester(RotationStrategy):
                         f"🎯 Fallback selection: {target_etf} (round-robin week {week_num}, ETF {week_num % len(available_etfs) + 1}/{len(available_etfs)})")
                 else:
                     target_etf = None
-                    print("❌ No available ETFs for fallback selection")
+                    self.logger.info("❌ No available ETFs for fallback selection")
 
             if target_etf and target_etf in open_prices.index and not pd.isna(open_prices[target_etf]):
                 # PDF Specification: execution_price = monday_open_price
                 price = open_prices[target_etf]
-                print(f"💰 Execution price (Monday open): ₹{price:.2f}")
+                self.logger.progress(f"💰 Execution price (Monday open): ₹{price:.2f}")
 
                 # Purchase Calculation
                 gross_amount = capital_per_week
@@ -1735,11 +1437,11 @@ class ETFRotationBacktester(RotationStrategy):
                 net_amount_for_units = gross_amount - costs_estimate['total_costs']
                 units = int(net_amount_for_units / price) if price > 0 else 0
 
-                print(f"📋 Purchase calculation:")
-                print(f"   Gross amount: ₹{gross_amount:,.0f}")
-                print(f"   Transaction costs: ₹{costs_estimate['total_costs']:.2f}")
-                print(f"   Net for units: ₹{net_amount_for_units:,.0f}")
-                print(f"   Units to buy: {units}")
+                self.logger.info(f"📋 Purchase calculation:")
+                self.logger.info(f"   Gross amount: ₹{gross_amount:,.0f}")
+                self.logger.trade(f"   Transaction costs: ₹{costs_estimate['total_costs']:.2f}")
+                self.logger.info(f"   Net for units: ₹{net_amount_for_units:,.0f}")
+                self.logger.trade(f"   Units to buy: {units}")
 
                 if units > 0 and cash >= gross_amount:
                     # Execute purchase at Monday opening price
@@ -1757,9 +1459,9 @@ class ETFRotationBacktester(RotationStrategy):
                     self.log_transaction_costs(week_num, execution_date, 'buy', target_etf,
                                                units, price, actual_costs, 0)
 
-                    print(f"✅ Purchase executed: {units} units of {target_etf} for ₹{actual_amount:,.0f}")
-                    print(f"💳 Total cost (including fees): ₹{actual_costs['net_amount']:,.0f}")
-                    print(f"💰 Remaining cash: ₹{cash:,.0f}")
+                    self.logger.trade(f"✅ Purchase executed: {units} units of {target_etf} for ₹{actual_amount:,.0f}")
+                    self.logger.info(f"💳 Total cost (including fees): ₹{actual_costs['net_amount']:,.0f}")
+                    self.logger.progress(f"💰 Remaining cash: ₹{cash:,.0f}")
 
                     trade_log.update({
                         'action': 'buy',
@@ -1772,7 +1474,7 @@ class ETFRotationBacktester(RotationStrategy):
                         'cash_after': cash
                     })
                 else:
-                    print(f"❌ Cannot execute purchase: units={units}, cash=₹{cash:,.0f}, required=₹{gross_amount:,.0f}")
+                    self.logger.info(f"❌ Cannot execute purchase: units={units}, cash=₹{cash:,.0f}, required=₹{gross_amount:,.0f}")
                     trade_log.update({
                         'action': 'none',
                         'ticker': target_etf if target_etf else 'N/A',
@@ -1785,7 +1487,7 @@ class ETFRotationBacktester(RotationStrategy):
                         'failure_reason': 'insufficient_cash'
                     })
             else:
-                print(f"❌ No valid target ETF found for purchase")
+                self.logger.info(f"❌ No valid target ETF found for purchase")
                 trade_log.update({
                     'action': 'none',
                     'ticker': 'N/A',
@@ -1800,7 +1502,7 @@ class ETFRotationBacktester(RotationStrategy):
 
         else:
             # ===== CHURNING PHASE LOGIC =====
-            print(f"🔄 Churning Phase - Week {week_num}")
+            self.logger.progress(f"🔄 Churning Phase - Week {week_num}")
 
             if not high_low_data.empty:
                 # Execute complete churning process
@@ -1820,7 +1522,7 @@ class ETFRotationBacktester(RotationStrategy):
                 current_holdings = churn_result['holdings']
                 trade_log.update(churn_result)
             else:
-                print("⚠️ No momentum data available for churning")
+                self.logger.info("⚠️ No momentum data available for churning")
                 trade_log.update({
                     'action': 'none',
                     'ticker': 'N/A',
@@ -1842,12 +1544,12 @@ class ETFRotationBacktester(RotationStrategy):
         trade_log['nav'] = nav
         trade_log['holdings'] = current_holdings.copy()
 
-        print(f"📊 Week {week_num} summary:")
-        print(f"   Action: {trade_log['action']}")
-        print(f"   NAV: ₹{nav:,.0f}")
-        print(f"   Cash: ₹{cash:,.0f}")
-        print(f"   Holdings: {[(k, v) for k, v in current_holdings.items() if v > 0]}")
-        print("=" * 60)
+        self.logger.progress(f"📊 Week {week_num} summary:")
+        self.logger.trade(f"   Action: {trade_log['action']}")
+        self.logger.performance(f"   NAV: ₹{nav:,.0f}")
+        self.logger.info(f"   Cash: ₹{cash:,.0f}")
+        self.logger.info(f"   Holdings: {[(k, v) for k, v in current_holdings.items() if v > 0]}")
+        self.logger.progress("=" * 60)
 
         return trade_log
 
@@ -1856,7 +1558,7 @@ class ETFRotationBacktester(RotationStrategy):
                      compounding_enabled: bool = False) -> Dict:
         """Run the complete backtest as per Technical Specification PDF"""
         if self._verbose:
-            print("Loading data from database...")
+            self.logger.progress("Loading data from database...")
         data_dict = self.load_data_from_database(tickers, start_date, end_date)
 
         if not data_dict:
@@ -1889,7 +1591,7 @@ class ETFRotationBacktester(RotationStrategy):
         week_num = 1
 
         if self._verbose:
-            print("Running backtest simulation...")
+            self.logger.progress("Running backtest simulation...")
 
         # Performance tracking
         total_weeks = 0
@@ -1898,48 +1600,77 @@ class ETFRotationBacktester(RotationStrategy):
         total_expected_weeks = int((end - start).days / 7) + 1
 
         if self._verbose:
-            print(f"\n=== STARTING BACKTEST (PDF-ALIGNED) ===")
-            print(f"Selected ETFs: {tickers}")
-            print(f"Period: {start_date} to {end_date}")
-            print(f"Expected weeks: ~{total_expected_weeks}")
-            print(f"Capital per week: ₹{capital_per_week:,.0f}")
-            print(f"Accumulation period: {accumulation_weeks} weeks")
-            print(f"Compounding: {'Enabled' if compounding_enabled else 'Disabled'}")
-            print(f"Data shape: {close_df.shape} (dates × ETFs)")
-            print("=" * 80)
+            self.logger.progress(f"\n=== STARTING BACKTEST (PDF-ALIGNED) ===")
+            self.logger.info(f"Selected ETFs: {tickers}")
+            self.logger.info(f"Period: {start_date} to {end_date}")
+            self.logger.info(f"Expected weeks: ~{total_expected_weeks}")
+            self.logger.info(f"Capital per week: ₹{capital_per_week:,.0f}")
+            self.logger.info(f"Accumulation period: {accumulation_weeks} weeks")
+            self.logger.info(f"Compounding: {'Enabled' if compounding_enabled else 'Disabled'}")
+            self.logger.info(f"Data shape: {close_df.shape} (dates × ETFs)")
+            self.logger.progress("=" * 80)
 
         while current_date <= end:
             total_weeks += 1
 
             if self._verbose:
-                print(f"\n--- WEEK {week_num} ({current_date.strftime('%Y-%m-%d')}) ---")
+                self.logger.info(f"\n--- WEEK {week_num} ({current_date.strftime('%Y-%m-%d')}) ---")
+                self.logger.debug(f"🔍 Loop iteration: current_date={current_date.strftime('%Y-%m-%d %A')}, week_num={week_num}")
 
             # ===== SIGNAL GENERATION =====
-            # Signal Date: Friday of current week (or nearest trading day)
-            signal_date = self.get_next_trading_day(close_df, current_date, 'Friday')
+            # Signal Date: Friday of current week (or nearest prior trading day)
+            signal_date = self.get_last_trading_day(close_df, current_date, 'Friday')
+            
+            if self._verbose and signal_date:
+                self.logger.debug(f"🔍 Calculated signal_date={signal_date.strftime('%Y-%m-%d %A')} from current_date={current_date.strftime('%Y-%m-%d %A')}")
 
             if signal_date is not None:
                 successful_signals += 1
                 if self._verbose:
-                    print(f"📅 Signal date: {signal_date.strftime('%Y-%m-%d')} (Friday)")
+                    self.logger.info(f"📅 Signal date: {signal_date.strftime('%Y-%m-%d')} (Friday)")
 
                 # Execution Date: Monday of following week (or nearest trading day)
                 execution_date = self.get_next_trading_day(open_df, signal_date, 'Monday')
+                
+                if self._verbose and execution_date:
+                    self.logger.debug(f"🔍 Calculated execution_date={execution_date.strftime('%Y-%m-%d %A')} from signal_date={signal_date.strftime('%Y-%m-%d %A')}")
+                
+                # CRITICAL VALIDATION: Ensure execution_date is valid and after signal_date
+                if execution_date is not None:
+                    # Validate execution is after signal
+                    if execution_date <= signal_date:
+                        self.logger.error(f"❌ BUG DETECTED: execution_date ({execution_date.strftime('%Y-%m-%d')}) <= signal_date ({signal_date.strftime('%Y-%m-%d')})")
+                        self.logger.error(f"   Week {week_num}: This should never happen!")
+                        # Try to find the next Monday after signal_date
+                        days_to_monday = (7 - signal_date.weekday()) % 7
+                        if days_to_monday == 0:
+                            days_to_monday = 7  # If signal_date is Monday, go to next Monday
+                        execution_date = signal_date + timedelta(days=days_to_monday)
+                        self.logger.info(f"   Corrected execution_date to: {execution_date.strftime('%Y-%m-%d')}")
+                        # Verify this date exists in data
+                        if execution_date not in open_df.index:
+                            self.logger.error(f"   Corrected date not in data, skipping week")
+                            execution_date = None
+                    
+                    # Validate execution_date is actually a Monday (weekday 0)
+                    elif execution_date.weekday() != 0:
+                        self.logger.warning(f"⚠️ execution_date ({execution_date.strftime('%Y-%m-%d')}) is {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][execution_date.weekday()]}, not Monday")
+                        self.logger.warning(f"   Week {week_num}: This may indicate a data issue or holiday")
 
                 if execution_date is not None and execution_date <= end:
                     successful_executions += 1
                     if self._verbose:
-                        print(f"💼 Execution date: {execution_date.strftime('%Y-%m-%d')} (Monday)")
+                        self.logger.info(f"💼 Execution date: {execution_date.strftime('%Y-%m-%d')} (Monday)")
 
                     # Add weekly capital during accumulation phase
                     if week_num <= accumulation_weeks:
                         cash += capital_per_week
                         if self._verbose:
-                            print(f"💰 Added weekly capital: ₹{capital_per_week:,.0f} (Total cash: ₹{cash:,.0f})")
+                            self.logger.progress(f"💰 Added weekly capital: ₹{capital_per_week:,.0f} (Total cash: ₹{cash:,.0f})")
 
                     # ===== 52-WEEK MOMENTUM CALCULATION =====
                     if self._verbose:
-                        print(f"📊 Computing 52-week momentum for signal date...")
+                        self.logger.progress(f"📊 Computing 52-week momentum for signal date...")
                     high_low_data = self.compute_52_week_high_low(close_df, signal_date)
 
                     # Get execution prices (Monday opening prices)
@@ -1947,7 +1678,7 @@ class ETFRotationBacktester(RotationStrategy):
                     close_prices = close_df.loc[execution_date]
 
                     if self._verbose:
-                        print(f"💰 Available open prices: {len(open_prices.dropna())} ETFs")
+                        self.logger.progress(f"💰 Available open prices: {len(open_prices.dropna())} ETFs")
 
                     # ===== TRADE EXECUTION =====
                     trade_result = self.execute_weekly_trade(
@@ -1967,10 +1698,13 @@ class ETFRotationBacktester(RotationStrategy):
 
                     # Only log the trade if it's not a "none" action
                     if trade_result['action'] != 'none':
+                        # Debug logging to track duplicate entries
+                        if self._verbose:
+                            self.logger.debug(f"📝 Appending to portfolio_log: Week {trade_result.get('week')}, Date {trade_result.get('execution_date')}, Action {trade_result.get('action')}")
                         self.portfolio_log.append(trade_result)
                         if self._verbose:
-                            print(f"📈 Trade completed: {trade_result['action']} {trade_result['ticker']}")
-                            print(f"💰 Portfolio NAV: ₹{trade_result['nav']:,.0f}")
+                            self.logger.trade(f"📈 Trade completed: {trade_result['action']} {trade_result['ticker']}")
+                            self.logger.trade(f"💰 Portfolio NAV: ₹{trade_result['nav']:,.0f}")
                     else:
                         # Track skipped trade execution
                         skip_reason = trade_result.get('skip_reason', 'No trade signal generated')
@@ -1981,7 +1715,7 @@ class ETFRotationBacktester(RotationStrategy):
                             'reason': skip_reason
                         })
                         if self._verbose:
-                            print(f"⏭️ No trade executed - {skip_reason}")
+                            self.logger.trade(f"⏭️ No trade executed - {skip_reason}")
 
                 else:
                     # Track skipped execution
@@ -1993,7 +1727,7 @@ class ETFRotationBacktester(RotationStrategy):
                         'reason': skip_reason
                     })
                     if self._verbose:
-                        print(f"❌ {skip_reason}")
+                        self.logger.info(f"❌ {skip_reason}")
             else:
                 # Track skipped signal
                 skip_reason = "No valid signal date found"
@@ -2004,7 +1738,7 @@ class ETFRotationBacktester(RotationStrategy):
                     'reason': skip_reason
                 })
                 if self._verbose:
-                    print(f"❌ {skip_reason}")
+                    self.logger.info(f"❌ {skip_reason}")
 
             # Move to next week
             current_date += timedelta(weeks=1)
@@ -2016,28 +1750,28 @@ class ETFRotationBacktester(RotationStrategy):
         self.successful_executions = successful_executions
 
         if self._verbose:
-            print(f"\n=== BACKTEST COMPLETION SUMMARY ===")
-            print(f"Total weeks processed: {total_weeks}")
-            print(f"Successful signals: {successful_signals}")
-            print(f"Successful executions: {successful_executions}")
-            print(f"Portfolio log entries: {len(self.portfolio_log)}")
-            print(f"Transaction cost entries: {len(self.transaction_costs_log)}")
-            print(f"Skipped trades: {len(self.skipped_days)}")
+            self.logger.info(f"\n=== BACKTEST COMPLETION SUMMARY ===")
+            self.logger.info(f"Total weeks processed: {total_weeks}")
+            self.logger.info(f"Successful signals: {successful_signals}")
+            self.logger.info(f"Successful executions: {successful_executions}")
+            self.logger.info(f"Portfolio log entries: {len(self.portfolio_log)}")
+            self.logger.trade(f"Transaction cost entries: {len(self.transaction_costs_log)}")
+            self.logger.trade(f"Skipped trades: {len(self.skipped_days)}")
 
         if successful_executions == 0:
             if self._verbose:
-                print("⚠️ No successful trade executions found. Check date ranges and data availability.")
+                self.logger.info("⚠️ No successful trade executions found. Check date ranges and data availability.")
             return {"error": "No trade executions found"}
 
         # Enhanced validation checks
         if len(self.portfolio_log) < 10 and self._verbose:
-            print(f"⚠️ Only {len(self.portfolio_log)} trades executed. Consider longer backtest period.")
+            self.logger.info(f"⚠️ Only {len(self.portfolio_log)} trades executed. Consider longer backtest period.")
 
         # Check for empty portfolio (no successful purchases)
         final_nav = self.portfolio_log[-1]['nav'] if self.portfolio_log else 0
         if final_nav == 0:
             if self._verbose:
-                print("❌ Portfolio NAV is zero. Check ETF data quality and price availability.")
+                self.logger.info("❌ Portfolio NAV is zero. Check ETF data quality and price availability.")
             return {"error": "Portfolio NAV is zero"}
 
         # Check for excessive transaction failures
@@ -2045,7 +1779,7 @@ class ETFRotationBacktester(RotationStrategy):
         success_rate = (len(self.portfolio_log) - failed_trades) / len(
             self.portfolio_log) * 100 if self.portfolio_log else 0
         if success_rate < 50 and self._verbose:
-            print(f"⚠️ Low trade success rate: {success_rate:.1f}%. Data quality may be poor.")
+            self.logger.info(f"⚠️ Low trade success rate: {success_rate:.1f}%. Data quality may be poor.")
 
         # Check for reasonable final value
         total_investment = accumulation_weeks * capital_per_week
@@ -2058,7 +1792,7 @@ class ETFRotationBacktester(RotationStrategy):
             total_costs = sum(cost['total_costs'] for cost in self.transaction_costs_log)
             cost_ratio = total_costs / total_investment * 100
             if cost_ratio > 5 and self._verbose:  # More than 5% in costs
-                print(f"⚠️ High transaction costs: {cost_ratio:.2f}% of total investment")
+                self.logger.info(f"⚠️ High transaction costs: {cost_ratio:.2f}% of total investment")
 
         # Create weekly NAV DataFrame
         if self.portfolio_log:
@@ -2087,13 +1821,13 @@ class ETFRotationBacktester(RotationStrategy):
         # Calculate benchmark comparison
         total_investment = accumulation_weeks * capital_per_week
         if self._verbose:
-            print("Calculating benchmark buy-and-hold comparison...")
+            self.logger.trade("Calculating benchmark buy-and-hold comparison...")
         self.nifty50_df = self.calculate_benchmark_buyhold(start_date, end_date, total_investment, brokerage_percent)
 
         if self._verbose:
-            print(f"✅ Backtest completed successfully!")
-            print(f"📊 Final portfolio value: ₹{self.portfolio_log[-1]['nav']:,.0f}")
-            print(f"💰 Total investment: ₹{total_investment:,.0f}")
+            self.logger.progress(f"✅ Backtest completed successfully!")
+            self.logger.performance(f"📊 Final portfolio value: ₹{self.portfolio_log[-1]['nav']:,.0f}")
+            self.logger.progress(f"💰 Total investment: ₹{total_investment:,.0f}")
 
         return {
             "success": True,
@@ -2132,11 +1866,11 @@ class ETFRotationBacktester(RotationStrategy):
                 result = session.execute(query, {"symbol": symbol})
                 if result.fetchone():
                     benchmark_symbol = symbol
-                    print(f"✅ Using {benchmark_symbol} as market benchmark")
+                    self.logger.progress(f"✅ Using {benchmark_symbol} as market benchmark")
                     break
 
             if not benchmark_symbol:
-                print("⚠️ No suitable benchmark found in database. Benchmark comparison will be skipped.")
+                self.logger.info("⚠️ No suitable benchmark found in database. Benchmark comparison will be skipped.")
                 return pd.DataFrame()
 
             query = text("""
@@ -2158,16 +1892,16 @@ class ETFRotationBacktester(RotationStrategy):
             columns = result.keys()
             nifty_df = pd.DataFrame(rows, columns=columns)
 
-            print(f"📊 Benchmark SQL query returned {len(nifty_df)} rows for {benchmark_symbol}")
-            print(f"   Query params: start_date={start_date}, end_date={end_date}")
+            self.logger.performance(f"📊 Benchmark SQL query returned {len(nifty_df)} rows for {benchmark_symbol}")
+            self.logger.info(f"   Query params: start_date={start_date}, end_date={end_date}")
 
             if nifty_df.empty:
-                print("⚠️ No benchmark data found - query returned 0 rows")
+                self.logger.info("⚠️ No benchmark data found - query returned 0 rows")
                 return pd.DataFrame()
             
             if len(nifty_df) == 1:
-                print(f"⚠️ WARNING: Only 1 row returned! Date: {nifty_df['date'].iloc[0]}, Close: {nifty_df['close'].iloc[0]}")
-                print(f"   This suggests the benchmark symbol '{benchmark_symbol}' has very limited data in the database")
+                self.logger.info(f"⚠️ WARNING: Only 1 row returned! Date: {nifty_df['date'].iloc[0]}, Close: {nifty_df['close'].iloc[0]}")
+                self.logger.info(f"   This suggests the benchmark symbol '{benchmark_symbol}' has very limited data in the database")
 
             nifty_df['date'] = pd.to_datetime(nifty_df['date'])
             nifty_df = nifty_df.set_index('date')
@@ -2186,7 +1920,7 @@ class ETFRotationBacktester(RotationStrategy):
             if hasattr(self, 'weekly_nav_df') and not self.weekly_nav_df.empty:
                 weekly_dates = pd.to_datetime(self.weekly_nav_df['date'])
                 
-                print(f"📊 Aligning benchmark data from {len(nifty_df)} daily points to {len(weekly_dates)} weekly dates")
+                self.logger.progress(f"📊 Aligning benchmark data from {len(nifty_df)} daily points to {len(weekly_dates)} weekly dates")
                 
                 # Reset index to prepare for merge
                 nifty_df_daily = nifty_df.reset_index()
@@ -2205,9 +1939,9 @@ class ETFRotationBacktester(RotationStrategy):
                 # Set date as index
                 nifty_df = aligned_df.set_index('date')
                 
-                print(f"✅ Aligned benchmark data to {len(nifty_df)} weekly dates")
+                self.logger.progress(f"✅ Aligned benchmark data to {len(nifty_df)} weekly dates")
             else:
-                print("⚠️ weekly_nav_df not available, using daily benchmark data")
+                self.logger.info("⚠️ weekly_nav_df not available, using daily benchmark data")
             
             # Recalculate returns based on weekly aligned data
             nifty_df['returns'] = nifty_df['nav'].pct_change()
@@ -2218,7 +1952,7 @@ class ETFRotationBacktester(RotationStrategy):
             return nifty_df
 
         except Exception as e:
-            print(f"Error calculating Nifty50 buy-hold: {e}")
+            self.logger.trade(f"Error calculating Nifty50 buy-hold: {e}")
             return pd.DataFrame()
         finally:
             if session:
@@ -2800,8 +2534,8 @@ class ETFRotationBacktester(RotationStrategy):
         if not selected_etfs:
             return {"error": "No ETFs selected"}
 
-        print(f"🔍 DIAGNOSING DATA FOR {len(selected_etfs)} ETFs")
-        print("=" * 50)
+        self.logger.info(f"🔍 DIAGNOSING DATA FOR {len(selected_etfs)} ETFs")
+        self.logger.progress("=" * 50)
 
         diagnosis = {
             "selected_etfs": selected_etfs,
@@ -2842,46 +2576,46 @@ class ETFRotationBacktester(RotationStrategy):
                 if latest_end is None or end_date > latest_end:
                     latest_end = end_date
 
-        print("\n📈 DATA SUMMARY:")
-        print(f"   Earliest ETF data starts: {earliest_start.strftime('%Y-%m-%d')}")
-        print(f"   Latest ETF data starts:   {latest_start.strftime('%Y-%m-%d')}")
-        print(f"   Earliest ETF data ends:   {earliest_end.strftime('%Y-%m-%d')}")
-        print(f"   Latest ETF data ends:     {latest_end.strftime('%Y-%m-%d')}")
+        self.logger.progress("\n📈 DATA SUMMARY:")
+        self.logger.info(f"   Earliest ETF data starts: {earliest_start.strftime('%Y-%m-%d')}")
+        self.logger.info(f"   Latest ETF data starts:   {latest_start.strftime('%Y-%m-%d')}")
+        self.logger.info(f"   Earliest ETF data ends:   {earliest_end.strftime('%Y-%m-%d')}")
+        self.logger.info(f"   Latest ETF data ends:     {latest_end.strftime('%Y-%m-%d')}")
 
         # Calculate overlapping period
         overlap_start = latest_start
         overlap_end = earliest_end
 
-        print(f"\n🎯 OVERLAPPING PERIOD:")
-        print(f"   Common data range: {overlap_start.strftime('%Y-%m-%d')} to {overlap_end.strftime('%Y-%m-%d')}")
+        self.logger.progress(f"\n🎯 OVERLAPPING PERIOD:")
+        self.logger.info(f"   Common data range: {overlap_start.strftime('%Y-%m-%d')} to {overlap_end.strftime('%Y-%m-%d')}")
 
         if overlap_start >= overlap_end:
-            print("   ❌ NO COMMON DATA PERIOD!")
+            self.logger.info("   ❌ NO COMMON DATA PERIOD!")
             diagnosis["recommendations"].append("No overlapping data period - select different ETFs")
             return diagnosis
 
         overlap_days = (overlap_end - overlap_start).days
         overlap_years = overlap_days / 365.25
-        print(f"   Overlap duration: {overlap_days} days ({overlap_years:.1f} years)")
+        self.logger.info(f"   Overlap duration: {overlap_days} days ({overlap_years:.1f} years)")
 
         # Calculate strategy start date (after 90-week buffer)
         buffer_days = 630  # 90 weeks
         strategy_start = overlap_start + timedelta(days=buffer_days)
 
-        print(f"\n🚀 STRATEGY FEASIBILITY:")
-        print(f"   Required buffer: {buffer_days} days (90 weeks for enhanced 52-week momentum + safety)")
-        print(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
+        self.logger.info(f"\n🚀 STRATEGY FEASIBILITY:")
+        self.logger.info(f"   Required buffer: {buffer_days} days (90 weeks for enhanced 52-week momentum + safety)")
+        self.logger.info(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
 
         if strategy_start >= overlap_end:
-            print("   ❌ INSUFFICIENT DATA FOR STRATEGY!")
+            self.logger.info("   ❌ INSUFFICIENT DATA FOR STRATEGY!")
             shortage_days = (strategy_start - overlap_end).days
-            print(f"   Shortage: {shortage_days} days")
+            self.logger.info(f"   Shortage: {shortage_days} days")
             diagnosis["recommendations"].append(f"Need {shortage_days} more days of data")
             diagnosis["recommendations"].append("Consider selecting ETFs with longer history")
         else:
             backtest_days = (overlap_end - strategy_start).days
             backtest_years = backtest_days / 365.25
-            print(f"   ✅ Available backtest period: {backtest_days} days ({backtest_years:.1f} years)")
+            self.logger.progress(f"   ✅ Available backtest period: {backtest_days} days ({backtest_years:.1f} years)")
 
             diagnosis["common_range"] = {
                 "strategy_start": strategy_start.strftime('%Y-%m-%d'),
@@ -2904,9 +2638,9 @@ class ETFRotationBacktester(RotationStrategy):
             sector = self.get_asset_sector_classification(etf)
             sectors[sector] = sectors.get(sector, 0) + 1
 
-        print(f"\n📊 PORTFOLIO DIVERSIFICATION:")
+        self.logger.progress(f"\n📊 PORTFOLIO DIVERSIFICATION:")
         for sector, count in sectors.items():
-            print(f"   {sector}: {count} ETF(s)")
+            self.logger.info(f"   {sector}: {count} ETF(s)")
 
         if len(sectors) >= 4:
             diagnosis["recommendations"].append("Excellent diversification across sectors")
@@ -2915,8 +2649,8 @@ class ETFRotationBacktester(RotationStrategy):
         else:
             diagnosis["recommendations"].append("Consider adding ETFs from different sectors")
 
-        print(f"\n💡 RECOMMENDATIONS:")
+        self.logger.info(f"\n💡 RECOMMENDATIONS:")
         for i, rec in enumerate(diagnosis["recommendations"], 1):
-            print(f"   {i}. {rec}")
+            self.logger.info(f"   {i}. {rec}")
 
         return diagnosis

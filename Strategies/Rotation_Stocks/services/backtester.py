@@ -29,13 +29,13 @@ from market_data_db_connection import (
     create_connection as create_market_data_connection,
     get_session as get_market_data_session,
     init_database as init_market_data_database,
-    StockData,  # Stock data model (uses stock_data table)
-    Nifty500Metadata,  # Stock metadata model (uses nifty500_metadata table)
+    StockData,  # Stock data model (uses stock_data table) - metadata calculated from this
     IndexData  # Index data for RS calculations (uses index_data table)
 )
 
 # Import base class for OOP refactoring
 from Strategies.Rotation.RotationStrategy import RotationStrategy
+from Strategies.utilities.logging_config import StrategyLogger
 
 try:
     import plotly.graph_objects as go
@@ -58,6 +58,9 @@ class StockRotationBacktester(RotationStrategy):
         # Call base class constructor (initializes common attributes)
         super().__init__()
         
+        # Initialize centralized logger AFTER parent init to prevent override
+        self.logger = StrategyLogger('Rotation_Stocks')
+        
         # Initialize PostgreSQL connection
         if not create_market_data_connection():
             raise RuntimeError("Failed to connect to MarketData database")
@@ -72,8 +75,7 @@ class StockRotationBacktester(RotationStrategy):
         self.purchase_history = {}
         
         # Strategy-specific table configuration (must be set before method calls)
-        self.metadata_table = "nifty500_metadata"  # Use nifty500_metadata for stock metadata
-        self.data_table = "stock_data"  # Stocks are stored in stock_data table
+        self.data_table = "stock_data"  # Stocks are stored in stock_data table (metadata calculated from this)
         
         self.available_databases = []  # Not needed for PostgreSQL
         self.stock_metadata = self.load_metadata()
@@ -98,10 +100,6 @@ class StockRotationBacktester(RotationStrategy):
     def _get_data_model(self):
         """Return the SQLAlchemy model for Stock data"""
         return StockData
-    
-    def _get_metadata_model(self):
-        """Return the SQLAlchemy model for Stock metadata"""
-        return Nifty500Metadata
 
     def set_verbose(self, verbose: bool = True):
         """Enable or disable verbose logging for debugging"""
@@ -180,78 +178,72 @@ class StockRotationBacktester(RotationStrategy):
         return []
 
     def load_metadata(self) -> Dict[str, Dict]:
-        """Load stock metadata from PostgreSQL database"""
+        """Load stock metadata by calculating directly from stock_data table"""
         session = None
         try:
             session = self._get_session()
             
-            # Try to load from nifty500_metadata table first
-            from sqlalchemy import text
-            result = session.execute(text("""
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_schema = 'public' AND table_name = 'nifty500_metadata'
-            """))
+            # Calculate metadata directly from stock_data table
+            metadata = self.calculate_metadata_from_data(session)
             
-            if result.fetchone():
-                # Load from nifty500_metadata table
-                metadata_records = session.query(Nifty500Metadata).all()
-                metadata = {}
-                for record in metadata_records:
-                    metadata[record.symbol] = {
-                        'start_date': record.start_date,
-                        'end_date': record.end_date,
-                        'years_available': record.years_available or 0,
-                        'total_records': record.total_records or 0,
-                        'data_source': record.data_source or 'database'
-                    }
-            else:
-                # Fallback: calculate metadata from data table
-                metadata = self.calculate_metadata_from_data(session)
-
             return metadata
-
+            
         except Exception as e:
-            print(f"Error loading stock metadata: {e}")
+            self.logger.progress(f"Error loading stock metadata: {e}")
             return {}
         finally:
             if session:
                 session.close()
 
     def calculate_metadata_from_data(self, session) -> Dict[str, Dict]:
-        """Calculate metadata from data table if metadata table doesn't exist"""
+        """Calculate metadata directly from stock_data table"""
         try:
             from sqlalchemy import text
             
-            # Use stock_data table
-            query = text("""
+            # Use stock_data table directly
+            table_name = 'stock_data'
+            
+            # Query metadata from stock_data - date column is of type DATE/TIMESTAMP
+            # Fix: Cast dates to timestamp to get proper interval for EXTRACT
+            query_str = """
                 SELECT 
                     symbol,
-                    MIN(date::text) as start_date,
-                    MAX(date::text) as end_date,
+                    MIN(date)::text as start_date,
+                    MAX(date)::text as end_date,
                     COUNT(*) as total_records,
-                    ROUND(EXTRACT(EPOCH FROM (MAX(date) - MIN(date))) / 86400.0 / 365.25, 1) as years_available
+                    ROUND(EXTRACT(EPOCH FROM (MAX(date)::timestamp - MIN(date)::timestamp)) / 86400.0 / 365.25, 1) as years_available
                 FROM stock_data
                 GROUP BY symbol
-            """)
+                ORDER BY symbol
+            """
             
-            result = session.execute(query)
+            result = session.execute(text(query_str))
             rows = result.fetchall()
             
             metadata = {}
             for row in rows:
-                metadata[row.symbol] = {
-                    'start_date': row.start_date,
-                    'end_date': row.end_date,
-                    'years_available': float(row.years_available) if row.years_available else 0,
-                    'total_records': row.total_records,
-                    'data_source': 'OHLCV'
-                }
+                try:
+                    metadata[row[0]] = {
+                        'start_date': str(row[1]) if row[1] else None,
+                        'end_date': str(row[2]) if row[2] else None,
+                        'years_available': float(row[4]) if row[4] else 0,
+                        'total_records': int(row[3]) if row[3] else 0,
+                        'data_source': 'stock_data'
+                    }
+                except Exception as row_error:
+                    continue
 
             return metadata
 
         except Exception as e:
-            print(f"Error calculating metadata: {e}")
+            self.logger.progress(f"Error calculating metadata: {e}")
+            
+            # Rollback the session to clear the failed transaction
+            try:
+                session.rollback()
+            except:
+                pass
+            
             return {}
 
     def generate_asset_description(self, symbol: str) -> str:
@@ -384,7 +376,7 @@ class StockRotationBacktester(RotationStrategy):
     def calculate_common_date_range(self, selected_stocks: List[str]) -> Tuple[Optional[str], Optional[str], float]:
         """Calculate common date range for selected stocks by querying stock_data table directly"""
         if not selected_stocks:
-            print("[ERROR] No stocks provided for date range calculation")
+            self.logger.error("No stocks provided for date range calculation")
             return None, None, 0.0
         
         session = None
@@ -392,7 +384,7 @@ class StockRotationBacktester(RotationStrategy):
             session = self._get_session()
             from sqlalchemy import text
             
-            print(f"[DEBUG] Querying stock_data table for date ranges of: {selected_stocks}")
+            self.logger.debug(f"Querying stock_data table for date ranges of: {selected_stocks}")
             
             # Build placeholders for IN clause
             placeholders = ','.join([f':ticker_{i}' for i in range(len(selected_stocks))])
@@ -417,7 +409,7 @@ class StockRotationBacktester(RotationStrategy):
             rows = result.fetchall()
             
             if not rows:
-                print(f"[ERROR] No data found in stock_data table for: {selected_stocks}")
+                self.logger.error(f"No data found in stock_data table for: {selected_stocks}")
                 return None, None, 0.0
             
             # Parse results
@@ -446,10 +438,10 @@ class StockRotationBacktester(RotationStrategy):
             # Check if all requested stocks were found
             missing_stocks = [stock for stock in selected_stocks if stock not in stock_date_ranges]
             if missing_stocks:
-                print(f"[WARNING] No data found for: {missing_stocks}")
+                self.logger.info(f"No data found for: {missing_stocks}")
             
             if not stock_date_ranges:
-                print(f"[ERROR] None of the requested stocks found in stock_data table: {selected_stocks}")
+                self.logger.error(f"None of the requested stocks found in stock_data table: {selected_stocks}")
                 return None, None, 0.0
             
             # Calculate common date range
@@ -460,40 +452,40 @@ class StockRotationBacktester(RotationStrategy):
             latest_start = max(start_dates)
             common_end = min(end_dates)
             
-            print(f"📅 Stock Data Ranges (from stock_data table):")
+            self.logger.info(f"📅 Stock Data Ranges (from stock_data table):")
             for symbol, data in stock_date_ranges.items():
                 years = data['years_available']
-                print(f"   {symbol:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years:.1f} years, {data['total_records']} records)")
+                self.logger.info(f"   {symbol:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years:.1f} years, {data['total_records']} records)")
             
-            print(f"📊 Common data range: {latest_start.strftime('%Y-%m-%d')} to {common_end.strftime('%Y-%m-%d')}")
+            self.logger.progress(f"📊 Common data range: {latest_start.strftime('%Y-%m-%d')} to {common_end.strftime('%Y-%m-%d')}")
             
             # OPTIMIZED BUFFER: Use 53 weeks (371 days) for 252+ trading days
             buffer_weeks = 53
             buffer_days = buffer_weeks * 7  # 371 calendar days (~265 trading days)
             strategy_start = latest_start + timedelta(days=buffer_days)
             
-            print(f"🎯 Enhanced Buffer Strategy:")
-            print(f"   Buffer period: {buffer_weeks} weeks ({buffer_days} calendar days)")
-            print(f"   Expected trading days: ~{int(buffer_days * 5 / 7)} days")
-            print(f"   Required for momentum: 252 trading days")
-            print(f"   Safety margin: ~{int(buffer_days * 5 / 7) - 252} trading days")
-            print(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
+            self.logger.info(f"🎯 Enhanced Buffer Strategy:")
+            self.logger.info(f"   Buffer period: {buffer_weeks} weeks ({buffer_days} calendar days)")
+            self.logger.info(f"   Expected trading days: ~{int(buffer_days * 5 / 7)} days")
+            self.logger.info(f"   Required for momentum: 252 trading days")
+            self.logger.info(f"   Safety margin: ~{int(buffer_days * 5 / 7) - 252} trading days")
+            self.logger.info(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
             
             # Ensure we have at least 1 year of backtest data after the strategy start
             if strategy_start >= common_end:
-                print(f"❌ Insufficient data even with {buffer_weeks}-week buffer:")
-                print(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
-                print(f"   Data ends: {common_end.strftime('%Y-%m-%d')}")
+                self.logger.info(f"❌ Insufficient data even with {buffer_weeks}-week buffer:")
+                self.logger.info(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
+                self.logger.info(f"   Data ends: {common_end.strftime('%Y-%m-%d')}")
                 shortage_days = (strategy_start - common_end).days
-                print(f"   Shortage: {shortage_days} days")
+                self.logger.info(f"   Shortage: {shortage_days} days")
                 
                 # Try with maximum possible buffer
                 max_possible_days = (common_end - latest_start).days - 365  # Reserve 1 year for backtesting
                 if max_possible_days > 252:  # At least need 252 trading days
                     alt_strategy_start = latest_start + timedelta(days=max_possible_days)
-                    print(f"🔄 Alternative with maximum buffer:")
-                    print(f"   Maximum buffer: {max_possible_days} days ({max_possible_days / 7:.1f} weeks)")
-                    print(f"   Alternative start: {alt_strategy_start.strftime('%Y-%m-%d')}")
+                    self.logger.progress(f"🔄 Alternative with maximum buffer:")
+                    self.logger.info(f"   Maximum buffer: {max_possible_days} days ({max_possible_days / 7:.1f} weeks)")
+                    self.logger.info(f"   Alternative start: {alt_strategy_start.strftime('%Y-%m-%d')}")
                     
                     years_available = (common_end - alt_strategy_start).days / 365.25
                     return alt_strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
@@ -503,22 +495,22 @@ class StockRotationBacktester(RotationStrategy):
             # Check if we have sufficient backtest period
             years_available = (common_end - strategy_start).days / 365.25
             
-            print(f"📈 Backtest Feasibility:")
+            self.logger.info(f"📈 Backtest Feasibility:")
             if years_available >= 10:
-                print(f"   ✅ Excellent: {years_available:.1f} years provides statistically robust results")
+                self.logger.progress(f"   ✅ Excellent: {years_available:.1f} years provides statistically robust results")
             elif years_available >= 5:
-                print(f"   ✅ Good: {years_available:.1f} years allows reasonable strategy validation")
+                self.logger.progress(f"   ✅ Good: {years_available:.1f} years allows reasonable strategy validation")
             elif years_available >= 2:
-                print(f"   ⚠️ Fair: {years_available:.1f} years provides basic validation")
+                self.logger.info(f"   ⚠️ Fair: {years_available:.1f} years provides basic validation")
             else:
-                print(f"   ⚠️ Limited: {years_available:.1f} years may not be reliable")
+                self.logger.info(f"   ⚠️ Limited: {years_available:.1f} years may not be reliable")
             
             return strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
             
         except Exception as e:
-            print(f"[ERROR] Error calculating date range from stock_data table: {e}")
+            self.logger.error(f"Error calculating date range from stock_data table: {e}")
             import traceback
-            print(f"[ERROR] Traceback: {traceback.format_exc()}")
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
             return None, None, 0.0
         finally:
             if session:
@@ -533,7 +525,7 @@ class StockRotationBacktester(RotationStrategy):
         cache_key = f"{','.join(sorted(tickers))}_{buffer_start_date}_{end_date}"
         if cache_key in self._data_cache:
             if self._verbose:
-                print(f"📦 Using cached data for {len(tickers)} stocks")
+                self.logger.info(f"📦 Using cached data for {len(tickers)} stocks")
             return self._data_cache[cache_key]
         
         session = None
@@ -542,10 +534,10 @@ class StockRotationBacktester(RotationStrategy):
             from sqlalchemy import text
 
             if self._verbose:
-                print(f"📊 Loading data with historical buffer:")
-                print(f"   Strategy period: {start_date} to {end_date}")
-                print(f"   Data loading period: {buffer_start_date} to {end_date}")
-                print(f"   Buffer: 400 calendar days (~252 trading days) for momentum calculations")
+                self.logger.progress(f"📊 Loading data with historical buffer:")
+                self.logger.info(f"   Strategy period: {start_date} to {end_date}")
+                self.logger.progress(f"   Data loading period: {buffer_start_date} to {end_date}")
+                self.logger.info(f"   Buffer: 400 calendar days (~252 trading days) for momentum calculations")
 
             # Use stock_data table - column names match directly
             # Get available symbols using proper parameterization
@@ -570,7 +562,7 @@ class StockRotationBacktester(RotationStrategy):
             missing_tickers = [t for t in tickers if t not in available_tickers]
 
             if missing_tickers and self._verbose:
-                print(f"⚠️ Missing data for: {', '.join(missing_tickers)}")
+                self.logger.info(f"⚠️ Missing data for: {', '.join(missing_tickers)}")
 
             if not available_tickers:
                 raise ValueError("No data available for any of the selected stocks")
@@ -609,7 +601,7 @@ class StockRotationBacktester(RotationStrategy):
                 raise ValueError(f"No data found for the selected date range {start_date} to {end_date}")
 
             if self._verbose:
-                print(f"✅ Loaded data for {len(available_tickers)} stocks: {', '.join(available_tickers)}")
+                self.logger.progress(f"✅ Loaded data for {len(available_tickers)} stocks: {', '.join(available_tickers)}")
 
             df['date'] = pd.to_datetime(df['date'])
 
@@ -625,7 +617,7 @@ class StockRotationBacktester(RotationStrategy):
             return data_dict
 
         except Exception as e:
-            print(f"Error loading data: {e}")
+            self.logger.progress(f"Error loading data: {e}")
             return {}
         finally:
             if session:
@@ -672,23 +664,23 @@ class StockRotationBacktester(RotationStrategy):
         required_trading_days = 252
         available_days = len(historical_data)
 
-        print(f"📊 Momentum Calculation for {current_date.strftime('%Y-%m-%d')}:")
-        print(f"   Available historical data: {available_days} days")
-        print(f"   Required for 52-week calc: {required_trading_days} days")
+        self.logger.progress(f"📊 Momentum Calculation for {current_date.strftime('%Y-%m-%d')}:")
+        self.logger.info(f"   Available historical data: {available_days} days")
+        self.logger.info(f"   Required for 52-week calc: {required_trading_days} days")
 
         if available_days < required_trading_days:
             # Insufficient data for proper 52-week calculation
-            print(f"   ❌ Insufficient data: {available_days} < {required_trading_days} required")
-            print(f"   📋 Available stocks: {list(historical_data.columns)}")
-            print(f"   🔄 Strategy will use fallback logic during accumulation")
+            self.logger.info(f"   ❌ Insufficient data: {available_days} < {required_trading_days} required")
+            self.logger.info(f"   📋 Available stocks: {list(historical_data.columns)}")
+            self.logger.progress(f"   🔄 Strategy will use fallback logic during accumulation")
             return pd.DataFrame()
 
         # Use exactly 252 trading days as per PDF specification
         window_data = historical_data.tail(252)
-        print(f"   ✅ Using exactly {len(window_data)} trading days for momentum")
+        self.logger.progress(f"   ✅ Using exactly {len(window_data)} trading days for momentum")
 
         if window_data.empty:
-            print("   ❌ Window data is empty after filtering")
+            self.logger.info("   ❌ Window data is empty after filtering")
             return pd.DataFrame()
 
         # Calculate 52-week highs and lows as per PDF specification
@@ -696,9 +688,9 @@ class StockRotationBacktester(RotationStrategy):
         lows_52w = window_data.min()  # Minimum closing price in trailing 252 trading days
         current_prices = historical_data.iloc[-1] if not historical_data.empty else pd.Series()
 
-        print(f"   📈 52-week highs calculated for {len(highs_52w)} stocks")
-        print(f"   📉 52-week lows calculated for {len(lows_52w)} stocks")
-        print(f"   💰 Current prices available for {len(current_prices)} stocks")
+        self.logger.info(f"   📈 52-week highs calculated for {len(highs_52w)} stocks")
+        self.logger.info(f"   📉 52-week lows calculated for {len(lows_52w)} stocks")
+        self.logger.info(f"   💰 Current prices available for {len(current_prices)} stocks")
 
         # Create result DataFrame with exact PDF specification calculations
         result_data = []
@@ -725,22 +717,22 @@ class StockRotationBacktester(RotationStrategy):
                     })
 
                     valid_stocks += 1
-                    print(f"   ✅ {symbol}: High=₹{highs_52w[symbol]:.2f}, Low=₹{lows_52w[symbol]:.2f}, Current=₹{current_prices[symbol]:.2f}")
-                    print(f"       Distance from Low: {distance_from_low:.2f}%, Distance from High: {distance_from_high:.2f}%")
+                    self.logger.progress(f"   ✅ {symbol}: High=₹{highs_52w[symbol]:.2f}, Low=₹{lows_52w[symbol]:.2f}, Current=₹{current_prices[symbol]:.2f}")
+                    self.logger.info(f"       Distance from Low: {distance_from_low:.2f}%, Distance from High: {distance_from_high:.2f}%")
                 else:
-                    print(f"   ❌ {symbol}: Data integrity issue - high ({highs_52w[symbol]:.2f}) < low ({lows_52w[symbol]:.2f})")
+                    self.logger.info(f"   ❌ {symbol}: Data integrity issue - high ({highs_52w[symbol]:.2f}) < low ({lows_52w[symbol]:.2f})")
             else:
-                print(f"   ❌ {symbol}: Invalid data - contains NaN or zero values")
+                self.logger.info(f"   ❌ {symbol}: Invalid data - contains NaN or zero values")
 
         result_df = pd.DataFrame(result_data)
-        print(f"   🎯 Final momentum result: {len(result_df)} valid stocks with proper 52-week data")
+        self.logger.info(f"   🎯 Final momentum result: {len(result_df)} valid stocks with proper 52-week data")
 
         if not result_df.empty:
             # Sort by distance from low for accumulation phase (buy closest to low)
             result_df_sorted = result_df.sort_values('distance_from_low')
-            print(f"   📊 Ranked 52 week low stocks in ascending order:")
+            self.logger.progress(f"   📊 Ranked 52 week low stocks in ascending order:")
             for idx, row in result_df_sorted.head().iterrows():
-                print(f"      {idx + 1}. {row['symbol']}: {row['distance_from_low']:.2f}% from low")
+                self.logger.info(f"      {idx + 1}. {row['symbol']}: {row['distance_from_low']:.2f}% from low")
 
         return result_df
 
@@ -831,8 +823,8 @@ class StockRotationBacktester(RotationStrategy):
         1. Capital Raising Process: Sell from stocks closest to 52-week high
         2. Reallocation Process: Buy stock with smallest distance from 52-week low
         """
-        print(f"🔄 Executing Churning Phase - Week {week_num}")
-        print(f"💰 Target capital to raise: ₹{target_capital:,.0f}")
+        self.logger.progress(f"🔄 Executing Churning Phase - Week {week_num}")
+        self.logger.info(f"💰 Target capital to raise: ₹{target_capital:,.0f}")
         
         # Initialize tracking variables
         total_raised = 0
@@ -841,7 +833,7 @@ class StockRotationBacktester(RotationStrategy):
         updated_holdings = current_holdings.copy()
         
         # ===== CAPITAL RAISING PROCESS =====
-        print("📊 Starting Capital Raising Process...")
+        self.logger.progress("📊 Starting Capital Raising Process...")
         capital_raising_result = self.execute_capital_raising_process(
             week_num=week_num,
             execution_date=execution_date,
@@ -863,7 +855,7 @@ class StockRotationBacktester(RotationStrategy):
         current_cash = cash + total_raised
         
         # ===== REALLOCATION PROCESS =====
-        print(f"📊 Starting Reallocation Process (Cash available: ₹{current_cash:,.2f})...")
+        self.logger.progress(f"📊 Starting Reallocation Process (Cash available: ₹{current_cash:,.2f})...")
         
         # Only proceed if we have cash to deploy
         buy_transaction = {}
@@ -924,7 +916,7 @@ class StockRotationBacktester(RotationStrategy):
         valid_holdings = [ticker for ticker in updated_holdings.keys() if ticker in high_low_data['symbol'].values]
         
         if not valid_holdings:
-            print("   ⚠️ No valid holdings available for selling")
+            self.logger.trade("   ⚠️ No valid holdings available for selling")
             return {
                 'total_raised': 0,
                 'sell_transactions': [],
@@ -938,9 +930,9 @@ class StockRotationBacktester(RotationStrategy):
         # Sort by distance from high (ascending) - sell stocks closest to high first
         holdings_sorted = holdings_data.sort_values('distance_from_high')
         
-        print("   📉 Sell candidates (closest to 52-week high):")
+        self.logger.trade("   📉 Sell candidates (closest to 52-week high):")
         for idx, row in holdings_sorted.iterrows():
-            print(f"      {row['symbol']}: {row['distance_from_high']:.2f}% from high")
+            self.logger.info(f"      {row['symbol']}: {row['distance_from_high']:.2f}% from high")
             
         # Iterate through candidates and sell until target capital is raised
         for _, row in holdings_sorted.iterrows():
@@ -999,14 +991,14 @@ class StockRotationBacktester(RotationStrategy):
                         'capital_gains_tax': capital_gains_tax
                     })
                     
-                    print(f"📋 Sale calculation:")
-                    print(f"   Gross amount: ₹{amount:,.2f}")
-                    print(f"   Transaction costs: ₹{costs['total_costs']:,.2f}")
-                    print(f"   Capital Gains Tax: ₹{capital_gains_tax:,.2f}")
-                    print(f"   Net proceeds: ₹{net_amount:,.2f}")
-                    print(f"   Units to sell: {units_to_sell}")
-                    print(f"🔻 Sale executed: {units_to_sell} units of {ticker} for ₹{net_amount:,.2f}")
-                    print(f"💰 Remaining cash: ₹{cash + total_raised:,.2f}")
+                    self.logger.info(f"📋 Sale calculation:")
+                    self.logger.info(f"   Gross amount: ₹{amount:,.2f}")
+                    self.logger.info(f"   Transaction costs: ₹{costs['total_costs']:,.2f}")
+                    self.logger.info(f"   Capital Gains Tax: ₹{capital_gains_tax:,.2f}")
+                    self.logger.info(f"   Net proceeds: ₹{net_amount:,.2f}")
+                    self.logger.trade(f"   Units to sell: {units_to_sell}")
+                    self.logger.trade(f"🔻 Sale executed: {units_to_sell} units of {ticker} for ₹{net_amount:,.2f}")
+                    self.logger.info(f"💰 Remaining cash: ₹{cash + total_raised:,.2f}")
                 
         return {
             'total_raised': total_raised,
@@ -1029,7 +1021,7 @@ class StockRotationBacktester(RotationStrategy):
         buy_candidates = high_low_data.sort_values('distance_from_low')
         
         if buy_candidates.empty:
-            print("   ⚠️ No valid buy candidates found")
+            self.logger.trade("   ⚠️ No valid buy candidates found")
             return {
                 'buy_transaction': {},
                 'holdings': updated_holdings,
@@ -1041,7 +1033,7 @@ class StockRotationBacktester(RotationStrategy):
         ticker = top_candidate['symbol']
         price = open_prices[ticker]
         
-        print(f"   📈 Top Buy Candidate: {ticker} ({top_candidate['distance_from_low']:.2f}% from low)")
+        self.logger.trade(f"   📈 Top Buy Candidate: {ticker} ({top_candidate['distance_from_low']:.2f}% from low)")
         
         # Determine investable capital
         # If target_allocation provided, use IT for sizing (matching ETF logic: try to buy fixed amount)
@@ -1087,16 +1079,16 @@ class StockRotationBacktester(RotationStrategy):
                 }
                 
                 # Enhanced Logging for Buy (matching detailed style)
-                print(f"📋 Purchase calculation:")
-                print(f"   Gross amount: ₹{amount:,.0f}")
-                print(f"   Transaction costs: ₹{costs['total_costs']:,.2f}")
-                print(f"   Net for units: ₹{remaining_cash - costs['total_costs']:,.0f}") # Approximate Net available
-                print(f"   Units to buy: {units_to_buy}")
-                print(f"✅ Purchase executed: {units_to_buy} units of {ticker} for ₹{costs['net_amount']:,.2f}")
-                print(f"💳 Total cost (including fees): ₹{costs['total_costs']:,.2f}")
-                print(f"💰 Remaining cash: ₹{remaining_cash:,.2f}")
+                self.logger.info(f"📋 Purchase calculation:")
+                self.logger.info(f"   Gross amount: ₹{amount:,.0f}")
+                self.logger.info(f"   Transaction costs: ₹{costs['total_costs']:,.2f}")
+                self.logger.info(f"   Net for units: ₹{remaining_cash - costs['total_costs']:,.0f}")
+                self.logger.trade(f"   Units to buy: {units_to_buy}")
+                self.logger.trade(f"✅ Purchase executed: {units_to_buy} units of {ticker} for ₹{costs['net_amount']:,.2f}")
+                self.logger.info(f"💳 Total cost (including fees): ₹{costs['total_costs']:,.2f}")
+                self.logger.info(f"💰 Remaining cash: ₹{remaining_cash:,.2f}")
         else:
-            print(f"      ⚠️ Insufficient cash to buy even 1 unit of {ticker}")
+            self.logger.trade(f"      ⚠️ Insufficient cash to buy even 1 unit of {ticker}")
             
         return {
             'buy_transaction': buy_transaction,
@@ -1253,9 +1245,9 @@ class StockRotationBacktester(RotationStrategy):
                      brokerage_percent: float, compounding_enabled: bool) -> Dict[str, Any]:
         """Run the full backtest simulation"""
         try:
-            print(f"🚀 Starting Stock Rotation Backtest...")
-            print(f"   Tickers: {tickers}")
-            print(f"   Period: {start_date} to {end_date}")
+            self.logger.info(f"🚀 Starting Stock Rotation Backtest...")
+            self.logger.info(f"   Tickers: {tickers}")
+            self.logger.info(f"   Period: {start_date} to {end_date}")
             
             # Load data
             data_dict = self.load_data_from_database(tickers, start_date, end_date)
@@ -1285,13 +1277,13 @@ class StockRotationBacktester(RotationStrategy):
             while current_date <= end_date_dt:
                 # Phase Logging (matching detailed style)
                 is_accumulation = week_num <= accumulation_weeks
-                print(f"\n🔄 Week {week_num} - {'ACCUMULATION' if is_accumulation else 'CHURNING'} PHASE")
+                self.logger.progress(f"\n🔄 Week {week_num} - {'ACCUMULATION' if is_accumulation else 'CHURNING'} PHASE")
                 
                 # Get current prices (Execution Day Prices)
                 try:
                     current_prices = open_df.loc[current_date]
                 except KeyError:
-                    print(f"   ⚠️ No price data for {current_date}, skipping week")
+                    self.logger.info(f"   ⚠️ No price data for {current_date}, skipping week")
                     current_date = current_date + timedelta(days=7)
                     continue
 
@@ -1302,11 +1294,11 @@ class StockRotationBacktester(RotationStrategy):
                 
                 # Log Dates (matching user request)
                 if signal_date:
-                    print(f"📅 Signal Day: {signal_date.strftime('%A, %Y-%m-%d')}")
-                print(f"💼 Execution Day: {current_date.strftime('%A, %Y-%m-%d')}")
+                    self.logger.info(f"📅 Signal Day: {signal_date.strftime('%A, %Y-%m-%d')}")
+                self.logger.info(f"💼 Execution Day: {current_date.strftime('%A, %Y-%m-%d')}")
                 if is_accumulation:
-                    print(f"📈 Accumulation Phase - Week {week_num}")
-                    print(f"💰 Weekly capital allocation: ₹{capital_per_week:,.0f}")
+                    self.logger.info(f"📈 Accumulation Phase - Week {week_num}")
+                    self.logger.info(f"💰 Weekly capital allocation: ₹{capital_per_week:,.0f}")
                     cash += capital_per_week
                 
                 # 2. Calculate Momentum (52-week High/Low)
@@ -1379,12 +1371,12 @@ class StockRotationBacktester(RotationStrategy):
                 nav_display = self.calculate_nav(holdings, current_prices, cash)
                 holdings_summary = [(s, qty) for s, qty in holdings.items() if qty > 0]
                 
-                print(f"📊 Week {week_num} summary:")
-                print(f"   Action: {'buy' if is_accumulation else 'churn'}")
-                print(f"   NAV: ₹{nav_display:,.0f}")
-                print(f"   Cash: ₹{cash:,.0f}")
-                print(f"   Holdings: {holdings_summary}")
-                print("============================================================")
+                self.logger.progress(f"📊 Week {week_num} summary:")
+                self.logger.trade(f"   Action: {'buy' if is_accumulation else 'churn'}")
+                self.logger.info(f"   NAV: ₹{nav_display:,.0f}")
+                self.logger.info(f"   Cash: ₹{cash:,.0f}")
+                self.logger.info(f"   Holdings: {holdings_summary}")
+                self.logger.info("============================================================")
                 self.total_weeks = week_num
                 
                 # Move to next week
@@ -1489,10 +1481,10 @@ class StockRotationBacktester(RotationStrategy):
             nifty_df = pd.DataFrame(rows, columns=columns)
 
             if nifty_df.empty:
-                print("⚠️ No Nifty50 benchmark data found in index_data table")
+                self.logger.info("⚠️ No Nifty50 benchmark data found in index_data table")
                 return pd.DataFrame()
 
-            print(f"✅ Loaded {len(nifty_df)} days of Nifty50 benchmark data")
+            self.logger.progress(f"✅ Loaded {len(nifty_df)} days of Nifty50 benchmark data")
 
             nifty_df['date'] = pd.to_datetime(nifty_df['date'])
             nifty_df = nifty_df.set_index('date')
@@ -1516,7 +1508,7 @@ class StockRotationBacktester(RotationStrategy):
             return nifty_df
 
         except Exception as e:
-            print(f"Error calculating Nifty50 buy-hold benchmark: {e}")
+            self.logger.trade(f"Error calculating Nifty50 buy-hold benchmark: {e}")
             import traceback
             traceback.print_exc()
             return pd.DataFrame()

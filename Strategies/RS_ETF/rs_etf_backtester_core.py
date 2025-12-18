@@ -17,6 +17,15 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from benchmark_calculator import BenchmarkCalculator
+from Strategies.utilities.logging_config import StrategyLogger
+
+# Import RS configuration
+try:
+    from ..RS.rs_config_loader import get_rs_config
+except ImportError:
+    # Fallback for direct execution
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'RS'))
+    from rs_config_loader import get_rs_config
 
 class MarketRegime(Enum):
     BULL = "bull"
@@ -126,6 +135,9 @@ class Position:
 
 class RSETFStrategyBacktester:
     def __init__(self, db: Session, config_id: int = None, config_dict: Dict = None):
+        # Initialize centralized logger
+        self.logger = StrategyLogger('RS_ETF')
+
         self.db = db
         
         # Support both config_id (existing) and config_dict (new custom config approach)
@@ -188,6 +200,18 @@ class RSETFStrategyBacktester:
         else:
             raise ValueError("Either config_id or config_dict must be provided")
         
+        # Load RS configuration for stop loss behavior
+        rs_config = get_rs_config()
+        
+        # Daily stop loss check setting - can be overridden by config_dict
+        if config_dict and 'daily_stop_loss_check' in config_dict:
+            self.daily_stop_loss_check = config_dict.get('daily_stop_loss_check')
+        else:
+            # Load from centralized RS config
+            self.daily_stop_loss_check = rs_config.get_daily_stop_loss_check()
+        
+        self.logger.info(f"Stop Loss Mode: {'Daily Check' if self.daily_stop_loss_check else 'Weekly Check (Signal Day Only)'}")
+        
         # Calculated values for dynamic buffer system
         self.buffer_capital = self.total_capital * self.buffer_capital_pct  # Initial buffer amount
         # Full position size for maximum capital utilization
@@ -217,6 +241,9 @@ class RSETFStrategyBacktester:
         self.pending_entries = None
         self.pending_exits = None
         self.signal_date = None
+        
+        # Weekly stop loss accumulation (for weekly mode)
+        self.weekly_stop_loss_exits: List[str] = []
     
     @classmethod
     def from_config_dict(cls, db: Session, config_dict: Dict):
@@ -247,20 +274,20 @@ class RSETFStrategyBacktester:
         # buffer_start_date = (pd.to_datetime(start_date) - timedelta(days=400)).strftime('%Y-%m-%d')
         data_start_date = start_date - timedelta(days=100)
         
-        print(f"Loading ETF data from {data_start_date} to {end_date} (backtest period: {start_date} to {end_date})")
+        self.logger.progress(f"Loading ETF data from {data_start_date} to {end_date} (backtest period: {start_date} to {end_date})")
         
         # Calculate period length
         period_days = (end_date - start_date).days
         total_data_days = (end_date - data_start_date).days
-        print(f"Backtest period: {period_days} days, Total data period: {total_data_days} days")
+        self.logger.info(f"Backtest period: {period_days} days, Total data period: {total_data_days} days")
         
         # Get selected ETF symbols
         selected_etfs = self.get_custom_etf_universe()
         if not selected_etfs:
             raise ValueError("No ETFs selected for backtest")
         
-        print(f"Selected ETFs for backtest: {len(selected_etfs)} ETFs")
-        print(f"ETF symbols: {selected_etfs}")
+        self.logger.info(f"Selected ETFs for backtest: {len(selected_etfs)} ETFs")
+        self.logger.info(f"ETF symbols: {selected_etfs}")
         
         # Build symbol filter for SQL query
         placeholders = ','.join(['%s'] * len(selected_etfs))
@@ -278,15 +305,15 @@ class RSETFStrategyBacktester:
         df = pd.read_sql(sql, self.db.bind, params=params, 
                         index_col=['symbol', 'date'], parse_dates=['date'])
         
-        print(f"Raw ETF data query returned: {len(df)} records")
+        self.logger.performance(f"Raw ETF data query returned: {len(df)} records")
         
         # Convert timezone-aware dates to timezone-naive
         if df.index.get_level_values('date').tz is not None:
             df.index = df.index.set_levels(df.index.levels[1].tz_convert(None), level='date')
         
-        print(f"Final ETF data: {len(df)} records, {len(df.index.get_level_values('symbol').unique())} ETFs")
+        self.logger.info(f"Final ETF data: {len(df)} records, {len(df.index.get_level_values('symbol').unique())} ETFs")
         if not df.empty:
-            print(f"Date range: {df.index.get_level_values('date').min()} to {df.index.get_level_values('date').max()}")
+            self.logger.info(f"Date range: {df.index.get_level_values('date').min()} to {df.index.get_level_values('date').max()}")
         
         return df
     
@@ -301,7 +328,7 @@ class RSETFStrategyBacktester:
             valid_etfs = [etf for etf in selected_etfs if etf in allowed_etfs]
             
             if not valid_etfs:
-                print(f"Warning: No valid ETFs in selection. Allowed ETFs: {allowed_etfs}")
+                self.logger.info(f"Warning: No valid ETFs in selection. Allowed ETFs: {allowed_etfs}")
                 return None, None, 0.0
             
             # Query database for min/max dates for each ETF
@@ -325,7 +352,7 @@ class RSETFStrategyBacktester:
                     }
             
             if not etf_ranges:
-                print(f"No data found for selected ETFs: {valid_etfs}")
+                self.logger.info(f"No data found for selected ETFs: {valid_etfs}")
                 return None, None, 0.0
             
             # Find the latest start date and earliest end date (common range)
@@ -335,15 +362,15 @@ class RSETFStrategyBacktester:
             latest_start = max(start_dates)
             earliest_end = min(end_dates)
             
-            print(f"📅 RS ETF Strategy Data Ranges:")
+            self.logger.info(f"📅 RS ETF Strategy Data Ranges:")
             for etf in valid_etfs:
                 if etf in etf_ranges:
                     data = etf_ranges[etf]
                     days_available = (data['end_date'] - data['start_date']).days
                     years_available = days_available / 365.25
-                    print(f"   {etf:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years_available:.1f} years)")
+                    self.logger.info(f"   {etf:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years_available:.1f} years)")
             
-            print(f"📊 Common data range: {latest_start.strftime('%Y-%m-%d')} to {earliest_end.strftime('%Y-%m-%d')}")
+            self.logger.progress(f"📊 Common data range: {latest_start.strftime('%Y-%m-%d')} to {earliest_end.strftime('%Y-%m-%d')}")
             
             # Add buffer for RS ETF strategy calculations
             # RS strategy needs lookback periods, so add buffer
@@ -351,13 +378,13 @@ class RSETFStrategyBacktester:
             buffer_days = buffer_weeks * 7
             strategy_start = latest_start + timedelta(days=buffer_days)
             
-            print(f"🎯 RS Strategy Buffer:")
-            print(f"   Buffer period: {buffer_weeks} weeks ({buffer_days} calendar days)")
-            print(f"   Strategy start (with buffer): {strategy_start.strftime('%Y-%m-%d')}")
+            self.logger.info(f"🎯 RS Strategy Buffer:")
+            self.logger.info(f"   Buffer period: {buffer_weeks} weeks ({buffer_days} calendar days)")
+            self.logger.info(f"   Strategy start (with buffer): {strategy_start.strftime('%Y-%m-%d')}")
             
             # Ensure we have valid range
             if strategy_start >= earliest_end:
-                print(f"⚠️ Insufficient data with buffer, using latest_start as strategy start")
+                self.logger.info(f"⚠️ Insufficient data with buffer, using latest_start as strategy start")
                 strategy_start = latest_start
             
             # Calculate years available for backtesting
@@ -367,12 +394,12 @@ class RSETFStrategyBacktester:
             start_date_str = strategy_start.strftime('%Y-%m-%d')
             end_date_str = earliest_end.strftime('%Y-%m-%d')
             
-            print(f"✅ Final date range: {start_date_str} to {end_date_str} ({years_available:.1f} years)")
+            self.logger.progress(f"✅ Final date range: {start_date_str} to {end_date_str} ({years_available:.1f} years)")
             
             return start_date_str, end_date_str, years_available
             
         except Exception as e:
-            print(f"Error calculating date range: {e}")
+            self.logger.progress(f"Error calculating date range: {e}")
             import traceback
             traceback.print_exc()
             return None, None, 0.0
@@ -389,7 +416,7 @@ class RSETFStrategyBacktester:
         # buffer_start_date = (pd.to_datetime(start_date) - timedelta(days=400)).strftime('%Y-%m-%d')
         data_start_date = start_date - timedelta(days=400)
         
-        print(f"Loading index data for {self.main_index} from {data_start_date} to {end_date} (backtest period: {start_date} to {end_date})")
+        self.logger.progress(f"Loading index data for {self.main_index} from {data_start_date} to {end_date} (backtest period: {start_date} to {end_date})")
         
         # Use raw SQL to avoid SQLAlchemy model issues
         # Handle multiple symbol formats for NSEI index
@@ -411,7 +438,7 @@ class RSETFStrategyBacktester:
         df = pd.read_sql(sql, self.db.bind, params=params,
                         index_col='date', parse_dates=['date'])
         
-        print(f"Raw index data query returned: {len(df)} records")
+        self.logger.performance(f"Raw index data query returned: {len(df)} records")
         
         
         # Rename adj_close to adjusted_close for consistency
@@ -424,9 +451,9 @@ class RSETFStrategyBacktester:
         if df.index.tz is not None:
             df.index = df.index.tz_convert(None)
         
-        print(f"Final index data: {len(df)} records")
+        self.logger.info(f"Final index data: {len(df)} records")
         if not df.empty:
-            print(f"Date range: {df.index.min()} to {df.index.max()}")
+            self.logger.info(f"Date range: {df.index.min()} to {df.index.max()}")
         
         return df
 
@@ -597,10 +624,10 @@ class RSETFStrategyBacktester:
                 allowed_etfs = self._get_allowed_etf_list()
                 filtered_etfs = [etf for etf in self.custom_etfs if etf in allowed_etfs]
                 if filtered_etfs:
-                    print(f"Using custom ETF selection: {len(filtered_etfs)} ETFs")
+                    self.logger.info(f"Using custom ETF selection: {len(filtered_etfs)} ETFs")
                     return filtered_etfs
                 else:
-                    print(f"Warning: Custom ETFs not in allowed list, using default list")
+                    self.logger.info(f"Warning: Custom ETFs not in allowed list, using default list")
             
             # PRIORITY 2: Get from configuration
             if self.config and hasattr(self.config, 'custom_etfs') and self.config.custom_etfs:
@@ -609,16 +636,16 @@ class RSETFStrategyBacktester:
                 allowed_etfs = self._get_allowed_etf_list()
                 filtered_etfs = [etf for etf in custom_etfs if etf in allowed_etfs]
                 if filtered_etfs:
-                    print(f"Using custom ETF universe from config: {len(filtered_etfs)} ETFs")
+                    self.logger.info(f"Using custom ETF universe from config: {len(filtered_etfs)} ETFs")
                     return filtered_etfs
             
             # PRIORITY 3: Return default allowed ETF list
             default_etfs = self._get_allowed_etf_list()
-            print(f"Using default allowed ETF list: {len(default_etfs)} ETFs")
+            self.logger.info(f"Using default allowed ETF list: {len(default_etfs)} ETFs")
             return default_etfs
             
         except Exception as e:
-            print(f"Error in get_custom_etf_universe: {e}")
+            self.logger.info(f"Error in get_custom_etf_universe: {e}")
             # Fallback to default list on error
             return self._get_allowed_etf_list()
     
@@ -631,14 +658,14 @@ class RSETFStrategyBacktester:
             
             if not result.empty:
                 dynamic_list = result['symbol'].tolist()
-                print(f"Dynamically loaded {len(dynamic_list)} ETFs from database")
+                self.logger.info(f"Dynamically loaded {len(dynamic_list)} ETFs from database")
                 return dynamic_list
             else:
-                print("Warning: No ETFs found in database, falling back to default list")
+                self.logger.info("Warning: No ETFs found in database, falling back to default list")
                 raise ValueError("Empty ETF table")
                 
         except Exception as e:
-            print(f"Error loading dynamic ETF list: {e}")
+            self.logger.progress(f"Error loading dynamic ETF list: {e}")
             # Fallback to hardcoded list if database query fails
             return [
                 'NIFTYBEES',
@@ -663,13 +690,13 @@ class RSETFStrategyBacktester:
             earliest_data = self.db.query(ETFData.date).order_by(ETFData.date.asc()).first()
             
             if earliest_data and earliest_data[0] > earliest_required:
-                print(f"WARNING: Insufficient data. Need data from {earliest_required}, but only have from {earliest_data[0]}")
-                print(f"Consider using shorter lookback periods or getting more historical data")
+                self.logger.info(f"WARNING: Insufficient data. Need data from {earliest_required}, but only have from {earliest_data[0]}")
+                self.logger.info(f"Consider using shorter lookback periods or getting more historical data")
                 return False
             
             return True
         except Exception as e:
-            print(f"Error validating data range: {e}")
+            self.logger.info(f"Error validating data range: {e}")
             return True  # Continue anyway
     
     def calculate_last_trading_days(self, trading_dates: List[datetime]) -> None:
@@ -806,14 +833,14 @@ class RSETFStrategyBacktester:
         
         # Get universe size based on custom selection
         universe_size = len(symbols)
-        print(f"Custom ETF universe size: {universe_size} ETFs and date: {signal_date.strftime('%Y-%m-%d (%A)')} ,day:{signal_date.weekday()}")
+        self.logger.info(f"Custom ETF universe size: {universe_size} ETFs and date: {signal_date.strftime('%Y-%m-%d (%A)')} ,day:{signal_date.weekday()}")
         
-        print(f"📊 RS Momentum Calculation for {signal_date.strftime('%Y-%m-%d')}:")
-        print(f"   Note: Using Relative Strength (RS) score (Equal Weight)")
-        print(f"   Note: Breakdown values show Outperformance (Excess Return vs Index)")
-        print(f"         Week: 1-week return (5 days) outperformance")
-        print(f"         Month: 1-month return (20 days) outperformance")
-        print(f"         Quarter: 1-quarter return (60 days) outperformance")
+        self.logger.progress(f"📊 RS Momentum Calculation for {signal_date.strftime('%Y-%m-%d')}:")
+        self.logger.info(f"   Note: Using Relative Strength (RS) score (Equal Weight)")
+        self.logger.performance(f"   Note: Breakdown values show Outperformance (Excess Return vs Index)")
+        self.logger.performance(f"         Week: 1-week return (5 days) outperformance")
+        self.logger.performance(f"         Month: 1-month return (20 days) outperformance")
+        self.logger.performance(f"         Quarter: 1-quarter return (60 days) outperformance")
 
         for i, symbol in enumerate(symbols):
             try:
@@ -869,10 +896,10 @@ class RSETFStrategyBacktester:
                 failed_symbols += 1
                 continue
         
-        print(f"  Valid RS calculations: {valid_symbols}, Failed: {failed_symbols}")
+        self.logger.info(f"  Valid RS calculations: {valid_symbols}, Failed: {failed_symbols}")
         
         if valid_symbols == 0:
-            print("  No valid rankings - insufficient historical data or all calculations failed")
+            self.logger.info("  No valid rankings - insufficient historical data or all calculations failed")
             return pd.DataFrame()
         
         # Create DataFrame and sort
@@ -889,11 +916,11 @@ class RSETFStrategyBacktester:
         df['rank'] = range(1, len(df) + 1)
         
         # Print Ranked List matching user request format
-        print(f"   ✅ ETFs Ranked by RS Score (Equal Weight) - Highest to Lowest:")
+        self.logger.progress(f"   ✅ ETFs Ranked by RS Score (Equal Weight) - Highest to Lowest:")
         
         for index, row in df.iterrows():
-            print(f"      {int(row['rank'])}. {row['symbol']}: RS Score={row['rs_score']:.4f}, Price=₹{row['current_price']:.2f}")
-            print(f"         Breakdown (Outperf): Week (5d)={row['rs_w']:.3f}, Month (20d)={row['rs_m']:.3f}, Quarter (60d)={row['rs_q']:.3f}")
+            self.logger.info(f"      {int(row['rank'])}. {row['symbol']}: RS Score={row['rs_score']:.4f}, Price=₹{row['current_price']:.2f}")
+            self.logger.info(f"         Breakdown (Outperf): Week (5d)={row['rs_w']:.3f}, Month (20d)={row['rs_m']:.3f}, Quarter (60d)={row['rs_q']:.3f}")
         
         return df
     
@@ -904,37 +931,37 @@ class RSETFStrategyBacktester:
         rankings = self.rank_etfs(etf_data, index_data, signal_date)
         
         if rankings.empty:
-            print("  No rankings available, returning empty signals")
+            self.logger.performance("  No rankings available, returning empty signals")
             return [], []
         
         # Select top N ETFs with positive RS scores (more opportunities)
         positive_rs = rankings[rankings['rs_score'] > 0]
-        print(f"  ETFs with positive RS: {len(positive_rs)}")
+        self.logger.info(f"  ETFs with positive RS: {len(positive_rs)}")
         
         # Select top positions for better diversification
         top_etfs = positive_rs.head(self.dynamic_params.max_positions)
         target_symbols = top_etfs['symbol'].tolist()
-        print(f"  Target symbols: {target_symbols}")
+        self.logger.info(f"  Target symbols: {target_symbols}")
         
         # Current positions
         current_symbols = list(self.positions.keys())
-        print(f"  Current positions: {current_symbols}")
+        self.logger.info(f"  Current positions: {current_symbols}")
         
         # Determine exits (ETFs not in targets)
         exits = []
         for symbol in current_symbols:
             if symbol not in target_symbols:
                 exits.append(symbol)
-                print(f"    Exit signal: {symbol} (not in targets)")
+                self.logger.info(f"    Exit signal: {symbol} (not in targets)")
         
         # Determine entries (new ETFs to buy)
         entries = []
         for symbol in target_symbols:
             if symbol not in current_symbols:
                 entries.append(symbol)
-                print(f"    Entry signal: {symbol}")
+                self.logger.info(f"    Entry signal: {symbol}")
         
-        print(f"  Final signals: {len(entries)} entries, {len(exits)} exits")
+        self.logger.info(f"  Final signals: {len(entries)} entries, {len(exits)} exits")
         return entries, exits
     
     def calculate_transaction_costs(self, transaction_value: float, action: str, brokerage_pct: float = None):
@@ -1055,34 +1082,20 @@ class RSETFStrategyBacktester:
     #     if end_date.tzinfo:
     #         end_date = end_date.replace(tzinfo=None)
             
-    #     print(f"=== BACKTEST START ===")
-    #     print(f"Starting backtest from {start_date} to {end_date}")
-    #     print(f"Configuration ID: {self.config.id}")
-    #     print(f"Total Capital: {self.total_capital}")
-    #     print(f"Max Positions: {self.max_positions}")
-    #     print(f"Position Size %: {self.position_size_pct}")
         
     #     # Validate data range before starting
     #     if not self.validate_data_range(start_date, end_date):
-    #         print("WARNING: Proceeding with limited data range")
         
     #     # Load data
-    #     print("Loading stock data...")
     #     etf_data = self.load_etf_data(start_date, end_date)
-    #     print(f"ETF data loaded: {len(etf_data)} records, {len(etf_data.index.get_level_values('symbol').unique())} symbols")
         
-    #     print("Loading index data...")
     #     index_data = self.load_index_data(start_date, end_date)
-    #     print(f"Index data loaded: {len(index_data)} records")
         
     #     if etf_data.empty or index_data.empty:
-    #         print("ERROR: No data available for backtest period")
     #         raise ValueError("No data available for backtest period")
         
     #     # Get all trading dates (should be timezone-naive now)
     #     trading_dates = sorted(etf_data.index.get_level_values('date').unique())
-    #     print(f"Total trading dates: {len(trading_dates)}")
-    #     print(f"First date: {trading_dates[0]}, Last date: {trading_dates[-1]}")
         
     #     # Calculate last trading days of each week
     #     self.calculate_last_trading_days(trading_dates)
@@ -1092,13 +1105,11 @@ class RSETFStrategyBacktester:
     #     total_dates = len(trading_dates)
     #     progress_interval = max(1, total_dates // 20)  # Show progress every 5%
         
-    #     print(f"Processing {total_dates} trading dates...")
         
     #     for i, date in enumerate(trading_dates):
     #         # Progress reporting for long backtests
     #         if i % progress_interval == 0 or i == total_dates - 1:
     #             progress_pct = (i / total_dates) * 100
-    #             print(f"Progress: {progress_pct:.1f}% ({i}/{total_dates}) - Date: {date}")
     #         # Take portfolio snapshot
     #         self.take_portfolio_snapshot(stock_data, index_data, date)
             
@@ -1115,7 +1126,6 @@ class RSETFStrategyBacktester:
                 
     #             # Print Friday signal date and Monday execution date
     #             next_monday = self.get_next_monday(date)
-    #             print(f"📅 SIGNAL DAY: Friday {date.strftime('%Y-%m-%d (%A)')} -> EXECUTION DAY: Monday {next_monday.strftime('%Y-%m-%d (%A)')}")
                 
     #             entries, exits = self.generate_signals(stock_data, index_data, date)
                 
@@ -1127,7 +1137,6 @@ class RSETFStrategyBacktester:
                 
     #             # Execute trades on next Monday
     #             if next_monday <= end_date:
-    #                 print(f"🔄 Executing {len(exits)} exits and {len(entries)} entries on Monday {next_monday.strftime('%Y-%m-%d')}")
     #                 # Execute exits
     #                 for symbol in exits:
     #                     try:
@@ -1152,15 +1161,9 @@ class RSETFStrategyBacktester:
     #                     except (KeyError, IndexError):
     #                         continue
         
-    #     print(f"=== BACKTEST COMPLETE ===")
-    #     print(f"Total signal generations: {signal_count}")
-    #     print(f"Total trades executed: {trade_count}")
-    #     print(f"Final cash balance: {self.cash_balance}")
-    #     print(f"Final positions: {len(self.positions)}")
         
     #     # Calculate final metrics
     #     metrics = self.calculate_backtest_metrics()
-    #     print(f"Final metrics: {metrics}")
     #     return metrics
     
     # def calculate_cagr(self, start_value: float, end_value: float, start_date: datetime, end_date: datetime) -> float:
@@ -1256,26 +1259,18 @@ class RSETFStrategyBacktester:
     
     # def calculate_backtest_metrics(self) -> Dict:
     #     """Calculate backtest performance metrics"""
-    #     print(f"=== CALCULATING METRICS ===")
-    #     print(f"Portfolio snapshots: {len(self.portfolio_snapshots)}")
-    #     print(f"Total trades: {len(self.trades)}")
         
     #     if not self.portfolio_snapshots:
-    #         print("ERROR: No portfolio snapshots available")
     #         return {}
         
     #     snapshots = pd.DataFrame(self.portfolio_snapshots)
     #     snapshots['returns'] = snapshots['total_value'].pct_change()
         
-    #     print(f"Snapshot data shape: {snapshots.shape}")
-    #     print(f"First portfolio value: {snapshots['total_value'].iloc[0]}")
-    #     print(f"Last portfolio value: {snapshots['total_value'].iloc[-1]}")
         
     #     # Basic metrics - SAFE VERSION
     #     start_val = snapshots['total_value'].iloc[0]
     #     end_val = snapshots['total_value'].iloc[-1]
     #     total_return = safe_float((safe_divide(end_val, start_val, 1.0) - 1) * 100)
-    #     print(f"Total return: {total_return}%")
         
     #     # Calculate CAGR
     #     start_date = snapshots['date'].iloc[0]
@@ -1283,14 +1278,10 @@ class RSETFStrategyBacktester:
     #     start_value = snapshots['total_value'].iloc[0]
     #     end_value = snapshots['total_value'].iloc[-1]
     #     cagr = self.calculate_cagr(start_value, end_value, start_date, end_date)
-    #     print(f"CAGR: {cagr}%")
         
     #     # Calculate Rule of 72 metrics
     #     years = (end_date - start_date).days / 365.25
     #     rule_72_metrics = self.calculate_rule_of_72_metrics(cagr, years)
-    #     print(f"Rule of 72 - Years to double: {rule_72_metrics['years_to_double']:.1f}")
-    #     print(f"Rule of 72 - Expected return: {rule_72_metrics['rule_of_72_return']:.1f}%")
-    #     print(f"Rule of 72 - Doublings: {rule_72_metrics['expected_doublings']:.2f}")
         
     #     # Calculate XIRR from cash flows
     #     cash_flows = []
@@ -1308,7 +1299,6 @@ class RSETFStrategyBacktester:
     #     cash_flows.append((end_date, end_value))
         
     #     xirr = self.calculate_xirr(cash_flows)
-    #     print(f"XIRR: {xirr}%")
         
     #     # Annualized return (legacy calculation) - SAFE VERSION
     #     days = (end_date - start_date).days
@@ -1316,7 +1306,6 @@ class RSETFStrategyBacktester:
     #         annualized_return = safe_float(((end_value / start_value) ** (365 / days) - 1) * 100)
     #     else:
     #         annualized_return = 0.0
-    #     print(f"Annualized return: {annualized_return}% (over {days} days)")
         
     #     # Max drawdown - SAFE VERSION
     #     peak = snapshots['total_value'].expanding().max()
@@ -1324,7 +1313,6 @@ class RSETFStrategyBacktester:
     #     # Handle division by zero and infinity values
     #     drawdown = drawdown.replace([float('inf'), float('-inf')], 0.0).fillna(0.0)
     #     max_drawdown = safe_float(drawdown.min())
-    #     print(f"Max drawdown: {max_drawdown}%")
         
     #     # Sharpe ratio (simplified) - SAFE VERSION
     #     returns_std = snapshots['returns'].std()
@@ -1333,13 +1321,11 @@ class RSETFStrategyBacktester:
     #         sharpe_ratio = safe_float(returns_mean / returns_std * safe_sqrt(252))
     #     else:
     #         sharpe_ratio = 0.0
-    #     print(f"Sharpe ratio: {sharpe_ratio}")
         
     #     # Win rate
     #     winning_trades = len([t for t in self.trades if t.action == "SELL" and t.amount > 0])
     #     total_sell_trades = len([t for t in self.trades if t.action == "SELL"])
     #     win_rate = (winning_trades / total_sell_trades * 100) if total_sell_trades > 0 else 0
-    #     print(f"Win rate: {win_rate}% ({winning_trades}/{total_sell_trades})")
         
     #     # Smart snapshot sampling for long backtests
     #     total_snapshots = len(self.portfolio_snapshots)
@@ -1388,7 +1374,6 @@ class RSETFStrategyBacktester:
     #         }
     #     }
         
-    #     print(f"Final metrics calculated: {metrics}")
     #     return metrics
     
     def convert_to_json_safe(self, obj):
@@ -1455,7 +1440,7 @@ class RSETFStrategyBacktester:
                 if self.is_capital_reset_active:
                     recovery_threshold = self.peak_portfolio_value * 0.8  # 20% recovery from peak
                     if current_portfolio_value >= recovery_threshold:
-                        print(f"  Capital reset deactivated - portfolio recovered to {current_portfolio_value:.0f}")
+                        self.logger.info(f"  Capital reset deactivated - portfolio recovered to {current_portfolio_value:.0f}")
                         self.is_capital_reset_active = False
                         self.capital_reset_start_date = None
                         return False
@@ -1464,7 +1449,7 @@ class RSETFStrategyBacktester:
             if not self.is_capital_reset_active:
                 drawdown = (self.peak_portfolio_value - current_portfolio_value) / self.peak_portfolio_value
                 if drawdown >= self.capital_reset_threshold_pct:
-                    print(f"  CAPITAL RESET TRIGGERED: Drawdown {drawdown:.1%} >= {self.capital_reset_threshold_pct:.1%}")
+                    self.logger.performance(f"  CAPITAL RESET TRIGGERED: Drawdown {drawdown:.1%} >= {self.capital_reset_threshold_pct:.1%}")
                     self.is_capital_reset_active = True
                     self.capital_reset_start_date = current_date
                     return True
@@ -1472,7 +1457,7 @@ class RSETFStrategyBacktester:
             return self.is_capital_reset_active
             
         except Exception as e:
-            print(f"Error in capital reset check: {e}")
+            self.logger.info(f"Error in capital reset check: {e}")
             return False
     
     def apply_capital_reset_logic(self, entries: List[str], exits: List[str]) -> Tuple[List[str], List[str]]:
@@ -1480,7 +1465,7 @@ class RSETFStrategyBacktester:
         if not self.is_capital_reset_active:
             return entries, exits
         
-        print(f"  Applying capital reset logic - reducing risk")
+        self.logger.info(f"  Applying capital reset logic - reducing risk")
         
         # Reduce entries by 50%
         reduced_entries = entries[:len(entries)//2] if len(entries) > 1 else []
@@ -1494,7 +1479,7 @@ class RSETFStrategyBacktester:
         
         all_exits = exits + additional_exits
         
-        print(f"  Capital reset: {len(entries)} -> {len(reduced_entries)} entries, {len(exits)} -> {len(all_exits)} exits")
+        self.logger.info(f"  Capital reset: {len(entries)} -> {len(reduced_entries)} entries, {len(exits)} -> {len(all_exits)} exits")
         
         return reduced_entries, all_exits
     
@@ -1507,9 +1492,9 @@ class RSETFStrategyBacktester:
                 holding_weeks = (current_date - position.buy_date).days / 7
                 if holding_weeks >= self.max_holding_period:
                     exits.append(symbol)
-                    print(f"    Max holding period exit: {symbol} (held {holding_weeks:.1f} weeks)")
+                    self.logger.info(f"    Max holding period exit: {symbol} (held {holding_weeks:.1f} weeks)")
             except Exception as e:
-                print(f"Error checking holding period for {symbol}: {e}")
+                self.logger.info(f"Error checking holding period for {symbol}: {e}")
                 continue
         
         return exits
@@ -1527,10 +1512,10 @@ class RSETFStrategyBacktester:
                 except (KeyError, IndexError):
                     continue
         except Exception as e:
-            print(f"Error applying minimum price filter: {e}")
+            self.logger.info(f"Error applying minimum price filter: {e}")
             return list(etf_data.index.get_level_values('symbol').unique())
         
-        print(f"  Price filter: {len(etf_data.index.get_level_values('symbol').unique())} -> {len(filtered_symbols)} ETFs (min price: ₹{self.min_price})")
+        self.logger.info(f"  Price filter: {len(etf_data.index.get_level_values('symbol').unique())} -> {len(filtered_symbols)} ETFs (min price: ₹{self.min_price})")
         return filtered_symbols
      
     def run_backtest(self, start_date: datetime, end_date: datetime) -> Dict:
@@ -1542,12 +1527,12 @@ class RSETFStrategyBacktester:
             if end_date.tzinfo:
                 end_date = end_date.replace(tzinfo=None)
             
-            print(f"=== BACKTEST START ===")
-            print(f"Starting backtest from {start_date} to {end_date}")
-            print(f"Configuration ID: {self.config.id if self.config else 'Custom Config'}")
-            print(f"Total Capital: {self.total_capital}")
-            print(f"Max Positions: {self.max_positions}")
-            print(f"Position Size %: {self.position_size_pct}")
+            self.logger.info(f"=== BACKTEST START ===")
+            self.logger.info(f"Starting backtest from {start_date} to {end_date}")
+            self.logger.info(f"Configuration ID: {self.config.id if self.config else 'Custom Config'}")
+            self.logger.info(f"Total Capital: {self.total_capital}")
+            self.logger.info(f"Max Positions: {self.max_positions}")
+            self.logger.info(f"Position Size %: {self.position_size_pct}")
             
             # Validate date range
             try:
@@ -1556,16 +1541,16 @@ class RSETFStrategyBacktester:
                 if (end_date - start_date).days < 30:
                     raise ValueError("Backtest period must be at least 30 days")
             except Exception as e:
-                print(f"Error validating data range: {e}")
+                self.logger.info(f"Error validating data range: {e}")
                 raise
             
             # Load data
-            print("Loading ETF data...")
+            self.logger.progress("Loading ETF data...")
             etf_data = self.load_etf_data(start_date, end_date)
             if etf_data.empty:
                 raise ValueError("No ETF data available for the specified date range")
             
-            print("Loading index data...")
+            self.logger.progress("Loading index data...")
             index_data = self.load_index_data(start_date, end_date)
             if index_data.empty:
                 raise ValueError("No index data available for the specified date range")
@@ -1577,12 +1562,12 @@ class RSETFStrategyBacktester:
             all_trading_dates = sorted(etf_data.index.get_level_values('date').unique())
             trading_dates = [d for d in all_trading_dates if start_date <= d <= end_date]
             
-            print(f"Total loaded dates: {len(all_trading_dates)} (from {all_trading_dates[0]} to {all_trading_dates[-1]})")
-            print(f"Backtest trading dates: {len(trading_dates)} (from {trading_dates[0]} to {trading_dates[-1]})")
+            self.logger.info(f"Total loaded dates: {len(all_trading_dates)} (from {all_trading_dates[0]} to {all_trading_dates[-1]})")
+            self.logger.info(f"Backtest trading dates: {len(trading_dates)} (from {trading_dates[0]} to {trading_dates[-1]})")
             
             # Calculate last trading days of each week for Friday signal generation
             self.calculate_last_trading_days(trading_dates)
-            print(f"Last trading days calculated: {len(self.last_trading_days)} days")
+            self.logger.info(f"Last trading days calculated: {len(self.last_trading_days)} days")
             
             # Initialize portfolio snapshot
             self.portfolio_snapshots = []
@@ -1593,13 +1578,13 @@ class RSETFStrategyBacktester:
             self.cash_balance = self.total_capital - self.buffer_capital
             
             # Run backtest
-            print(f"Processing {len(trading_dates)} trading dates...")
+            self.logger.progress(f"Processing {len(trading_dates)} trading dates...")
             signal_count = 0
             
             for i, date in enumerate(trading_dates):
                 if i % 20 == 0:  # Progress every 20 days
                     progress = (i / len(trading_dates)) * 100
-                    print(f"Progress: {progress:.1f}% ({i}/{len(trading_dates)}) - Date: {date}")
+                    self.logger.info(f"Progress: {progress:.1f}% ({i}/{len(trading_dates)}) - Date: {date}")
                 
                 try:
                     # Update positions with current prices
@@ -1611,24 +1596,52 @@ class RSETFStrategyBacktester:
                     
                     # Removed max holding period check - stocks held until RS ranking drops
                     
-                    # Check for daily stop loss exits
-                    stop_loss_exits = self.check_daily_stop_loss(etf_data, date)
-                    
-                    # Execute stop loss exits immediately
-                    for symbol in stop_loss_exits:
-                        try:
-                            price_data = etf_data.loc[symbol, date]['adjusted_close']
-                            price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
-                            self.execute_trade(date, symbol, "SELL", price, "Stop Loss")
-                        except (KeyError, IndexError):
-                            continue
+                    # Stop Loss Check - Conditional based on configuration
+                    if self.daily_stop_loss_check:
+                        # DAILY MODE: Check stop loss every day and execute immediately
+                        stop_loss_exits = self.check_daily_stop_loss(etf_data, date)
+                        
+                        # Execute stop loss exits immediately
+                        for symbol in stop_loss_exits:
+                            try:
+                                price_data = etf_data.loc[symbol, date]['adjusted_close']
+                                price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
+                                self.execute_trade(date, symbol, "SELL", price, "Stop Loss (Daily)")
+                            except (KeyError, IndexError):
+                                continue
+                    else:
+                        # WEEKLY MODE: Check stop loss daily but accumulate for weekly execution
+                        # Only check on non-signal days (signal day will check separately)
+                        if not self.is_friday_or_last_trading_day(date):
+                            stop_loss_exits = self.check_daily_stop_loss(etf_data, date)
+                            # Accumulate stop loss exits for Monday execution
+                            for symbol in stop_loss_exits:
+                                if symbol not in self.weekly_stop_loss_exits:
+                                    self.weekly_stop_loss_exits.append(symbol)
                     
                     # Initialize entries and exits for each day
                     entries, exits = [], []
                     
                     # Generate signals only on Friday (or last trading day of week)
                     if self.is_friday_or_last_trading_day(date):  # Generate signals only on Friday
+                        
+                        # WEEKLY MODE: Check stop loss on signal day and add to exits
+                        if not self.daily_stop_loss_check:
+                            stop_loss_exits = self.check_daily_stop_loss(etf_data, date)
+                            # Combine weekly accumulated stop losses with current check
+                            all_stop_loss_exits = list(set(self.weekly_stop_loss_exits + stop_loss_exits))
+                            if all_stop_loss_exits:
+                                self.logger.info(f"  📊 Weekly Stop Loss Summary: {len(all_stop_loss_exits)} position(s) to exit")
+                                for symbol in all_stop_loss_exits:
+                                    self.logger.info(f"    - {symbol}")
+                        
                         entries, exits = self.generate_signals(etf_data, index_data, date)
+                        
+                        # WEEKLY MODE: Add stop loss exits to regular exits
+                        if not self.daily_stop_loss_check and all_stop_loss_exits:
+                            # Combine stop loss exits with RS signal exits (avoid duplicates)
+                            exits = list(set(exits + all_stop_loss_exits))
+                            self.logger.info(f"  Combined exits: {len(exits)} total (RS signals + stop loss)")
                         
                         # Apply capital reset logic
                         entries, exits = self.apply_capital_reset_logic(entries, exits)
@@ -1639,18 +1652,23 @@ class RSETFStrategyBacktester:
                         self.pending_entries = entries
                         self.pending_exits = exits
                         self.signal_date = date
-                        print(f"📅 SIGNAL DAY: Friday {date.strftime('%Y-%m-%d (%A)')} - Generated {len(entries)} entries, {len(exits)} exits")
+                        
+                        # Reset weekly stop loss accumulator
+                        if not self.daily_stop_loss_check:
+                            self.weekly_stop_loss_exits = []
+                        
+                        self.logger.info(f"📅 SIGNAL DAY: Friday {date.strftime('%Y-%m-%d (%A)')} - Generated {len(entries)} entries, {len(exits)} exits")
 
                         # Weekly Summary Log (matching RS_Stocks enhancement)
                         week_num = (i // 5) + 1
                         holdings_summary = [(s, p.quantity) for s, p in self.positions.items()]
-                        print(f"📊 Week {week_num} summary:")
-                        print(f"   Date: {date.strftime('%Y-%m-%d')}")
-                        print(f"   NAV: ₹{current_portfolio_value:,.2f}")
-                        print(f"   Cash: ₹{self.cash_balance:,.2f}")
-                        print(f"   Holdings Value: ₹{current_portfolio_value - self.cash_balance:,.2f}")
-                        print(f"   Holdings: {holdings_summary}")
-                        print("============================================================")
+                        self.logger.progress(f"📊 Week {week_num} summary:")
+                        self.logger.info(f"   Date: {date.strftime('%Y-%m-%d')}")
+                        self.logger.info(f"   NAV: ₹{current_portfolio_value:,.2f}")
+                        self.logger.info(f"   Cash: ₹{self.cash_balance:,.2f}")
+                        self.logger.info(f"   Holdings Value: ₹{current_portfolio_value - self.cash_balance:,.2f}")
+                        self.logger.info(f"   Holdings: {holdings_summary}")
+                        self.logger.info("============================================================")
                     
                     # Execute trades on Monday (or next available trading day if Monday is holiday)
                     if hasattr(self, 'pending_entries') and self.pending_entries is not None:
@@ -1663,7 +1681,7 @@ class RSETFStrategyBacktester:
                             execution_day = self.find_next_available_trading_day(next_monday, trading_dates)
                         
                         if date == execution_day:
-                            print(f"🔄 EXECUTION DAY: Monday {date.strftime('%Y-%m-%d (%A)')} - Executing {len(self.pending_exits)} exits and {len(self.pending_entries)} entries")
+                            self.logger.progress(f"🔄 EXECUTION DAY: Monday {date.strftime('%Y-%m-%d (%A)')} - Executing {len(self.pending_exits)} exits and {len(self.pending_entries)} entries")
                             
                             # SELL FIRST to free up cash before buying new positions
                             # SELL FIRST to free up cash before buying new positions
@@ -1720,23 +1738,23 @@ class RSETFStrategyBacktester:
                         signal_count += 1
                         
                 except Exception as e:
-                    print(f"Error processing date {date}: {e}")
+                    self.logger.progress(f"Error processing date {date}: {e}")
                     continue
             
-            print(f"=== BACKTEST COMPLETE ===")
-            print(f"Total signal generations: {signal_count}")
-            print(f"Total trades executed: {len(self.trades)}")
-            print(f"Final cash balance: {self.cash_balance:.1f}")
-            print(f"Final positions: {len(self.positions)}")
+            self.logger.info(f"=== BACKTEST COMPLETE ===")
+            self.logger.info(f"Total signal generations: {signal_count}")
+            self.logger.trade(f"Total trades executed: {len(self.trades)}")
+            self.logger.info(f"Final cash balance: {self.cash_balance:.1f}")
+            self.logger.info(f"Final positions: {len(self.positions)}")
             
             # Calculate metrics (with default risk_free_rate, will be overridden by API)
-            print("=== CALCULATING METRICS ===")
+            self.logger.progress("=== CALCULATING METRICS ===")
             metrics = self.calculate_metrics(risk_free_rate=6.0)
             
             return metrics
             
         except Exception as e:
-            print(f"Backtest failed: {e}")
+            self.logger.info(f"Backtest failed: {e}")
             raise
     
     def calculate_portfolio_value(self, etf_data: pd.DataFrame, date: datetime) -> float:
@@ -1762,7 +1780,7 @@ class RSETFStrategyBacktester:
             
             return total_value
         except Exception as e:
-            print(f"Error calculating portfolio value: {e}")
+            self.logger.progress(f"Error calculating portfolio value: {e}")
             return self.cash_balance + self.buffer_capital
     
     def trade_to_dict(self, trade: Trade) -> Dict:
@@ -1800,21 +1818,21 @@ class RSETFStrategyBacktester:
         """Calculate comprehensive performance metrics"""
         try:
             if not self.portfolio_snapshots:
-                print("ERROR: No portfolio snapshots available")
+                self.logger.info("ERROR: No portfolio snapshots available")
                 return {}
             
             snapshots = pd.DataFrame(self.portfolio_snapshots)
             snapshots['returns'] = snapshots['total_value'].pct_change()
             
-            print(f"Snapshot data shape: {snapshots.shape}")
-            print(f"First portfolio value: {snapshots['total_value'].iloc[0]}")
-            print(f"Last portfolio value: {snapshots['total_value'].iloc[-1]}")
+            self.logger.info(f"Snapshot data shape: {snapshots.shape}")
+            self.logger.info(f"First portfolio value: {snapshots['total_value'].iloc[0]}")
+            self.logger.info(f"Last portfolio value: {snapshots['total_value'].iloc[-1]}")
             
             # Basic metrics - SAFE VERSION
             start_val = snapshots['total_value'].iloc[0]
             end_val = snapshots['total_value'].iloc[-1]
             total_return = safe_float((safe_divide(end_val, start_val, 1.0) - 1) * 100)
-            print(f"Total return: {total_return}%")
+            self.logger.performance(f"Total return: {total_return}%")
             
             # Calculate CAGR
             start_date = snapshots['date'].iloc[0]
@@ -1822,14 +1840,14 @@ class RSETFStrategyBacktester:
             start_value = snapshots['total_value'].iloc[0]
             end_value = snapshots['total_value'].iloc[-1]
             cagr = self.calculate_cagr(start_value, end_value, start_date, end_date)
-            print(f"CAGR: {cagr}%")
+            self.logger.performance(f"CAGR: {cagr}%")
             
             # Calculate Rule of 72 metrics
             years = (end_date - start_date).days / 365.25
             rule_72_metrics = self.calculate_rule_of_72_metrics(cagr, years)
-            print(f"Rule of 72 - Years to double: {rule_72_metrics['years_to_double']:.1f}")
-            print(f"Rule of 72 - Expected return: {rule_72_metrics['rule_of_72_return']:.1f}%")
-            print(f"Rule of 72 - Doublings: {rule_72_metrics['expected_doublings']:.2f}")
+            self.logger.info(f"Rule of 72 - Years to double: {rule_72_metrics['years_to_double']:.1f}")
+            self.logger.performance(f"Rule of 72 - Expected return: {rule_72_metrics['rule_of_72_return']:.1f}%")
+            self.logger.info(f"Rule of 72 - Doublings: {rule_72_metrics['expected_doublings']:.2f}")
             
             # Calculate XIRR from cash flows
             cash_flows = []
@@ -1847,32 +1865,32 @@ class RSETFStrategyBacktester:
             cash_flows.append((end_date, end_value))
             
             xirr = self.calculate_xirr(cash_flows)
-            print(f"XIRR: {xirr}%")
+            self.logger.info(f"XIRR: {xirr}%")
             
             # Calculate annualized return
             annualized_return = safe_float((safe_power(safe_divide(end_value, start_value, 1.0), safe_divide(365.25, (end_date - start_date).days, 1.0)) - 1) * 100)
-            print(f"Annualized return: {annualized_return}% (over {(end_date - start_date).days} days)")
+            self.logger.performance(f"Annualized return: {annualized_return}% (over {(end_date - start_date).days} days)")
             
             # Calculate maximum drawdown
             max_drawdown = self.calculate_max_drawdown(snapshots)
-            print(f"Max drawdown: {max_drawdown}%")
+            self.logger.performance(f"Max drawdown: {max_drawdown}%")
             
             # Calculate Sharpe ratio
             sharpe_ratio = self.calculate_sharpe_ratio(snapshots)
-            print(f"Sharpe ratio: {sharpe_ratio}")
+            self.logger.performance(f"Sharpe ratio: {sharpe_ratio}")
             
             # Calculate Beta and Treynor ratio
             beta, treynor_ratio = self.calculate_beta_and_treynor(snapshots, risk_free_rate)
-            print(f"Beta: {beta:.2f}")
-            print(f"Treynor ratio: {treynor_ratio:.2f}%")
+            self.logger.info(f"Beta: {beta:.2f}")
+            self.logger.info(f"Treynor ratio: {treynor_ratio:.2f}%")
             
             # Calculate Calmar ratio: abs(CAGR / max_drawdown) if max_drawdown < 0
             calmar_ratio = abs(cagr / max_drawdown) if max_drawdown < 0 else 0.0
-            print(f"Calmar ratio: {calmar_ratio:.2f}")
+            self.logger.info(f"Calmar ratio: {calmar_ratio:.2f}")
             
             # Calculate win rate
             win_rate = self.calculate_win_rate()
-            print(f"Win rate: {win_rate}% ({len([t for t in self.trades if t.action == 'SELL' and self.get_trade_pnl(t) > 0])}/{len([t for t in self.trades if t.action == 'SELL'])})")
+            self.logger.trade(f"Win rate: {win_rate}% ({len([t for t in self.trades if t.action == 'SELL' and self.get_trade_pnl(t) > 0])}/{len([t for t in self.trades if t.action == 'SELL'])})")
             
             # Convert snapshots to JSON-safe format
             simplified_snapshots = []
@@ -1912,7 +1930,7 @@ class RSETFStrategyBacktester:
             }
             
             # Calculate benchmark buy-and-hold metrics
-            print("=== CALCULATING BENCHMARK METRICS ===")
+            self.logger.progress("=== CALCULATING BENCHMARK METRICS ===")
             try:
                 trading_dates = [snap['date'] for snap in self.portfolio_snapshots]
                 benchmark_calc = BenchmarkCalculator(
@@ -1928,20 +1946,20 @@ class RSETFStrategyBacktester:
                 metrics['benchmark_buyhold'] = benchmark_values
                 metrics['alpha_pct'] = safe_float(cagr - benchmark_metrics['cagr_pct'])
                 
-                print(f"Benchmark Total Return: {benchmark_metrics['total_return_pct']:.2f}%")
-                print(f"Benchmark CAGR: {benchmark_metrics['cagr_pct']:.2f}%")
-                print(f"Strategy Alpha: {metrics['alpha_pct']:.2f}%")
+                self.logger.performance(f"Benchmark Total Return: {benchmark_metrics['total_return_pct']:.2f}%")
+                self.logger.performance(f"Benchmark CAGR: {benchmark_metrics['cagr_pct']:.2f}%")
+                self.logger.info(f"Strategy Alpha: {metrics['alpha_pct']:.2f}%")
             except Exception as e:
-                print(f"Error calculating benchmark metrics: {e}")
+                self.logger.progress(f"Error calculating benchmark metrics: {e}")
                 metrics['benchmark_metrics'] = {}
                 metrics['benchmark_buyhold'] = []
                 metrics['alpha_pct'] = 0.0
             
-            print(f"Final metrics calculated: {metrics}")
+            self.logger.info(f"Final metrics calculated: {metrics}")
             return metrics
             
         except Exception as e:
-            print(f"Error calculating metrics: {e}")
+            self.logger.progress(f"Error calculating metrics: {e}")
             return {
                 'total_return_pct': 0.0,
                 'annualized_return_pct': 0.0,
@@ -1978,7 +1996,7 @@ class RSETFStrategyBacktester:
             cagr = (safe_power(safe_divide(end_value, start_value, 1.0), safe_divide(1.0, years, 1.0)) - 1) * 100
             return safe_float(cagr)
         except Exception as e:
-            print(f"Error calculating CAGR: {e}")
+            self.logger.performance(f"Error calculating CAGR: {e}")
             return 0.0
     
     def calculate_rule_of_72_metrics(self, cagr: float, years: float) -> Dict:
@@ -2003,7 +2021,7 @@ class RSETFStrategyBacktester:
                 'compounding_factor': safe_float(compounding_factor)
             }
         except Exception as e:
-            print(f"Error calculating Rule of 72 metrics: {e}")
+            self.logger.progress(f"Error calculating Rule of 72 metrics: {e}")
             return {
                 'years_to_double': 0.0,
                 'expected_doublings': 0.0,
@@ -2035,7 +2053,7 @@ class RSETFStrategyBacktester:
             xirr = (safe_power(safe_divide(total_return, abs(total_investment), 1.0), safe_divide(1.0, years, 1.0)) - 1) * 100
             return safe_float(xirr)
         except Exception as e:
-            print(f"Error calculating XIRR: {e}")
+            self.logger.progress(f"Error calculating XIRR: {e}")
             return 0.0
     
     def calculate_max_drawdown(self, snapshots: pd.DataFrame) -> float:
@@ -2050,7 +2068,7 @@ class RSETFStrategyBacktester:
             
             return safe_float(max_drawdown)
         except Exception as e:
-            print(f"Error calculating max drawdown: {e}")
+            self.logger.performance(f"Error calculating max drawdown: {e}")
             return 0.0
     
     def calculate_sharpe_ratio(self, snapshots: pd.DataFrame) -> float:
@@ -2073,7 +2091,7 @@ class RSETFStrategyBacktester:
             sharpe = (mean_return / std_return) * np.sqrt(252)
             return safe_float(sharpe)
         except Exception as e:
-            print(f"Error calculating Sharpe ratio: {e}")
+            self.logger.performance(f"Error calculating Sharpe ratio: {e}")
             return 0.0
     
     def calculate_beta_and_treynor(self, snapshots: pd.DataFrame, risk_free_rate: float = 6.0) -> tuple:
@@ -2152,7 +2170,7 @@ class RSETFStrategyBacktester:
             return beta, treynor_ratio
             
         except Exception as e:
-            print(f"Error calculating beta and Treynor ratio: {e}")
+            self.logger.progress(f"Error calculating beta and Treynor ratio: {e}")
             import traceback
             traceback.print_exc()
             return 1.0, 0.0
@@ -2179,7 +2197,7 @@ class RSETFStrategyBacktester:
             win_rate = (winning_trades / len(sell_trades)) * 100
             return safe_float(win_rate)
         except Exception as e:
-            print(f"Error calculating win rate: {e}")
+            self.logger.progress(f"Error calculating win rate: {e}")
             return 0.0
     
     def get_trade_pnl(self, trade: Trade) -> float:
@@ -2200,7 +2218,7 @@ class RSETFStrategyBacktester:
             
             return 0.0
         except Exception as e:
-            print(f"Error calculating trade P&L: {e}")
+            self.logger.trade(f"Error calculating trade P&L: {e}")
             return 0.0
 
     def calculate_portfolio_nav(self, date: datetime, stock_data: pd.DataFrame = None) -> float:
@@ -2228,7 +2246,7 @@ class RSETFStrategyBacktester:
             return round(total_nav, 2)
             
         except Exception as e:
-            print(f"Error calculating portfolio NAV: {e}")
+            self.logger.progress(f"Error calculating portfolio NAV: {e}")
             # Fallback to total capital
             return self.total_capital
 
@@ -2282,7 +2300,7 @@ class RSETFStrategyBacktester:
                 price = float(price)
                 
             if pd.isna(price) or price <= 0:
-                print(f"  Invalid price for {symbol}: {price}")
+                self.logger.info(f"  Invalid price for {symbol}: {price}")
                 return False
             if action == "BUY":
                 # Fixed position size
@@ -2292,13 +2310,13 @@ class RSETFStrategyBacktester:
                 total_available = self.cash_balance + self.buffer_capital
                 
                 if total_available < fixed_position_size:
-                    print(f"  Insufficient capital to buy {symbol}: {total_available} < {fixed_position_size}")
+                    self.logger.trade(f"  Insufficient capital to buy {symbol}: {total_available} < {fixed_position_size}")
                     return False
                 
                 # Calculate quantity
                 quantity = int(fixed_position_size / price)
                 if quantity <= 0:
-                    print(f"  Cannot buy {symbol}: quantity would be {quantity}")
+                    self.logger.trade(f"  Cannot buy {symbol}: quantity would be {quantity}")
                     return False
                 
                 # Calculate transaction costs using proper Indian market calculation
@@ -2310,14 +2328,14 @@ class RSETFStrategyBacktester:
                 if self.cash_balance >= net_amount:
                     # Use only cash
                     self.cash_balance -= net_amount
-                    print(f"  Used cash: ₹{net_amount:.2f}")
+                    self.logger.info(f"  Used cash: ₹{net_amount:.2f}")
                 else:
                     # Use cash + buffer
                     original_cash_used = self.cash_balance  # Store original cash before resetting
                     needed_from_buffer = net_amount - self.cash_balance
                     self.cash_balance = 0
                     self.buffer_capital -= needed_from_buffer
-                    print(f"  Used cash: ₹{original_cash_used:.2f}, buffer: ₹{needed_from_buffer:.2f}")
+                    self.logger.info(f"  Used cash: ₹{original_cash_used:.2f}, buffer: ₹{needed_from_buffer:.2f}")
                 
                 # Calculate stop loss price
                 stop_loss_price = price * (1 - self.stop_loss_pct)
@@ -2368,21 +2386,21 @@ class RSETFStrategyBacktester:
                 )
                 self.trades.append(trade)
                 
-                print(f"📋 Purchase calculation:")
-                print(f"   Gross amount: ₹{cost_details['transaction_value']:,.2f}")
-                print(f"   Transaction costs: ₹{cost_details['total_costs']:,.2f}")
-                print(f"   Net amount: ₹{net_amount:,.2f}")
-                print(f"   Units to buy: {quantity}")
-                print(f"✅ Purchase executed: {quantity} units of {symbol} for ₹{net_amount:,.2f}")
-                print(f"💳 Total cost (including fees): ₹{cost_details['total_costs']:,.2f}")
-                print(f"📊 Portfolio NAV: ₹{portfolio_nav:,.2f}")
-                print(f"💰 Buy Price: ₹{price:,.2f}")
-                print(f"💰 Remaining cash: ₹{self.cash_balance:,.2f}")
+                self.logger.info(f"📋 Purchase calculation:")
+                self.logger.info(f"   Gross amount: ₹{cost_details['transaction_value']:,.2f}")
+                self.logger.info(f"   Transaction costs: ₹{cost_details['total_costs']:,.2f}")
+                self.logger.info(f"   Net amount: ₹{net_amount:,.2f}")
+                self.logger.trade(f"   Units to buy: {quantity}")
+                self.logger.trade(f"✅ Purchase executed: {quantity} units of {symbol} for ₹{net_amount:,.2f}")
+                self.logger.info(f"💳 Total cost (including fees): ₹{cost_details['total_costs']:,.2f}")
+                self.logger.progress(f"📊 Portfolio NAV: ₹{portfolio_nav:,.2f}")
+                self.logger.trade(f"💰 Buy Price: ₹{price:,.2f}")
+                self.logger.info(f"💰 Remaining cash: ₹{self.cash_balance:,.2f}")
                 return True
                 
             elif action == "SELL":
                 if symbol not in self.positions:
-                    print(f"  Cannot sell {symbol}: not in positions")
+                    self.logger.trade(f"  Cannot sell {symbol}: not in positions")
                     return False
                 
                 position = self.positions[symbol]
@@ -2412,9 +2430,9 @@ class RSETFStrategyBacktester:
                 self.cash_balance += cost_basis
                 
                 if net_pnl > 0:
-                    print(f"  Profit: ₹{net_pnl:.2f} added to buffer")
+                    self.logger.info(f"  Profit: ₹{net_pnl:.2f} added to buffer")
                 else:
-                    print(f"  Loss: ₹{abs(net_pnl):.2f} subtracted from buffer")
+                    self.logger.info(f"  Loss: ₹{abs(net_pnl):.2f} subtracted from buffer")
                 
                 # Remove position
                 del self.positions[symbol]
@@ -2463,24 +2481,24 @@ class RSETFStrategyBacktester:
                 self.trades.append(trade)
                 
                 print(f"")
-                print(f"💰 SELL EXECUTED: {symbol}")
-                print(f"   Quantity: {quantity} units")
-                print(f"   Sell Price: ₹{price:,.2f}")
-                print(f"   Buy Price: ₹{buy_price:,.2f}")
-                print(f"   Holding Period: {holding_period_days} days")
+                self.logger.trade(f"💰 SELL EXECUTED: {symbol}")
+                self.logger.info(f"   Quantity: {quantity} units")
+                self.logger.trade(f"   Sell Price: ₹{price:,.2f}")
+                self.logger.trade(f"   Buy Price: ₹{buy_price:,.2f}")
+                self.logger.info(f"   Holding Period: {holding_period_days} days")
                 print(f"")
 
-                print(f"📈 PORTFOLIO STATUS:")
-                print(f"   Portfolio NAV: ₹{portfolio_nav:,.2f}")
-                print(f"   Cash Balance: ₹{self.cash_balance:,.2f}")
-                print(f"   Buffer Capital: ₹{self.buffer_capital:,.2f}")
-                print(f"   Holdings Value: ₹{portfolio_nav - self.cash_balance - self.buffer_capital:,.2f}")
+                self.logger.info(f"📈 PORTFOLIO STATUS:")
+                self.logger.info(f"   Portfolio NAV: ₹{portfolio_nav:,.2f}")
+                self.logger.info(f"   Cash Balance: ₹{self.cash_balance:,.2f}")
+                self.logger.info(f"   Buffer Capital: ₹{self.buffer_capital:,.2f}")
+                self.logger.info(f"   Holdings Value: ₹{portfolio_nav - self.cash_balance - self.buffer_capital:,.2f}")
                 print(f"")
                 print(f"")
                 return True
                 
         except Exception as e:
-            print(f"Error executing trade {action} {symbol}: {e}")
+            self.logger.trade(f"Error executing trade {action} {symbol}: {e}")
             return False
 
     def check_daily_stop_loss(self, etf_data: pd.DataFrame, current_date: datetime) -> List[str]:
@@ -2489,9 +2507,9 @@ class RSETFStrategyBacktester:
         
         # Print daily check header
         if len(self.positions) > 0:
-            print(f"🛡️  Daily Stop Loss Check: {current_date.strftime('%Y-%m-%d (%A)')} - Checking {len(self.positions)} position(s)")
+            self.logger.info(f"🛡️  Daily Stop Loss Check: {current_date.strftime('%Y-%m-%d (%A)')} - Checking {len(self.positions)} position(s)")
         else:
-            print(f"🛡️  Daily Stop Loss Check: {current_date.strftime('%Y-%m-%d (%A)')} - No positions to check")
+            self.logger.info(f"🛡️  Daily Stop Loss Check: {current_date.strftime('%Y-%m-%d (%A)')} - No positions to check")
             return stop_loss_exits  # Early return if no positions
         
         try:
@@ -2505,24 +2523,24 @@ class RSETFStrategyBacktester:
                     if current_price <= position.stop_loss_price:
                         stop_loss_exits.append(symbol)
                         loss_pct = ((current_price - position.buy_price) / position.buy_price * 100)
-                        print(f"  ⚠️  STOP LOSS HIT: {symbol} - Current: ₹{current_price:.2f} <= Stop Loss: ₹{position.stop_loss_price:.2f} (Loss: {loss_pct:.2f}%)")
+                        self.logger.info(f"  ⚠️  STOP LOSS HIT: {symbol} - Current: ₹{current_price:.2f} <= Stop Loss: ₹{position.stop_loss_price:.2f} (Loss: {loss_pct:.2f}%)")
                     else:
                         # Print that stop loss not reached for this stock
-                        print(f"  ✓ {symbol}: Current ₹{current_price:.2f} > Stop Loss ₹{position.stop_loss_price:.2f} (Safe)")
+                        self.logger.info(f"  ✓ {symbol}: Current ₹{current_price:.2f} > Stop Loss ₹{position.stop_loss_price:.2f} (Safe)")
                         
                 except (KeyError, IndexError):
                     # Stock data not available for this date
-                    print(f"  ⚠️  {symbol}: Data not available for stop loss check")
+                    self.logger.info(f"  ⚠️  {symbol}: Data not available for stop loss check")
                     continue
                     
         except Exception as e:
-            print(f"  ❌ Error checking stop loss: {e}")
+            self.logger.info(f"  ❌ Error checking stop loss: {e}")
         
         # Print summary
         if len(stop_loss_exits) == 0:
-            print(f"  ✅ No stop loss reached - All {len(self.positions)} position(s) safe")
+            self.logger.progress(f"  ✅ No stop loss reached - All {len(self.positions)} position(s) safe")
         else:
-            print(f"  ⚠️  {len(stop_loss_exits)} position(s) hit stop loss and will be sold")
+            self.logger.trade(f"  ⚠️  {len(stop_loss_exits)} position(s) hit stop loss and will be sold")
         
         return stop_loss_exits
     

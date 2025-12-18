@@ -10,6 +10,7 @@ from .indicators import add_indicators
 from .rs_calculator import calculate_rs_for_universe, rank_by_rs
 from .signal_logic import add_all_signals
 from .portfolio_manager import PortfolioManager
+from Strategies.utilities.logging_config import StrategyLogger
 
 
 class BacktestEngine:
@@ -19,6 +20,9 @@ class BacktestEngine:
     
     def __init__(self, stock_data: pd.DataFrame, index_data: pd.DataFrame, config: Dict):
         """
+        # Initialize centralized logger
+        self.logger = StrategyLogger('SuperTrend')
+
         Initialize backtest engine
         
         Args:
@@ -63,12 +67,12 @@ class BacktestEngine:
         # STEP 1: CALCULATING INDICATORS
         # ============================================================
         print("=" * 60)
-        print("STEP 1: Calculating indicators...")
+        self.logger.progress("STEP 1: Calculating indicators...")
         print("=" * 60)
         
         # Calculate indicators for each symbol
         symbols = self.stock_data['symbol'].unique()
-        print(f"  → Processing {len(symbols)} symbols")
+        self.logger.progress(f"  → Processing {len(symbols)} symbols")
         all_data = []
         
         for idx, symbol in enumerate(symbols, 1):
@@ -94,21 +98,21 @@ class BacktestEngine:
             
             # Progress update every 20 symbols
             if idx % 20 == 0 or idx == len(symbols):
-                print(f"  → Processed {idx}/{len(symbols)} symbols")
+                self.logger.info(f"  → Processed {idx}/{len(symbols)} symbols")
         
         # Combine all stocks
         all_stocks = pd.concat(all_data, ignore_index=True)
-        print(f"✓ Indicators calculated: {len(all_stocks):,} total records")
+        self.logger.info(f"✓ Indicators calculated: {len(all_stocks):,} total records")
         print()
         
         # ============================================================
         # STEP 2: CALCULATING RS SCORES
         # ============================================================
         print("=" * 60)
-        print("STEP 2: Calculating RS scores...")
+        self.logger.progress("STEP 2: Calculating RS scores...")
         print("=" * 60)
-        print(f"  → RS Windows: {self.rs_windows} days")
-        print(f"  → Index benchmark records: {len(self.index_data)}")
+        self.logger.info(f"  → RS Windows: {self.rs_windows} days")
+        self.logger.info(f"  → Index benchmark records: {len(self.index_data)}")
         
         # Calculate RS scores
         all_stocks = calculate_rs_for_universe(all_stocks, self.index_data, self.rs_windows,
@@ -119,29 +123,29 @@ class BacktestEngine:
         rs_null_count = all_stocks['rs_score'].isna().sum()
         rs_valid_count = all_stocks['rs_score'].notna().sum()
         
-        print(f"✓ RS Calculation Complete:")
-        print(f"  → Valid RS scores: {rs_valid_count:,}")
-        print(f"  → Null RS scores: {rs_null_count:,} (insufficient history)")
-        print(f"  → RS Score Range: [{rs_stats['min']:.2f}, {rs_stats['max']:.2f}]")
-        print(f"  → RS Score Mean: {rs_stats['mean']:.2f}")
-        print(f"  → RS Score Median: {rs_stats['50%']:.2f}")
+        self.logger.info(f"✓ RS Calculation Complete:")
+        self.logger.info(f"  → Valid RS scores: {rs_valid_count:,}")
+        self.logger.info(f"  → Null RS scores: {rs_null_count:,} (insufficient history)")
+        self.logger.info(f"  → RS Score Range: [{rs_stats['min']:.2f}, {rs_stats['max']:.2f}]")
+        self.logger.info(f"  → RS Score Mean: {rs_stats['mean']:.2f}")
+        self.logger.info(f"  → RS Score Median: {rs_stats['50%']:.2f}")
         
         # Show top 5 stocks by latest RS
         latest_date = all_stocks['date'].max()
         latest_rs = all_stocks[all_stocks['date'] == latest_date].nlargest(5, 'rs_score')
-        print(f"\n  Top 5 stocks by RS on {latest_date}:")
+        self.logger.info(f"\n  Top 5 stocks by RS on {latest_date}:")
         for idx, row in latest_rs.iterrows():
-            print(f"    {idx+1}. {row['symbol']}: RS={row['rs_score']:.2f}")
+            self.logger.info(f"    {idx+1}. {row['symbol']}: RS={row['rs_score']:.2f}")
         print()
         
         # ============================================================
         # STEP 3: CALCULATING SIGNALS
         # ============================================================
         print("=" * 60)
-        print("STEP 3: Calculating signals...")
+        self.logger.progress("STEP 3: Calculating signals...")
         print("=" * 60)
-        print(f"  → Price Floor: ≥₹{self.price_floor}")
-        print(f"  → Liquidity: ≥₹{self.liquidity_cr} Cr median turnover")
+        self.logger.info(f"  → Price Floor: ≥₹{self.price_floor}")
+        self.logger.info(f"  → Liquidity: ≥₹{self.liquidity_cr} Cr median turnover")
         
         # Count before filters
         before_count = len(all_stocks)
@@ -153,10 +157,10 @@ class BacktestEngine:
         after_count = len(all_stocks)
         filtered_out = before_count - after_count
         
-        print(f"✓ Hygiene Filters Applied:")
-        print(f"  → Records before filters: {before_count:,}")
-        print(f"  → Records after filters: {after_count:,}")
-        print(f"  → Filtered out: {filtered_out:,} ({(filtered_out/before_count*100):.1f}%)")
+        self.logger.info(f"✓ Hygiene Filters Applied:")
+        self.logger.info(f"  → Records before filters: {before_count:,}")
+        self.logger.info(f"  → Records after filters: {after_count:,}")
+        self.logger.info(f"  → Filtered out: {filtered_out:,} ({(filtered_out/before_count*100):.1f}%)")
         
         # Signal statistics for latest date
         latest_data = all_stocks[all_stocks['date'] == latest_date]
@@ -164,15 +168,15 @@ class BacktestEngine:
         entry_signal_count = latest_data['entry_signal'].sum()
         exit_signal_count = latest_data['exit_signal'].sum()
         
-        print(f"\n  Signal Statistics (Latest Date: {latest_date}):")
-        print(f"  → Eligible stocks (Price>EMA20 & EMA10>EMA20): {eligible_count}")
-        print(f"  → Entry signals (Green ST & Eligible): {entry_signal_count}")
-        print(f"  → Exit signals (Red ST or bearish EMAs): {exit_signal_count}")
+        self.logger.info(f"\n  Signal Statistics (Latest Date: {latest_date}):")
+        self.logger.info(f"  → Eligible stocks (Price>EMA20 & EMA10>EMA20): {eligible_count}")
+        self.logger.info(f"  → Entry signals (Green ST & Eligible): {entry_signal_count}")
+        self.logger.info(f"  → Exit signals (Red ST or bearish EMAs): {exit_signal_count}")
         
         # Show entry candidates
         if entry_signal_count > 0:
             entry_candidates = latest_data[latest_data['entry_signal'] == 1].nlargest(5, 'rs_score')
-            print(f"\n  Top Entry Candidates:")
+            self.logger.info(f"\n  Top Entry Candidates:")
             for idx, row in entry_candidates.iterrows():
                 print(f"    • {row['symbol']}: RS={row['rs_score']:.2f}, "
                       f"Price={row['adj_close']:.2f}, ST={row['supertrend_color']}")
@@ -213,10 +217,10 @@ class BacktestEngine:
         Returns:
             Backtest results dictionary
         """
-        print(f"Running backtest from {start_date} to {end_date}")
-        print(f"⚠️  REALISTIC EXECUTION: Signals generated at close → Executed at next day's open")
-        print(f"💰 Brokerage: {brokerage_pct}% | Transaction costs: ENABLED")
-        print(f"🔒 Buffer: {buffer_pct}% (P&L absorption system)")
+        self.logger.info(f"Running backtest from {start_date} to {end_date}")
+        self.logger.trade(f"⚠️  REALISTIC EXECUTION: Signals generated at close → Executed at next day's open")
+        self.logger.info(f"💰 Brokerage: {brokerage_pct}% | Transaction costs: ENABLED")
+        self.logger.info(f"🔒 Buffer: {buffer_pct}% (P&L absorption system)")
         
         # Prepare data
         data = self.prepare_data()
@@ -235,7 +239,7 @@ class BacktestEngine:
         # Get unique trading dates
         trading_dates = sorted(data['date'].unique())
         
-        print(f"Simulating {len(trading_dates)} trading days...")
+        self.logger.info(f"Simulating {len(trading_dates)} trading days...")
         
         # Variables to store signals from previous day
         prev_exit_symbols = []
@@ -244,7 +248,7 @@ class BacktestEngine:
         # Daily simulation loop
         for i, date in enumerate(trading_dates):
             if i % 50 == 0:
-                print(f"Processing day {i+1}/{len(trading_dates)}: {date}")
+                self.logger.progress(f"Processing day {i+1}/{len(trading_dates)}: {date}")
             
             # DETAILED OUTPUT - Show first 5 days in detail
             show_details = i < 5 or i % 100 == 0
@@ -253,9 +257,9 @@ class BacktestEngine:
                 # Convert date to datetime to get day name
                 date_obj = pd.to_datetime(date)
                 day_name = date_obj.strftime('%A')  # Monday, Tuesday, etc.
-                print(f"\n{'='*70}")
-                print(f"📅 TRADING DAY {i+1}: {day_name}, {date}")
-                print(f"{'='*70}")
+                self.logger.info(f"\n{'='*70}")
+                self.logger.info(f"📅 TRADING DAY {i+1}: {day_name}, {date}")
+                self.logger.info(f"{'='*70}")
             
             # Get data for current date
             date_data = data[data['date'] == date].copy()
@@ -267,9 +271,9 @@ class BacktestEngine:
             current_prices_open = dict(zip(date_data['symbol'], date_data['open']))
             
             if show_details:
-                print(f"\n💰 CURRENT PORTFOLIO STATE:")
-                print(f"  Cash: ₹{self.portfolio_manager.cash:,.0f}")
-                print(f"  Positions: {len(self.portfolio_manager.positions)}")
+                self.logger.info(f"\n💰 CURRENT PORTFOLIO STATE:")
+                self.logger.info(f"  Cash: ₹{self.portfolio_manager.cash:,.0f}")
+                self.logger.info(f"  Positions: {len(self.portfolio_manager.positions)}")
                 if self.portfolio_manager.positions:
                     for sym, pos in self.portfolio_manager.positions.items():
                         curr_price = current_prices_close.get(sym, pos['entry_price'])
@@ -285,7 +289,7 @@ class BacktestEngine:
             # ================================================================
             if i > 0:  # Skip first day (no previous signals)
                 if show_details and (prev_exit_symbols or not prev_candidates.empty):
-                    print(f"\n🔄 EXECUTING PREVIOUS DAY'S SIGNALS AT TODAY'S OPEN:")
+                    self.logger.progress(f"\n🔄 EXECUTING PREVIOUS DAY'S SIGNALS AT TODAY'S OPEN:")
                 
                 # Execute trades using TODAY's OPEN prices
                 trades_executed = self.portfolio_manager.rebalance(
@@ -296,7 +300,7 @@ class BacktestEngine:
                 )
                 
                 if show_details and trades_executed:
-                    print(f"  💼 TRADES EXECUTED: {len(trades_executed)}")
+                    self.logger.trade(f"  💼 TRADES EXECUTED: {len(trades_executed)}")
                     for trade in trades_executed:
                         if trade['action'] == 'BUY':
                             print(f"    ✅ BUY {trade['symbol']}: Qty={trade['quantity']}, "
@@ -318,7 +322,7 @@ class BacktestEngine:
                 if not symbol_data.empty and symbol_data.iloc[0]['exit_signal'] == 1:
                     exit_symbols.append(symbol)
                     if show_details:
-                        print(f"\n🚪 EXIT SIGNAL GENERATED: {symbol} (will execute tomorrow at open)")
+                        self.logger.info(f"\n🚪 EXIT SIGNAL GENERATED: {symbol} (will execute tomorrow at open)")
                         row = symbol_data.iloc[0]
                         print(f"  Reason: Close < EMA15 & EMA21, "
                               f"Price=₹{row['adj_close']:.2f}, "
@@ -331,8 +335,8 @@ class BacktestEngine:
             ].copy()
             
             if show_details and not candidates.empty:
-                print(f"\n✅ ENTRY CANDIDATES GENERATED: {len(candidates)} stocks (will execute tomorrow at open)")
-                print(f"  Showing top 10 by RS:")
+                self.logger.progress(f"\n✅ ENTRY CANDIDATES GENERATED: {len(candidates)} stocks (will execute tomorrow at open)")
+                self.logger.info(f"  Showing top 10 by RS:")
                 top = candidates.nlargest(10, 'rs_score')
                 for idx, (_, row) in enumerate(top.iterrows(), 1):
                     print(f"    {idx}. {row['symbol']}: RS={row['rs_score']:.2f}, "
@@ -343,9 +347,9 @@ class BacktestEngine:
                 # DETAILED RS CALCULATION DEBUG FOR TOP 10 ENTRY CANDIDATES
                 # ================================================================
                 if self.debug_rs:
-                    print(f"\n{'='*80}")
-                    print(f"DETAILED RS CALCULATION FOR TOP 10 ENTRY CANDIDATES")
-                    print(f"{'='*80}")
+                    self.logger.info(f"\n{'='*80}")
+                    self.logger.info(f"DETAILED RS CALCULATION FOR TOP 10 ENTRY CANDIDATES")
+                    self.logger.info(f"{'='*80}")
                     
                     top_10 = candidates.nlargest(10, 'rs_score')
                     
@@ -365,9 +369,9 @@ class BacktestEngine:
                         
                         # Only show debug if we have enough historical data
                         if current_idx >= max(self.rs_windows):
-                            print(f"\n{'='*80}")
-                            print(f"DEBUG RS Calculation for {symbol} (Rank #{rank}, RS={rs_score:.2f})")
-                            print(f"{'='*80}")
+                            self.logger.info(f"\n{'='*80}")
+                            self.logger.info(f"DEBUG RS Calculation for {symbol} (Rank #{rank}, RS={rs_score:.2f})")
+                            self.logger.info(f"{'='*80}")
                             
                             current_price = stock_history.loc[current_idx, 'adj_close']
                             
@@ -375,13 +379,13 @@ class BacktestEngine:
                             index_row = self.index_data[self.index_data['date'] == date]
                             current_index = index_row['adj_close'].iloc[0] if len(index_row) > 0 else 0
                             
-                            print(f"    Current Date: {date}")
-                            print(f"    Current stock index: {current_idx}")
-                            print(f"    Max lookback required: {max(self.rs_windows)}")
-                            print(f"    Lookback periods: week={self.rs_windows[0]}, month={self.rs_windows[1]}, quarter={self.rs_windows[2]}")
-                            print(f"    Current prices:")
-                            print(f"      Stock: ₹{current_price:.2f}, Index: ₹{current_index:.2f}")
-                            print(f"    Historical dates and prices:")
+                            self.logger.info(f"    Current Date: {date}")
+                            self.logger.info(f"    Current stock index: {current_idx}")
+                            self.logger.info(f"    Max lookback required: {max(self.rs_windows)}")
+                            self.logger.info(f"    Lookback periods: week={self.rs_windows[0]}, month={self.rs_windows[1]}, quarter={self.rs_windows[2]}")
+                            self.logger.info(f"    Current prices:")
+                            self.logger.info(f"      Stock: ₹{current_price:.2f}, Index: ₹{current_index:.2f}")
+                            self.logger.info(f"    Historical dates and prices:")
                             
                             # Calculate historical data for each window
                             window_labels = ['Week', 'Month', 'Quarter']
@@ -403,16 +407,16 @@ class BacktestEngine:
                                     rs_val = stock_return - index_return
                                     rs_values.append(rs_val)
                                     
-                                    print(f"      {label} ago ({window}d): {hist_date} - Stock: ₹{hist_price:.2f}, Index: ₹{hist_index:.2f}")
+                                    self.logger.info(f"      {label} ago ({window}d): {hist_date} - Stock: ₹{hist_price:.2f}, Index: ₹{hist_index:.2f}")
                             
                             # Show RS values
                             print(f"    RS values: ", end="")
                             rs_parts = [f"{label.lower()}={val:.3f}" for label, val in zip(window_labels, rs_values)]
                             print(", ".join(rs_parts))
                             
-                            print(f"    Final RS score: {rs_score:.3f}")
-                            print(f"    {symbol}: RS Score = {rs_score:.3f}")
-                            print(f"{'='*80}")
+                            self.logger.info(f"    Final RS score: {rs_score:.3f}")
+                            self.logger.info(f"    {symbol}: RS Score = {rs_score:.3f}")
+                            self.logger.info(f"{'='*80}")
             
             # Rank by RS score (handle None values properly)
             if not candidates.empty:
@@ -428,20 +432,20 @@ class BacktestEngine:
                             exit_symbols.append(symbol)
                             if show_details:
                                 rank = symbol_rank.iloc[0]['rank'] if not symbol_rank.empty else 'N/A'
-                                print(f"\n🚪 RANK EXIT: {symbol} (Rank: {rank}, Max: {self.max_holdings})")
+                                self.logger.info(f"\n🚪 RANK EXIT: {symbol} (Rank: {rank}, Max: {self.max_holdings})")
                 
                 # Select top N
                 top_candidates = candidates.head(self.max_holdings)
                 
                 if show_details:
-                    print(f"\n🎯 SELECTED TOP {self.max_holdings} CANDIDATES (for tomorrow):")
+                    self.logger.info(f"\n🎯 SELECTED TOP {self.max_holdings} CANDIDATES (for tomorrow):")
                     for _, row in top_candidates.iterrows():
                         print(f"  {row['rank']}. {row['symbol']}: RS={row['rs_score']:.2f}, "
                               f"Close Price=₹{row['adj_close']:.2f}")
             else:
                 top_candidates = pd.DataFrame()
                 if show_details:
-                    print(f"\n⚠️  NO ENTRY CANDIDATES TODAY")
+                    self.logger.info(f"\n⚠️  NO ENTRY CANDIDATES TODAY")
             
             # ================================================================
             # STEP 3: STORE SIGNALS FOR NEXT DAY EXECUTION
@@ -455,10 +459,10 @@ class BacktestEngine:
             self.portfolio_manager.update_portfolio_value(current_prices_close)
             
             if show_details:
-                print(f"\n📊 END OF DAY PORTFOLIO:")
-                print(f"  Portfolio Value: ₹{self.portfolio_manager.portfolio_value:,.0f}")
-                print(f"  Cash: ₹{self.portfolio_manager.cash:,.0f}")
-                print(f"  Open Positions: {len(self.portfolio_manager.positions)}")
+                self.logger.progress(f"\n📊 END OF DAY PORTFOLIO:")
+                self.logger.info(f"  Portfolio Value: ₹{self.portfolio_manager.portfolio_value:,.0f}")
+                self.logger.info(f"  Cash: ₹{self.portfolio_manager.cash:,.0f}")
+                self.logger.info(f"  Open Positions: {len(self.portfolio_manager.positions)}")
             
             # Record equity curve
             self.portfolio_manager.record_equity(date)
@@ -468,18 +472,18 @@ class BacktestEngine:
         
         # BACKTEST COMPLETION SUMMARY
         print("\n" + "=" * 70)
-        print("✓ BACKTEST COMPLETED SUCCESSFULLY")
+        self.logger.info("✓ BACKTEST COMPLETED SUCCESSFULLY")
         print("=" * 70)
         
-        print(f"\n📊 PERFORMANCE SUMMARY")
+        self.logger.performance(f"\n📊 PERFORMANCE SUMMARY")
         print("-" * 70)
-        print(f"  Period:          {start_date} to {end_date}")
-        print(f"  Trading Days:    {len(trading_dates)}")
-        print(f"  Initial Capital: ₹{initial_capital:,.0f}")
-        print(f"  Final Value:     ₹{self.portfolio_manager.portfolio_value:,.0f}")
-        print(f"  Total Return:    {metrics['total_return']:.2f}%")
-        print(f"  CAGR:            {metrics['cagr']:.2f}%")
-        print(f"  Total Trades:    {len(self.portfolio_manager.trades)}")
+        self.logger.info(f"  Period:          {start_date} to {end_date}")
+        self.logger.info(f"  Trading Days:    {len(trading_dates)}")
+        self.logger.info(f"  Initial Capital: ₹{initial_capital:,.0f}")
+        self.logger.info(f"  Final Value:     ₹{self.portfolio_manager.portfolio_value:,.0f}")
+        self.logger.performance(f"  Total Return:    {metrics['total_return']:.2f}%")
+        self.logger.performance(f"  CAGR:            {metrics['cagr']:.2f}%")
+        self.logger.trade(f"  Total Trades:    {len(self.portfolio_manager.trades)}")
         print("-" * 70)
         
         # Store results (with NaN handling for JSON serialization)
@@ -592,7 +596,7 @@ class BacktestEngine:
         for key, value in metrics.items():
             if pd.isna(value):
                 metrics[key] = 0.0
-                print(f"Warning: {key} was NaN, set to 0.0")
+                self.logger.info(f"Warning: {key} was NaN, set to 0.0")
         
         return metrics
     
@@ -699,6 +703,6 @@ if __name__ == "__main__":
     engine = BacktestEngine(stock_df, index_data, config)
     results = engine.run_backtest('2023-06-01', '2023-12-31', 1000000)
     
-    print("\nBacktest Results:")
+    self.logger.info("\nBacktest Results:")
     print(results['metrics'])
 
