@@ -22,8 +22,7 @@ from market_data_db_connection import (
     init_database as init_market_data_database,
     Base as MarketDataBase,
     StockData,
-    IndexData,
-    Nifty500Metadata
+    IndexData
 )
 
 # Use market data connection for market data tables
@@ -54,14 +53,13 @@ def get_db():
                 logging.error(f"Error closing database session: {e}")
 
 # Stock data model - using models from market_data_db_connection
-# StockData, IndexData, and Nifty500Metadata are imported from market_data_db_connection
-
-# Alias for compatibility
-Nifty500Constituents = Nifty500Metadata
+# StockData and IndexData are imported from market_data_db_connection
+# Note: Nifty500Metadata was deprecated - metadata is now calculated directly from stock_data table
 
 # Strategy configuration
 class StrategyConfig(Base):
     __tablename__ = "strategy_config"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, index=True)  # User-specific configuration
@@ -88,6 +86,7 @@ class StrategyConfig(Base):
 # Backtest results
 class BacktestResult(Base):
     __tablename__ = "backtest_results"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, index=True)  # User-specific results
@@ -112,6 +111,7 @@ class BacktestResult(Base):
 # Trade logs
 class TradeLog(Base):
     __tablename__ = "trade_logs"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, index=True)  # User-specific trades
@@ -140,6 +140,7 @@ class TradeLog(Base):
 # Portfolio snapshots
 class PortfolioSnapshot(Base):
     __tablename__ = "portfolio_snapshots"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, index=True)  # User-specific snapshots
@@ -155,6 +156,7 @@ class PortfolioSnapshot(Base):
 # Saved RS Strategy
 class SavedRSStrategy(Base):
     __tablename__ = "saved_rs_strategies"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     strategy_name = Column(String, index=True)
@@ -181,6 +183,7 @@ class SavedRSStrategy(Base):
 # RS Live signals
 class RSLiveSignal(Base):
     __tablename__ = "rs_live"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, index=True)  # User-specific signals

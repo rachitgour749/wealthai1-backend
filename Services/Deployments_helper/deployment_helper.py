@@ -247,6 +247,8 @@ def init_rs_etf_instance_table():
                         created_at VARCHAR(50),
                         last_execution_date VARCHAR(50),
                         next_execution_date VARCHAR(50),
+                        email_notification BOOLEAN DEFAULT FALSE,
+                        telegram_notification BOOLEAN DEFAULT FALSE,
                         UNIQUE(strategy_name, user_id)
                     )
                 """))
@@ -268,7 +270,9 @@ def init_rs_etf_instance_table():
                     'webhook_url': 'TEXT',
                     'status': 'VARCHAR(50) DEFAULT \'deploy\'',
                     'last_execution_date': 'VARCHAR(50)',
-                    'next_execution_date': 'VARCHAR(50)'
+                    'next_execution_date': 'VARCHAR(50)',
+                    'email_notification': 'BOOLEAN DEFAULT FALSE',
+                    'telegram_notification': 'BOOLEAN DEFAULT FALSE'
                 }
                 
                 for column_name, column_def in required_columns.items():
@@ -590,6 +594,8 @@ async def save_deployment(request: dict):
         strategy_name = request.get('strategy_name')
         client_information_json = request.get('client_information_json', '{}')
         webhook_url = request.get('webhook_url', '')
+        email_notification = request.get('email_notification', False)
+        telegram_notification = request.get('telegram_notification', False)
         
         # Validate required fields
         if not user_email:
@@ -690,7 +696,9 @@ async def save_deployment(request: dict):
             SET run_id = :run_id, client_information_json = :client_info, 
                 webhook_url = :webhook_url, status = :status,
                 last_execution_date = :last_exec_date,
-                next_execution_date = :next_exec_date
+                next_execution_date = :next_exec_date,
+                email_notification = :email_notif,
+                telegram_notification = :telegram_notif
             WHERE id = :strategy_id
         """
         
@@ -701,6 +709,8 @@ async def save_deployment(request: dict):
             "status": 'running',
             "last_exec_date": last_exec_date,
             "next_exec_date": next_exec_date,
+            "email_notif": email_notification,
+            "telegram_notif": telegram_notification,
             "strategy_id": strategy_id
         }
         
@@ -760,6 +770,8 @@ async def save_live_signals_deployment(request: dict):
         etf_count = request.get('etf_count')
         etf_names = request.get('etf_names')
         strategy_type = request.get('strategy_type', '')
+        email_notification = request.get('email_notification', False)
+        telegram_notification = request.get('telegram_notification', False)
         
         # Validate required fields
         if not user_email:
@@ -852,7 +864,9 @@ async def save_live_signals_deployment(request: dict):
                     deployment_data = :deployment_data,
                     etf_count = :etf_count,
                     etf_names = :etf_names,
-                    strategy_type = :strategy_type
+                    strategy_type = :strategy_type,
+                    email_notification = :email_notif,
+                    telegram_notification = :telegram_notif
                 WHERE id = :strategy_id
             """
             
@@ -875,6 +889,8 @@ async def save_live_signals_deployment(request: dict):
                 "etf_count": etf_count,
                 "etf_names": etf_names_json,
                 "strategy_type": strategy_type,
+                "email_notif": email_notification,
+                "telegram_notif": telegram_notification,
                 "strategy_id": strategy_id
             }
         else:
@@ -889,7 +905,9 @@ async def save_live_signals_deployment(request: dict):
                     last_execution_date = :last_exec_date,
                     next_execution_date = :next_exec_date,
                     reference_capital = :ref_capital,
-                    strategy_type = :strategy_type
+                    strategy_type = :strategy_type,
+                    email_notification = :email_notif,
+                    telegram_notification = :telegram_notif
                 WHERE id = :strategy_id
             """
             
@@ -903,6 +921,8 @@ async def save_live_signals_deployment(request: dict):
                 "next_exec_date": next_execution_date,
                 "ref_capital": reference_capital,
                 "strategy_type": strategy_type,
+                "email_notif": email_notification,
+                "telegram_notif": telegram_notification,
                 "strategy_id": strategy_id
             }
         

@@ -22,9 +22,7 @@ from market_data_db_connection import (
     init_database as init_market_data_database,
     Base as MarketDataBase,
     ETFData,
-    ETFMetadata,
-    IndexData,
-    Nifty500Metadata
+    IndexData
 )
 
 # Use market data connection for market data tables
@@ -83,14 +81,13 @@ def get_db():
                 logging.error(f"Error closing database session: {e}")
 
 # ETF data model - using models from market_data_db_connection
-# ETFData, ETFMetadata, IndexData, and Nifty500Metadata are imported from market_data_db_connection
-
-# Alias for compatibility
-Nifty500Constituents = Nifty500Metadata
+# ETFData and IndexData are imported from market_data_db_connection
+# Note: ETFMetadata was deprecated - metadata is now calculated directly from etf_data table
 
 # Strategy configuration
 class StrategyConfig(Base):
     __tablename__ = "rs_etf_strategy_config"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, index=True)
@@ -117,6 +114,7 @@ class StrategyConfig(Base):
 # Backtest results
 class BacktestResult(Base):
     __tablename__ = "rs_etf_backtest_results"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, index=True)
@@ -141,6 +139,7 @@ class BacktestResult(Base):
 # Trade logs
 class TradeLog(Base):
     __tablename__ = "rs_etf_trade_logs"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, index=True)
@@ -169,6 +168,7 @@ class TradeLog(Base):
 # Portfolio snapshots
 class PortfolioSnapshot(Base):
     __tablename__ = "rs_etf_portfolio_snapshots"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, index=True)
@@ -184,6 +184,7 @@ class PortfolioSnapshot(Base):
 # Saved ETF Strategy
 class SavedETFStrategy(Base):
     __tablename__ = "rs_etf_saved_strategies"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     strategy_name = Column(String, index=True)

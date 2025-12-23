@@ -468,6 +468,16 @@ except Exception as e:
     logger.error(f"Failed to import supertrend_router: {e}")
 
 try:
+    from Strategies.CustomStrategies.Rotation_ETF_Payout.api_routes import (
+        rotation_etf_payout_router,
+        initialize_rotation_etf_payout_backtester
+    )
+except Exception as e:
+    logger.error(f"Failed to import rotation_etf_payout_router: {e}")
+    rotation_etf_payout_router = None
+    initialize_rotation_etf_payout_backtester = None
+
+try:
     from Services.webhook.webhook_api import router as webhook_router
 except Exception as e:
     logger.error(f"Failed to import webhook_router: {e}")
@@ -608,6 +618,17 @@ if deployment_router:
     app.include_router(deployment_router)
 if single_sign_on_router:
     app.include_router(single_sign_on_router)
+
+# Rotation ETF Payout router
+if rotation_etf_payout_router:
+    app.include_router(rotation_etf_payout_router)
+    # Initialize the backtester
+    if initialize_rotation_etf_payout_backtester:
+        try:
+            initialize_rotation_etf_payout_backtester()
+            logger.info("✅ Rotation ETF Payout backtester initialized successfully")
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize Rotation ETF Payout backtester: {e}")
 
 # ChatAI router (only if available)
 if chatai1_new and hasattr(chatai1_new, 'router'):

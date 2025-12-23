@@ -53,6 +53,8 @@ class ETFSavedStrategy(Base):
     deployment_data = Column(Text)  # JSON
     etf_count = Column(Integer)
     etf_names = Column(Text)  # JSON array
+    email_notification = Column(Boolean, default=False, nullable=False)
+    telegram_notification = Column(Boolean, default=False, nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     __table_args__ = (

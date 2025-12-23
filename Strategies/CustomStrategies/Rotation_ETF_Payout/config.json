@@ -1,0 +1,26 @@
+{
+  "strategy_name": "Rotation ETF Payout",
+  "description": "ETF rotation strategy with systematic withdrawal feature during churning phase",
+  
+  "accumulation_weeks": 13,
+  "accumulation_per_week": 50000,
+  "withdraw_amount": 25000,
+  
+  "selected_etfs": [
+    "NIFTYBEES",
+    "JUNIORBEES",
+    "BANKBEES",
+    "ITBEES",
+    "GOLDBEES"
+  ],
+  
+  "brokerage_percent": 0.03,
+  "compounding_enabled": true,
+  
+  "notes": {
+    "accumulation_phase": "During accumulation, the strategy buys ETFs worth 'accumulation_per_week' amount every week",
+    "churning_phase": "During churning, the strategy sells ETFs worth 'accumulation_per_week + withdraw_amount' every week",
+    "withdrawal_logic": "The 'withdraw_amount' represents weekly withdrawals from the portfolio",
+    "total_withdrawn": "The strategy tracks and reports the total amount withdrawn during the entire backtest period"
+  }
+}

@@ -1,0 +1,190 @@
+"""
+FastAPI Routes for Rotation ETF Payout Strategy
+
+Provides endpoints for running backtests with withdrawal/payout feature.
+"""
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+import traceback
+
+# Import backtester
+from .backtester import RotationETFPayoutBacktester
+
+# Create router
+router = APIRouter(prefix="/api/rotation-etf-payout", tags=["Rotation ETF Payout"])
+
+
+# Request/Response Models
+class BacktestRequest(BaseModel):
+    start_date: str
+    end_date: str
+    selected_etfs: List[str]
+    accumulation_weeks: int = 13
+    accumulation_per_week: float = 50000
+    withdraw_amount: float = 25000
+    brokerage_percent: float = 0.03
+    compounding_enabled: bool = True
+
+
+class BacktestResponse(BaseModel):
+    success: bool
+    strategy: Optional[str] = None
+    period: Optional[Dict[str, Any]] = None
+    parameters: Optional[Dict[str, Any]] = None
+    results: Optional[Dict[str, Any]] = None
+    withdrawal_log: Optional[List[Dict[str, Any]]] = None
+    final_holdings: Optional[Dict[str, int]] = None
+    error: Optional[str] = None
+
+
+class MetadataResponse(BaseModel):
+    available_etfs: List[Dict[str, Any]]
+    total_etfs: int
+
+
+class DateRangeRequest(BaseModel):
+    selected_etfs: List[str]
+
+
+class DateRangeResponse(BaseModel):
+    start_date: Optional[str]
+    end_date: Optional[str]
+    years_available: float
+    etf_ranges: Optional[List[Dict[str, Any]]] = None
+
+
+# Endpoints
+@router.post("/backtest", response_model=BacktestResponse)
+async def run_backtest(request: BacktestRequest):
+    """
+    Run Rotation ETF Payout backtest
+    
+    This endpoint runs a backtest with the withdrawal/payout feature.
+    During accumulation, it invests the specified amount weekly.
+    During churning, it sells the investment amount PLUS the withdrawal amount.
+    
+    Returns comprehensive results including total withdrawn amount.
+    """
+    try:
+        # Create backtester instance
+        backtester = RotationETFPayoutBacktester()
+        
+        # Set withdraw_amount before running backtest
+        backtester.withdraw_amount = request.withdraw_amount
+        
+        # Reset withdrawal tracking
+        backtester.total_withdrawn_amount = 0.0
+        backtester.withdrawal_log = []
+        
+        # Run backtest using parent's method (with correct parameter names)
+        results = backtester.run_backtest(
+            tickers=request.selected_etfs,  # Parent expects 'tickers'
+            start_date=request.start_date,
+            end_date=request.end_date,
+            capital_per_week=request.accumulation_per_week,  # Parent expects 'capital_per_week'
+            accumulation_weeks=request.accumulation_weeks,
+            brokerage_percent=request.brokerage_percent,
+            compounding_enabled=request.compounding_enabled
+        )
+        
+        # Add withdrawal info to results
+        if not results.get('error'):
+            results['total_withdrawn'] = backtester.total_withdrawn_amount
+            results['withdrawal_log'] = backtester.withdrawal_log
+        
+        return BacktestResponse(**results)
+        
+    except Exception as e:
+        error_msg = f"Backtest failed: {str(e)}"
+        print(f"ERROR: {error_msg}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=error_msg)
+
+
+@router.get("/metadata", response_model=MetadataResponse)
+async def get_metadata():
+    """
+    Get available ETFs and their metadata
+    
+    Returns list of all available ETFs with their date ranges and data availability.
+    """
+    try:
+        backtester = RotationETFPayoutBacktester()
+        metadata = backtester.etf_metadata
+        
+        # Format metadata for response
+        available_etfs = []
+        for symbol, info in metadata.items():
+            available_etfs.append({
+                'symbol': symbol,
+                'start_date': info.get('start_date'),
+                'end_date': info.get('end_date'),
+                'years_available': info.get('years_available', 0),
+                'total_records': info.get('total_records', 0),
+                'description': backtester.generate_asset_description(symbol),
+                'sector': backtester.get_asset_sector_classification(symbol)
+            })
+        
+        return MetadataResponse(
+            available_etfs=available_etfs,
+            total_etfs=len(available_etfs)
+        )
+        
+    except Exception as e:
+        error_msg = f"Failed to load metadata: {str(e)}"
+        print(f"ERROR: {error_msg}")
+        raise HTTPException(status_code=500, detail=error_msg)
+
+
+@router.post("/calculate-date-range", response_model=DateRangeResponse)
+async def calculate_date_range(request: DateRangeRequest):
+    """
+    Calculate common date range for selected ETFs
+    
+    Returns the overlapping date range where all selected ETFs have data.
+    This helps users understand what backtest period is possible.
+    """
+    try:
+        backtester = RotationETFPayoutBacktester()
+        
+        # Calculate common date range
+        start_date, end_date, years_available = backtester.calculate_common_date_range(
+            request.selected_etfs
+        )
+        
+        # Get individual ETF ranges for reference
+        etf_ranges = []
+        for etf in request.selected_etfs:
+            if etf in backtester.etf_metadata:
+                info = backtester.etf_metadata[etf]
+                etf_ranges.append({
+                    'symbol': etf,
+                    'start_date': info.get('start_date'),
+                    'end_date': info.get('end_date'),
+                    'years_available': info.get('years_available', 0)
+                })
+        
+        return DateRangeResponse(
+            start_date=start_date,
+            end_date=end_date,
+            years_available=years_available,
+            etf_ranges=etf_ranges
+        )
+        
+    except Exception as e:
+        error_msg = f"Failed to calculate date range: {str(e)}"
+        print(f"ERROR: {error_msg}")
+        raise HTTPException(status_code=500, detail=error_msg)
+
+
+@router.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "strategy": "Rotation_ETF_Payout",
+        "version": "1.0.0"
+    }

@@ -996,12 +996,7 @@ class ETFRotationBacktester(RotationStrategy):
             self.logger.info(f"   {idx + 1}. {row['symbol']}: {row['distance_from_high']:.2f}% from high")
 
         # Step 2: Sell from ETFs closest to 52-week high until target capital is raised
-        # NEW LOGIC: Continue selling from same ETF until target reached or ETF exhausted
         for _, etf_row in sorted_for_sell.iterrows():
-            if total_raised >= target_capital:
-                self.logger.progress(f"✅ Target capital reached: ₹{total_raised:,.0f} >= ₹{target_capital:,.0f}")
-                break
-
             ticker = etf_row['symbol']
 
             # Check if we have holdings in this ETF
@@ -1065,11 +1060,8 @@ class ETFRotationBacktester(RotationStrategy):
                     self.logger.error(f"❌ Failed to sell {ticker}: {sell_result.get('error', 'Unknown error')}")
                     break  # Exit the while loop if sell fails
 
-            # Check if we need to move to next ETF
-            if total_raised < target_capital and updated_holdings.get(ticker, 0) == 0:
-                self.logger.info(f"📦 {ticker} exhausted - moving to next priority ETF")
-            elif total_raised >= target_capital:
-                self.logger.progress(f"🎯 Target reached with {ticker} - stopping")
+            # Check if target reached - exit outer loop
+            if total_raised >= target_capital:
                 break
 
         return {
@@ -1429,28 +1421,33 @@ class ETFRotationBacktester(RotationStrategy):
                 price = open_prices[target_etf]
                 self.logger.progress(f"💰 Execution price (Monday open): ₹{price:.2f}")
 
-                # Purchase Calculation
+                # Purchase Calculation - NEW LOGIC
+                # Step 1: Calculate units directly from gross amount
                 gross_amount = capital_per_week
-                costs_estimate = self.calculate_transaction_costs('buy', gross_amount, brokerage_percent)
-
-                # Determine maximum units purchasable with available cash
-                net_amount_for_units = gross_amount - costs_estimate['total_costs']
-                units = int(net_amount_for_units / price) if price > 0 else 0
+                units = int(gross_amount / price) if price > 0 else 0
+                
+                # Step 2: Calculate actual amount based on units
+                actual_amount = units * price
+                
+                # Step 3: Calculate transaction costs on actual amount
+                actual_costs = self.calculate_transaction_costs('buy', actual_amount, brokerage_percent)
+                
+                # Step 4: Total cost = actual amount + transaction costs
+                total_cost = actual_costs['net_amount']  # This includes actual_amount + costs
 
                 self.logger.info(f"📋 Purchase calculation:")
                 self.logger.info(f"   Gross amount: ₹{gross_amount:,.0f}")
-                self.logger.trade(f"   Transaction costs: ₹{costs_estimate['total_costs']:.2f}")
-                self.logger.info(f"   Net for units: ₹{net_amount_for_units:,.0f}")
+                self.logger.info(f"   Price per unit: ₹{price:.2f}")
                 self.logger.trade(f"   Units to buy: {units}")
+                self.logger.info(f"   Actual amount: ₹{actual_amount:,.0f}")
+                self.logger.trade(f"   Transaction costs: ₹{actual_costs['total_costs']:.2f}")
+                self.logger.info(f"   Total cost (amount + fees): ₹{total_cost:,.0f}")
 
-                if units > 0 and cash >= gross_amount:
+                if units > 0 and cash >= total_cost:
                     # Execute purchase at Monday opening price
-                    actual_amount = units * price
-                    actual_costs = self.calculate_transaction_costs('buy', actual_amount, brokerage_percent)
-
                     # Update holdings and cash
                     current_holdings[target_etf] = current_holdings.get(target_etf, 0) + units
-                    cash -= actual_costs['net_amount']
+                    cash -= total_cost
 
                     # Record purchase in FIFO tracking system
                     self.add_purchase_record(target_etf, units, price, execution_date)
@@ -1460,7 +1457,7 @@ class ETFRotationBacktester(RotationStrategy):
                                                units, price, actual_costs, 0)
 
                     self.logger.trade(f"✅ Purchase executed: {units} units of {target_etf} for ₹{actual_amount:,.0f}")
-                    self.logger.info(f"💳 Total cost (including fees): ₹{actual_costs['net_amount']:,.0f}")
+                    self.logger.info(f"💳 Total cost (including fees): ₹{total_cost:,.0f}")
                     self.logger.progress(f"💰 Remaining cash: ₹{cash:,.0f}")
 
                     trade_log.update({
@@ -1474,7 +1471,7 @@ class ETFRotationBacktester(RotationStrategy):
                         'cash_after': cash
                     })
                 else:
-                    self.logger.info(f"❌ Cannot execute purchase: units={units}, cash=₹{cash:,.0f}, required=₹{gross_amount:,.0f}")
+                    self.logger.info(f"❌ Cannot execute purchase: units={units}, cash=₹{cash:,.0f}, required=₹{total_cost:,.0f}")
                     trade_log.update({
                         'action': 'none',
                         'ticker': target_etf if target_etf else 'N/A',
