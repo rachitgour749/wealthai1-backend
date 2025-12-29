@@ -53,6 +53,8 @@ class RotationETFPayoutBacktester(ETFRotationBacktester):
         self.load_config()
         
         # Initialize withdrawal tracking
+        self.payout_start_week = 1
+        self.current_week = 1
         self.total_withdrawn_amount = 0.0
         self.withdrawal_log = []
         
@@ -70,7 +72,8 @@ class RotationETFPayoutBacktester(ETFRotationBacktester):
             # Load strategy parameters
             self.accumulation_weeks = config.get('accumulation_weeks', 13)
             self.accumulation_per_week = config.get('accumulation_per_week', 50000)
-            self.withdraw_amount = config.get('withdraw_amount', 0)  # NEW PARAMETER
+            self.withdraw_amount = config.get('withdraw_amount', 0)
+            self.payout_start_week = config.get('payout_start_week', 1)  # NEW
             self.selected_etfs = config.get('selected_etfs', [])
             self.brokerage_percent = config.get('brokerage_percent', 0.03)
             self.compounding_enabled = config.get('compounding_enabled', True)
@@ -83,6 +86,7 @@ class RotationETFPayoutBacktester(ETFRotationBacktester):
             self.accumulation_weeks = 13
             self.accumulation_per_week = 50000
             self.withdraw_amount = 0
+            self.payout_start_week = 1
             self.selected_etfs = []
             self.brokerage_percent = 0.03
             self.compounding_enabled = True
@@ -106,16 +110,33 @@ class RotationETFPayoutBacktester(ETFRotationBacktester):
             current_nav, cash, capital_per_week, accumulation_weeks, compounding_enabled
         )
         
-        # Add withdrawal amount
-        total_churn_amount = base_churn_amount + self.withdraw_amount
+        # Add withdrawal amount only if payout start week has been reached
+        if self.current_week >= self.payout_start_week:
+            total_churn_amount = base_churn_amount + self.withdraw_amount
+            self.logger.info(f"💰 Churning calculation (WITHDRAWAL ACTIVE):")
+        else:
+            total_churn_amount = base_churn_amount
+            self.logger.info(f"💰 Churning calculation (ACCUMULATION ONLY/BEFORE PAYOUT):")
         
-        self.logger.info(f"💰 Churning calculation:")
+        self.logger.info(f"   Current week: {self.current_week} (Payout starts: {self.payout_start_week})")
         self.logger.info(f"   Base churn amount: ₹{base_churn_amount:,.0f}")
         self.logger.info(f"   Withdrawal amount: ₹{self.withdraw_amount:,.0f}")
         self.logger.info(f"   Total churn amount: ₹{total_churn_amount:,.0f}")
         
         return total_churn_amount
     
+    def execute_weekly_trade(self, *args, **kwargs) -> Dict:
+        """
+        Track current week number before executing trade
+        """
+        # The first argument is week_num
+        if args:
+            self.current_week = args[0]
+        elif 'week_num' in kwargs:
+            self.current_week = kwargs['week_num']
+            
+        return super().execute_weekly_trade(*args, **kwargs)
+
     def execute_churning_phase(self, week_num: int, execution_date: datetime, 
                                high_low_data: pd.DataFrame, open_prices: pd.Series, 
                                current_holdings: Dict[str, int], cash: float,
@@ -128,11 +149,16 @@ class RotationETFPayoutBacktester(ETFRotationBacktester):
         2. Reinvest only base_capital
         3. Track the difference as actual withdrawal
         """
-        # Calculate portions
-        base_capital = target_capital - self.withdraw_amount
-        withdrawal_portion = self.withdraw_amount
+        # STEP 0: Calculate portions based on whether payout is active
+        if self.current_week >= self.payout_start_week:
+            base_capital = target_capital - self.withdraw_amount
+            withdrawal_portion = self.withdraw_amount
+        else:
+            base_capital = target_capital
+            withdrawal_portion = 0.0
         
         self.logger.progress(f"🔄 Churning Phase - Week {week_num}")
+        self.logger.progress(f"   Current week: {self.current_week} (Payout starts: {self.payout_start_week})")
         self.logger.progress(f"   Total to raise: ₹{target_capital:,.0f}")
         self.logger.progress(f"   Reinvestment: ₹{base_capital:,.0f}")
         self.logger.progress(f"   Planned withdrawal: ₹{withdrawal_portion:,.0f}")
@@ -228,10 +254,13 @@ class RotationETFPayoutBacktester(ETFRotationBacktester):
         # Check if we raised enough
         if total_raised < target_capital * 0.95:  # Allow 5% tolerance
             self.logger.warning(f"⚠️ Could not raise full target. Raised: ₹{total_raised:,.0f}")
-            # Adjust withdrawal based on what we actually raised
-            actual_withdrawal = max(0, total_raised - base_capital)
+            # Adjust withdrawal based on what we actually raised (if payout is active)
+            if self.current_week >= self.payout_start_week:
+                actual_withdrawal = max(0, total_raised - base_capital)
+            else:
+                actual_withdrawal = 0.0
         else:
-            actual_withdrawal = withdrawal_portion
+            actual_withdrawal = withdrawal_portion if self.current_week >= self.payout_start_week else 0.0
         
         # STEP 2: Reinvest only base_capital (not the full amount raised)
         reinvestment_amount = min(base_capital, total_raised - actual_withdrawal)

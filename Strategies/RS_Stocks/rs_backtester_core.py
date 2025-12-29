@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional
 from sqlalchemy.orm import Session
 try:
-    from .database import StockData, IndexData, Nifty500Constituents, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
+    from .database import StockData, IndexData, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
 except ImportError:
-    from database import StockData, IndexData, Nifty500Constituents, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
+    from database import StockData, IndexData, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
 import json
 from dataclasses import dataclass
 import math

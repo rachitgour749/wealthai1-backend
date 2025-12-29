@@ -14,59 +14,59 @@ logger = logging.getLogger(__name__)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # Import the ETF backtester
-from .backtester import RotationETFPayoutBacktester
+from ..services.backtester import InternationalETFRotationBacktester
 # Signal generator removed - not needed
 LiveSignalGenerator = None
-from .schemas import (
+from ..etf_schemas import (
     BacktestRequest, ETFMetadata, BacktestResult, BacktestResults,
     SaveETFStrategyRequest, SavedETFStrategy
 )
 
 # Create ETF router
-rotation_etf_payout_router = APIRouter(prefix="/api/rotation-etf-payout", tags=["ETF Strategy"])
+international_etf_router = APIRouter(prefix="/api/international-etf", tags=["International ETF Strategy"])
 
 # Pydantic models for request/response
 
 
 # Global ETF backtester instance
-rotation_etf_payout_backtester = None
+international_etf_backtester = None
 
-def initialize_rotation_etf_payout_backtester(db_path: str = "unified_etf_data.sqlite"):
+def initialize_international_etf_backtester(db_path: str = "unified_etf_data.sqlite"):
     """Initialize the ETF backtester
     
     Args:
         db_path: Deprecated - kept for compatibility. Now uses PostgreSQL for all operations.
     """
-    global rotation_etf_payout_backtester
+    global international_etf_backtester
     try:
-        rotation_etf_payout_backtester = RotationETFPayoutBacktester(db_path=db_path)  # db_path ignored, uses PostgreSQL
+        international_etf_backtester = InternationalETFRotationBacktester(db_path=db_path)  # db_path ignored, uses PostgreSQL
         print("ETF Backtester initialized successfully")
         return True
     except Exception as e:
         print(f"Error initializing ETF Backtester: {e}")
-        rotation_etf_payout_backtester = None
+        international_etf_backtester = None
         return False
 
-def cleanup_rotation_etf_payout_backtester():
+def cleanup_international_etf_backtester():
     """Clean up ETF backtester resources"""
-    global rotation_etf_payout_backtester
-    if rotation_etf_payout_backtester:
-        rotation_etf_payout_backtester.cleanup()
-        rotation_etf_payout_backtester = None
+    global international_etf_backtester
+    if international_etf_backtester:
+        international_etf_backtester.cleanup()
+        international_etf_backtester = None
 
 # ============================================================================
 # ETF STRATEGY ROUTES
 # ============================================================================
 
-@rotation_etf_payout_router.get("/etfs")
+@international_etf_router.get("/etfs")
 async def get_available_etfs():
     """Get list of available ETFs"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
         # Load ETF metadata
-        metadata = rotation_etf_payout_backtester.load_metadata()
+        metadata = international_etf_backtester.load_metadata()
         etfs = []
         
         for ticker, data in metadata.items():
@@ -82,26 +82,26 @@ async def get_available_etfs():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error loading ETFs: {str(e)}")
 
-@rotation_etf_payout_router.get("/default")
+@international_etf_router.get("/default")
 async def get_default_etf_selection():
     """Get default ETF selection"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
-        metadata = rotation_etf_payout_backtester.load_metadata()
+        metadata = international_etf_backtester.load_metadata()
         available_etfs = list(metadata.keys())
-        default_selection = rotation_etf_payout_backtester.get_default_etf_selection(available_etfs, 5)
+        default_selection = international_etf_backtester.get_default_etf_selection(available_etfs, 5)
         
         return {"default_etfs": default_selection}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting default selection: {str(e)}")
 
-@rotation_etf_payout_router.post("/etfs/date-range")
+@international_etf_router.post("/etfs/date-range")
 async def calculate_etf_date_range(request: Dict[str, Any]):
     """Calculate common date range for selected ETFs"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
         tickers = request.get("tickers", [])
@@ -111,9 +111,9 @@ async def calculate_etf_date_range(request: Dict[str, Any]):
         print(f"Calculating date range for ETF tickers: {tickers}")
         
         # Enable verbose mode for debugging
-        rotation_etf_payout_backtester.set_verbose(True)
+        international_etf_backtester.set_verbose(True)
         
-        start_date, end_date, years = rotation_etf_payout_backtester.calculate_common_date_range(tickers)
+        start_date, end_date, years = international_etf_backtester.calculate_common_date_range(tickers)
         
         if start_date and end_date:
             return {
@@ -123,9 +123,9 @@ async def calculate_etf_date_range(request: Dict[str, Any]):
             }
         else:
             # Provide more detailed error message
-            available_symbols = list(rotation_etf_payout_backtester.etf_metadata.keys())[:20] if rotation_etf_payout_backtester.etf_metadata else []
+            available_symbols = list(international_etf_backtester.etf_metadata.keys())[:20] if international_etf_backtester.etf_metadata else []
             error_msg = f"Could not calculate date range for ETFs: {tickers}. "
-            if not rotation_etf_payout_backtester.etf_metadata:
+            if not international_etf_backtester.etf_metadata:
                 error_msg += "Metadata is empty. "
             elif available_symbols:
                 error_msg += f"Available symbols (sample): {available_symbols}. "
@@ -140,32 +140,32 @@ async def calculate_etf_date_range(request: Dict[str, Any]):
         print(f"[ERROR] Traceback: {error_trace}")
         raise HTTPException(status_code=500, detail=f"Error calculating date range: {str(e)}")
 
-@rotation_etf_payout_router.post("/diagnose")
+@international_etf_router.post("/diagnose")
 async def diagnose_etf_data(request: Dict[str, Any]):
     """Diagnose ETF data availability and provide recommendations"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
         tickers = request.get("tickers", [])
-        diagnosis = rotation_etf_payout_backtester.diagnose_etf_data(tickers)
+        diagnosis = international_etf_backtester.diagnose_etf_data(tickers)
         return diagnosis
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error diagnosing ETF data: {str(e)}")
 
-@rotation_etf_payout_router.get("/etfs/overview")
+@international_etf_router.get("/etfs/overview")
 async def get_etf_overview():
     """Get ETF overview with descriptions"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
-        metadata = rotation_etf_payout_backtester.load_metadata()
+        metadata = international_etf_backtester.load_metadata()
         etf_overview = []
         
         for symbol, meta in metadata.items():
-            description = rotation_etf_payout_backtester.generate_asset_description(symbol)
-            sector = rotation_etf_payout_backtester.get_asset_sector_classification(symbol)
+            description = international_etf_backtester.generate_asset_description(symbol)
+            sector = international_etf_backtester.get_asset_sector_classification(symbol)
             etf_overview.append({
                 'symbol': symbol,
                 'description': description,
@@ -182,7 +182,7 @@ async def get_etf_overview():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting ETF overview: {str(e)}")
 
-@rotation_etf_payout_router.post("/metrics")
+@international_etf_router.post("/metrics")
 async def calculate_etf_metrics(request: BacktestRequest):
     """Calculate performance metrics for ETF rotation strategy"""
     try:
@@ -202,22 +202,13 @@ async def calculate_etf_metrics(request: BacktestRequest):
             else:
                 return obj
         
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
         print(f"Running ETF backtest with parameters: {request}")
         
-        # Set parameters before running backtest
-        rotation_etf_payout_backtester.withdraw_amount = request.withdraw_amount
-        rotation_etf_payout_backtester.payout_start_week = request.payout_start_week  # NEW
-        
-        # Reset tracking
-        rotation_etf_payout_backtester.current_week = 1
-        rotation_etf_payout_backtester.total_withdrawn_amount = 0.0
-        rotation_etf_payout_backtester.withdrawal_log = []
-        
         # Run the backtest
-        result = rotation_etf_payout_backtester.run_backtest(
+        result = international_etf_backtester.run_backtest(
             tickers=request.tickers,
             start_date=request.start_date,
             end_date=request.end_date,
@@ -231,7 +222,7 @@ async def calculate_etf_metrics(request: BacktestRequest):
             raise HTTPException(status_code=400, detail=f"ETF backtest failed: {result['error']}")
         
         # Calculate metrics
-        etf_metrics = rotation_etf_payout_backtester.calculate_metrics(
+        etf_metrics = international_etf_backtester.calculate_metrics(
             request.capital_per_week,
             request.accumulation_weeks,
             request.risk_free_rate
@@ -239,7 +230,7 @@ async def calculate_etf_metrics(request: BacktestRequest):
         
         # Calculate benchmark metrics
         total_investment = request.accumulation_weeks * request.capital_per_week
-        benchmark_metrics = rotation_etf_payout_backtester.calculate_benchmark_metrics(
+        benchmark_metrics = international_etf_backtester.calculate_benchmark_metrics(
             total_investment,
             request.risk_free_rate
         )
@@ -252,21 +243,16 @@ async def calculate_etf_metrics(request: BacktestRequest):
             "benchmark_buyhold": []
         }
         
-        if not rotation_etf_payout_backtester.weekly_nav_df.empty:
-            performance_data["dates"] = [str(date) for date in rotation_etf_payout_backtester.weekly_nav_df['date']]
-            performance_data["etf_strategy"] = rotation_etf_payout_backtester.weekly_nav_df['nav'].tolist()
-            performance_data["cumulative_investment"] = rotation_etf_payout_backtester.weekly_nav_df['cumulative_investment'].tolist()
+        if not international_etf_backtester.weekly_nav_df.empty:
+            performance_data["dates"] = [str(date) for date in international_etf_backtester.weekly_nav_df['date']]
+            performance_data["etf_strategy"] = international_etf_backtester.weekly_nav_df['nav'].tolist()
+            performance_data["cumulative_investment"] = international_etf_backtester.weekly_nav_df['cumulative_investment'].tolist()
             
-            if not rotation_etf_payout_backtester.nifty50_df.empty:
+            if not international_etf_backtester.sp500_df.empty:
                 # Align benchmark data with weekly data
-                benchmark_dates = [str(date) for date in rotation_etf_payout_backtester.nifty50_df['date']]
-                benchmark_navs = rotation_etf_payout_backtester.nifty50_df['nav'].tolist()
+                benchmark_dates = [str(date) for date in international_etf_backtester.sp500_df['date']]
+                benchmark_navs = international_etf_backtester.sp500_df['nav'].tolist()
                 performance_data["benchmark_buyhold"] = benchmark_navs
-        
-        # Add withdrawal info to result
-        if not result.get('error'):
-            result['total_withdrawn'] = rotation_etf_payout_backtester.total_withdrawn_amount
-            result['withdrawal_log'] = rotation_etf_payout_backtester.withdrawal_log
         
         # Sanitize all data before returning
         response_data = {
@@ -274,11 +260,7 @@ async def calculate_etf_metrics(request: BacktestRequest):
             "etf_metrics": sanitize_data(etf_metrics),
             "benchmark_metrics": sanitize_data(benchmark_metrics),
             "backtest_result": sanitize_data(result),
-            "performance_data": sanitize_data(performance_data),
-            "withdrawal_data": {
-                "total_withdrawn": rotation_etf_payout_backtester.total_withdrawn_amount,
-                "withdrawal_log": sanitize_data(rotation_etf_payout_backtester.withdrawal_log)
-            }
+            "performance_data": sanitize_data(performance_data)
         }
         
         return response_data
@@ -287,7 +269,7 @@ async def calculate_etf_metrics(request: BacktestRequest):
         print(f"Error calculating ETF metrics: {e}")
         raise HTTPException(status_code=500, detail=f"Error calculating ETF metrics: {str(e)}")
 
-@rotation_etf_payout_router.get("/metrics/table")
+@international_etf_router.get("/metrics/table")
 async def get_etf_metrics_table():
     """Get formatted metrics comparison table for ETFs"""
     try:
@@ -307,20 +289,20 @@ async def get_etf_metrics_table():
             else:
                 return obj
         
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
         # This would need to be called after a backtest is run
-        if not hasattr(rotation_etf_payout_backtester, 'weekly_nav_df') or rotation_etf_payout_backtester.weekly_nav_df is None:
+        if not hasattr(international_etf_backtester, 'weekly_nav_df') or international_etf_backtester.weekly_nav_df is None:
             raise HTTPException(status_code=400, detail="No ETF backtest data available. Run backtest first.")
         
         # Calculate metrics
-        etf_metrics = rotation_etf_payout_backtester.calculate_metrics(50000, 52, 8.0)  # Default values
+        etf_metrics = international_etf_backtester.calculate_metrics(50000, 52, 8.0)  # Default values
         total_investment = 52 * 50000
-        benchmark_metrics = rotation_etf_payout_backtester.calculate_benchmark_metrics(total_investment, 8.0)
+        benchmark_metrics = international_etf_backtester.calculate_benchmark_metrics(total_investment, 8.0)
         
         # Create formatted table
-        formatted_table = rotation_etf_payout_backtester.create_formatted_metrics_table(etf_metrics, benchmark_metrics)
+        formatted_table = international_etf_backtester.create_formatted_metrics_table(etf_metrics, benchmark_metrics)
         
         if not formatted_table.empty:
             table_data = formatted_table.to_dict('records')
@@ -331,14 +313,14 @@ async def get_etf_metrics_table():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting ETF metrics table: {str(e)}")
 
-@rotation_etf_payout_router.get("/transaction-costs/summary")
+@international_etf_router.get("/transaction-costs/summary")
 async def get_etf_transaction_costs_summary():
     """Get transaction costs summary for ETFs"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
-        if not rotation_etf_payout_backtester.transaction_costs_log:
+        if not international_etf_backtester.transaction_costs_log:
             return {"costs_summary": {
                 'Total All Costs': '₹0',
                 'Capital Gains Tax': '₹0',
@@ -346,22 +328,22 @@ async def get_etf_transaction_costs_summary():
                 'Total Transactions': '0'
             }}
         
-        costs_summary = rotation_etf_payout_backtester.get_transaction_costs_summary()
+        costs_summary = international_etf_backtester.get_transaction_costs_summary()
         return {"costs_summary": costs_summary}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting ETF transaction costs summary: {str(e)}")
 
-@rotation_etf_payout_router.get("/transaction-log")
+@international_etf_router.get("/transaction-log")
 async def get_etf_transaction_log():
     """Get transaction log from the latest ETF backtest"""
     try:
         import math
         
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
-        if not hasattr(rotation_etf_payout_backtester, 'portfolio_log') or not rotation_etf_payout_backtester.portfolio_log:
+        if not hasattr(international_etf_backtester, 'portfolio_log') or not international_etf_backtester.portfolio_log:
             return {"transaction_log": [], "trading_summary": {}}
         
         # Helper function to recursively sanitize NaN/inf values
@@ -380,7 +362,7 @@ async def get_etf_transaction_log():
         
         # Convert portfolio log to frontend format
         transaction_log = []
-        for log in rotation_etf_payout_backtester.portfolio_log:
+        for log in international_etf_backtester.portfolio_log:
             # Extract transaction costs from the costs dictionary
             costs = log.get('costs', {})
             transaction_costs = costs.get('total_costs', 0) if costs else 0
@@ -474,8 +456,8 @@ async def get_etf_transaction_log():
                 'total_buy_transactions_in_churns': total_churn_buys,
                 'average_sells_per_churn': total_churn_sells / churn_trades if churn_trades > 0 else 0
             },
-            'no_trade_weeks': getattr(rotation_etf_payout_backtester, 'skipped_days', []),
-            'trading_frequency': f"{(total_trades / max(1, len(rotation_etf_payout_backtester.portfolio_log))) * 100:.1f}%"
+            'no_trade_weeks': getattr(international_etf_backtester, 'skipped_days', []),
+            'trading_frequency': f"{(total_trades / max(1, len(international_etf_backtester.portfolio_log))) * 100:.1f}%"
         }
         
         return {
@@ -485,16 +467,16 @@ async def get_etf_transaction_log():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error loading ETF transaction log: {str(e)}")
 
-@rotation_etf_payout_router.get("/debug/portfolio-log")
+@international_etf_router.get("/debug/portfolio-log")
 async def debug_portfolio_log():
     """Debug endpoint to inspect raw portfolio_log data"""
     try:
         import math
         
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized")
         
-        if not hasattr(rotation_etf_payout_backtester, 'portfolio_log') or not rotation_etf_payout_backtester.portfolio_log:
+        if not hasattr(international_etf_backtester, 'portfolio_log') or not international_etf_backtester.portfolio_log:
             return {"portfolio_log": [], "count": 0}
         
         # Helper function to handle NaN values
@@ -507,7 +489,7 @@ async def debug_portfolio_log():
         
         # Return simplified view of portfolio_log
         debug_data = []
-        for i, log in enumerate(rotation_etf_payout_backtester.portfolio_log):
+        for i, log in enumerate(international_etf_backtester.portfolio_log):
             debug_data.append({
                 'index': i,
                 'week': log.get('week', 0),
@@ -525,19 +507,69 @@ async def debug_portfolio_log():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in debug endpoint: {str(e)}")
 
-@rotation_etf_payout_router.get("/transaction-costs")
+@international_etf_router.get("/debug/backtest-state")
+async def debug_backtest_state():
+    """Enhanced debug endpoint to check complete backtester state"""
+    try:
+        if international_etf_backtester is None:
+            return {
+                "error": "Backtester not initialized",
+                "backtester_exists": False
+            }
+        
+        # Gather comprehensive state information
+        state = {
+            "backtester_exists": True,
+            "backtester_type": type(international_etf_backtester).__name__,
+            "has_portfolio_log": hasattr(international_etf_backtester, 'portfolio_log'),
+            "portfolio_log_count": len(international_etf_backtester.portfolio_log) if hasattr(international_etf_backtester, 'portfolio_log') else 0,
+            "has_transaction_costs_log": hasattr(international_etf_backtester, 'transaction_costs_log'),
+            "transaction_costs_count": len(international_etf_backtester.transaction_costs_log) if hasattr(international_etf_backtester, 'transaction_costs_log') else 0,
+            "has_skipped_days": hasattr(international_etf_backtester, 'skipped_days'),
+            "skipped_days_count": len(international_etf_backtester.skipped_days) if hasattr(international_etf_backtester, 'skipped_days') else 0,
+            "has_weekly_nav_df": hasattr(international_etf_backtester, 'weekly_nav_df'),
+            "weekly_nav_rows": len(international_etf_backtester.weekly_nav_df) if hasattr(international_etf_backtester, 'weekly_nav_df') and international_etf_backtester.weekly_nav_df is not None else 0,
+            "total_weeks": getattr(international_etf_backtester, 'total_weeks', 0),
+            "successful_signals": getattr(international_etf_backtester, 'successful_signals', 0),
+            "successful_executions": getattr(international_etf_backtester, 'successful_executions', 0),
+            "current_cash": getattr(international_etf_backtester, 'current_cash', 0),
+            "current_holdings": getattr(international_etf_backtester, 'current_holdings', {}),
+            "etf_metadata_count": len(international_etf_backtester.etf_metadata) if hasattr(international_etf_backtester, 'etf_metadata') else 0
+        }
+        
+        # Add sample of portfolio_log if available
+        if state["portfolio_log_count"] > 0:
+            sample_logs = []
+            for i, log in enumerate(international_etf_backtester.portfolio_log[:3]):  # First 3 entries
+                sample_logs.append({
+                    'week': log.get('week', 0),
+                    'action': log.get('action', 'NONE'),
+                    'ticker': log.get('ticker', ''),
+                    'execution_date': str(log.get('execution_date', ''))
+                })
+            state["portfolio_log_sample"] = sample_logs
+        
+        return state
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+@international_etf_router.get("/transaction-costs")
 async def get_etf_transaction_costs():
     """Get transaction costs data from the latest ETF backtest"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
-        if not hasattr(rotation_etf_payout_backtester, 'transaction_costs_log') or not rotation_etf_payout_backtester.transaction_costs_log:
+        if not hasattr(international_etf_backtester, 'transaction_costs_log') or not international_etf_backtester.transaction_costs_log:
             return {"transaction_costs": []}
         
         # Convert transaction costs log to frontend format
         transaction_costs = []
-        for cost in rotation_etf_payout_backtester.transaction_costs_log:
+        for cost in international_etf_backtester.transaction_costs_log:
             transaction_costs.append({
                 'date': cost.get('date', '').strftime('%Y-%m-%d') if hasattr(cost.get('date', ''), 'strftime') else str(cost.get('date', '')),
                 'cumulative_cost': cost.get('cumulative_costs', 0),
@@ -549,19 +581,19 @@ async def get_etf_transaction_costs():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error loading ETF transaction costs: {str(e)}")
 
-@rotation_etf_payout_router.get("/skipped-trades")
+@international_etf_router.get("/skipped-trades")
 async def get_etf_skipped_trades():
     """Get skipped trades information from the latest ETF backtest"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
-        if not hasattr(rotation_etf_payout_backtester, 'skipped_days') or not rotation_etf_payout_backtester.skipped_days:
+        if not hasattr(international_etf_backtester, 'skipped_days') or not international_etf_backtester.skipped_days:
             return {"skipped_trades": []}
         
         # Convert skipped days to frontend format
         skipped_trades = []
-        for skip in rotation_etf_payout_backtester.skipped_days:
+        for skip in international_etf_backtester.skipped_days:
             skipped_trades.append({
                 'week': skip.get('week', 0),
                 'date': skip.get('date', ''),
@@ -573,31 +605,31 @@ async def get_etf_skipped_trades():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error loading ETF skipped trades: {str(e)}")
 
-@rotation_etf_payout_router.get("/trade-execution-status")
+@international_etf_router.get("/trade-execution-status")
 async def get_etf_trade_execution_status():
     """Get real-time trade execution status and statistics for ETFs"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
         # Get current backtest statistics
         stats = {
-            'total_weeks_processed': getattr(rotation_etf_payout_backtester, 'total_weeks', 0),
-            'successful_signals': getattr(rotation_etf_payout_backtester, 'successful_signals', 0),
-            'successful_executions': getattr(rotation_etf_payout_backtester, 'successful_executions', 0),
-            'portfolio_log_entries': len(getattr(rotation_etf_payout_backtester, 'portfolio_log', [])),
-            'transaction_costs_entries': len(getattr(rotation_etf_payout_backtester, 'transaction_costs_log', [])),
-            'skipped_trades_count': len(getattr(rotation_etf_payout_backtester, 'skipped_days', [])),
-            'current_cash': getattr(rotation_etf_payout_backtester, 'current_cash', 0),
-            'current_holdings': getattr(rotation_etf_payout_backtester, 'current_holdings', {}),
+            'total_weeks_processed': getattr(international_etf_backtester, 'total_weeks', 0),
+            'successful_signals': getattr(international_etf_backtester, 'successful_signals', 0),
+            'successful_executions': getattr(international_etf_backtester, 'successful_executions', 0),
+            'portfolio_log_entries': len(getattr(international_etf_backtester, 'portfolio_log', [])),
+            'transaction_costs_entries': len(getattr(international_etf_backtester, 'transaction_costs_log', [])),
+            'skipped_trades_count': len(getattr(international_etf_backtester, 'skipped_days', [])),
+            'current_cash': getattr(international_etf_backtester, 'current_cash', 0),
+            'current_holdings': getattr(international_etf_backtester, 'current_holdings', {}),
             'last_trade_date': None,
             'last_trade_action': None,
             'last_trade_ticker': None
         }
         
         # Get last trade information
-        if rotation_etf_payout_backtester.portfolio_log:
-            last_trade = rotation_etf_payout_backtester.portfolio_log[-1]
+        if international_etf_backtester.portfolio_log:
+            last_trade = international_etf_backtester.portfolio_log[-1]
             stats['last_trade_date'] = last_trade.get('execution_date', '').strftime('%Y-%m-%d') if hasattr(last_trade.get('execution_date', ''), 'strftime') else str(last_trade.get('execution_date', ''))
             stats['last_trade_action'] = last_trade.get('action', 'NONE')
             stats['last_trade_ticker'] = last_trade.get('ticker', '')
@@ -606,27 +638,27 @@ async def get_etf_trade_execution_status():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error loading ETF trade execution status: {str(e)}")
 
-@rotation_etf_payout_router.get("/charts/equity-curve")
+@international_etf_router.get("/charts/equity-curve")
 async def get_etf_equity_curve_chart(show_benchmark: bool = True, show_etf_strategy: bool = True):
     """Get equity curve chart data for ETFs"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
-        if not hasattr(rotation_etf_payout_backtester, 'weekly_nav_df') or rotation_etf_payout_backtester.weekly_nav_df is None:
+        if not hasattr(international_etf_backtester, 'weekly_nav_df') or international_etf_backtester.weekly_nav_df is None:
             raise HTTPException(status_code=400, detail="No ETF backtest data available. Run backtest first.")
         
         # Return data for frontend charting
-        if not rotation_etf_payout_backtester.weekly_nav_df.empty:
+        if not international_etf_backtester.weekly_nav_df.empty:
             chart_data = {
-                "dates": [str(date) for date in rotation_etf_payout_backtester.weekly_nav_df['date']],
-                "etf_strategy": rotation_etf_payout_backtester.weekly_nav_df['nav'].tolist(),
-                "cumulative_investment": rotation_etf_payout_backtester.weekly_nav_df['cumulative_investment'].tolist(),
+                "dates": [str(date) for date in international_etf_backtester.weekly_nav_df['date']],
+                "etf_strategy": international_etf_backtester.weekly_nav_df['nav'].tolist(),
+                "cumulative_investment": international_etf_backtester.weekly_nav_df['cumulative_investment'].tolist(),
                 "benchmark_buyhold": []
             }
             
-            if not rotation_etf_payout_backtester.nifty50_df.empty:
-                chart_data["benchmark_buyhold"] = rotation_etf_payout_backtester.nifty50_df['nav'].tolist()
+            if not international_etf_backtester.sp500_df.empty:
+                chart_data["benchmark_buyhold"] = international_etf_backtester.sp500_df['nav'].tolist()
             
             return {"chart_data": chart_data}
         else:
@@ -635,18 +667,18 @@ async def get_etf_equity_curve_chart(show_benchmark: bool = True, show_etf_strat
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting ETF equity curve chart: {str(e)}")
 
-@rotation_etf_payout_router.get("/charts/transaction-costs")
+@international_etf_router.get("/charts/transaction-costs")
 async def get_etf_transaction_costs_chart():
     """Get transaction costs chart data for ETFs"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
-        if not rotation_etf_payout_backtester.transaction_costs_log:
+        if not international_etf_backtester.transaction_costs_log:
             return {"chart_data": {}}
         
         # Return data for frontend charting
-        costs_df = pd.DataFrame(rotation_etf_payout_backtester.transaction_costs_log)
+        costs_df = pd.DataFrame(international_etf_backtester.transaction_costs_log)
         costs_df['date'] = pd.to_datetime(costs_df['date'])
         costs_df = costs_df.sort_values('date')
         costs_df['cumulative_total_costs'] = costs_df['total_impact'].cumsum()
@@ -661,23 +693,23 @@ async def get_etf_transaction_costs_chart():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting ETF transaction costs chart: {str(e)}")
 
-@rotation_etf_payout_router.post("/cleanup")
+@international_etf_router.post("/cleanup")
 async def cleanup_etf_resources():
     """Clean up ETF resources and clear cache"""
     try:
-        cleanup_rotation_etf_payout_backtester()
+        cleanup_international_etf_backtester()
         return {"success": True, "message": "ETF resources cleaned up successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error cleaning up ETF resources: {str(e)}")
 
-@rotation_etf_payout_router.get("/costs/summary")
+@international_etf_router.get("/costs/summary")
 async def get_etf_costs_summary():
     """Get comprehensive costs summary including transaction costs and capital gains tax for ETFs"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
-        if not hasattr(rotation_etf_payout_backtester, 'portfolio_log') or not rotation_etf_payout_backtester.portfolio_log:
+        if not hasattr(international_etf_backtester, 'portfolio_log') or not international_etf_backtester.portfolio_log:
             return {
                 "total_all_costs": 0,
                 "capital_gains_tax": 0,
@@ -688,11 +720,11 @@ async def get_etf_costs_summary():
             }
         
         # Calculate costs from portfolio log - FIXED: Extract transaction costs from costs dictionary
-        total_capital_gains_tax = sum(log.get('capital_gains_tax', 0) for log in rotation_etf_payout_backtester.portfolio_log)
+        total_capital_gains_tax = sum(log.get('capital_gains_tax', 0) for log in international_etf_backtester.portfolio_log)
         
         # Fix: Extract transaction costs from the costs dictionary, not directly from log
         total_transaction_costs = 0
-        for log in rotation_etf_payout_backtester.portfolio_log:
+        for log in international_etf_backtester.portfolio_log:
             costs = log.get('costs', {})
             transaction_cost = costs.get('total_costs', 0) if costs else 0
             total_transaction_costs += transaction_cost
@@ -700,13 +732,13 @@ async def get_etf_costs_summary():
         total_all_costs = total_capital_gains_tax + total_transaction_costs
         
         # Calculate total volume (sum of all transaction amounts)
-        total_volume = sum(log.get('amount', 0) for log in rotation_etf_payout_backtester.portfolio_log)
+        total_volume = sum(log.get('amount', 0) for log in international_etf_backtester.portfolio_log)
         
         # Calculate cost as percentage of volume
         cost_as_percent = (total_all_costs / total_volume * 100) if total_volume > 0 else 0
         
         # Count total transactions
-        total_transactions = len(rotation_etf_payout_backtester.portfolio_log)
+        total_transactions = len(international_etf_backtester.portfolio_log)
         
         return {
             "total_all_costs": round(total_all_costs, 2),
@@ -719,14 +751,14 @@ async def get_etf_costs_summary():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error calculating ETF costs summary: {str(e)}")
 
-@rotation_etf_payout_router.get("/costs/analysis")
+@international_etf_router.get("/costs/analysis")
 async def get_etf_costs_analysis():
     """Get detailed costs analysis over time for the ETF chart"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
-        if not hasattr(rotation_etf_payout_backtester, 'portfolio_log') or not rotation_etf_payout_backtester.portfolio_log:
+        if not hasattr(international_etf_backtester, 'portfolio_log') or not international_etf_backtester.portfolio_log:
             return {"costs_data": []}
         
         # Create cumulative costs data over time
@@ -737,7 +769,7 @@ async def get_etf_costs_analysis():
         
         # Group by date and calculate cumulative costs
         date_costs = {}
-        for log in rotation_etf_payout_backtester.portfolio_log:
+        for log in international_etf_backtester.portfolio_log:
             date = log.get('execution_date', '').strftime('%Y-%m-%d') if hasattr(log.get('execution_date', ''), 'strftime') else str(log.get('execution_date', ''))
             
             # Fix: Extract transaction costs from the costs dictionary, not directly from log
@@ -768,19 +800,19 @@ async def get_etf_costs_analysis():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error calculating ETF costs analysis: {str(e)}")
 
-@rotation_etf_payout_router.get("/costs/breakdown")
+@international_etf_router.get("/costs/breakdown")
 async def get_etf_costs_breakdown():
     """Get detailed breakdown of costs by type and period for ETFs"""
     try:
-        if rotation_etf_payout_backtester is None:
+        if international_etf_backtester is None:
             raise HTTPException(status_code=500, detail="ETF backtester not initialized. Check database connection.")
         
-        if not hasattr(rotation_etf_payout_backtester, 'portfolio_log') or not rotation_etf_payout_backtester.portfolio_log:
+        if not hasattr(international_etf_backtester, 'portfolio_log') or not international_etf_backtester.portfolio_log:
             return {"breakdown": {}}
         
         # Calculate costs by year
         yearly_costs = {}
-        for log in rotation_etf_payout_backtester.portfolio_log:
+        for log in international_etf_backtester.portfolio_log:
             date = log.get('execution_date')
             if hasattr(date, 'year'):
                 year = date.year
@@ -862,7 +894,7 @@ def init_saved_etf_strategies_table(db_path: str = None):
 # SAVED STRATEGY ROUTES
 # ============================================================================
 
-@rotation_etf_payout_router.post("/save-strategy")
+@international_etf_router.post("/save-strategy")
 async def save_etf_strategy(request: SaveETFStrategyRequest):
     """Save an ETF strategy to the database with validation"""
     try:
@@ -872,9 +904,9 @@ async def save_etf_strategy(request: SaveETFStrategyRequest):
             raise HTTPException(status_code=500, detail=f"Failed to initialize database table: {error_msg}")
         
         # Check if strategy already exists using the backtester core validation
-        from .backtester import RotationETFPayoutBacktester
+        from ..services.backtester import InternationalETFRotationBacktester
         
-        backtester = RotationETFPayoutBacktester()
+        backtester = InternationalETFRotationBacktester()
         validation_result = backtester.check_strategy_exists(
             strategy_name=request.strategy_name,
             user_id=request.user_id,
@@ -952,7 +984,7 @@ async def save_etf_strategy(request: SaveETFStrategyRequest):
         print(f"ERROR: Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error saving strategy: {str(e)}")
 
-@rotation_etf_payout_router.get("/get-saved-strategies-list/{user_id}")
+@international_etf_router.get("/get-saved-strategies-list/{user_id}")
 async def get_saved_etf_strategies(user_id: str):
     """Get all saved ETF strategies for a specific user"""
     try:
@@ -1015,7 +1047,7 @@ async def get_saved_etf_strategies(user_id: str):
         # Return empty array instead of throwing error to prevent frontend crashes
         return {"strategies": []}
 
-@rotation_etf_payout_router.get("/get-saved-strategy/{strategy_id}")
+@international_etf_router.get("/get-saved-strategy/{strategy_id}")
 async def get_saved_etf_strategy_by_id(strategy_id: int):
     """Get a specific saved ETF strategy by ID"""
     try:
@@ -1066,7 +1098,7 @@ async def get_saved_etf_strategy_by_id(strategy_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving strategy: {str(e)}")
 
-@rotation_etf_payout_router.delete("/delete-saved-strategy/{strategy_id}")
+@international_etf_router.delete("/delete-saved-strategy/{strategy_id}")
 async def delete_saved_etf_strategy(strategy_id: int):
     """Delete a saved ETF strategy by ID"""
     session = None
@@ -1104,7 +1136,7 @@ async def delete_saved_etf_strategy(strategy_id: int):
         if session:
             session.close()
 
-@rotation_etf_payout_router.put("/update-saved-strategy/{strategy_id}")
+@international_etf_router.put("/update-saved-strategy/{strategy_id}")
 async def update_saved_etf_strategy(strategy_id: int, request: SaveETFStrategyRequest):
     """Update a saved ETF strategy"""
     try:
@@ -1161,7 +1193,7 @@ async def update_saved_etf_strategy(strategy_id: int, request: SaveETFStrategyRe
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating strategy: {str(e)}")
 
-@rotation_etf_payout_router.get("/get-saved-strategies-count/{user_id}")
+@international_etf_router.get("/get-saved-strategies-count/{user_id}")
 async def get_saved_etf_strategies_count(user_id: str):
     """Get count of saved ETF strategies for a specific user"""
     session = None
@@ -1191,7 +1223,7 @@ async def get_saved_etf_strategies_count(user_id: str):
 # NEW RS-STYLE ENDPOINTS FOR ETF STRATEGIES
 # ============================================================================
 
-@rotation_etf_payout_router.get("/get-saved-strategies-table/{user_id}")
+@international_etf_router.get("/get-saved-strategies-table/{user_id}")
 async def get_saved_etf_strategies_table(user_id: str):
     """Get saved ETF strategies in table format like RS strategy"""
     try:
@@ -1236,7 +1268,7 @@ async def get_saved_etf_strategies_table(user_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting ETF strategies table: {str(e)}")
 
-@rotation_etf_payout_router.post("/stop-etf-strategy")
+@international_etf_router.post("/stop-etf-strategy")
 async def stop_etf_strategy(request: dict):
     """Stop a running ETF strategy"""
     session = None
@@ -1279,7 +1311,7 @@ async def stop_etf_strategy(request: dict):
         if session:
             session.close()
 
-@rotation_etf_payout_router.post("/restart-etf-strategy")
+@international_etf_router.post("/restart-etf-strategy")
 async def restart_etf_strategy(request: dict):
     """Restart a stopped ETF strategy"""
     session = None
@@ -1322,7 +1354,7 @@ async def restart_etf_strategy(request: dict):
         if session:
             session.close()
 
-@rotation_etf_payout_router.delete("/delete-etf-strategy/{strategy_id}")
+@international_etf_router.delete("/delete-etf-strategy/{strategy_id}")
 async def delete_etf_strategy(strategy_id: int):
     """Delete an ETF strategy"""
     session = None
@@ -1355,7 +1387,7 @@ async def delete_etf_strategy(strategy_id: int):
         if session:
             session.close()
 
-@rotation_etf_payout_router.post("/stop-strategy/{strategy_id}")
+@international_etf_router.post("/stop-strategy/{strategy_id}")
 async def stop_etf_strategy(strategy_id: int):
     """
     Stop a running ETF strategy by changing status to 'stopped'
@@ -1416,7 +1448,7 @@ async def stop_etf_strategy(strategy_id: int):
         if session:
             session.close()
 
-@rotation_etf_payout_router.post("/restart-strategy/{strategy_id}")
+@international_etf_router.post("/restart-strategy/{strategy_id}")
 async def restart_etf_strategy(strategy_id: int):
     """
     Restart a stopped ETF strategy by changing status to 'running'
@@ -1477,7 +1509,7 @@ async def restart_etf_strategy(strategy_id: int):
         if session:
             session.close()
 
-@rotation_etf_payout_router.delete("/delete-strategy-by-run-id/{run_id}")
+@international_etf_router.delete("/delete-strategy-by-run-id/{run_id}")
 async def delete_etf_strategy_by_run_id(run_id: str):
     """
     Delete an ETF strategy by run_id
@@ -1536,7 +1568,7 @@ async def delete_etf_strategy_by_run_id(run_id: str):
 # ETF SIGNAL GENERATION ENDPOINTS
 # ============================================================================
 
-@rotation_etf_payout_router.post("/etf-signals/generate")
+@international_etf_router.post("/etf-signals/generate")
 async def generate_etf_signals(request: Dict[str, Any] = None):
     """
     Generate ETF trading signals
@@ -1712,7 +1744,7 @@ async def generate_etf_signals(request: Dict[str, Any] = None):
         raise HTTPException(status_code=500, detail=f"Error generating ETF signals: {str(e)}")
 
 
-@rotation_etf_payout_router.get("/etf-signals/recent")
+@international_etf_router.get("/etf-signals/recent")
 async def get_recent_etf_signals(days: int = 7):
     """
     Get recent ETF signals from the database
@@ -1759,7 +1791,7 @@ async def get_recent_etf_signals(days: int = 7):
         raise HTTPException(status_code=500, detail=f"Error getting recent ETF signals: {str(e)}")
 
 
-@rotation_etf_payout_router.get("/etf-signals/run/{run_id}")
+@international_etf_router.get("/etf-signals/run/{run_id}")
 async def get_etf_signals_by_run_id(run_id: str):
     """
     Get ETF signals for a specific run_id
@@ -1848,7 +1880,7 @@ async def get_etf_signals_by_run_id(run_id: str):
         raise HTTPException(status_code=500, detail=f"Error getting ETF signals by run_id: {str(e)}")
 
 
-@rotation_etf_payout_router.get("/etf-signals/runs")
+@international_etf_router.get("/etf-signals/runs")
 async def get_etf_signal_runs(days: int = 30):
     """
     Get list of signal generation runs within the specified days
@@ -1922,7 +1954,7 @@ async def get_etf_signal_runs(days: int = 30):
         raise HTTPException(status_code=500, detail=f"Error getting ETF signal runs: {str(e)}")
 
 
-@rotation_etf_payout_router.get("/etf-signals/latest")
+@international_etf_router.get("/etf-signals/latest")
 async def get_latest_etf_signals():
     """
     Get the latest ETF signals (most recent run)
@@ -2011,4 +2043,3 @@ async def get_latest_etf_signals():
     except Exception as e:
         print(f"Error getting latest ETF signals: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting latest ETF signals: {str(e)}")
-

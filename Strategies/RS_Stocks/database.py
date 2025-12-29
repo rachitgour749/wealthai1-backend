@@ -22,7 +22,8 @@ from market_data_db_connection import (
     init_database as init_market_data_database,
     Base as MarketDataBase,
     StockData,
-    IndexData
+    IndexData,
+    StockMetadata
 )
 
 # Use market data connection for market data tables

@@ -507,6 +507,56 @@ async def debug_portfolio_log():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in debug endpoint: {str(e)}")
 
+@etf_router.get("/debug/backtest-state")
+async def debug_backtest_state():
+    """Enhanced debug endpoint to check complete backtester state"""
+    try:
+        if etf_backtester is None:
+            return {
+                "error": "Backtester not initialized",
+                "backtester_exists": False
+            }
+        
+        # Gather comprehensive state information
+        state = {
+            "backtester_exists": True,
+            "backtester_type": type(etf_backtester).__name__,
+            "has_portfolio_log": hasattr(etf_backtester, 'portfolio_log'),
+            "portfolio_log_count": len(etf_backtester.portfolio_log) if hasattr(etf_backtester, 'portfolio_log') else 0,
+            "has_transaction_costs_log": hasattr(etf_backtester, 'transaction_costs_log'),
+            "transaction_costs_count": len(etf_backtester.transaction_costs_log) if hasattr(etf_backtester, 'transaction_costs_log') else 0,
+            "has_skipped_days": hasattr(etf_backtester, 'skipped_days'),
+            "skipped_days_count": len(etf_backtester.skipped_days) if hasattr(etf_backtester, 'skipped_days') else 0,
+            "has_weekly_nav_df": hasattr(etf_backtester, 'weekly_nav_df'),
+            "weekly_nav_rows": len(etf_backtester.weekly_nav_df) if hasattr(etf_backtester, 'weekly_nav_df') and etf_backtester.weekly_nav_df is not None else 0,
+            "total_weeks": getattr(etf_backtester, 'total_weeks', 0),
+            "successful_signals": getattr(etf_backtester, 'successful_signals', 0),
+            "successful_executions": getattr(etf_backtester, 'successful_executions', 0),
+            "current_cash": getattr(etf_backtester, 'current_cash', 0),
+            "current_holdings": getattr(etf_backtester, 'current_holdings', {}),
+            "etf_metadata_count": len(etf_backtester.etf_metadata) if hasattr(etf_backtester, 'etf_metadata') else 0
+        }
+        
+        # Add sample of portfolio_log if available
+        if state["portfolio_log_count"] > 0:
+            sample_logs = []
+            for i, log in enumerate(etf_backtester.portfolio_log[:3]):  # First 3 entries
+                sample_logs.append({
+                    'week': log.get('week', 0),
+                    'action': log.get('action', 'NONE'),
+                    'ticker': log.get('ticker', ''),
+                    'execution_date': str(log.get('execution_date', ''))
+                })
+            state["portfolio_log_sample"] = sample_logs
+        
+        return state
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
 @etf_router.get("/transaction-costs")
 async def get_etf_transaction_costs():
     """Get transaction costs data from the latest ETF backtest"""

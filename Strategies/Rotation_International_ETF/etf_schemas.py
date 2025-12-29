@@ -10,8 +10,6 @@ class BacktestRequest(BaseModel):
     brokerage_percent: float
     compounding_enabled: bool = False
     risk_free_rate: float = 8.0
-    withdraw_amount: float = 0.0  # NEW: Withdrawal amount per churning week
-    payout_start_week: int = 1   # NEW: Week number to start payouts
 
 class ETFMetadata(BaseModel):
     ticker: str
@@ -26,7 +24,6 @@ class BacktestResult(BaseModel):
     final_portfolio_value: float
     total_return: float
     total_brokerage: float
-    total_withdrawn: Optional[float] = 0.0  # NEW: Total amount withdrawn
     error: Optional[str] = None
 
 class BacktestResults(BaseModel):
@@ -34,7 +31,6 @@ class BacktestResults(BaseModel):
     cagr: Optional[str] = None
     sharpe_ratio: Optional[str] = None
     max_drawdown: Optional[str] = None
-    total_withdrawn: Optional[float] = 0.0  # NEW
 
 class SaveETFStrategyRequest(BaseModel):
     strategy_name: str
@@ -51,8 +47,6 @@ class SaveETFStrategyRequest(BaseModel):
     use_custom_dates: bool
     backtest_results: BacktestResults
     created_at: str
-    withdraw_amount: float = 0.0  # NEW
-    payout_start_week: int = 1   # NEW
 
 class SavedETFStrategy(BaseModel):
     id: int
@@ -70,5 +64,3 @@ class SavedETFStrategy(BaseModel):
     use_custom_dates: bool
     backtest_results: Dict[str, Any]
     created_at: str
-    withdraw_amount: Optional[float] = 0.0  # NEW
-    payout_start_week: Optional[int] = 1   # NEW

@@ -15,7 +15,7 @@
   ],
   
   "brokerage_percent": 0.03,
-  "compounding_enabled": true,
+  "compounding_enabled": false,
   
   "notes": {
     "accumulation_phase": "During accumulation, the strategy buys ETFs worth 'accumulation_per_week' amount every week",

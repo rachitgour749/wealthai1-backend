@@ -1,0 +1,6 @@
+{
+    "strategy_name": "Rotation_International_ETF",
+    "log_level": "INFO",
+    "log_to_file": false,
+    "log_to_console": false
+}

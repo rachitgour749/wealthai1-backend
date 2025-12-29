@@ -767,8 +767,8 @@ async def calculate_rs_strategy_date_range(request: Dict[str, Any], db: Session 
 @router.get("/market-data/symbols")
 async def get_nifty500_symbols(db: Session = Depends(get_db)):
     """Get Nifty 500 constituent symbols"""
-    from .database import Nifty500Constituents
-    symbols = db.query(Nifty500Constituents).all()
+    from .database import StockMetadata
+    symbols = db.query(StockMetadata).all()
     result = [{"symbol": s.symbol, "start_date": s.start_date, "end_date": s.end_date, "total_records": s.total_records, "data_source": s.data_source} for s in symbols]
     return result
 

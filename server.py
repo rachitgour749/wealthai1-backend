@@ -448,6 +448,16 @@ except Exception as e:
     logger.error(f"Failed to import etf_router: {e}")
 
 try:
+    from Strategies.Rotation_International_ETF.api.routes import (
+        international_etf_router,
+        initialize_international_etf_backtester
+    )
+except Exception as e:
+    logger.error(f"Failed to import international_etf_router: {e}")
+    international_etf_router = None
+    initialize_international_etf_backtester = None
+
+try:
     from Strategies.RS_Stocks.api import router as rs_router
 except Exception as e:
     logger.error(f"Failed to import rs_router: {e}")
@@ -594,6 +604,18 @@ if stock_router:
     app.include_router(stock_router)
 if etf_router:
     app.include_router(etf_router)
+
+# International ETF router
+if international_etf_router:
+    app.include_router(international_etf_router)
+    # Initialize the backtester
+    if initialize_international_etf_backtester:
+        try:
+            initialize_international_etf_backtester()
+            logger.info("✅ International ETF backtester initialized successfully")
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize International ETF backtester: {e}")
+
 if rs_router:
     app.include_router(rs_router, prefix="/api/rs-strategy", tags=["RS Strategy"])
 if rs_etf_router:

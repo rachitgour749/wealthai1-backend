@@ -102,6 +102,27 @@ class IndexData(Base):
     )
 
 
+# International ETF Data Model (for international_etf_data table)
+class InternationalETFData(Base):
+    """Model for International ETF market data"""
+    __tablename__ = "international_etf_data"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    symbol = Column(String, nullable=False, index=True)
+    date = Column(DateTime, nullable=False, index=True)
+    open = Column(Float)
+    high = Column(Float)
+    low = Column(Float)
+    close = Column(Float)
+    volume = Column(Integer)
+    adjusted_close = Column(Float)
+    created_at = Column(DateTime, server_default=func.now())
+    
+    __table_args__ = (
+        UniqueConstraint('symbol', 'date', name='uq_international_etf_data_symbol_date'),
+    )
+
+
 # Nifty500Metadata model removed - metadata now calculated directly from stock_data table
 
 
