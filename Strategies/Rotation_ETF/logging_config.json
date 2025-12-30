@@ -1,11 +1,11 @@
 {
-  "enabled": false,
+  "enabled": true,
   "categories": {
-    "debug": false,
-    "info": false,
-    "progress": false,
-    "error": false,
-    "trade": false,
-    "performance": false
+    "debug": true,
+    "info": true,
+    "progress": true,
+    "error": true,
+    "trade": true,
+    "performance": true
   }
 }

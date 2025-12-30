@@ -429,10 +429,12 @@ async def get_etf_transaction_log():
                     'transaction_costs': transaction_costs,
                     'capital_gains_tax': log.get('capital_gains_tax', 0),
                     'nav': log.get('nav', 0),
+                    'withdrawal_amount': log.get('withdrawal_amount', 0),  # Add withdrawal amount to top level
                     'churning_details': {
                         'sell_transactions': sell_transactions,
                         'buy_transaction': buy_transaction,
-                        'total_raised': log.get('total_raised', 0)
+                        'total_raised': log.get('total_raised', 0),
+                        'withdrawal_info': log.get('withdrawal_info', {}) # Include full withdrawal info
                     }
                 })
             else:
@@ -452,6 +454,18 @@ async def get_etf_transaction_log():
         
         # Sanitize all data to remove NaN values
         transaction_log = sanitize_data(transaction_log)
+
+        # Normalize Week Numbers
+        # Find the minimum week number and shift all weeks so the first week is Week 1
+        if transaction_log:
+            min_week = min(log['week'] for log in transaction_log)
+            # We want the first week to be 1, so we subtract (min_week - 1)
+            week_offset = min_week - 1
+            
+            if week_offset > 0:
+                print(f"Normalizing log weeks by offset: -{week_offset} (First week was {min_week})")
+                for log in transaction_log:
+                    log['week'] = log['week'] - week_offset
         
         # Calculate trading summary
         total_trades = len(transaction_log)
@@ -917,6 +931,12 @@ async def save_etf_strategy(request: SaveETFStrategyRequest):
         backtest_results_json = json.dumps(backtest_results_dict)
         
         # Prepare strategy data
+        # Store withdrawal parameters in strategy_config
+        strategy_config = {
+            'withdraw_amount': request.withdraw_amount,
+            'payout_start_week': request.payout_start_week
+        }
+        
         strategy_data = {
             'strategy_name': request.strategy_name,
             'strategy_type': request.strategy_type,
@@ -932,7 +952,8 @@ async def save_etf_strategy(request: SaveETFStrategyRequest):
             'use_custom_dates': request.use_custom_dates,
             'backtest_results': backtest_results_json,
             'created_at': request.created_at,
-            'status': 'deploy'
+            'status': 'deploy',
+            'strategy_config': json.dumps(strategy_config)  # Save config
         }
         
         # Save to PostgreSQL
@@ -974,6 +995,14 @@ async def get_saved_etf_strategies(user_id: str):
                 tickers = json.loads(strategy['tickers']) if strategy.get('tickers') else []
                 backtest_results = json.loads(strategy['backtest_results']) if strategy.get('backtest_results') else {}
                 
+                # Parse strategy_config to get withdrawal params
+                strategy_config = {}
+                if strategy.get('strategy_config'):
+                    try:
+                        strategy_config = json.loads(strategy['strategy_config'])
+                    except:
+                        pass
+                
                 strategies.append({
                     "id": strategy['id'],
                     "strategy_name": strategy['strategy_name'],
@@ -996,7 +1025,10 @@ async def get_saved_etf_strategies(user_id: str):
                     "webhook_url": strategy.get('webhook_url'),
                     "client_information_json": strategy.get('client_information_json'),
                     "last_execution_date": strategy.get('last_execution_date'),
-                    "next_execution_date": strategy.get('next_execution_date')
+                    "next_execution_date": strategy.get('next_execution_date'),
+                    # Populate params from config
+                    "withdraw_amount": strategy_config.get('withdraw_amount', 0.0),
+                    "payout_start_week": strategy_config.get('payout_start_week', 1)
                 })
             except (json.JSONDecodeError, KeyError) as e:
                 print(f"Warning: Could not parse strategy ID {strategy.get('id')}: {e}")
@@ -1037,6 +1069,14 @@ async def get_saved_etf_strategy_by_id(strategy_id: int):
             tickers = json.loads(strategy['tickers']) if strategy.get('tickers') else []
             backtest_results = json.loads(strategy['backtest_results']) if strategy.get('backtest_results') else {}
             
+            # Parse strategy_config 
+            strategy_config = {}
+            if strategy.get('strategy_config'):
+                try:
+                    strategy_config = json.loads(strategy['strategy_config'])
+                except:
+                    pass
+
             strategy_response = {
                 "id": strategy['id'],
                 "strategy_name": strategy['strategy_name'],
@@ -1053,7 +1093,9 @@ async def get_saved_etf_strategy_by_id(strategy_id: int):
                 "use_custom_dates": strategy['use_custom_dates'],
                 "backtest_results": backtest_results,
                 "created_at": strategy['created_at'],
-                "created_timestamp": strategy['created_timestamp']
+                "created_timestamp": strategy['created_timestamp'],
+                "withdraw_amount": strategy_config.get('withdraw_amount', 0.0),
+                "payout_start_week": strategy_config.get('payout_start_week', 1)
             }
             
             return {"strategy": strategy_response}
@@ -1130,6 +1172,12 @@ async def update_saved_etf_strategy(strategy_id: int, request: SaveETFStrategyRe
         backtest_results_json = json.dumps(backtest_results_dict)
         
         # Prepare strategy data for update
+        # Store withdrawal parameters
+        strategy_config = {
+            'withdraw_amount': request.withdraw_amount,
+            'payout_start_week': request.payout_start_week
+        }
+
         strategy_data = {
             'id': strategy_id,
             'strategy_name': request.strategy_name,
@@ -1145,7 +1193,8 @@ async def update_saved_etf_strategy(strategy_id: int, request: SaveETFStrategyRe
             'risk_free_rate': request.risk_free_rate,
             'use_custom_dates': request.use_custom_dates,
             'backtest_results': backtest_results_json,
-            'created_at': request.created_at
+            'created_at': request.created_at,
+            'strategy_config': json.dumps(strategy_config)  # Update config
         }
         
         # Update in PostgreSQL

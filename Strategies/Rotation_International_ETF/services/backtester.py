@@ -319,7 +319,87 @@ class InternationalETFRotationBacktester(RotationStrategy):
             return f'{symbol} ETF'
 
     def get_asset_sector_classification(self, symbol: str) -> str:
-        """Classify ETF into sector categories"""
+        """Classify ETF into sector categories with robust mapping"""
+        symbol_upper = symbol.upper()
+        
+        # Comprehensive Sector Mapping for US/International ETFs
+        sector_map = {
+            # Broad Market / US Large Cap
+            'SPY': 'Other', 'IVV': 'Other', 'VOO': 'Other', 'VTI': 'Other', 
+            'QQQ': 'Technology', 'DIA': 'Other', 'IWM': 'Other', 'RSP': 'Other', 
+            'VT': 'Other', 'VUG': 'Other', 'VTV': 'Other', 'SCHB': 'Other', 'SPTS': 'Other',
+            
+            # Technology
+            'XLK': 'Technology', 'VGT': 'Technology', 'IGV': 'Technology', 
+            'SOXX': 'Technology', 'SMH': 'Technology', 'TECL': 'Technology', 
+            'FTEC': 'Technology', 'IXN': 'Technology', 'ITA': 'Technology', 'ITB': 'Technology',
+            
+            # Financials
+            'XLF': 'Financial', 'VFH': 'Financial', 'KBE': 'Financial', 
+            'KRE': 'Financial', 'IYF': 'Financial', 'IAF': 'Financial', 'FNcl': 'Financial',
+            
+            # Healthcare / Biotech
+            'XLV': 'Healthcare', 'VHT': 'Healthcare', 'IBB': 'Healthcare', 
+            'XBI': 'Healthcare', 'PJP': 'Healthcare', 'IYH': 'Healthcare',
+            
+            # Energy / Oil
+            'XLE': 'Energy', 'VDE': 'Energy', 'OIH': 'Energy', 
+            'XOP': 'Energy', 'USO': 'Energy', 'OILK': 'Energy', 
+            'IYE': 'Energy', 'IEO': 'Energy', 'IXC': 'Energy',
+            
+            # Consumer Discretionary & Staples
+            'XLY': 'Consumer Discretionary', 'VCR': 'Consumer Discretionary', 'IYC': 'Consumer Discretionary', 'CARZ': 'Consumer Discretionary',
+            'XLP': 'Consumer Staples', 'VDC': 'Consumer Staples',
+            
+            # Real Estate (REITs)
+            'VNQ': 'Real Estate', 'IYR': 'Real Estate', 'XLRE': 'Real Estate', 'SCHH': 'Real Estate',
+            
+            # Utilities
+            'XLU': 'Utilities', 'VPU': 'Utilities', 'IDU': 'Utilities',
+            
+            # Materials
+            'XLB': 'Materials', 'VAW': 'Materials', 'IYM': 'Materials', 'LIT': 'Materials',
+            'XHB': 'Materials', # Homebuilders often grouped here or discretionary
+            
+            # Industrials
+            'XLI': 'Industrials', 'VIS': 'Industrials', 'IYJ': 'Industrials', 'JETS': 'Industrials',
+            
+            # Communication Services
+            'XLC': 'Communication Services', 'VOX': 'Communication Services',
+            
+            # Bonds / Fixed Income
+            'AGG': 'Bonds', 'BND': 'Bonds', 'BSV': 'Bonds', 'TLT': 'Bonds', 
+            'SHY': 'Bonds', 'IEF': 'Bonds', 'LQD': 'Bonds', 'HYG': 'Bonds', 
+            'MINT': 'Bonds', 'VGSH': 'Bonds', 'NEAR': 'Bonds', 'VTIP': 'Bonds',
+            
+            # Commodities / Precious Metals
+            'GLD': 'Commodities', 'SLV': 'Commodities', 'DBC': 'Commodities', 
+            'PALL': 'Commodities', 'USO': 'Commodities', 'GSG': 'Commodities', 
+            'IAU': 'Commodities', 'BAR': 'Commodities', 'GLDM': 'Commodities',
+            'PLTM': 'Commodities', 'JJU': 'Commodities', 'JO': 'Commodities',
+            'DBA': 'Commodities', 'DBB': 'Commodities', 'DJP': 'Commodities',
+            
+            # International / Regional
+            'EEM': 'International', 'EFA': 'International', 'VGK': 'International', 
+            'EWJ': 'International', 'EWG': 'International', 'EWQ': 'International', 
+            'FXI': 'International', 'INDA': 'International', 'MCHI': 'International',
+            
+            # Dividends / Strategy
+            'SCHD': 'Strategy', 'VIG': 'Strategy', 'NOBL': 'Strategy', 
+            'MOAT': 'Strategy', 'DIVO': 'Strategy', 'SMDV': 'Strategy',
+             'PDBC': 'Strategy', 'SARK': 'Strategy', 'SUPP': 'Strategy',
+             'CHAT': 'Strategy', 'IBAT': 'Strategy', 'NLR': 'Strategy',
+             'PXI': 'Strategy', 'FXH': 'Strategy', 'BIL': 'Strategy',
+             'VEA': 'Strategy', 'TAN': 'Strategy', 'UCO': 'Strategy',
+             'GDXJ': 'Strategy', 'XTN': 'Strategy', 'GDX': 'Strategy',
+              'IDRV': 'Strategy' 
+        }
+        
+        # Check explicit mapping first
+        if symbol_upper in sector_map:
+            return sector_map[symbol_upper]
+
+        # Fallback to string matching for unknown tickers
         symbol_lower = symbol.lower()
 
         if symbol in ['NIFTYBEES', 'JUNIORBEES', 'MIDCAPETF']:
