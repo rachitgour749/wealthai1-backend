@@ -118,3 +118,5 @@ holidays
 google-genai>=0.3.0
 slowapi>=0.1.9
 PyPDF2>=3.0.0
+openpyxl>=3.1.0
+aiofiles>=23.2.0

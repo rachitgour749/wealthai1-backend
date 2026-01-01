@@ -288,6 +288,15 @@ try:
     CHATAI_DIR = os.path.join(BASE_DIR, 'ChatAI')
     if CHATAI_DIR not in sys.path:
         sys.path.insert(0, CHATAI_DIR)
+    
+    # Load ChatAI environment variables explicitly
+    from dotenv import load_dotenv
+    env_path = os.path.join(CHATAI_DIR, '.env')
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+        logger.info(f"✅ Loaded ChatAI .env from {env_path}")
+    else:
+        logger.warning(f"⚠️ ChatAI .env not found at {env_path}")
         
     from src.api.main import (
         router as chatai_router,
