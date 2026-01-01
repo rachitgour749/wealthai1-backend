@@ -305,19 +305,20 @@ try:
         RateLimitExceeded,
         rate_limit_handler
     )
-    logger.info("=" * 60)
-    logger.info("✅ ChatAI INITIALIZATION SUCCESSFUL")
-    logger.info("   - Router: LOADED")
-    logger.info("   - Lifespan: LOADED")
-    logger.info("   - Rate Limiter: LOADED")
-    logger.info("=" * 60)
+    # Using print to ensure visibility despite logging level
+    print("=" * 60)
+    print("✅ ChatAI INITIALIZATION SUCCESSFUL")
+    print("   - Router: LOADED")
+    print("   - Lifespan: LOADED")
+    print("   - Rate Limiter: LOADED")
+    print("=" * 60)
     chatai_availabe = True
 except Exception as e:
-    logger.error("=" * 60)
-    logger.error("❌ ChatAI INITIALIZATION FAILED")
-    logger.error(f"   Error: {e}")
-    logger.error("   ChatAI routes will NOT be available.")
-    logger.error("=" * 60)
+    print("=" * 60)
+    print("❌ ChatAI INITIALIZATION FAILED")
+    print(f"   Error: {e}")
+    print("   ChatAI routes will NOT be available.")
+    print("=" * 60)
     chatai_router = None
     chatai_lifespan = None
     chatai_availabe = False
