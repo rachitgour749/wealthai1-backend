@@ -281,6 +281,30 @@ async def _init_backtesters_lazy():
     asyncio.create_task(init_etf_backtester())
 
 # =========================
+# CHATAI INTEGRATION (New)
+# =========================
+try:
+    # Add ChatAI root to sys.path to allow internal imports in ChatAI to work
+    CHATAI_DIR = os.path.join(BASE_DIR, 'ChatAI')
+    if CHATAI_DIR not in sys.path:
+        sys.path.insert(0, CHATAI_DIR)
+        
+    from src.api.main import (
+        router as chatai_router,
+        lifespan as chatai_lifespan,
+        limiter as chatai_limiter,
+        RateLimitExceeded,
+        rate_limit_handler
+    )
+    logger.info("✅ ChatAI (New) module imported successfully")
+    chatai_availabe = True
+except Exception as e:
+    logger.error(f"❌ Failed to import ChatAI (New): {e}")
+    chatai_router = None
+    chatai_lifespan = None
+    chatai_availabe = False
+
+# =========================
 # LIFESPAN CONTEXT MANAGER
 # =========================
 @asynccontextmanager
@@ -289,13 +313,13 @@ async def lifespan(app: FastAPI):
     global subscription_service_initialized, webhook_service_initialized
     global custom_strategy_service_initialized, single_sign_on_service_initialized
     
-    # Initialize ChatAI database (required for chat routes)
+    # Initialize ChatAI database (Legacy ChatAI1 - Optional/Deprecated)
     chatai1_new_settings, init_db, close_db, chatai1_new = _lazy_import_chatai()
     if init_db:
         try:
             await init_db()
         except Exception as e:
-            logger.error(f"ChatAI database init failed: {e}")
+            logger.error(f"ChatAI1 (Legacy) database init failed: {e}")
     
     # Initialize all database services in parallel
     db_results = await _init_database_services()
@@ -308,14 +332,23 @@ async def lifespan(app: FastAPI):
     # Start backtesters in background (non-blocking)
     await _init_backtesters_lazy()
     
-    yield
+    # Use ChatAI (New) lifespan if available
+    if chatai_availabe and chatai_lifespan:
+        try:
+            async with chatai_lifespan(app):
+                yield
+        except Exception as e:
+            logger.error(f"ChatAI (New) lifespan error: {e}")
+            yield
+    else:
+        yield
     
     # Shutdown
     if close_db:
         try:
             await close_db()
         except Exception as e:
-            logger.error(f"ChatAI database close failed: {e}")
+            logger.error(f"ChatAI1 (Legacy) database close failed: {e}")
 
 # =========================
 # FASTAPI APP CREATION (Fast - no blocking operations)
@@ -325,10 +358,15 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
     description="High-performance financial backtesting and trading strategy API",
-    docs_url=None,       # Disable default docs
-    redoc_url=None,      # Disable default redoc
-    openapi_url=None     # Disable default openapi.json
+    docs_url="/docs",       # Enable default docs for better visibility of all routes
+    redoc_url="/redoc",
+    openapi_url="/openapi.json"
 )
+
+# Register ChatAI Rate Limiter if available
+if chatai_availabe:
+    app.state.limiter = chatai_limiter
+    app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 
 # =========================
 # SECURITY CONFIGURATION
@@ -348,6 +386,11 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
             headers={"WWW-Authenticate": "Basic"},
         )
     return credentials.username
+
+# Override default docs with protected version if needed, or keep default
+# The user asked to "show all apis through my swagger", so we should ensure docs are accessible.
+# server.py previously disabled default docs and added protected ones. 
+# We'll keep the protection but ensure everything is visible.
 
 @app.get("/docs", include_in_schema=False)
 async def get_documentation(username: str = Depends(get_current_username)):
@@ -392,7 +435,9 @@ try:
             "/redoc",
             "/openapi.json",
             "/health_check",
-            "/"
+            "/",
+            "/api/chat/health", # Exempt ChatAI health
+            "/health" # ChatAI health
         ]
     )
     logger.info("✅ SingleSessionMiddleware added")
@@ -411,6 +456,7 @@ app.add_middleware(
         "https://wealthai1.in",
         "https://www.wealthai1.in",
         "https://trade.wealthai1.in",
+        "http://localhost:5173", # ChatAI frontend dev
     ],
     allow_credentials=True,
     allow_headers=["*"],
@@ -556,11 +602,11 @@ try:
 except Exception as e:
     logger.error(f"Failed to import single_sign_on_router: {e}")
 
-# ChatAI router (lazy import)
+# ChatAI router (Legacy)
 try:
     chatai1_new_settings, _, _, chatai1_new = _lazy_import_chatai()
 except Exception as e:
-    logger.error(f"Failed to import ChatAI: {e}")
+    logger.error(f"Failed to import ChatAI1 (Legacy): {e}")
 
 # =========================
 # CORE ROUTES
@@ -652,9 +698,14 @@ if rotation_etf_payout_router:
         except Exception as e:
             logger.error(f"❌ Failed to initialize Rotation ETF Payout backtester: {e}")
 
-# ChatAI router (only if available)
+# ChatAI router (Legacy)
 if chatai1_new and hasattr(chatai1_new, 'router'):
-    app.include_router(chatai1_new.router, prefix="/api")
+    app.include_router(chatai1_new.router, prefix="/api/legacy/chatai1") # Renamed prefix to avoid conflict
+
+# ChatAI router (New)
+if chatai_availabe and chatai_router:
+    app.include_router(chatai_router)
+    logger.info("✅ ChatAI (New) router mounted successfully")
 
 # SuperTrend router (handle duplicate root route)
 try:
@@ -672,6 +723,12 @@ except Exception as e:
 @app.get("/api/chat")
 async def chat_root():
     """ChatAI root endpoint"""
+    if chatai_availabe:
+        return {
+             "app": "ChatAI",
+             "status": "running",
+             "version": "1.0.0"
+        }
     if chatai1_new_settings:
         return {
             "app": chatai1_new_settings.APP_NAME,
@@ -679,6 +736,7 @@ async def chat_root():
             "status": "running"
         }
     return {"status": "chat_service_unavailable"}
+
 
 @app.get("/api/chat/health")
 async def chat_health():

@@ -1,0 +1,150 @@
+{
+  "PRODUCT": [
+    {
+      "query": "What is HDFC Multi Asset Fund?",
+      "expected": "PRODUCT",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "Tell me about the features of Acko Personal Health Policy",
+      "expected": "PRODUCT",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "What is the expense ratio of HDFC Top 100 fund?",
+      "expected": "PRODUCT",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "Show me details of ICICI Bluechip Fund",
+      "expected": "PRODUCT",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "Explain the benefits of Arogya Sanjeevani policy",
+      "expected": "PRODUCT",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    }
+  ],
+  "CLIENT": [
+    {
+      "query": "What is Priya's current portfolio?",
+      "expected": "CLIENT",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "Show me Rahul's holdings",
+      "expected": "CLIENT",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "What is the NAV of Amit's mutual funds?",
+      "expected": "CLIENT",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "How much has Sneha invested in HDFC funds?",
+      "expected": "CLIENT",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "What are the details of client Rohan?",
+      "expected": "CLIENT",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    }
+  ],
+  "GENERAL": [
+    {
+      "query": "What is ELSS?",
+      "expected": "GENERAL",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "Explain term insurance",
+      "expected": "GENERAL",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "What is NAV in mutual funds?",
+      "expected": "GENERAL",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "How does health insurance work?",
+      "expected": "GENERAL",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "What is the difference between equity and debt funds?",
+      "expected": "GENERAL",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    }
+  ],
+  "COMPLEX": [
+    {
+      "query": "Compare HDFC Multi Asset Fund with SBI Balanced Fund",
+      "expected": "COMPLEX",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "Which is better: Acko health policy or Star Health Premier?",
+      "expected": "COMPLEX",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "Compare HDFC Top 100 with ICICI Bluechip",
+      "expected": "COMPLEX",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "Should I invest in ELSS or PPF for tax saving?",
+      "expected": "COMPLEX",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    },
+    {
+      "query": "Compare Priya's portfolio with HDFC Balanced Advantage Fund",
+      "expected": "COMPLEX",
+      "actual": "ERROR",
+      "correct": false,
+      "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=30)"
+    }
+  ]
+}
