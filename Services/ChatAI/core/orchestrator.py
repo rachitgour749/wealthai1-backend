@@ -16,9 +16,9 @@ from typing import Optional
 from datetime import datetime, timedelta
 from google import genai
 
-from src.core.intent_classifier import IntentType, ClassifiedIntent
-from src.core.conversation_manager import ConversationManager
-from src.stores.tenant_manager import TenantStoreManager
+from Services.ChatAI.core.intent_classifier import IntentType, ClassifiedIntent
+from Services.ChatAI.core.conversation_manager import ConversationManager
+from Services.ChatAI.stores.tenant_manager import TenantStoreManager
 
 logger = logging.getLogger(__name__)
 
@@ -208,7 +208,7 @@ class QueryOrchestrator:
         # Check if we have recent product context for EDUCATION queries
         if intent.primary_intent == IntentType.EDUCATION:
             # Import to check if this is a strong education pattern
-            from src.core.intent_classifier import is_strong_education_query
+            from Services.ChatAI.core.intent_classifier import is_strong_education_query
             
             # DON'T override strong education patterns like "SIP kya hota hai?"
             # Check the CURRENT QUERY, not conversation history
@@ -392,7 +392,7 @@ Be concise, professional, and actionable."""
             
             if product_context:
                 # Use premium comparison prompt
-                from src.core.system_prompts import PRODUCT_COMPARE_PROMPT, ADVISOR_TIPS
+                from Services.ChatAI.core.system_prompts import PRODUCT_COMPARE_PROMPT, ADVISOR_TIPS
                 
                 comparison_prompt = PRODUCT_COMPARE_PROMPT.format(
                     context=product_context,

@@ -124,7 +124,7 @@ class ZohoBatchSync:
     
     def transform_contact(self, contact: dict) -> dict:
         """Transform Zoho contact to document format."""
-        from src.sync.transform import transform_contact_to_document
+        from Services.ChatAI.sync.transform import transform_contact_to_document
         return transform_contact_to_document(contact)
     
     async def sync_to_file_search(

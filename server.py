@@ -283,22 +283,23 @@ async def _init_backtesters_lazy():
 # =========================
 # CHATAI INTEGRATION (New)
 # =========================
+# =========================
+# CHATAI INTEGRATION (New)
+# =========================
 try:
-    # Add ChatAI root to sys.path to allow internal imports in ChatAI to work
-    CHATAI_DIR = os.path.join(BASE_DIR, 'ChatAI')
-    if CHATAI_DIR not in sys.path:
-        sys.path.insert(0, CHATAI_DIR)
-    
-    # Load ChatAI environment variables explicitly
+    # Load ChatAI environment variables from Services/ChatAI
+    CHATAI_SERVICE_DIR = os.path.join(BASE_DIR, 'Services', 'ChatAI')
     from dotenv import load_dotenv
-    env_path = os.path.join(CHATAI_DIR, '.env')
+    env_path = os.path.join(CHATAI_SERVICE_DIR, '.env')
+    
     if os.path.exists(env_path):
         load_dotenv(env_path)
-        logger.info(f"✅ Loaded ChatAI .env from {env_path}")
+        print(f"✅ Loaded ChatAI .env from {env_path}")
     else:
-        logger.warning(f"⚠️ ChatAI .env not found at {env_path}")
+        print(f"⚠️ ChatAI .env not found at {env_path}")
         
-    from src.api.main import (
+    # Import directly from Services (standard python path)
+    from Services.ChatAI.api.main import (
         router as chatai_router,
         lifespan as chatai_lifespan,
         limiter as chatai_limiter,

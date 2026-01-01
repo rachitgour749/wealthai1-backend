@@ -23,13 +23,13 @@ from slowapi.errors import RateLimitExceeded
 
 from google import genai
 
-from src.core.intent_classifier import classify_intent
-from src.core.orchestrator import QueryOrchestrator
-from src.core.conversation_manager import (
+from Services.ChatAI.core.intent_classifier import classify_intent
+from Services.ChatAI.core.orchestrator import QueryOrchestrator
+from Services.ChatAI.core.conversation_manager import (
     get_or_create_session,
     cleanup_expired_sessions
 )
-from src.core.error_handling import GracefulError
+from Services.ChatAI.core.error_handling import GracefulError
 
 # Load environment variables
 load_dotenv()
@@ -226,15 +226,15 @@ def extract_citations(grounding_metadata) -> list:
 
 
 # Include webhook router
-from src.sync.zoho_webhook import router as zoho_router
+from Services.ChatAI.sync.zoho_webhook import router as zoho_router
 router.include_router(zoho_router)
 
 # Include store management router
-from src.api.store_routes import router as store_router
+from Services.ChatAI.api.store_routes import router as store_router
 router.include_router(store_router)
 
 # Include admin routes
-from src.api.admin_routes import router as admin_router
+from Services.ChatAI.api.admin_routes import router as admin_router
 router.include_router(admin_router)
 
 # Include router in standalone app

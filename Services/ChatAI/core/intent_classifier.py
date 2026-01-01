@@ -16,7 +16,7 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 from google import genai
 
-from src.core.system_prompts import CLASSIFICATION_PROMPT_V2
+from Services.ChatAI.core.system_prompts import CLASSIFICATION_PROMPT_V2
 
 logger = logging.getLogger(__name__)
 

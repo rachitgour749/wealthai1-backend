@@ -9,8 +9,8 @@ from fastapi import APIRouter, Request, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import Optional
 
-from src.core.error_handling import dlq, RetryHandler
-from src.sync.transform import transform_contact_to_document
+from Services.ChatAI.core.error_handling import dlq, RetryHandler
+from Services.ChatAI.sync.transform import transform_contact_to_document
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ async def process_contact_webhook(tenant_id: str, payload: dict):
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     
     # Get store name
-    from src.stores.tenant_manager import TenantStoreManager
+    from Services.ChatAI.stores.tenant_manager import TenantStoreManager
     store_manager = TenantStoreManager(client)
     store_name = store_manager.get_client_store_name(tenant_id)
     

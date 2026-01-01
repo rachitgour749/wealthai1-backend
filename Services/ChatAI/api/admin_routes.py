@@ -88,8 +88,8 @@ class SyncStatus(BaseModel):
 
 # Get the directory of the current file (admin_routes.py)
 CURRENT_FILE_DIR = Path(__file__).resolve().parent
-# Go up 3 levels to reach ChatAI root (src/api/ -> src/ -> ChatAI/)
-CHATAI_ROOT = CURRENT_FILE_DIR.parent.parent
+# Go up 1 level to reach ChatAI root (Services/ChatAI/api/ -> Services/ChatAI/)
+CHATAI_ROOT = CURRENT_FILE_DIR.parent
 DATA_DIR = CHATAI_ROOT / "data"
 
 CUSTOMERS_FILE = DATA_DIR / "customers.json"
@@ -507,7 +507,7 @@ async def sync_zoho_data(customer_id: str, background_tasks: BackgroundTasks):
 @router.post("/sync/zoho/all")
 async def sync_all_zoho_data(background_tasks: BackgroundTasks):
     """Trigger Zoho data sync for all customers with Zoho configured."""
-    from src.sync.zoho_batch_sync import run_monthly_zoho_sync_for_all
+    from Services.ChatAI.sync.zoho_batch_sync import run_monthly_zoho_sync_for_all
     
     background_tasks.add_task(run_monthly_zoho_sync_for_all)
     
@@ -529,7 +529,7 @@ async def get_zoho_sync_status(customer_id: str):
 
 async def run_zoho_sync_for_customer(customer_id: str):
     """Background task to run Zoho sync."""
-    from src.sync.zoho_batch_sync import ZohoBatchSync
+    from Services.ChatAI.sync.zoho_batch_sync import ZohoBatchSync
     
     try:
         sync = ZohoBatchSync(customer_id)
