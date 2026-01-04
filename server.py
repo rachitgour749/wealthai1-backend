@@ -628,6 +628,14 @@ try:
 except Exception as e:
     logger.error(f"Failed to import ChatAI1 (Legacy): {e}")
 
+# Centralized Backtest API (New)
+centralized_backtest_router = None
+try:
+    from APIs.centralized_backtest import centralized_router as centralized_backtest_router
+    logger.info("✅ Centralized Backtest API router loaded successfully")
+except Exception as e:
+    logger.error(f"Failed to import centralized_backtest_router: {e}")
+
 # =========================
 # CORE ROUTES
 # =========================
@@ -736,6 +744,11 @@ try:
     app.include_router(supertrend_router, tags=["SuperTrend"])
 except Exception as e:
     logger.error(f"SuperTrend router failed: {e}")
+
+# Centralized Backtest API (New)
+if centralized_backtest_router:
+    app.include_router(centralized_backtest_router)
+    logger.info("✅ Centralized Backtest API mounted at /api/run_backtest")
 
 # =========================
 # CHATAI ENDPOINTS (Fallback if router not available)

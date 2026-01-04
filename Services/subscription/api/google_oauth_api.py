@@ -159,22 +159,20 @@ class GoogleOAuthHandler:
             
             logger.info(f"Processing Google login for user: {user_email}")
             
-            # STORE RAW TOKEN: As requested by user
-            try:
-                # token_hash = hashlib.sha256(token.encode()).hexdigest() # OLD: Hashed
-                subscription_manager.update_user_token_hash(user_email, token) # NEW: Raw Token
-                logger.info(f"Updated token for {user_email}")
-            except Exception as e:
-                logger.error(f"Failed to update token for {user_email}: {e}")
-                # Proceeding anyway, but auth might fail later depending on middleware strictness
-            
             # Check if user already has a subscription in database
             # We use get_user_details to check for existence in user_details table
             existing_user = await self.service.get_user_details(user_email)
             
             if existing_user:
-                # Existing user - return details
+                # Existing user - update token and return details
                 logger.info(f"Existing user {user_email} logged in")
+                
+                # STORE RAW TOKEN for existing user
+                try:
+                    subscription_manager.update_user_token_hash(user_email, token)
+                    logger.info(f"✅ Updated token for existing user {user_email}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to update token for {user_email}: {e}")
                 
                 return {
                     "user_email": existing_user.user_email,
@@ -201,6 +199,13 @@ class GoogleOAuthHandler:
                 # We pass phone_no to it
                 new_user = await self.service.create_subscription(subscription_request, phone_no=phone_no)
                 
+                # STORE RAW TOKEN for new user (AFTER user is created)
+                try:
+                    subscription_manager.update_user_token_hash(user_email, token)
+                    logger.info(f"✅ Updated token for new user {user_email}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to update token for new user {user_email}: {e}")
+                
                 return {
                     "user_email": new_user.user_email,
                     "user_name": new_user.user_name,
@@ -218,6 +223,7 @@ class GoogleOAuthHandler:
         except Exception as e:
             logger.error(f"Error handling Google login: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Login processing failed: {str(e)}")
+
 
 # Global handler instance
 google_oauth_handler = GoogleOAuthHandler()
