@@ -101,6 +101,13 @@ class RSETFHandler(BaseStrategyHandler):
             performance_data = self._sanitize_data(performance_data)
             transaction_log = self._sanitize_data(results.get('trades', []))
             
+            # Cache backtest results
+            try:
+                from APIs.centralized_backtest import cache_backtest_results
+                cache_backtest_results("RS_ETF_Rotation", backtester)
+            except Exception as e:
+                print(f"[RS_ETF_HANDLER] Warning: Could not cache backtest results: {e}")
+            
             return UnifiedBacktestResponse(
                 success=True,
                 strategy_type=request.strategy_type,

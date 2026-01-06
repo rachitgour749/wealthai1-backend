@@ -287,16 +287,8 @@ async def _init_backtesters_lazy():
 # CHATAI INTEGRATION (New)
 # =========================
 try:
-    # Load ChatAI environment variables from Services/ChatAI
-    CHATAI_SERVICE_DIR = os.path.join(BASE_DIR, 'Services', 'ChatAI')
-    from dotenv import load_dotenv
-    env_path = os.path.join(CHATAI_SERVICE_DIR, '.env')
-    
-    if os.path.exists(env_path):
-        load_dotenv(env_path)
-        print(f"✅ Loaded ChatAI .env from {env_path}")
-    else:
-        print(f"⚠️ ChatAI .env not found at {env_path}")
+    # ChatAI now loads .env from root directory in its own main.py
+    # No need to load it here
         
     # Import directly from Services (standard python path)
     from Services.ChatAI.api.main import (
@@ -636,6 +628,14 @@ try:
 except Exception as e:
     logger.error(f"Failed to import centralized_backtest_router: {e}")
 
+# Centralized Strategy API (New)
+centralized_strategy_router = None
+try:
+    from APIs.centralized_strategy import strategy_router as centralized_strategy_router
+    logger.info("✅ Centralized Strategy API router loaded successfully")
+except Exception as e:
+    logger.error(f"Failed to import centralized_strategy_router: {e}")
+
 # =========================
 # CORE ROUTES
 # =========================
@@ -749,6 +749,11 @@ except Exception as e:
 if centralized_backtest_router:
     app.include_router(centralized_backtest_router)
     logger.info("✅ Centralized Backtest API mounted at /api/run_backtest")
+
+# Centralized Strategy API (New)
+if centralized_strategy_router:
+    app.include_router(centralized_strategy_router)
+    logger.info("✅ Centralized Strategy API mounted at /api/assets, /api/date-range, etc.")
 
 # =========================
 # CHATAI ENDPOINTS (Fallback if router not available)

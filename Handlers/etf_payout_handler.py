@@ -89,6 +89,13 @@ class ETFPayoutHandler(BaseStrategyHandler):
             metrics = self._sanitize_data(metrics)
             performance_data = self._sanitize_data(performance_data)
             
+            # Cache backtest results for transaction-log endpoint
+            try:
+                from APIs.centralized_backtest import cache_backtest_results
+                cache_backtest_results("ETF_Payout", backtester)
+            except Exception as e:
+                print(f"[ETF_PAYOUT_HANDLER] Warning: Could not cache backtest results: {e}")
+            
             return UnifiedBacktestResponse(
                 success=True,
                 strategy_type=request.strategy_type,

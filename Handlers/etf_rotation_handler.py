@@ -123,6 +123,20 @@ class ETFRotationHandler(BaseStrategyHandler):
             performance_data = self._sanitize_data(performance_data)
             transaction_log = self._sanitize_data(transaction_log)
             
+            # Cache backtest results
+            print(f"[ETF_ROTATION_HANDLER] About to cache results...")
+            print(f"[ETF_ROTATION_HANDLER] Backtester has {len(backtester.portfolio_log)} portfolio log entries")
+            
+            try:
+                from APIs.centralized_backtest import cache_backtest_results
+                print(f"[ETF_ROTATION_HANDLER] Calling cache_backtest_results...")
+                cache_backtest_results("ETF_Rotation", backtester)
+                print(f"[ETF_ROTATION_HANDLER] ✅ Cache call completed")
+            except Exception as e:
+                print(f"[ETF_ROTATION_HANDLER] ❌ ERROR caching: {e}")
+                import traceback
+                traceback.print_exc()
+            
             return UnifiedBacktestResponse(
                 success=True,
                 strategy_type=request.strategy_type,

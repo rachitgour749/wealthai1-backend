@@ -21,9 +21,9 @@ from typing import Optional
 from datetime import datetime, timedelta
 from google import genai
 
-from Services.ChatAI.core.intent_classifier import IntentType, ClassifiedIntent
-from Services.ChatAI.core.conversation_manager import ConversationManager
-from Services.ChatAI.stores.tenant_manager import TenantStoreManager
+from src.core.intent_classifier import IntentType, ClassifiedIntent
+from src.core.conversation_manager import ConversationManager
+from src.stores.tenant_manager import TenantStoreManager
 
 logger = logging.getLogger(__name__)
 
@@ -457,7 +457,7 @@ Provide actionable insights for this client."""
             
             # Update active client in conversation
             if client_name and conversation:
-                conversation.active_client = client_name
+                conversation.set_active_client(client_name)
             
             return response
         except Exception as e:

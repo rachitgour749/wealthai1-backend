@@ -318,7 +318,10 @@ class RSETFStrategyBacktester:
         return df
     
     def calculate_common_date_range(self, selected_etfs: List[str]) -> Tuple[Optional[str], Optional[str], float]:
-        """Calculate common date range for selected ETFs by querying the database"""
+        """Calculate common date range for selected ETFs by querying the database
+        
+        For RS_ETF Strategy: Returns maximum 5 years of data from current to past
+        """
         if not selected_etfs:
             return None, None, 0.0
         
@@ -377,6 +380,18 @@ class RSETFStrategyBacktester:
             buffer_weeks = 15  # 90 weeks = ~630 calendar days
             buffer_days = buffer_weeks * 7
             strategy_start = latest_start + timedelta(days=buffer_days)
+            
+            # ===== NEW: LIMIT TO MAXIMUM 5 YEARS =====
+            # Calculate 5 years before the end date
+            five_years_ago = earliest_end - timedelta(days=int(5 * 365.25))
+            
+            # If the calculated start is earlier than 5 years ago, use 5 years ago instead
+            if strategy_start < five_years_ago:
+                self.logger.info(f"🔒 RS_ETF Strategy: Limiting to maximum 5 years of data")
+                self.logger.info(f"   Original start: {strategy_start.strftime('%Y-%m-%d')}")
+                self.logger.info(f"   Limited start (5 years ago): {five_years_ago.strftime('%Y-%m-%d')}")
+                strategy_start = five_years_ago
+            # ===== END NEW LOGIC =====
             
             self.logger.info(f"🎯 RS Strategy Buffer:")
             self.logger.info(f"   Buffer period: {buffer_weeks} weeks ({buffer_days} calendar days)")

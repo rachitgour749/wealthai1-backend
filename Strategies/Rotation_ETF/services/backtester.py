@@ -1421,27 +1421,37 @@ class ETFRotationBacktester(RotationStrategy):
                 price = open_prices[target_etf]
                 self.logger.progress(f"💰 Execution price (Monday open): ₹{price:.2f}")
 
-                # Purchase Calculation - NEW LOGIC
-                # Step 1: Calculate units directly from gross amount
-                gross_amount = capital_per_week
-                units = int(gross_amount / price) if price > 0 else 0
+                # Purchase Calculation - FIXED LOGIC
+                # We need to ensure: (units * price) + transaction_costs <= capital_per_week
+                # Strategy: Estimate costs, subtract from capital, then calculate units
                 
-                # Step 2: Calculate actual amount based on units
+                available_capital = capital_per_week
+                
+                # Step 1: Estimate transaction costs as percentage of capital
+                # Typical costs are around 0.13-0.15% for buy transactions
+                estimated_cost_rate = 0.0015  # 0.15%
+                estimated_costs = available_capital * estimated_cost_rate
+                
+                # Step 2: Calculate net capital available for purchase
+                net_capital_for_purchase = available_capital - estimated_costs
+                
+                # Step 3: Calculate units based on net capital
+                units = int(net_capital_for_purchase / price) if price > 0 else 0
+                
+                # Step 4: Calculate actual amount and costs
                 actual_amount = units * price
-                
-                # Step 3: Calculate transaction costs on actual amount
                 actual_costs = self.calculate_transaction_costs('buy', actual_amount, brokerage_percent)
                 
-                # Step 4: Total cost = actual amount + transaction costs
-                total_cost = actual_costs['net_amount']  # This includes actual_amount + costs
+                # Step 5: Total cost = actual amount + transaction costs
+                total_cost = actual_amount + actual_costs['total_costs']
 
                 self.logger.info(f"📋 Purchase calculation:")
-                self.logger.info(f"   Gross amount: ₹{gross_amount:,.0f}")
+                self.logger.info(f"   Available capital: ₹{available_capital:,.0f}")
                 self.logger.info(f"   Price per unit: ₹{price:.2f}")
                 self.logger.trade(f"   Units to buy: {units}")
-                self.logger.info(f"   Actual amount: ₹{actual_amount:,.0f}")
+                self.logger.info(f"   Purchase amount: ₹{actual_amount:,.0f}")
                 self.logger.trade(f"   Transaction costs: ₹{actual_costs['total_costs']:.2f}")
-                self.logger.info(f"   Total cost (amount + fees): ₹{total_cost:,.0f}")
+                self.logger.info(f"   Total cost: ₹{total_cost:,.0f}")
 
                 if units > 0 and cash >= total_cost:
                     # Execute purchase at Monday opening price

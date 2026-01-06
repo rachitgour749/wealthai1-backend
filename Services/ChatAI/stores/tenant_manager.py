@@ -8,7 +8,8 @@ Manages isolated File Search stores per tenant:
 
 import logging
 import os
-from typing import Optional
+import json
+from typing import Optional, Dict, Any
 from google import genai
 from google.genai import types
 
@@ -22,6 +23,24 @@ def get_product_store_name():
         with open(store_file) as f:
             return f.read().strip()
     return None  # Will fall back to general query
+
+
+def load_customers() -> Dict[str, Any]:
+    """Load customers from customers.json file."""
+    customers_file = os.path.join(os.path.dirname(__file__), "../data/customers.json")
+    if os.path.exists(customers_file):
+        with open(customers_file, 'r') as f:
+            return json.load(f)
+    return {"customers": []}
+
+
+def get_customer_by_id(tenant_id: str) -> Optional[Dict[str, Any]]:
+    """Get customer data by tenant ID."""
+    customers_data = load_customers()
+    for customer in customers_data.get('customers', []):
+        if customer.get('id') == tenant_id:
+            return customer
+    return None
 
 
 class TenantStoreManager:
@@ -39,9 +58,28 @@ class TenantStoreManager:
         """Shared store name for financial products."""
         return self._product_store
     
-    def get_client_store_name(self, tenant_id: str) -> str:
-        """Get store name for tenant's client data."""
-        return f"{self.NAMESPACE}_{tenant_id}_clients"
+    def get_client_store_name(self, tenant_id: str) -> Optional[str]:
+        """Get store name for tenant's client data from customers.json.
+        
+        Falls back to Money Compound's store as default if tenant not found.
+        """
+        # First try to find the specific tenant
+        customer = get_customer_by_id(tenant_id)
+        if customer and customer.get('file_search_store'):
+            store_id = customer['file_search_store']
+            logger.info(f"Found FileSearchStore for {tenant_id}: {store_id}")
+            return store_id
+        
+        # Fallback to Money Compound's store as default
+        logger.info(f"Tenant {tenant_id} not found, using Money Compound store as default")
+        money_compound = get_customer_by_id("money_compound")
+        if money_compound and money_compound.get('file_search_store'):
+            default_store = money_compound['file_search_store']
+            logger.info(f"Using default Money Compound store: {default_store}")
+            return default_store
+        
+        logger.warning(f"No FileSearchStore found for tenant {tenant_id} and no default store available")
+        return None
     
     async def provision_tenant(self, tenant_id: str) -> str:
         """
@@ -110,6 +148,10 @@ class TenantStoreManager:
         """
         store = self.get_client_store_name(tenant_id)
         
+        if not store:
+            logger.warning(f"No FileSearchStore configured for tenant {tenant_id}")
+            return await self._fallback_query(query, f"No store configured for tenant {tenant_id}")
+        
         if filter_client:
             query = f"Client: {filter_client}. {query}"
         
@@ -155,6 +197,34 @@ class TenantStoreManager:
             print("\n" + "="*50)
             print(f"DEBUG LOG - Store Query")
             print(f"Store Name: {store_name}")
+            
+            # Check if store_name is already a full resource path
+            # Valid formats: corpora/xxx or fileSearchStores/xxx
+            is_resource_path = store_name.startswith('corpora/') or store_name.startswith('fileSearchStores/')
+            
+            if not is_resource_path:
+                logger.info(f"Store name '{store_name}' is not a resource path, searching for matching store...")
+                # List all stores and find the one with matching display name
+                try:
+                    stores_pager = await self.client.aio.file_search_stores.list()
+                    matching_store = None
+                    
+                    # AsyncPager needs to be iterated with async for
+                    async for store in stores_pager:
+                        # Check if display_name matches our store_name
+                        if hasattr(store, 'display_name') and store.display_name == store_name:
+                            matching_store = store.name
+                            logger.info(f"Found matching store: {matching_store}")
+                            break
+                    
+                    if not matching_store:
+                        logger.warning(f"No store found with display_name '{store_name}', falling back")
+                        return await self._fallback_query(query, f"Store '{store_name}' not found")
+                    
+                    store_name = matching_store
+                except Exception as list_error:
+                    logger.error(f"Failed to list stores: {list_error}")
+                    return await self._fallback_query(query, f"Failed to find store: {list_error}")
             
             config = types.GenerateContentConfig(
                 tools=[types.Tool(

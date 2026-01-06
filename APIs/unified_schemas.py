@@ -169,3 +169,50 @@ class UnifiedBacktestResponse(BaseModel):
                 }
             }
         }
+
+
+# ============================================================================
+# CENTRALIZED STRATEGY API SCHEMAS
+# ============================================================================
+
+class DateRangeRequest(BaseModel):
+    """Request for calculating available date range"""
+    strategy_type: Literal[
+        "ETF_Rotation", 
+        "RS_ETF_Rotation", 
+        "International_ETF_Rotation",
+        "Rotation_Stocks",
+        "ETF_Payout",
+        "SuperTrend"
+    ]
+    
+    # For Rotation strategies
+    tickers: Optional[List[str]] = None
+    
+    # For RS strategies
+    etf_universe: Optional[str] = None
+    stock_universe: Optional[str] = None
+    custom_etfs: Optional[List[str]] = None
+    custom_stocks: Optional[List[str]] = None
+    main_index: Optional[str] = "^NSEI"
+    
+    # RS lookback periods
+    lookback_weeks: Optional[int] = None
+    lookback_months: Optional[int] = None
+    lookback_quarters: Optional[int] = None
+
+
+class SaveStrategyRequest(BaseModel):
+    """Request for saving a strategy configuration"""
+    strategy_type: Literal[
+        "ETF_Rotation", 
+        "RS_ETF_Rotation", 
+        "International_ETF_Rotation",
+        "Rotation_Stocks",
+        "ETF_Payout"
+    ]
+    user_id: str
+    strategy_name: str
+    config: Dict[str, Any]
+    webhook_url: Optional[str] = None
+    clients: Optional[List[Dict[str, Any]]] = None

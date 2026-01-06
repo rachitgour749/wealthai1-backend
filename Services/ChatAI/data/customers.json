@@ -9,6 +9,16 @@
       "docs_synced": 0,
       "last_sync": null,
       "created_at": "2025-12-29T20:29:59.630154"
+    },
+    {
+      "id": "money_compound",
+      "name": "Money Compound",
+      "email": "Moneycompoundinfo@gmail.com",
+      "status": "active",
+      "file_search_store": "fileSearchStores/money-compound-client-data-eb32ihr02r59",
+      "docs_synced": 10,
+      "last_sync": "2026-01-02T08:00:00",
+      "created_at": "2026-01-02T07:10:00"
     }
   ]
 }

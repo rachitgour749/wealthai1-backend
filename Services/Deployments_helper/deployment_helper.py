@@ -1292,6 +1292,22 @@ async def stop_rs_strategy(request: dict):
     """Stop a running RS Stock strategy"""
     session = None
     try:
+        # Validate required parameters
+        strategy_id = request.get('strategy_id')
+        user_id = request.get('user_id')
+        
+        if not strategy_id:
+            return {
+                "success": False,
+                "message": "strategy_id is required"
+            }
+        
+        if not user_id:
+            return {
+                "success": False,
+                "message": "user_id is required"
+            }
+        
         session = get_session()
         
         result = session.execute(text("""
@@ -1299,11 +1315,21 @@ async def stop_rs_strategy(request: dict):
             SET status = 'stop'
             WHERE id = :strategy_id AND user_id = :user_id
         """), {
-            "strategy_id": request['strategy_id'],
-            "user_id": request['user_id']
+            "strategy_id": strategy_id,
+            "user_id": user_id
         })
         
+        # Check if any rows were updated
+        if result.rowcount == 0:
+            session.rollback()
+            logger.warning(f"No RS Stock strategy found with id={strategy_id} and user_id={user_id}")
+            return {
+                "success": False,
+                "message": "RS Stock Strategy not found or already stopped"
+            }
+        
         session.commit()
+        logger.info(f"RS Stock strategy {strategy_id} stopped successfully for user {user_id}")
         
         return {
             "success": True,
@@ -1324,18 +1350,48 @@ async def restart_rs_strategy(request: dict):
     """Restart a stopped RS Stock strategy"""
     session = None
     try:
+        # Validate required parameters
+        strategy_id = request.get('strategy_id')
+        user_id = request.get('user_id')
+        
+        if not strategy_id:
+            return {
+                "success": False,
+                "message": "strategy_id is required"
+            }
+        
         session = get_session()
         
-        result = session.execute(text("""
-            UPDATE rs_stock_instance 
-            SET status = 'running'
-            WHERE id = :strategy_id AND user_id = :user_id
-        """), {
-            "strategy_id": request['strategy_id'],
-            "user_id": request['user_id']
-        })
+        # Build query based on whether user_id is provided
+        if user_id:
+            result = session.execute(text("""
+                UPDATE rs_etf_instance 
+                SET status = 'running'
+                WHERE id = :strategy_id AND user_id = :user_id
+            """), {
+                "strategy_id": strategy_id,
+                "user_id": user_id
+            })
+        else:
+            result = session.execute(text("""
+                UPDATE rs_etf_instance 
+                SET status = 'running'
+                WHERE id = :strategy_id
+            """), {
+                "strategy_id": strategy_id
+            })
+        
+        # Check if any rows were updated
+        if result.rowcount == 0:
+            session.rollback()
+            logger.warning(f"No RS ETF strategy found with id={strategy_id}")
+            return {
+                "success": False,
+                "message": "RS ETF Strategy not found"
+            }
         
         session.commit()
+        logger.info(f"RS ETF strategy {strategy_id} restarted successfully")
         
         return {
             "success": True,
@@ -1384,18 +1440,48 @@ async def stop_rs_etf_strategy(request: dict):
     """Stop a running RS ETF strategy"""
     session = None
     try:
+        # Validate required parameters
+        strategy_id = request.get('strategy_id')
+        user_id = request.get('user_id')
+        
+        if not strategy_id:
+            return {
+                "success": False,
+                "message": "strategy_id is required"
+            }
+        
         session = get_session()
         
-        result = session.execute(text("""
-            UPDATE rs_etf_instance 
-            SET status = 'stop'
-            WHERE id = :strategy_id AND user_id = :user_id
-        """), {
-            "strategy_id": request.get('strategy_id'),
-            "user_id": request.get('user_id')
-        })
+        # Build query based on whether user_id is provided
+        if user_id:
+            result = session.execute(text("""
+                UPDATE rs_etf_instance 
+                SET status = 'stop'
+                WHERE id = :strategy_id AND user_id = :user_id
+            """), {
+                "strategy_id": strategy_id,
+                "user_id": user_id
+            })
+        else:
+            result = session.execute(text("""
+                UPDATE rs_etf_instance 
+                SET status = 'stop'
+                WHERE id = :strategy_id
+            """), {
+                "strategy_id": strategy_id
+            })
+        
+        # Check if any rows were updated
+        if result.rowcount == 0:
+            session.rollback()
+            logger.warning(f"No RS ETF strategy found with id={strategy_id}")
+            return {
+                "success": False,
+                "message": "RS ETF Strategy not found or already stopped"
+            }
         
         session.commit()
+        logger.info(f"RS ETF strategy {strategy_id} stopped successfully")
         
         return {
             "success": True,
@@ -1416,18 +1502,48 @@ async def restart_rs_etf_strategy(request: dict):
     """Restart a stopped RS ETF strategy"""
     session = None
     try:
+        # Validate required parameters
+        strategy_id = request.get('strategy_id')
+        user_id = request.get('user_id')
+        
+        if not strategy_id:
+            return {
+                "success": False,
+                "message": "strategy_id is required"
+            }
+        
         session = get_session()
         
-        result = session.execute(text("""
-            UPDATE rs_etf_instance 
-            SET status = 'running'
-            WHERE id = :strategy_id AND user_id = :user_id
-        """), {
-            "strategy_id": request.get('strategy_id'),
-            "user_id": request.get('user_id')
-        })
+        # Build query based on whether user_id is provided
+        if user_id:
+            result = session.execute(text("""
+                UPDATE rs_etf_instance 
+                SET status = 'running'
+                WHERE id = :strategy_id AND user_id = :user_id
+            """), {
+                "strategy_id": strategy_id,
+                "user_id": user_id
+            })
+        else:
+            result = session.execute(text("""
+                UPDATE rs_etf_instance 
+                SET status = 'running'
+                WHERE id = :strategy_id
+            """), {
+                "strategy_id": strategy_id
+            })
+        
+        # Check if any rows were updated
+        if result.rowcount == 0:
+            session.rollback()
+            logger.warning(f"No RS ETF strategy found with id={strategy_id}")
+            return {
+                "success": False,
+                "message": "RS ETF Strategy not found"
+            }
         
         session.commit()
+        logger.info(f"RS ETF strategy {strategy_id} restarted successfully")
         
         return {
             "success": True,

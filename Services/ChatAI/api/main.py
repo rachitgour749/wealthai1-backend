@@ -31,8 +31,24 @@ from Services.ChatAI.core.conversation_manager import (
 )
 from Services.ChatAI.core.error_handling import GracefulError
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from root .env file
+# Get the absolute path to this file (Services/ChatAI/api/main.py)
+current_file = os.path.abspath(__file__)
+# Go up to Services/ChatAI/api -> Services/ChatAI -> Services -> New folder (root)
+chatai_api_dir = os.path.dirname(current_file)  # Services/ChatAI/api
+chatai_dir = os.path.dirname(chatai_api_dir)     # Services/ChatAI
+services_dir = os.path.dirname(chatai_dir)       # Services
+root_dir = os.path.dirname(services_dir)         # New folder (root)
+root_env_path = os.path.join(root_dir, '.env')
+
+if os.path.exists(root_env_path):
+    load_dotenv(root_env_path)
+    print(f"✅ ChatAI loaded .env from: {root_env_path}")
+else:
+    print(f"⚠️ ChatAI .env not found at {root_env_path}")
+    print(f"   Current file: {current_file}")
+    print(f"   Root dir: {root_dir}")
+    load_dotenv()  # Fallback to default behavior
 
 # Configure logging
 logging.basicConfig(

@@ -78,6 +78,13 @@ class RotationStocksHandler(BaseStrategyHandler):
             metrics = self._sanitize_data(metrics)
             performance_data = self._sanitize_data(performance_data)
             
+            # Cache backtest results
+            try:
+                from APIs.centralized_backtest import cache_backtest_results
+                cache_backtest_results("Rotation_Stocks", backtester)
+            except Exception as e:
+                print(f"Warning: Could not cache backtest results: {e}")
+            
             return UnifiedBacktestResponse(
                 success=True,
                 strategy_type=request.strategy_type,
