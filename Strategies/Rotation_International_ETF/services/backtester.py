@@ -57,12 +57,21 @@ class InternationalETFRotationBacktester(RotationStrategy):
         self.transaction_costs_log = []
         self.purchase_history = {}
         
+        # NEW: Purchase limit tracking for ETF concentration control
+        self.etf_purchase_limits = {}      # {ticker: max_purchases}
+        self.etf_purchase_counts = {}      # {ticker: current_count}
+        self.total_etfs = 0                # Total number of ETFs in strategy
+        self.accumulation_weeks = 0        # Store for limit calculation
+        
         # Performance optimizations
         self._data_cache = {}
         self._verbose = False  # Set to True for debugging
         
         # Initialize centralized logger
         self.logger = StrategyLogger('Rotation_International_ETF')
+        
+        # Load logging configuration
+        self.logging_config = self._load_logging_config()
         
         # Strategy-specific table configuration (must be set before method calls)
         self.data_table = "international_etf_data"  # International ETFs stored in international_etf_data table
@@ -79,6 +88,144 @@ class InternationalETFRotationBacktester(RotationStrategy):
         
         # Load metadata (now safe to call since _verbose is initialized)
         self.etf_metadata = self.load_metadata()
+
+    def _load_logging_config(self) -> Dict:
+        """Load logging configuration from JSON file"""
+        try:
+            config_path = os.path.join(os.path.dirname(__file__), '..', 'logging_config.json')
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    return json.load(f)
+        except Exception as e:
+            print(f"Warning: Could not load logging config: {e}")
+        
+        # Default config if file not found
+        return {
+            "enabled": True,
+            "categories": {
+                "debug": False,
+                "info": True,
+                "progress": True,
+                "error": True,
+                "trade": True,
+                "performance": True,
+                "limit": True
+            }
+        }
+    
+    def _log(self, category: str, message: str):
+        """Log message if category is enabled in config"""
+        if not self.logging_config.get("enabled", True):
+            return
+        
+        categories = self.logging_config.get("categories", {})
+        if categories.get(category, True):
+            # Map category to logger method
+            if category == "error":
+                self.logger.error(message)
+            elif category == "debug":
+                self.logger.debug(message)
+            elif category in ["progress", "trade", "limit", "performance"]:
+                self.logger.progress(message)
+            else:  # info and others
+                self.logger.info(message)
+
+    def initialize_purchase_limits(self, tickers: List[str], accumulation_weeks: int):
+        """
+        Initialize purchase limits for all ETFs based on allocation formula
+        
+        Formula:
+        - allocation_pct = (100 / total_etfs) * allocation_multiplier
+        - limit_per_etf = floor(allocation_pct * accumulation_weeks / 100)
+        
+        This applies to ALL ETFs (not just short ETFs) to prevent over-concentration
+        and achieve better CAGR and portfolio value.
+        
+        Args:
+            tickers: List of ETF tickers
+            accumulation_weeks: Number of accumulation weeks
+        """
+        # Get allocation multiplier from config (default 1.5)
+        purchase_limit_config = self.logging_config.get("purchase_limit_config", {})
+        allocation_multiplier = purchase_limit_config.get("allocation_multiplier", 1.5)
+        limit_enabled = purchase_limit_config.get("enabled", True)
+        
+        self.total_etfs = len(tickers)
+        self.accumulation_weeks = accumulation_weeks
+        
+        # Calculate allocation percentage (round down)
+        allocation_percentage = (100 / self.total_etfs) * allocation_multiplier
+        allocation_percentage = int(allocation_percentage)  # Round down
+        
+        # Calculate limit per ETF (round down)
+        limit_per_etf = int((allocation_percentage * accumulation_weeks) / 100)  # Round down
+        
+        # Initialize limits and counters for all ETFs
+        for ticker in tickers:
+            # If limits disabled, set to infinity (no limit)
+            self.etf_purchase_limits[ticker] = limit_per_etf if limit_enabled else float('inf')
+            self.etf_purchase_counts[ticker] = 0
+        
+        self._log("limit", "=" * 80)
+        self._log("limit", "📊 PURCHASE LIMIT INITIALIZATION")
+        self._log("limit", "=" * 80)
+        self._log("limit", f"   Total ETFs: {self.total_etfs}")
+        self._log("limit", f"   Accumulation Weeks: {accumulation_weeks}")
+        self._log("limit", f"   Allocation Multiplier: {allocation_multiplier}")
+        self._log("limit", f"   Calculation: (100 / {self.total_etfs}) × {allocation_multiplier} = {allocation_percentage}%")
+        self._log("limit", f"   Limit Formula: {allocation_percentage}% × {accumulation_weeks} weeks / 100")
+        if limit_enabled:
+            self._log("limit", f"   ✅ Limit per ETF: {limit_per_etf} purchases maximum")
+        else:
+            self._log("limit", f"   ⚠️ Purchase limits DISABLED (no limit)")
+        self._log("limit", "")
+        self._log("limit", "   ETF Purchase Limits:")
+        for ticker in sorted(tickers):
+            if limit_enabled:
+                self._log("limit", f"      {ticker:12s}: 0/{limit_per_etf} purchases")
+            else:
+                self._log("limit", f"      {ticker:12s}: 0/∞ purchases (unlimited)")
+        self._log("limit", "=" * 80)
+    
+    def get_purchase_limit_status(self) -> Dict[str, Any]:
+        """Get current status of purchase limits for all ETFs"""
+        # Get config values
+        purchase_limit_config = self.logging_config.get("purchase_limit_config", {})
+        allocation_multiplier = purchase_limit_config.get("allocation_multiplier", 1.5)
+        limit_enabled = purchase_limit_config.get("enabled", True)
+        
+        status = {
+            'total_etfs': self.total_etfs,
+            'accumulation_weeks': self.accumulation_weeks,
+            'allocation_multiplier': allocation_multiplier,
+            'limit_enabled': limit_enabled,
+            'etf_status': []
+        }
+        
+        for ticker in sorted(self.etf_purchase_limits.keys()):
+            limit = self.etf_purchase_limits[ticker]
+            count = self.etf_purchase_counts.get(ticker, 0)
+            
+            # Handle infinity (unlimited)
+            if limit == float('inf'):
+                percentage = 0
+                at_limit = False
+                remaining = float('inf')
+            else:
+                percentage = (count / limit * 100) if limit > 0 else 0
+                at_limit = count >= limit
+                remaining = limit - count
+            
+            status['etf_status'].append({
+                'ticker': ticker,
+                'current_purchases': count,
+                'limit': limit if limit != float('inf') else None,
+                'remaining': remaining if remaining != float('inf') else None,
+                'utilization_pct': round(percentage, 1),
+                'at_limit': at_limit
+            })
+        
+        return status
 
     
     def _get_data_model(self):
@@ -1098,9 +1245,9 @@ class InternationalETFRotationBacktester(RotationStrategy):
                 available_units = updated_holdings[ticker]
                 remaining_needed = target_capital - total_raised
 
-                # Calculate units to sell (don't oversell)
-                units_needed = int(remaining_needed / price)
-                units_to_sell = min(available_units, max(1, units_needed))  # Sell at least 1 unit
+                # Calculate units to sell (fractional allowed)
+                units_needed = remaining_needed / price
+                units_to_sell = min(available_units, units_needed)
 
                 # Safety check: don't sell more than available
                 if units_to_sell <= 0 or units_to_sell > available_units:
@@ -1123,6 +1270,13 @@ class InternationalETFRotationBacktester(RotationStrategy):
                     cash += sell_result['net_proceeds']
                     total_raised += sell_result['net_proceeds']
                     total_capital_gains_tax += sell_result['capital_gains_tax']
+
+                    # NEW: Decrement purchase counter when selling
+                    if ticker in self.etf_purchase_counts:
+                        self.etf_purchase_counts[ticker] = max(0, self.etf_purchase_counts[ticker] - 1)
+                        new_count = self.etf_purchase_counts[ticker]
+                        limit = self.etf_purchase_limits.get(ticker, 0)
+                        self._log("limit", f"📉 Purchase count decremented: {ticker} = {new_count}/{limit}")
 
                     # Record transaction
                     sell_transactions.append(sell_result)
@@ -1172,9 +1326,33 @@ class InternationalETFRotationBacktester(RotationStrategy):
 
         # Step 1: Select target ETF with smallest distance from 52-week low
         # PDF: target_etf = ETF_with_smallest_distance_from_52w_low
+        # NEW: Check purchase limits - select first ETF that hasn't reached limit
         sorted_for_buy = high_low_data.sort_values('distance_from_low', ascending=True)
-        target_etf = sorted_for_buy.iloc[0]['symbol']
-        distance_from_low = sorted_for_buy.iloc[0]['distance_from_low']
+        
+        target_etf = None
+        distance_from_low = None
+        
+        for idx, row in sorted_for_buy.iterrows():
+            etf_symbol = row['symbol']
+            current_count = self.etf_purchase_counts.get(etf_symbol, 0)
+            limit = self.etf_purchase_limits.get(etf_symbol, float('inf'))
+            
+            if current_count < limit:
+                target_etf = etf_symbol
+                distance_from_low = row['distance_from_low']
+                self._log("limit", f"🎯 Reallocation target: {target_etf} ({distance_from_low:.2f}% from low)")
+                self._log("limit", f"   Purchase Status: {current_count}/{limit} purchases")
+                break
+            else:
+                self._log("limit", f"⚠️ Skipped {etf_symbol} for reallocation: Limit reached ({current_count}/{limit})")
+        
+        if target_etf is None:
+            self._log("error", "❌ All ETFs have reached purchase limits - cannot reallocate!")
+            return {
+                'holdings': current_holdings,
+                'cash': cash,
+                'buy_transaction': {'error': 'All ETFs at purchase limit'}
+            }
 
         self.logger.progress(f"🎯 Reallocation target: {target_etf} ({distance_from_low:.2f}% from 52-week low)")
 
@@ -1202,11 +1380,11 @@ class InternationalETFRotationBacktester(RotationStrategy):
             self.logger.info(f"   Capped buy amount:    ${capped_capital:,.0f}")
             self.logger.info(f"   Excess retained:      ${excess_capital:,.0f}")
         
-        # Step 4: Calculate purchase with capped capital
+        # Step 4: Calculate purchase with capped capital (fractional allowed)
         # PDF: available_capital = total_raised_from_sells (but now capped)
         buy_costs_estimate = self.calculate_transaction_costs('buy', capped_capital, brokerage_percent)
         net_amount_for_units = capped_capital - buy_costs_estimate['total_costs']
-        units = int(net_amount_for_units / price) if price > 0 else 0
+        units = net_amount_for_units / price if price > 0 else 0
 
         if units <= 0:
             self.logger.info(f"❌ Cannot buy {target_etf}: insufficient capital after costs")
@@ -1231,6 +1409,12 @@ class InternationalETFRotationBacktester(RotationStrategy):
             updated_holdings = current_holdings.copy()
             updated_holdings[target_etf] = updated_holdings.get(target_etf, 0) + units
             cash -= buy_result['total_cost']
+
+            # NEW: Increment purchase counter
+            self.etf_purchase_counts[target_etf] = self.etf_purchase_counts.get(target_etf, 0) + 1
+            current_count = self.etf_purchase_counts[target_etf]
+            limit = self.etf_purchase_limits.get(target_etf, 0)
+            self._log("limit", f"📈 Purchase count updated: {target_etf} = {current_count}/{limit}")
 
             self.logger.trade(f"🟢 Bought {units} units of {target_etf} @ ₹{price:.2f}")
             self.logger.trade(f"   Total cost: ₹{buy_result['total_cost']:,.0f}")
@@ -1494,10 +1678,30 @@ class InternationalETFRotationBacktester(RotationStrategy):
 
             if not high_low_data.empty:
                 # PDF Specification: target_etf = ETF_with_smallest_distance_from_52w_low
+                # NEW: Check purchase limits - select first ETF that hasn't reached limit
                 sorted_etfs = high_low_data.sort_values('distance_from_low')
-                target_etf = sorted_etfs.iloc[0]['symbol']
-                distance_from_low = sorted_etfs.iloc[0]['distance_from_low']
-                self.logger.progress(f"📊 Momentum-based selection: {target_etf} ({distance_from_low:.2f}% from 52-week low)")
+                
+                for idx, row in sorted_etfs.iterrows():
+                    etf_symbol = row['symbol']
+                    current_count = self.etf_purchase_counts.get(etf_symbol, 0)
+                    limit = self.etf_purchase_limits.get(etf_symbol, float('inf'))
+                    
+                    if current_count < limit:
+                        target_etf = etf_symbol
+                        distance_from_low = row['distance_from_low']
+                        self._log("trade", f"📊 Selected: {target_etf} ({distance_from_low:.2f}% from low)")
+                        self._log("limit", f"   Purchase Status: {current_count}/{limit} purchases")
+                        break
+                    else:
+                        self._log("limit", f"⚠️ Skipped {etf_symbol}: Limit reached ({current_count}/{limit})")
+                
+                if target_etf is None:
+                    self._log("error", "❌ All ETFs have reached purchase limits!")
+                    self._log("limit", "   Current Status:")
+                    for ticker in sorted(self.etf_purchase_limits.keys()):
+                        count = self.etf_purchase_counts.get(ticker, 0)
+                        lim = self.etf_purchase_limits.get(ticker, 0)
+                        self._log("limit", f"      {ticker:12s}: {count}/{lim}")
             else:
                 # Fallback strategy when insufficient momentum data (early periods)
                 self.logger.info("⚠️ Insufficient momentum data - using round-robin fallback selection")
@@ -1505,10 +1709,21 @@ class InternationalETFRotationBacktester(RotationStrategy):
                                   if not pd.isna(open_prices[etf]) and open_prices[etf] > 0]
 
                 if available_etfs:
-                    # Round-robin selection based on week number for proper rotation
-                    target_etf = available_etfs[week_num % len(available_etfs)]
-                    print(
-                        f"🎯 Fallback selection: {target_etf} (round-robin week {week_num}, ETF {week_num % len(available_etfs) + 1}/{len(available_etfs)})")
+                    # NEW: Round-robin with limit checking
+                    attempts = 0
+                    while attempts < len(available_etfs):
+                        candidate_etf = available_etfs[(week_num + attempts) % len(available_etfs)]
+                        current_count = self.etf_purchase_counts.get(candidate_etf, 0)
+                        limit = self.etf_purchase_limits.get(candidate_etf, float('inf'))
+                        
+                        if current_count < limit:
+                            target_etf = candidate_etf
+                            self._log("trade", f"🎯 Fallback selection: {target_etf} ({current_count}/{limit} purchases)")
+                            break
+                        attempts += 1
+                    
+                    if target_etf is None:
+                        self._log("error", "❌ All ETFs at limit (fallback mode)")
                 else:
                     target_etf = None
                     self.logger.info("❌ No available ETFs for fallback selection")
@@ -1518,12 +1733,12 @@ class InternationalETFRotationBacktester(RotationStrategy):
                 price = open_prices[target_etf]
                 self.logger.progress(f"💰 Execution price (Monday open): ₹{price:.2f}")
 
-                # Purchase Calculation - NEW LOGIC
-                # Step 1: Calculate units directly from gross amount
+                # Purchase Calculation - FRACTIONAL BUYING ENABLED
+                # Step 1: Calculate units directly from gross amount (fractional allowed)
                 gross_amount = capital_per_week
-                units = int(gross_amount / price) if price > 0 else 0
+                units = gross_amount / price if price > 0 else 0
                 
-                # Step 2: Calculate actual amount based on units
+                # Step 2: Calculate actual amount based on units (fractional)
                 actual_amount = units * price
                 
                 # Step 3: Calculate transaction costs on actual amount
@@ -1535,10 +1750,10 @@ class InternationalETFRotationBacktester(RotationStrategy):
                 self.logger.info(f"📋 Purchase calculation:")
                 self.logger.info(f"   Gross amount: ₹{gross_amount:,.0f}")
                 self.logger.info(f"   Price per unit: ₹{price:.2f}")
-                self.logger.trade(f"   Units to buy: {units}")
-                self.logger.info(f"   Actual amount: ₹{actual_amount:,.0f}")
+                self.logger.trade(f"   Units to buy: {units:.6f}")
+                self.logger.info(f"   Actual amount: ₹{actual_amount:,.2f}")
                 self.logger.trade(f"   Transaction costs: ₹{actual_costs['total_costs']:.2f}")
-                self.logger.info(f"   Total cost (amount + fees): ₹{total_cost:,.0f}")
+                self.logger.info(f"   Total cost (amount + fees): ₹{total_cost:,.2f}")
 
                 if units > 0 and cash >= total_cost:
                     # Execute purchase at Monday opening price
@@ -1548,6 +1763,12 @@ class InternationalETFRotationBacktester(RotationStrategy):
 
                     # Record purchase in FIFO tracking system
                     self.add_purchase_record(target_etf, units, price, execution_date)
+
+                    # NEW: Increment purchase counter
+                    self.etf_purchase_counts[target_etf] = self.etf_purchase_counts.get(target_etf, 0) + 1
+                    current_count = self.etf_purchase_counts[target_etf]
+                    limit = self.etf_purchase_limits.get(target_etf, 0)
+                    self._log("limit", f"📈 Purchase count updated: {target_etf} = {current_count}/{limit}")
 
                     # Log transaction costs
                     self.log_transaction_costs(week_num, execution_date, 'buy', target_etf,
@@ -1669,6 +1890,9 @@ class InternationalETFRotationBacktester(RotationStrategy):
         self.portfolio_log = []
         self.transaction_costs_log = []
         self.purchase_history = {}
+
+        # NEW: Initialize purchase limits for all ETFs
+        self.initialize_purchase_limits(tickers, accumulation_weeks)
 
         # Reset trade execution tracking
         self.skipped_days = []

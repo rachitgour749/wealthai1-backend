@@ -1,6 +1,17 @@
 {
     "strategy_name": "Rotation_International_ETF",
-    "log_level": "INFO",
-    "log_to_file": false,
-    "log_to_console": false
+    "enabled": true,
+    "categories": {
+        "debug": false,
+        "info": true,
+        "progress": true,
+        "error": true,
+        "trade": true,
+        "performance": true,
+        "limit": true
+    },
+    "purchase_limit_config": {
+        "allocation_multiplier": 1.5,
+        "enabled": true
+    }
 }

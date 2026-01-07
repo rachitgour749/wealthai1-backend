@@ -254,13 +254,17 @@ async def calculate_etf_metrics(request: BacktestRequest):
                 benchmark_navs = international_etf_backtester.sp500_df['nav'].tolist()
                 performance_data["benchmark_buyhold"] = benchmark_navs
         
+        # Get purchase limit status
+        purchase_limit_status = international_etf_backtester.get_purchase_limit_status()
+        
         # Sanitize all data before returning
         response_data = {
             "success": True,
             "etf_metrics": sanitize_data(etf_metrics),
             "benchmark_metrics": sanitize_data(benchmark_metrics),
             "backtest_result": sanitize_data(result),
-            "performance_data": sanitize_data(performance_data)
+            "performance_data": sanitize_data(performance_data),
+            "purchase_limit_status": sanitize_data(purchase_limit_status)
         }
         
         return response_data
