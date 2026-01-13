@@ -12,7 +12,9 @@ import os
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
+from pydantic import BaseModel
+import json
 import concurrent.futures
 
 # Configure concise structured logging
@@ -780,6 +782,88 @@ async def chat_root():
 async def chat_health():
     """ChatAI health endpoint"""
     return {"status": "healthy"}
+
+# =========================
+# DELETE CLIENT API
+# =========================
+
+class DeleteClientRequest(BaseModel):
+    strategy_type: str
+    strategy_id: int
+    client_id: List[str]
+
+@app.post("/api/delete-client")
+async def delete_client(request: DeleteClientRequest):
+    """
+    Delete specific client(s) from a saved strategy's client_information_json.
+    """
+    session = None
+    try:
+        from Databases.app_data_db_connection import get_session
+        from sqlalchemy import text
+        
+        # Table mapping logic
+        table_name = None
+        if request.strategy_type in ["ETF_Rotation", "ETF_Payout", "International ETF Rotation"]:
+            table_name = "etf_saved_strategy"
+        elif request.strategy_type == "RS_ETF_Rotation":
+            table_name = "rs_etf_instance"
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported strategy_type: {request.strategy_type}")
+            
+        session = get_session()
+        
+        # Retrieve existing client_information_json
+        query = text(f"SELECT client_information_json FROM {table_name} WHERE id = :strategy_id")
+        result = session.execute(query, {"strategy_id": request.strategy_id}).fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Strategy not found")
+        
+        client_info_raw = result[0]
+        client_info = {}
+        
+        if client_info_raw:
+            if isinstance(client_info_raw, str):
+                try:
+                    client_info = json.loads(client_info_raw)
+                except json.JSONDecodeError:
+                    client_info = {}
+            elif isinstance(client_info_raw, dict):
+                client_info = client_info_raw
+        
+        # Remove client_id(s)
+        removed_clients = []
+        for cid in request.client_id:
+            if cid in client_info:
+                del client_info[cid]
+                removed_clients.append(cid)
+        
+        # Save back to database
+        updated_client_info_json = json.dumps(client_info)
+        update_query = text(f"UPDATE {table_name} SET client_information_json = :client_info WHERE id = :strategy_id")
+        session.execute(update_query, {"client_info": updated_client_info_json, "strategy_id": request.strategy_id})
+        
+        session.commit()
+        
+        return {
+            "success": True,
+            "message": f"Successfully removed {len(removed_clients)} client(s)",
+            "removed_clients": removed_clients
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        if session:
+            session.rollback()
+        logger.error(f"Error in delete_client API: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Error deleting client: {str(e)}")
+    finally:
+        if session:
+            session.close()
 
 # =========================
 # LOCAL RUN
