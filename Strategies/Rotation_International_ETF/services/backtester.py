@@ -2219,7 +2219,7 @@ class InternationalETFRotationBacktester(RotationStrategy):
 
             costs = self.calculate_transaction_costs('buy', total_investment, brokerage_percent)
 
-            units = int(total_investment / costs['net_amount'] * total_investment / start_price)
+            units = (total_investment / costs['net_amount'] * total_investment / start_price)
             actual_investment = units * start_price
             actual_costs = self.calculate_transaction_costs('buy', actual_investment, brokerage_percent)
 
