@@ -774,14 +774,6 @@ class RSStrategyBacktester:
                 'INDIAMART', 'INDIANB', 'INDIGO', 'INDUSINDBK', 'INDUSTOWER',
                 'INFY', 'INOXINDIA', 'INOXWIND', 'INTELLECT', 'IOB',
                 'IOC', 'IPCALAB', 'IRB', 'IRCON', 'IRCTC',
-                'IREDA', 'IRFC', 'ITC', 'ITI', 'J&KBANK',
-                'JBCHEPHARM', 'JBMA', 'JINDALSAW', 'JINDALSTEL', 'JIOFIN',
-                'JKCEMENT', 'JKTYRE', 'JMFINANCIL', 'JPPOWER', 'JSL',
-                'JSWENERGY', 'JSWHL', 'JSWINFRA', 'JSWSTEEL', 'JUBLFOOD',
-                'JUBLINGREA', 'JUBLPHARMA', 'JUSTDIAL', 'JWL', 'JYOTHYLAB',
-                'JYOTICNC', 'KAJARIACER', 'KALYANKJIL', 'KANSAINER', 'KARURVYSYA',
-                'KAYNES', 'KEC', 'KEI', 'KFINTECH', 'KIMS',
-                'KIRLOSBROS', 'KIRLOSENG', 'KNRCON', 'KOTAKBANK', 'KPIL',
                 'KPITTECH', 'KPRMILL', 'LALPATHLAB', 'LATENTVIEW', 'LAURUSLABS',
                 'LEMONTREE', 'LICHSGFIN', 'LICI', 'LINDEINDIA', 'LLOYDSME',
                 'LODHA', 'LT', 'LTF', 'LTFOODS', 'LTIM',
@@ -864,6 +856,79 @@ class RSStrategyBacktester:
         except Exception as e:
             self.logger.info(f"Error fetching custom stock universe: {e}")
             return []
+
+    def load_metadata(self) -> Dict[str, Dict]:
+        """Load stock metadata by calculating directly from stock_data table"""
+        try:
+            # Calculate metadata directly from stock_data table
+            metadata = self.calculate_metadata_from_data(self.db)
+            return metadata
+        except Exception as e:
+            self.logger.error(f"Error loading stock metadata: {e}")
+            return {}
+
+    def calculate_metadata_from_data(self, session) -> Dict[str, Dict]:
+        """Calculate metadata directly from stock_data table"""
+        try:
+            from sqlalchemy import text
+            
+            # Query metadata from stock_data
+            query_str = """
+                SELECT 
+                    symbol,
+                    MIN(date)::text as start_date,
+                    MAX(date)::text as end_date,
+                    COUNT(*) as total_records,
+                    ROUND(EXTRACT(EPOCH FROM (MAX(date)::timestamp - MIN(date)::timestamp)) / 86400.0 / 365.25, 1) as years_available
+                FROM stock_data
+                GROUP BY symbol
+                ORDER BY symbol
+            """
+            
+            result = session.execute(text(query_str))
+            rows = result.fetchall()
+            
+            metadata = {}
+            for row in rows:
+                try:
+                    metadata[row[0]] = {
+                        'start_date': str(row[1]) if row[1] else None,
+                        'end_date': str(row[2]) if row[2] else None,
+                        'years_available': float(row[4]) if row[4] else 0,
+                        'total_records': int(row[3]) if row[3] else 0,
+                        'data_source': 'stock_data'
+                    }
+                except Exception:
+                    continue
+            
+            return metadata
+        except Exception as e:
+            self.logger.error(f"Error calculating metadata: {e}")
+            return {}
+
+    def generate_asset_description(self, symbol: str) -> str:
+        """Generate intelligent stock descriptions based on symbol names"""
+        symbol_lower = symbol.lower()
+        if 'bank' in symbol_lower: return f'{symbol} - Banking Sector Stock'
+        elif 'pharma' in symbol_lower: return f'{symbol} - Pharmaceutical Sector Stock'
+        elif 'it' in symbol_lower or 'tech' in symbol_lower: return f'{symbol} - Technology Sector Stock'
+        elif 'steel' in symbol_lower or 'metal' in symbol_lower: return f'{symbol} - Materials Sector Stock'
+        elif 'auto' in symbol_lower: return f'{symbol} - Automotive Sector Stock'
+        elif 'power' in symbol_lower or 'energy' in symbol_lower: return f'{symbol} - Energy Sector Stock'
+        else: return f'{symbol} Stock'
+
+    def get_asset_sector_classification(self, symbol: str) -> str:
+        """Classify stock into sector categories"""
+        symbol_lower = symbol.lower()
+        if 'bank' in symbol_lower or 'fin' in symbol_lower: return 'Financial Services'
+        elif 'pharma' in symbol_lower or 'health' in symbol_lower: return 'Healthcare'
+        elif 'it' in symbol_lower or 'tech' in symbol_lower: return 'Technology'
+        elif 'auto' in symbol_lower: return 'Automobile'
+        elif 'steel' in symbol_lower or 'metal' in symbol_lower: return 'Materials'
+        elif 'power' in symbol_lower or 'energy' in symbol_lower or 'oil' in symbol_lower: return 'Energy'
+        elif 'infra' in symbol_lower: return 'Infrastructure'
+        elif 'consumer' in symbol_lower or 'fmcg' in symbol_lower: return 'Consumer Goods'
+        else: return 'Other'
     
     
     

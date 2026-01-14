@@ -26,6 +26,7 @@ class UnifiedBacktestRequest(BaseModel):
     strategy_type: Literal[
         "ETF_Rotation", 
         "RS_ETF_Rotation", 
+        "RS_Stocks",
         "International_ETF_Rotation",
         "Rotation_Stocks",
         "ETF_Payout",
@@ -111,7 +112,7 @@ class UnifiedBacktestRequest(BaseModel):
     def validate_strategy_type(cls, v):
         """Validate strategy type"""
         valid_types = [
-            "ETF_Rotation", "RS_ETF_Rotation", 
+            "ETF_Rotation", "RS_ETF_Rotation", "RS_Stocks",
             "International_ETF_Rotation", "Rotation_Stocks",
             "ETF_Payout", "SuperTrend"
         ]
@@ -180,6 +181,7 @@ class DateRangeRequest(BaseModel):
     strategy_type: Literal[
         "ETF_Rotation", 
         "RS_ETF_Rotation", 
+        "RS_Stocks",
         "International_ETF_Rotation",
         "Rotation_Stocks",
         "ETF_Payout",

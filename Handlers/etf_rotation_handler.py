@@ -44,6 +44,9 @@ class ETFRotationHandler(BaseStrategyHandler):
             # Validate request
             self.validate_request(request)
             
+            # Clean tickers (remove .NS)
+            request.tickers = self._clean_tickers(request.tickers)
+            
             # Initialize backtester
             backtester = ETFRotationBacktester(db_path="unified_etf_data.sqlite")
             
@@ -114,6 +117,9 @@ class ETFRotationHandler(BaseStrategyHandler):
                     'capital_gains_tax': log.get('capital_gains_tax', 0),
                     'nav': log.get('nav', 0)
                 })
+            
+            # Normalize benchmark metrics
+            benchmark_metrics = self._normalize_benchmark_metrics(benchmark_metrics)
             
             # Sanitize all data
             metrics = self._sanitize_data({

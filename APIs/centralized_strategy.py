@@ -140,15 +140,49 @@ async def get_assets(strategy_type: str = Query(..., description="Strategy type"
             
         elif strategy_type == "RS_ETF_Rotation":
             # Get ETF universe from RS ETF
-            from Strategies.RS_ETF.services.market_data_service import market_data_service
-            etfs = market_data_service.get_all_etfs()
-            return {"success": True, "strategy_type": strategy_type, "etfs": etfs}
+            from Strategies.RS_ETF.rs_etf_backtester_core import RSETFStrategyBacktester
+            from Strategies.RS_ETF.database import get_db
+            
+            db = next(get_db())
+            try:
+                # Create temporary backtester with minimal config
+                temp_config = {
+                    'main_index': '^NSEI',
+                    'etf_universe': 'ALL_ETFS',
+                    'buffer_capital_pct': 10.0,
+                    'max_positions': 20
+                }
+                backtester = RSETFStrategyBacktester.from_config_dict(db, temp_config)
+                etf_list = backtester.get_custom_etf_universe()
+                
+                # Format for frontend
+                etfs = [{"ticker": ticker, "symbol": ticker} for ticker in etf_list]
+                return {"success": True, "strategy_type": strategy_type, "etfs": etfs}
+            finally:
+                db.close()
             
         elif strategy_type == "RS_Stocks":
             # Get stock universe from RS Stocks
-            from Strategies.RS_Stocks.services.market_data_service import market_data_service
-            stocks = market_data_service.get_all_stocks()
-            return {"success": True, "strategy_type": strategy_type, "stocks": stocks}
+            from Strategies.RS_Stocks.rs_backtester_core import RSStrategyBacktester
+            from Strategies.RS_Stocks.database import get_db
+            
+            db = next(get_db())
+            try:
+                # Create temporary backtester with minimal config
+                temp_config = {
+                    'main_index': '^NSEI',
+                    'stock_universe': 'NIFTY_500',
+                    'buffer_capital_pct': 10.0,
+                    'max_positions': 20
+                }
+                backtester = RSStrategyBacktester.from_config_dict(db, temp_config)
+                stock_list = backtester.get_custom_stock_universe()
+                
+                # Format for frontend
+                stocks = [{"ticker": ticker, "symbol": ticker} for ticker in stock_list]
+                return {"success": True, "strategy_type": strategy_type, "stocks": stocks}
+            finally:
+                db.close()
         
         elif strategy_type == "ETF_Payout":
             # ETF_Payout uses same ETF list as ETF_Rotation
@@ -506,14 +540,76 @@ async def get_assets_overview(strategy_type: str = Query(..., description="Strat
             etf_overview.sort(key=lambda x: x['start_date'])
             return {"etf_overview": etf_overview}
             
-        elif strategy_type in ["RS_ETF_Rotation", "RS_Stocks"]:
-            # RS strategies don't have overview endpoint, return basic info
-            assets = await get_assets(strategy_type)
-            return {
-                "success": True,
-                "strategy_type": strategy_type,
-                "message": "Overview not available for RS strategies. Use /assets endpoint."
-            }
+        elif strategy_type == "RS_ETF_Rotation":
+            from Strategies.RS_ETF.rs_etf_backtester_core import RSETFStrategyBacktester
+            from Strategies.RS_ETF.database import get_db as get_rs_etf_db
+            
+            db = next(get_rs_etf_db())
+            try:
+                # Create temporary backtester
+                temp_config = {
+                    'main_index': '^NSEI',
+                    'buffer_capital_pct': 10.0,
+                    'max_positions': 10
+                }
+                backtester = RSETFStrategyBacktester.from_config_dict(db, temp_config)
+                metadata = backtester.load_metadata()
+                etf_overview = []
+                
+                for symbol, meta in metadata.items():
+                    description = backtester.generate_asset_description(symbol)
+                    sector = backtester.get_asset_sector_classification(symbol)
+                    etf_overview.append({
+                        'symbol': symbol,
+                        'description': description,
+                        'sector': sector,
+                        'start_date': meta['start_date'],
+                        'end_date': meta['end_date'],
+                        'years_available': round(meta['years_available'], 1),
+                        'total_records': meta['total_records']
+                    })
+                
+                # Sort by symbol
+                etf_overview.sort(key=lambda x: x['symbol'])
+                return {"etf_overview": etf_overview}
+            finally:
+                db.close()
+
+        elif strategy_type == "RS_Stocks":
+            from Strategies.RS_Stocks.rs_backtester_core import RSStrategyBacktester
+            from Strategies.RS_Stocks.database import get_db as get_rs_stocks_db
+            
+            db = next(get_rs_stocks_db())
+            try:
+                # Create temporary backtester
+                temp_config = {
+                    'main_index': '^NSEI',
+                    'stock_universe': 'NIFTY_500',
+                    'buffer_capital_pct': 10.0,
+                    'max_positions': 20
+                }
+                backtester = RSStrategyBacktester.from_config_dict(db, temp_config)
+                metadata = backtester.load_metadata()
+                stock_overview = []
+                
+                for symbol, meta in metadata.items():
+                    description = backtester.generate_asset_description(symbol)
+                    sector = backtester.get_asset_sector_classification(symbol)
+                    stock_overview.append({
+                        'symbol': symbol,
+                        'description': description,
+                        'sector': sector,
+                        'start_date': meta['start_date'],
+                        'end_date': meta['end_date'],
+                        'years_available': round(meta['years_available'], 1),
+                        'total_records': meta['total_records']
+                    })
+                
+                # Sort by symbol
+                stock_overview.sort(key=lambda x: x['symbol'])
+                return {"stock_overview": stock_overview}
+            finally:
+                db.close()
             
         else:
             raise HTTPException(status_code=400, detail=f"Invalid strategy_type: {strategy_type}")
@@ -572,15 +668,49 @@ async def get_cached_transaction_log(strategy_type: str = Query(..., description
         
         cached_data = _backtest_results_cache[strategy_type]
         portfolio_log = cached_data.get('portfolio_log', [])
+        trading_summary = cached_data.get('trading_summary', {})
         
-        print(f"[CACHED-TX-LOG] Returning {len(portfolio_log)} transactions")
+        # Sanitize data to handle numpy types, NaN/Inf, etc.
+        # We'll use a local sanitization function to avoid dependency on a handler instance
+        def sanitize(obj):
+            import math
+            import numpy as np
+            from datetime import date, datetime
+            
+            if isinstance(obj, dict):
+                return {str(k): sanitize(v) for k, v in obj.items()}
+            elif isinstance(obj, (list, tuple)):
+                return [sanitize(item) for item in obj]
+            elif isinstance(obj, (int, float)):
+                if math.isnan(obj) or math.isinf(obj):
+                    return 0
+                return obj
+            elif isinstance(obj, (np.bool_, bool)):
+                return bool(obj)
+            elif isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                if np.isnan(obj) or np.isinf(obj):
+                    return 0
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return sanitize(obj.tolist())
+            elif isinstance(obj, (datetime, date)):
+                return obj.isoformat()
+            else:
+                return obj
+
+        sanitized_log = sanitize(portfolio_log)
+        sanitized_summary = sanitize(trading_summary)
+        
+        print(f"[CACHED-TX-LOG] Returning {len(sanitized_log)} transactions")
         
         return {
             "success": True,
             "strategy_type": strategy_type,
-            "transaction_log": portfolio_log,
-            "trading_summary": cached_data.get('trading_summary', {}),
-            "total_transactions": len(portfolio_log)
+            "transaction_log": sanitized_log,
+            "trading_summary": sanitized_summary,
+            "total_transactions": len(sanitized_log)
         }
         
     except Exception as e:

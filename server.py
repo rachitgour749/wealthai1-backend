@@ -19,7 +19,7 @@ import concurrent.futures
 
 # Configure concise structured logging
 logging.basicConfig(
-    level=logging.ERROR,  # Only errors by default (quiet startup)
+    level=logging.INFO,  # Changed from ERROR for debugging
     format='[%(levelname)s] %(name)s: %(message)s',
     datefmt='%H:%M:%S'
 )
@@ -451,7 +451,8 @@ try:
             "/health_check",
             "/",
             "/api/chat/health", # Exempt ChatAI health
-            "/health" # ChatAI health
+            "/health", # ChatAI health
+            "/api/run_backtest" # Exempt centralized backtest for verified access
         ]
     )
     logger.info("✅ SingleSessionMiddleware added")

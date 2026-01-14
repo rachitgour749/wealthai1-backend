@@ -1,29 +1,30 @@
 """
-RS ETF Strategy Handler
-Handles backtest execution for RS ETF Rotation strategy
+RS Stocks Strategy Handler
+Handles backtest execution for RS Stocks strategy
 """
 import sys
 import os
 from datetime import datetime
 from sqlalchemy.orm import Session
 
+# Add Strategies path for imports
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Strategies'))
 
 from Handlers.base_handler import BaseStrategyHandler
 from APIs.unified_schemas import UnifiedBacktestRequest, UnifiedBacktestResponse
-from Strategies.RS_ETF.rs_etf_backtester_core import RSETFStrategyBacktester
+from Strategies.RS_Stocks.rs_backtester_core import RSStrategyBacktester
 
 
-class RSETFHandler(BaseStrategyHandler):
-    """Handler for RS ETF Rotation strategy"""
+class RSStocksHandler(BaseStrategyHandler):
+    """Handler for RS Stocks strategy"""
     
     def validate_request(self, request: UnifiedBacktestRequest) -> None:
-        """Validate RS ETF specific parameters"""
+        """Validate RS Stocks specific parameters"""
         if not request.total_capital:
-            raise ValueError("RS_ETF_Rotation requires 'total_capital' parameter")
+            raise ValueError("RS_Stocks requires 'total_capital' parameter")
     
     async def run_backtest(self, request: UnifiedBacktestRequest) -> UnifiedBacktestResponse:
-        """Run RS ETF backtest"""
+        """Run RS Stocks backtest"""
         db_created = False
         db_session = self.db
         
@@ -32,15 +33,15 @@ class RSETFHandler(BaseStrategyHandler):
             
             # Ensure we have a database session
             if db_session is None:
-                from Strategies.RS_ETF.database import get_db
+                from Strategies.RS_Stocks.database import get_db
                 db_session = next(get_db())
                 db_created = True
             
             # Create config dict
             config_dict = {
                 'main_index': self._clean_tickers(request.main_index) or "^NSEI",
-                'etf_universe': request.etf_universe or "ALL_ETFS",
-                'custom_etfs': self._clean_tickers(request.custom_etfs),
+                'stock_universe': request.stock_universe or "NIFTY_500",
+                'custom_stocks': self._clean_tickers(request.custom_stocks),
                 'max_positions': request.max_positions or 20,
                 'position_size_pct': request.position_size_pct,
                 'total_capital': request.total_capital,
@@ -57,7 +58,7 @@ class RSETFHandler(BaseStrategyHandler):
             }
             
             # Initialize backtester
-            backtester = RSETFStrategyBacktester.from_config_dict(db_session, config_dict)
+            backtester = RSStrategyBacktester.from_config_dict(db_session, config_dict)
             
             # Convert dates
             start_date = datetime.fromisoformat(request.start_date.replace('Z', '+00:00')).replace(tzinfo=None)
@@ -113,9 +114,9 @@ class RSETFHandler(BaseStrategyHandler):
             # Cache backtest results
             try:
                 from APIs.centralized_backtest import cache_backtest_results
-                cache_backtest_results("RS_ETF_Rotation", backtester)
+                cache_backtest_results("RS_Stocks", backtester)
             except Exception as e:
-                print(f"[RS_ETF_HANDLER] Warning: Could not cache backtest results: {e}")
+                print(f"[RS_STOCKS_HANDLER] Warning: Could not cache backtest results: {e}")
             
             return UnifiedBacktestResponse(
                 success=True,
@@ -127,11 +128,13 @@ class RSETFHandler(BaseStrategyHandler):
             )
             
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return UnifiedBacktestResponse(
                 success=False,
                 strategy_type=request.strategy_type,
                 metrics={},
-                error=f"RS ETF backtest failed: {str(e)}"
+                error=f"RS Stocks backtest failed: {str(e)}"
             )
         finally:
             if db_created and db_session:

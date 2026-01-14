@@ -32,6 +32,9 @@ class RotationStocksHandler(BaseStrategyHandler):
         try:
             self.validate_request(request)
             
+            # Clean tickers (remove .NS)
+            request.tickers = self._clean_tickers(request.tickers)
+            
             # Initialize backtester
             backtester = StockRotationBacktester(db_path="unified_stock_data.sqlite")
             
@@ -73,6 +76,22 @@ class RotationStocksHandler(BaseStrategyHandler):
                 performance_data["dates"] = [str(date) for date in backtester.weekly_nav_df['date']]
                 performance_data["stock_strategy"] = backtester.weekly_nav_df['nav'].tolist()
                 performance_data["cumulative_investment"] = backtester.weekly_nav_df['cumulative_investment'].tolist()
+            
+            # Calculate benchmark metrics
+            total_investment = request.accumulation_weeks * request.capital_per_week
+            benchmark_metrics = backtester.calculate_benchmark_metrics(
+                total_investment,
+                request.risk_free_rate or 8.0
+            )
+            
+            # Normalize benchmark metrics
+            benchmark_metrics = self._normalize_benchmark_metrics(benchmark_metrics)
+            
+            # Add benchmark metrics to metrics
+            metrics = {
+                **metrics,
+                "benchmark_metrics": benchmark_metrics
+            }
             
             # Sanitize data
             metrics = self._sanitize_data(metrics)

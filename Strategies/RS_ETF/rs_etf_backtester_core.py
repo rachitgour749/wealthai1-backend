@@ -663,6 +663,129 @@ class RSETFStrategyBacktester:
             self.logger.info(f"Error in get_custom_etf_universe: {e}")
             # Fallback to default list on error
             return self._get_allowed_etf_list()
+
+    def load_metadata(self) -> Dict[str, Dict]:
+        """Load ETF metadata by calculating directly from etf_data table"""
+        try:
+            # Calculate metadata directly from etf_data table
+            metadata = self.calculate_metadata_from_data(self.db)
+            return metadata
+        except Exception as e:
+            self.logger.error(f"Error loading ETF metadata: {e}")
+            return {}
+
+    def calculate_metadata_from_data(self, session) -> Dict[str, Dict]:
+        """Calculate metadata directly from etf_data table"""
+        try:
+            from sqlalchemy import text
+            
+            # Query metadata from etf_data
+            query_str = """
+                SELECT 
+                    symbol,
+                    MIN(date)::text as start_date,
+                    MAX(date)::text as end_date,
+                    COUNT(*) as total_records,
+                    ROUND(EXTRACT(EPOCH FROM (MAX(date)::timestamp - MIN(date)::timestamp)) / 86400.0 / 365.25, 1) as years_available
+                FROM etf_data
+                GROUP BY symbol
+                ORDER BY symbol
+            """
+            
+            result = session.execute(text(query_str))
+            rows = result.fetchall()
+            
+            metadata = {}
+            for row in rows:
+                try:
+                    symbol = row[0]
+                    start_date = row[1]
+                    end_date = row[2]
+                    total_records = row[3]
+                    years_available = row[4]
+                    
+                    metadata[symbol] = {
+                        'start_date': str(start_date) if start_date else None,
+                        'end_date': str(end_date) if end_date else None,
+                        'years_available': float(years_available) if years_available else 0,
+                        'total_records': int(total_records) if total_records else 0,
+                        'data_source': 'etf_data'
+                    }
+                except Exception:
+                    continue
+            
+            return metadata
+        except Exception as e:
+            self.logger.error(f"Error calculating metadata from etf_data: {e}")
+            return {}
+
+    def generate_asset_description(self, symbol: str) -> str:
+        """Generate intelligent ETF descriptions based on symbol names"""
+        etf_mappings = {
+            'NIFTYBEES': 'Nifty 50 ETF - Broad Market',
+            'BANKBEES': 'Banking Sector ETF',
+            'JUNIORBEES': 'Nifty Next 50 ETF - Mid Cap',
+            'ITBEES': 'Information Technology ETF',
+            'PHARMABEES': 'Pharmaceutical Sector ETF',
+            'INFRABEES': 'Infrastructure Sector ETF',
+            'GOLDBEES': 'Gold Commodity ETF',
+            'METALIETF': 'Metal & Mining Sector ETF',
+            'OILIETF': 'Oil & Gas Sector ETF',
+            'LIQUIDBEES': 'Liquid Fund ETF - Money Market',
+            'CPSEETF': 'CPSE (Central PSE) ETF',
+            'PSUBNKBEES': 'PSU Banking ETF',
+            'MON100': 'NASDAQ 100 ETF - US Tech',
+            'MODEFENCE': 'Defence Sector ETF',
+            'MIDCAPETF': 'Mid Cap ETF',
+        }
+
+        if symbol in etf_mappings:
+            return etf_mappings[symbol]
+
+        symbol_lower = symbol.lower()
+        if 'pharma' in symbol_lower: return 'Pharmaceutical Sector ETF'
+        elif 'bank' in symbol_lower: return 'Banking Sector ETF'
+        elif 'it' in symbol_lower or 'tech' in symbol_lower: return 'Technology Sector ETF'
+        elif 'gold' in symbol_lower: return 'Gold Commodity ETF'
+        elif 'oil' in symbol_lower or 'energy' in symbol_lower: return 'Oil & Gas Sector ETF'
+        elif 'metal' in symbol_lower: return 'Metal & Mining Sector ETF'
+        elif 'infra' in symbol_lower: return 'Infrastructure Sector ETF'
+        elif 'defence' in symbol_lower or 'defense' in symbol_lower: return 'Defence Sector ETF'
+        elif 'midcap' in symbol_lower or 'mid' in symbol_lower: return 'Mid Cap ETF'
+        elif 'smallcap' in symbol_lower or 'small' in symbol_lower: return 'Small Cap ETF'
+        elif 'liquid' in symbol_lower: return 'Liquid Fund ETF'
+        elif 'nifty' in symbol_lower: return 'Nifty Index ETF'
+        elif 'sensex' in symbol_lower: return 'Sensex Index ETF'
+        elif 'psu' in symbol_lower: return 'PSU Sector ETF'
+        elif 'cpse' in symbol_lower: return 'CPSE ETF'
+        elif 'dividend' in symbol_lower: return 'Dividend ETF'
+        elif 'momentum' in symbol_lower: return 'Momentum ETF'
+        elif 'value' in symbol_lower: return 'Value ETF'
+        elif 'quality' in symbol_lower: return 'Quality ETF'
+        elif any(geo in symbol_lower for geo in ['us', 'usa', 'nasdaq', 'sp500', 'dow']): return 'International ETF'
+        elif 'consumption' in symbol_lower or 'consumer' in symbol_lower: return 'Consumer Sector ETF'
+        elif 'auto' in symbol_lower: return 'Automotive Sector ETF'
+        elif 'realty' in symbol_lower or 'real' in symbol_lower: return 'Real Estate ETF'
+        elif 'healthcare' in symbol_lower or 'health' in symbol_lower: return 'Healthcare Sector ETF'
+        elif 'fmcg' in symbol_lower: return 'FMCG Sector ETF'
+        elif 'pvt' in symbol_lower or 'private' in symbol_lower: return 'Private Bank ETF'
+        else: return f'{symbol} ETF'
+
+    def get_asset_sector_classification(self, symbol: str) -> str:
+        """Classify ETF into sector categories"""
+        symbol_lower = symbol.lower()
+        if symbol in ['NIFTYBEES', 'JUNIORBEES', 'MIDCAPETF']: return 'Broad Market'
+        elif 'bank' in symbol_lower or 'psu' in symbol_lower: return 'Financial'
+        elif 'it' in symbol_lower or 'tech' in symbol_lower or 'mon100' in symbol_lower: return 'Technology'
+        elif 'pharma' in symbol_lower or 'health' in symbol_lower: return 'Healthcare'
+        elif 'gold' in symbol_lower: return 'Commodity'
+        elif 'oil' in symbol_lower or 'energy' in symbol_lower: return 'Energy'
+        elif 'metal' in symbol_lower: return 'Materials'
+        elif 'infra' in symbol_lower: return 'Infrastructure'
+        elif 'defence' in symbol_lower or 'defense' in symbol_lower: return 'Defence'
+        elif 'liquid' in symbol_lower: return 'Cash/Liquid'
+        elif 'cpse' in symbol_lower: return 'PSU'
+        else: return 'Other'
     
     def _get_allowed_etf_list(self) -> List[str]:
         """Get the allowed list of ETFs for RS ETF Strategy - Dynamic from DB"""

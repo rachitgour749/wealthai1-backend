@@ -16,6 +16,7 @@ if BASE_DIR not in sys.path:
 from APIs.unified_schemas import UnifiedBacktestRequest, UnifiedBacktestResponse
 from Handlers.etf_rotation_handler import ETFRotationHandler
 from Handlers.rs_etf_handler import RSETFHandler
+from Handlers.rs_stocks_handler import RSStocksHandler
 from Handlers.international_etf_handler import InternationalETFHandler
 from Handlers.rotation_stocks_handler import RotationStocksHandler
 from Handlers.etf_payout_handler import ETFPayoutHandler
@@ -224,6 +225,9 @@ async def run_backtest(request: UnifiedBacktestRequest) -> UnifiedBacktestRespon
         elif request.strategy_type == "RS_ETF_Rotation":
             handler = RSETFHandler(None)
             
+        elif request.strategy_type == "RS_Stocks":
+            handler = RSStocksHandler(None)
+            
         elif request.strategy_type == "International_ETF_Rotation":
             handler = InternationalETFHandler(None)
             
@@ -274,6 +278,7 @@ async def health_check():
         "supported_strategies": [
             "ETF_Rotation",
             "RS_ETF_Rotation",
+            "RS_Stocks",
             "International_ETF_Rotation",
             "Rotation_Stocks",
             "ETF_Payout",
@@ -306,6 +311,18 @@ async def list_strategies():
                 ],
                 "optional_params": [
                     "etf_universe", "custom_etfs", "max_positions",
+                    "lookback_weeks", "lookback_months", "lookback_quarters",
+                    "risk_free_rate"
+                ]
+            },
+            {
+                "type": "RS_Stocks",
+                "description": "Relative Strength stock strategy with lump sum capital",
+                "required_params": [
+                    "start_date", "end_date", "total_capital"
+                ],
+                "optional_params": [
+                    "stock_universe", "custom_stocks", "max_positions",
                     "lookback_weeks", "lookback_months", "lookback_quarters",
                     "risk_free_rate"
                 ]
