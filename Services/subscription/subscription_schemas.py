@@ -250,6 +250,7 @@ class UserDetailsResponse(BaseModel):
     user_name: Optional[str]
     phone_no: Optional[str] = None
     status: str  # TRIAL/PAID
+    role: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

@@ -16,6 +16,7 @@ class UserDetails(Base):
     phone_no = Column(String(50), nullable=True)
     active_token_hash = Column(String(64), nullable=True)  # SHA256 Hash of the active JWT/Token
     status = Column(String(20), default="TRIAL")  # TRIAL/PAID
+    role = Column(String(50), nullable=True, default="CLIENT")  # Admin, RM, Client, etc.
     created_at = Column(DateTime(timezone=True), default=func.now())
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
 
@@ -124,3 +125,17 @@ class ProductAccessLog(Base):
     subscription_id = Column(String(36), nullable=True)
     ip_address = Column(String(45), nullable=True)
     user_agent = Column(Text, nullable=True)
+
+
+class UserHierarchy(Base):
+    """Database model for user hierarchy - parent-child relationships"""
+    __tablename__ = "user_hierarchy"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_email = Column(String(255), nullable=False, unique=True, index=True)
+    parent_email = Column(String(255), nullable=True, index=True)
+    hierarchy_level = Column(Integer, nullable=False, default=0)
+    created_by = Column(String(255), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    is_active = Column(Boolean, default=True)

@@ -143,6 +143,7 @@ class SubscriptionManager:
         phone_no: Optional[str] = None,
         status: str = "FALSE",
         active_token_hash: Optional[str] = None,
+        role: str = "CLIENT",
     ) -> UserDetails:
         session = self.get_session()
         try:
@@ -171,6 +172,7 @@ class SubscriptionManager:
                 user_name=user_name,
                 phone_no=phone_no,
                 status=status,
+                role=role.upper() if role else "CLIENT",
                 active_token_hash=active_token_hash,
                 created_at=now,
                 updated_at=now,
@@ -291,6 +293,7 @@ class SubscriptionManager:
                     user_email=email,
                     user_name=user_name,
                     status="TRIAL",
+                    role="CLIENT",
                     created_at=now,
                     updated_at=now,
                 )
@@ -469,6 +472,7 @@ class SubscriptionManager:
                 user = UserDetails(
                     user_email=email,
                     status="PAID",
+                    role="CLIENT",
                     created_at=now,
                     updated_at=now
                 )

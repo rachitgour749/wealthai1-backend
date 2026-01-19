@@ -143,13 +143,14 @@ def create_connection():
         engine = create_engine(
             MARKET_DATA_DATABASE_URL,
             poolclass=QueuePool,
-            pool_size=10,  # Larger pool for market data operations
-            max_overflow=20,
+            pool_size=20,        # Increased from 5/10 to 20
+            max_overflow=40,     # Increased from 20 to 40
             pool_pre_ping=True,  # Verify connections before using them
-            pool_recycle=3600,   # Recycle connections after 1 hour
+            pool_recycle=1800,   # Recycle connections after 30 mins
+            pool_timeout=60,     # Wait up to 60s for a connection
             echo=False,          # Set to True for SQL query logging
             connect_args={
-                "connect_timeout": 10,  # 10 second connection timeout
+                "connect_timeout": 15,  # 15 second connection timeout
                 "sslmode": "require"
             }
         )
@@ -175,18 +176,25 @@ def create_connection():
 
 def get_session():
     """
-    Get a database session.
-    Usage:
-        session = get_session()
-        try:
-            # Your database operations
-            pass
-        finally:
-            session.close()
+    Get a database session for manual use.
+    IMPORTANT: You must call session.close() when done.
     """
     if SessionLocal is None:
         raise RuntimeError("Database connection not initialized. Call create_connection() first.")
     return SessionLocal()
+
+
+def get_db():
+    """
+    FastAPI dependency that provides a database session and ensures it's closed.
+    """
+    if SessionLocal is None:
+        raise RuntimeError("Database connection not initialized. Call create_connection() first.")
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 def get_engine():

@@ -445,6 +445,9 @@ try:
             "/single-sign-on", # Exempt SSO to allow login/token update
             "/api/auth", # Exempt Google OAuth
             "/paymentSuccess", # Exempt payment callback
+            "/api/portfolio/webhook/trade-executed", # Exempt portfolio webhook callback
+            "/api/portfolio", # Exempt all portfolio endpoints for testing
+            "/api/hierarchy", # Exempt all hierarchy endpoints for testing
             "/docs",
             "/redoc",
             "/openapi.json",
@@ -493,6 +496,8 @@ webhook_router = None
 subscription_router = None
 payment_router = None
 google_oauth_router = None
+hierarchy_router = None
+portfolio_router = None
 deployment_router = None
 single_sign_on_router = None
 chatai1_new_settings = None
@@ -574,19 +579,23 @@ try:
         logger.info(f"Loading routers from Services.{SUBSCRIPTION_DIR_NAME}...")
         subscription_api = importlib.import_module(f'Services.{SUBSCRIPTION_DIR_NAME}.api.subscription')
         google_oauth_api = importlib.import_module(f'Services.{SUBSCRIPTION_DIR_NAME}.api.google_oauth_api')
+        hierarchy_api = importlib.import_module(f'Services.{SUBSCRIPTION_DIR_NAME}.hierarchy_api')
         
         subscription_router = subscription_api.subscription_router
         payment_router = getattr(subscription_api, 'payment_router', None)
         google_oauth_router = google_oauth_api.google_oauth_router
+        hierarchy_router = hierarchy_api.hierarchy_router
         
         logger.info("=" * 60)
         logger.info("✅ SUCCESS: Subscription routers loaded successfully!")
         logger.info("✅ subscription_router: LOADED")
         logger.info("✅ google_oauth_router: LOADED")
+        logger.info("✅ hierarchy_router: LOADED")
         logger.info("✅ Subscription endpoints available:")
         logger.info("   - /api/subscription/*")
         logger.info("   - /paymentSuccess")
         logger.info("   - /api/auth/google-login")
+        logger.info("   - /api/hierarchy/*")
         logger.info("=" * 60)
         
     except ImportError as e:
@@ -606,11 +615,20 @@ except Exception as e:
     subscription_router = None
     payment_router = None
     google_oauth_router = None
+    hierarchy_router = None
 
 try:
     from Services.Deployments_helper.deployment_helper import deployment_router
 except Exception as e:
     logger.error(f"Failed to import deployment_router: {e}")
+
+# Portfolio router
+portfolio_router = None
+try:
+    from Services.portfolio.portfolio_api import portfolio_router
+    logger.info("✅ Portfolio API router loaded successfully")
+except Exception as e:
+    logger.error(f"Failed to import portfolio_router: {e}")
 
 try:
     from Services.SingleSignOn import router as single_sign_on_router
@@ -638,6 +656,10 @@ try:
     logger.info("✅ Centralized Strategy API router loaded successfully")
 except Exception as e:
     logger.error(f"Failed to import centralized_strategy_router: {e}")
+
+# Centralized Strategy Management API (New - Save/Deploy/Stop/etc)
+from APIs.strategy_management import strategy_mgmt_router
+logger.info("✅ Strategy Management API router loaded successfully")
 
 # =========================
 # CORE ROUTES
@@ -713,6 +735,21 @@ if google_oauth_router:
     app.include_router(google_oauth_router)
 else:
     logger.error("⚠️  Google OAuth router not loaded - OAuth endpoints will not be available")
+
+# Portfolio router
+if portfolio_router:
+    app.include_router(portfolio_router)
+    logger.info("✅ Portfolio router mounted successfully")
+else:
+    logger.error("⚠️  Portfolio router not loaded - portfolio endpoints will not be available")
+
+# Hierarchy router
+if hierarchy_router:
+    app.include_router(hierarchy_router)
+    logger.info("✅ Hierarchy router mounted successfully")
+else:
+    logger.error("⚠️  Hierarchy router not loaded - hierarchy endpoints will not be available")
+
 if deployment_router:
     app.include_router(deployment_router)
 if single_sign_on_router:
@@ -757,6 +794,10 @@ if centralized_backtest_router:
 if centralized_strategy_router:
     app.include_router(centralized_strategy_router)
     logger.info("✅ Centralized Strategy API mounted at /api/assets, /api/date-range, etc.")
+
+# Centralized Strategy Management API (New - Save/Deploy/Stop/etc)
+app.include_router(strategy_mgmt_router, prefix="/api")
+logger.info("✅ Strategy Management API mounted successfully")
 
 # =========================
 # CHATAI ENDPOINTS (Fallback if router not available)

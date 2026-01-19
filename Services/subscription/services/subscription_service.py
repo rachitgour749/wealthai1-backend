@@ -38,6 +38,7 @@ class SubscriptionService:
                 user_name=user.user_name,
                 phone_no=user.phone_no,
                 status=normalize_status(user.status),
+                role=user.role,
                 created_at=user.created_at,
                 updated_at=user.updated_at,
             )
@@ -53,6 +54,7 @@ class SubscriptionService:
             user_name=user.user_name,
             phone_no=user.phone_no,
             status=normalize_status(user.status),
+            role=user.role,
             created_at=user.created_at,
             updated_at=user.updated_at,
         )

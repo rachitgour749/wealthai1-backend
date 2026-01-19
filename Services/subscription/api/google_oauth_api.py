@@ -180,6 +180,7 @@ class GoogleOAuthHandler:
                     "created_at": existing_user.created_at.isoformat() if existing_user.created_at else None,
                     "updated_at": existing_user.updated_at.isoformat() if existing_user.updated_at else None,
                     "status": existing_user.status,
+                    "role": existing_user.role,
                     "phone_no": existing_user.phone_no,
                     "is_new_user": False,
                     "token": token, # Return token to frontend
@@ -212,6 +213,7 @@ class GoogleOAuthHandler:
                     "created_at": new_user.created_at.isoformat() if new_user.created_at else None,
                     "updated_at": new_user.updated_at.isoformat() if new_user.updated_at else None,
                     "status": new_user.status,
+                    "role": new_user.role,
                     "phone_no": new_user.phone_no,
                     "is_new_user": True,
                     "token": token, # Return token to frontend
@@ -279,6 +281,7 @@ async def get_user_info(authorization: Optional[str] = Header(None)):
                 "created_at": user_details.created_at.isoformat() if user_details.created_at else None,
                 "updated_at": user_details.updated_at.isoformat() if user_details.updated_at else None,
                 "status": user_details.status,
+                "role": user_details.role,
                 "phone_no": user_details.phone_no
             }
         })
