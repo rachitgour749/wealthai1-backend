@@ -36,6 +36,10 @@ class PortfolioResponse(BaseModel):
     unrealized_pnl: float
     total_return_pct: float
     holdings_count: int
+    # New Fields
+    total_allocated_capital: float = 0.0
+    cash_balance: float = 0.0
+    aum: float = 0.0
 
 
 class EquityCurvePoint(BaseModel):
@@ -52,6 +56,16 @@ class ClientDetail(BaseModel):
     """Individual client details within a strategy"""
     client_code: str
     capital: float  # Allocated capital for this strategy
+    # New Fields
+    total_allocated_capital: float = 0.0
+    market_value: float = 0.0
+    invested_amount: float = 0.0
+    cash_balance: float = 0.0
+    aum: float = 0.0
+    pnl: float = 0.0
+    return_pct: float = 0.0
+    cagr: float = 0.0  # Compound Annual Growth Rate %
+    xirr: float = 0.0  # Extended Internal Rate of Return %
 
 
 class UserStrategySummary(BaseModel):
@@ -63,6 +77,13 @@ class UserStrategySummary(BaseModel):
     market_value: float
     pnl: float
     return_pct: float
+    # New Fields
+    total_allocated_capital: float = 0.0
+    cash_balance: float = 0.0
+    aum: float = 0.0
+    cagr: float = 0.0
+    xirr: float = 0.0
+    
     holdings_count: int
     running_status: Optional[str] = "deploy"
     owner_email: Optional[str] = None
@@ -77,5 +98,12 @@ class UserPortfolioResponse(BaseModel):
     total_value: float
     total_pnl: float
     total_return_pct: float
+    # New Fields
+    total_allocated_capital: float = 0.0
+    total_cash_balance: float = 0.0
+    total_aum: float = 0.0
+    cagr: float = 0.0
+    xirr: float = 0.0
+    
     strategies_count: int
     strategies: List[UserStrategySummary]

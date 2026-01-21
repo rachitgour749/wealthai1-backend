@@ -15,9 +15,17 @@ from .portfolio_schemas import (
     HoldingResponse,
     EquityCurvePoint,
     UserPortfolioResponse,
-    UserStrategySummary
+    UserStrategySummary,
+    ClientDetail
 )
-from .utils import get_strategy_by_run_id, calculate_brokerage, calculate_taxes
+from .utils import (
+    get_strategy_by_run_id, 
+    calculate_brokerage, 
+    calculate_taxes, 
+    get_client_allocations,
+    calculate_cagr,
+    calculate_xirr
+)
 from .price_service import PriceService
 
 logger = logging.getLogger(__name__)
@@ -168,6 +176,17 @@ async def get_portfolio_holdings(
         logger.info(f"Found {len(results)} holdings for run_id={run_id}")
         
         if not results:
+            # Even if no holdings, we might have allocations (cash only)
+            allocations = get_client_allocations(run_id, db)
+            total_allocated = sum(allocations.values())
+            
+            # If a specific client is requested, filter allo
+            if client_code and client_code in allocations:
+                total_allocated = allocations[client_code]
+            elif client_code:
+                total_allocated = 0.0
+                
+            # If we have no trades, Net Flow is 0, so Cash = Allocated
             return PortfolioResponse(
                 client_code=client_code,
                 holdings=[],
@@ -175,7 +194,10 @@ async def get_portfolio_holdings(
                 total_invested=0.0,
                 unrealized_pnl=0.0,
                 total_return_pct=0.0,
-                holdings_count=0
+                holdings_count=0,
+                total_allocated_capital=total_allocated,
+                cash_balance=total_allocated,
+                aum=total_allocated
             )
         
         # Get current prices for all symbols
@@ -184,8 +206,8 @@ async def get_portfolio_holdings(
         
         # Build holdings
         holdings = []
-        total_value = 0.0
-        total_invested = 0.0
+        total_market_value = 0.0
+        total_invested_cost_basis = 0.0
         
         for symbol, quantity, avg_price in results:
             current_price = current_prices.get(symbol, 0.0)
@@ -205,20 +227,57 @@ async def get_portfolio_holdings(
                 return_pct=return_pct
             ))
             
-            total_value += market_value
-            total_invested += total_cost
+            total_market_value += market_value
+            total_invested_cost_basis += total_cost
         
-        total_unrealized_pnl = total_value - total_invested
-        total_return_pct = (total_unrealized_pnl / total_invested * 100) if total_invested > 0 else 0.0
+        # Calculate Cash and AUM
+        # 1. Get total allocated capital
+        allocations = get_client_allocations(run_id, db)
+        total_allocated = sum(allocations.values())
+        if client_code:
+            total_allocated = allocations.get(client_code, 0.0)
+            
+        # 2. Calculate Net Flow (Money In - Money Out)
+        # Net Flow = (Buy Value + Costs) - (Sell Value - Costs)
+        flow_query = text("""
+            SELECT 
+                SUM(CASE 
+                    WHEN side = 'BUY' THEN (quantity * price) + COALESCE(brokerage, 0) + COALESCE(taxes, 0)
+                    ELSE 0 
+                END) as total_buy_cost,
+                SUM(CASE 
+                    WHEN side = 'SELL' THEN (quantity * price) - COALESCE(brokerage, 0) - COALESCE(taxes, 0)
+                    ELSE 0 
+                END) as total_sell_proceeds
+            FROM portfolio_trades
+            WHERE run_id = :run_id
+            """ + (" AND client_code = :client_code" if client_code else "") + """
+        """)
+        
+        flow_res = db.execute(flow_query, params).fetchone()
+        buy_cost = float(flow_res[0] or 0)
+        sell_proceeds = float(flow_res[1] or 0)
+        
+        net_money_spent = buy_cost - sell_proceeds
+        cash_balance = total_allocated - net_money_spent
+        
+        # AUM = Market Value of Holdings + Cash Balance
+        aum = total_market_value + cash_balance
+        
+        total_unrealized_pnl = total_market_value - total_invested_cost_basis
+        total_return_pct = (total_unrealized_pnl / total_invested_cost_basis * 100) if total_invested_cost_basis > 0 else 0.0
         
         return PortfolioResponse(
             client_code=client_code,
             holdings=holdings,
-            total_value=total_value,
-            total_invested=total_invested,
+            total_value=total_market_value,
+            total_invested=total_invested_cost_basis,
             unrealized_pnl=total_unrealized_pnl,
             total_return_pct=total_return_pct,
-            holdings_count=len(holdings)
+            holdings_count=len(holdings),
+            total_allocated_capital=total_allocated,
+            cash_balance=cash_balance,
+            aum=aum
         )
         
     except Exception as e:
@@ -700,142 +759,315 @@ async def get_user_portfolio_summary(
             )
         
         strategies_summary = []
+        
+        # Global Aggregators
         overall_invested = 0.0
-        overall_value = 0.0
+        overall_market_value = 0.0
+        overall_allocated = 0.0
+        overall_cash = 0.0
+        overall_aum = 0.0
         
         # 2. For each strategy, calculate performance
         for run_id, strategy_name, strategy_type, owner_email, owner_name in strategy_rows:
-            # Get client_info from saved_instances table first
-            query_client_info = text("""
-                SELECT client_info
-                FROM saved_instances
-                WHERE run_id = :run_id
-            """)
+            # A. Get Client Allocations
+            allocations = get_client_allocations(run_id, db)
             
-            client_info_result = db.execute(query_client_info, {"run_id": run_id}).fetchone()
-            
-            # Build client details list from client_info JSON
-            clients_list = []
-            client_info = None
-            
-            if client_info_result and client_info_result[0]:
-                client_info = client_info_result[0]
-            else:
-                # Fallback: Check legacy strategy tables for client_information_json
-                legacy_tables = [
-                    'etf_saved_strategy',
-                    'stock_saved_strategy',
-                    'rs_etf_instance',
-                    'rs_stock_instance'
-                ]
-                
-                for table in legacy_tables:
-                    try:
-                        query_legacy = text(f"""
-                            SELECT client_information_json
-                            FROM {table}
-                            WHERE run_id = :run_id
-                        """)
-                        legacy_result = db.execute(query_legacy, {"run_id": run_id}).fetchone()
-                        
-                        if legacy_result and legacy_result[0]:
-                            client_info = legacy_result[0]
-                            logger.info(f"Found client_info in {table} for run_id={run_id}")
-                            break
-                    except Exception as e:
-                        logger.warning(f"Error checking {table}: {e}")
-                        continue
-            
-            if client_info:
-                # client_info format: {"CLIENT001": "10000", "CLIENT002": "20000"}
-                # or it might be a JSON string that needs parsing
-                if isinstance(client_info, str):
-                    try:
-                        import json
-                        client_info = json.loads(client_info)
-                    except:
-                        logger.warning(f"Could not parse client_info JSON for run_id={run_id}")
-                        client_info = {}
-                
-                for client_code, capital_str in client_info.items():
-                    from .portfolio_schemas import ClientDetail
-                    try:
-                        # Clean currency string: remove ₹, $, commas, and spaces
-                        cleaned_capital = str(capital_str).replace('₹', '').replace('$', '').replace(',', '').strip()
-                        clients_list.append(ClientDetail(
-                            client_code=client_code,
-                            capital=float(cleaned_capital)
-                        ))
-                    except (ValueError, TypeError) as e:
-                        logger.warning(f"Could not convert capital to float for client {client_code}: {e}")
-                        continue
-            
-            # Get current holdings for this strategy to calculate totals
-            query_holdings = text("""
-                SELECT 
-                    symbol,
-                    SUM(CASE WHEN side = 'BUY' THEN quantity ELSE -quantity END) as net_quantity,
-                    SUM(CASE WHEN side = 'BUY' THEN quantity * price ELSE 0 END) / 
-                        NULLIF(SUM(CASE WHEN side = 'BUY' THEN quantity ELSE 0 END), 0) as avg_price
+            # Get strategy execution count for proper allocation calculation
+            rounds_query = text("""
+                SELECT COUNT(DISTINCT trade_date)
                 FROM portfolio_trades
-                WHERE run_id = :run_id AND user_email = :owner_email
-                GROUP BY symbol
+                WHERE run_id = :run_id AND side = 'BUY'
+            """)
+            strategy_execution_count = db.execute(rounds_query, {"run_id": run_id}).scalar() or 1
+            
+            # B. Get Trade Flows per Client (for Cash calculation)
+            flow_query = text("""
+                SELECT 
+                    client_code,
+                    SUM(CASE 
+                        WHEN side = 'BUY' THEN (quantity * price) + COALESCE(brokerage, 0) + COALESCE(taxes, 0)
+                        ELSE 0 
+                    END) as buy_cost,
+                    SUM(CASE 
+                        WHEN side = 'SELL' THEN (quantity * price) - COALESCE(brokerage, 0) - COALESCE(taxes, 0)
+                        ELSE 0 
+                    END) as sell_proceeds
+                FROM portfolio_trades
+                WHERE run_id = :run_id
+                GROUP BY client_code
+            """)
+            flow_rows = db.execute(flow_query, {"run_id": run_id}).fetchall()
+            client_flows = {row[0]: (float(row[1] or 0), float(row[2] or 0)) for row in flow_rows}
+            
+            # C. Get Holdings per Client (for Market Value)
+            holdings_query = text("""
+                SELECT 
+                    client_code,
+                    symbol,
+                    SUM(CASE WHEN side = 'BUY' THEN quantity ELSE -quantity END) as net_qty,
+                    SUM(CASE WHEN side = 'BUY' THEN quantity * price ELSE 0 END) / 
+                        NULLIF(SUM(CASE WHEN side = 'BUY' THEN quantity ELSE 0 END), 0) as avg_buy_price
+                FROM portfolio_trades
+                WHERE run_id = :run_id
+                GROUP BY client_code, symbol
                 HAVING SUM(CASE WHEN side = 'BUY' THEN quantity ELSE -quantity END) > 0
             """)
+            holdings_rows = db.execute(holdings_query, {"run_id": run_id}).fetchall()
             
-            holding_rows = db.execute(query_holdings, {
-                "run_id": run_id, 
-                "owner_email": owner_email
-            }).fetchall()
-            
-            strategy_invested = 0.0
-            strategy_value = 0.0
-            holdings_count = len(holding_rows)
-            
-            if holding_rows:
-                symbols = [row[0] for row in holding_rows]
-                current_prices = PriceService.get_latest_prices(symbols)
+            # Group holdings by client
+            client_holdings = {}
+            active_symbols = set()
+            for r_client, r_symbol, r_qty, r_avg in holdings_rows:
+                if r_client not in client_holdings:
+                    client_holdings[r_client] = []
+                client_holdings[r_client].append((r_symbol, r_qty, r_avg))
+                active_symbols.add(r_symbol)
                 
-                for symbol, quantity, avg_price in holding_rows:
-                    price = current_prices.get(symbol, 0.0)
-                    strategy_invested += float(quantity) * float(avg_price)
-                    strategy_value += float(quantity) * price
-
+            # Fetch prices for all active symbols
+            current_prices = PriceService.get_latest_prices(list(active_symbols))
             
-            pnl = strategy_value - strategy_invested
-            ret_pct = (pnl / strategy_invested * 100) if strategy_invested > 0 else 0.0
+            # D. Get all trades for CAGR/XIRR calculation
+            trades_for_xirr_query = text("""
+                SELECT client_code, trade_date, side, quantity, price, 
+                       COALESCE(brokerage, 0) as brokerage, COALESCE(taxes, 0) as taxes
+                FROM portfolio_trades
+                WHERE run_id = :run_id
+                ORDER BY trade_date ASC
+            """)
+            all_trades = db.execute(trades_for_xirr_query, {"run_id": run_id}).fetchall()
             
-            # 3. Get running status
-            strategy_details = get_strategy_by_run_id(run_id, db)
-            running_status = strategy_details['status'] if strategy_details else 'deploy'
+            # Group trades by client for XIRR
+            client_trades = {}
+            first_trade_date = None
+            for t_client, t_date, t_side, t_qty, t_price, t_brok, t_tax in all_trades:
+                if t_client not in client_trades:
+                    client_trades[t_client] = []
+                client_trades[t_client].append((t_date, t_side, t_qty, t_price, t_brok, t_tax))
+                
+                if first_trade_date is None or t_date < first_trade_date:
+                    first_trade_date = t_date
+            
+            # E. Build ClientDetails list
+            clients_list = []
+            
+            # Strategy Aggregators
+            strat_allocated = 0.0
+            strat_cash = 0.0
+            strat_market_value = 0.0
+            strat_invested_basis = 0.0
+            strat_holdings_count = 0
+            
+            # For strategy-level XIRR
+            strategy_cash_flows = []
+            strategy_cash_flow_dates = []
+            
+            # Iterate over all clients known in allocations OR trades
+            all_clients = set(allocations.keys()) | set(client_flows.keys()) | set(client_holdings.keys())
+            
+            for client_code in all_clients:
+                # 1. Allocation
+                period_capital = allocations.get(client_code, 0.0)
+                client_total_allocated = strategy_execution_count * period_capital
+                
+                # 2. Cash Balance calculation
+                c_buy, c_sell = client_flows.get(client_code, (0.0, 0.0))
+                net_spent = c_buy - c_sell
+                
+                # 3. Market Value calculation
+                client_mv = 0.0
+                client_cost_basis = 0.0
+                
+                if client_code in client_holdings:
+                    for h_sym, h_qty, h_avg in client_holdings[client_code]:
+                        price = current_prices.get(h_sym, 0.0)
+                        client_mv += float(h_qty) * price
+                        client_cost_basis += float(h_qty) * float(h_avg)
+                        strat_holdings_count += 1
+                
+                # Cash = Total Allocated - Invested (Cost Basis)
+                client_cash = client_total_allocated - client_cost_basis
+                
+                # 4. AUM
+                client_aum = client_cash + client_mv
+                
+                # 5. Metrics
+                client_pnl = client_mv - client_cost_basis
+                client_ret = (client_pnl / client_cost_basis * 100) if client_cost_basis > 0 else 0.0
+                
+                # 6. Calculate CAGR and XIRR for this client
+                client_cagr = 0.0
+                client_xirr = 0.0
+                
+                if client_code in client_trades and len(client_trades[client_code]) > 0:
+                    client_first_trade = min(t[0] for t in client_trades[client_code])
+                    
+                    # CAGR
+                    client_cagr = calculate_cagr(
+                        initial_value=period_capital,
+                        current_value=client_aum,
+                        start_date=client_first_trade,
+                        end_date=date.today()
+                    )
+                    
+                    # XIRR: Build cash flows
+                    client_cf = []
+                    client_cf_dates = []
+                    
+                    for t_date, t_side, t_qty, t_price, t_brok, t_tax in client_trades[client_code]:
+                        if t_side == 'BUY':
+                            cf = -1 * float(float(t_qty) * float(t_price) + float(t_brok) + float(t_tax))
+                        else:  # SELL
+                            cf = float(float(t_qty) * float(t_price) - float(t_brok) - float(t_tax))
+                        
+                        client_cf.append(cf)
+                        client_cf_dates.append(t_date)
+                        
+                        # Add to strategy-level cash flows
+                        strategy_cash_flows.append(cf)
+                        strategy_cash_flow_dates.append(t_date)
+                    
+                    # Add current AUM as final positive cash flow
+                    client_cf.append(client_aum)
+                    client_cf_dates.append(date.today())
+                    
+                    client_xirr = calculate_xirr(client_cf, client_cf_dates)
+                
+                # Add to lists and aggregators
+                strat_allocated += client_total_allocated
+                strat_cash += client_cash
+                strat_market_value += client_mv
+                strat_invested_basis += client_cost_basis
+                
+                clients_list.append(ClientDetail(
+                    client_code=client_code,
+                    capital=period_capital,
+                    total_allocated_capital=round(client_total_allocated, 2),
+                    market_value=round(client_mv, 2),
+                    invested_amount=round(client_cost_basis, 2),
+                    cash_balance=round(client_cash, 2),
+                    aum=round(client_aum, 2),
+                    pnl=round(client_pnl, 2),
+                    return_pct=round(client_ret, 2),
+                    cagr=client_cagr,
+                    xirr=client_xirr
+                ))
+            
+            # E. Strategy Totals
+            strat_aum = strat_cash + strat_market_value
+            strat_pnl = strat_market_value - strat_invested_basis
+            strat_ret = (strat_pnl / strat_invested_basis * 100) if strat_invested_basis > 0 else 0.0
+            
+            # Calculate Strategy-level CAGR and XIRR
+            strategy_cagr = 0.0
+            strategy_xirr = 0.0
+            
+            if first_trade_date:
+                # CAGR for strategy
+                initial_strategy_value = sum(allocations.values())
+                strategy_cagr = calculate_cagr(
+                    initial_value=initial_strategy_value,
+                    current_value=strat_aum,
+                    start_date=first_trade_date,
+                    end_date=date.today()
+                )
+                
+                # XIRR for strategy
+                if len(strategy_cash_flows) > 0:
+                    strategy_cash_flows.append(strat_aum)
+                    strategy_cash_flow_dates.append(date.today())
+                    strategy_xirr = calculate_xirr(strategy_cash_flows, strategy_cash_flow_dates)
             
             strategies_summary.append(UserStrategySummary(
                 run_id=run_id,
                 strategy_name=strategy_name,
                 strategy_type=strategy_type,
-                total_invested=round(strategy_invested, 2),
-                market_value=round(strategy_value, 2),
-                pnl=round(pnl, 2),
-                return_pct=round(ret_pct, 2),
-                holdings_count=holdings_count,
-                running_status=running_status,
+                total_invested=round(strat_invested_basis, 2),
+                market_value=round(strat_market_value, 2),
+                pnl=round(strat_pnl, 2),
+                return_pct=round(strat_ret, 2),
+                total_allocated_capital=round(strat_allocated, 2),
+                cash_balance=round(strat_cash, 2),
+                aum=round(strat_aum, 2),
+                cagr=strategy_cagr,
+                xirr=strategy_xirr,
+                holdings_count=strat_holdings_count,
                 owner_email=owner_email,
                 owner_name=owner_name,
                 clients=clients_list
             ))
             
-            overall_invested += strategy_invested
-            overall_value += strategy_value
+            overall_allocated += strat_allocated
+            overall_cash += strat_cash
+            overall_market_value += strat_market_value
+            overall_invested += strat_invested_basis
+            overall_aum += strat_aum
+            
+        overall_pnl = overall_market_value - overall_invested
+        overall_ret = (overall_pnl / overall_invested * 100) if overall_invested > 0 else 0.0
         
-        overall_pnl = overall_value - overall_invested
-        overall_ret_pct = (overall_pnl / overall_invested * 100) if overall_invested > 0 else 0.0
+        # Calculate User-level CAGR and XIRR
+        user_cagr = 0.0
+        user_xirr = 0.0
+        
+        # Get all trades for this user to calculate CAGR/XIRR
+        user_trades_query = text("""
+            SELECT trade_date, side, quantity, price, 
+                   COALESCE(brokerage, 0) as brokerage, COALESCE(taxes, 0) as taxes
+            FROM portfolio_trades
+            WHERE user_email IN :user_emails
+            ORDER BY trade_date ASC
+        """)
+        user_all_trades = db.execute(user_trades_query, {"user_emails": tuple(accessible_users)}).fetchall()
+        
+        if len(user_all_trades) > 0:
+            first_user_trade_date = user_all_trades[0][0]
+            
+            # CAGR: Use sum of all first-period allocations as starting value
+            # Sum up the per-period capital from all strategies (not total allocated which includes SIP accumulation)
+            user_initial_value = 0.0
+            for strategy in strategies_summary:
+                # Get the per-period capital for each client in this strategy
+                for client in strategy.clients:
+                    user_initial_value += client.capital
+            
+            if user_initial_value > 0:
+                user_cagr = calculate_cagr(
+                    initial_value=user_initial_value,
+                    current_value=overall_aum,
+                    start_date=first_user_trade_date,
+                    end_date=date.today()
+                )
+            
+            # XIRR: Build cash flows from all trades
+            user_cf = []
+            user_cf_dates = []
+            
+            for t_date, t_side, t_qty, t_price, t_brok, t_tax in user_all_trades:
+                if t_side == 'BUY':
+                    cf = -1 * float(float(t_qty) * float(t_price) + float(t_brok) + float(t_tax))
+                else:  # SELL
+                    cf = float(float(t_qty) * float(t_price) - float(t_brok) - float(t_tax))
+                
+                user_cf.append(cf)
+                user_cf_dates.append(t_date)
+            
+            # Add current AUM as final positive cash flow
+            user_cf.append(overall_aum)
+            user_cf_dates.append(date.today())
+            
+            user_xirr = calculate_xirr(user_cf, user_cf_dates)
         
         return UserPortfolioResponse(
             user_email=user_email,
             total_invested=round(overall_invested, 2),
-            total_value=round(overall_value, 2),
+            total_value=round(overall_market_value, 2),
             total_pnl=round(overall_pnl, 2),
-            total_return_pct=round(overall_ret_pct, 2),
+            total_return_pct=round(overall_ret, 2),
+            total_allocated_capital=round(overall_allocated, 2),
+            total_cash_balance=round(overall_cash, 2),
+            total_aum=round(overall_aum, 2),
+            cagr=user_cagr,
+            xirr=user_xirr,
             strategies_count=len(strategies_summary),
             strategies=strategies_summary
         )
@@ -868,36 +1100,221 @@ async def get_strategy_summary(
             logger.error(f"Strategy not found for run_id: {run_id}")
             raise HTTPException(status_code=404, detail=f"Strategy not found for run_id: {run_id}")
         
-        # 2. Get current holdings for this strategy
-        query_holdings = text("""
+        # 2. Get Client Allocations
+        allocations = get_client_allocations(run_id, db)
+        
+        # 3. Determine Strategy Execution Count (Global Rounds)
+        # We need to know how many times the strategy has "run" (executed trades)
+        # We count distinct Buy dates for the entire strategy run_id
+        # This assumes that on a "run day", all active clients get an allocation.
+        rounds_query = text("""
+            SELECT COUNT(DISTINCT trade_date)
+            FROM portfolio_trades
+            WHERE run_id = :run_id AND side = 'BUY'
+        """)
+        strategy_execution_count = db.execute(rounds_query, {"run_id": run_id}).scalar() or 0
+        
+        # If no buy trades yet (just started), count is 0, but allocation implies 1st installment ready
+        # However, for cash calculation, if we haven't spent anything, we assume 1 installment if running
+        if strategy_execution_count == 0:
+             strategy_execution_count = 1
+             
+        # Get Flows
+        flow_query = text("""
             SELECT 
-                symbol,
-                SUM(CASE WHEN side = 'BUY' THEN quantity ELSE -quantity END) as net_quantity,
-                SUM(CASE WHEN side = 'BUY' THEN quantity * price ELSE 0 END) / 
-                    NULLIF(SUM(CASE WHEN side = 'BUY' THEN quantity ELSE 0 END), 0) as avg_price
+                client_code,
+                SUM(CASE 
+                    WHEN side = 'BUY' THEN (quantity * price) + COALESCE(brokerage, 0) + COALESCE(taxes, 0)
+                    ELSE 0 
+                END) as buy_cost,
+                SUM(CASE 
+                    WHEN side = 'SELL' THEN (quantity * price) - COALESCE(brokerage, 0) - COALESCE(taxes, 0)
+                    ELSE 0 
+                END) as sell_proceeds
             FROM portfolio_trades
             WHERE run_id = :run_id
-            GROUP BY symbol
+            GROUP BY client_code
+        """)
+        flow_rows = db.execute(flow_query, {"run_id": run_id}).fetchall()
+        client_flows = {row[0]: (float(row[1] or 0), float(row[2] or 0)) for row in flow_rows}
+        
+        # 4. Get Holdings per Client (for Market Value)
+        holdings_query = text("""
+            SELECT 
+                client_code,
+                symbol,
+                SUM(CASE WHEN side = 'BUY' THEN quantity ELSE -quantity END) as net_qty,
+                SUM(CASE WHEN side = 'BUY' THEN quantity * price ELSE 0 END) / 
+                    NULLIF(SUM(CASE WHEN side = 'BUY' THEN quantity ELSE 0 END), 0) as avg_buy_price
+            FROM portfolio_trades
+            WHERE run_id = :run_id
+            GROUP BY client_code, symbol
             HAVING SUM(CASE WHEN side = 'BUY' THEN quantity ELSE -quantity END) > 0
         """)
+        holdings_rows = db.execute(holdings_query, {"run_id": run_id}).fetchall()
         
-        holding_rows = db.execute(query_holdings, {"run_id": run_id}).fetchall()
-        
-        strategy_invested = 0.0
-        strategy_value = 0.0
-        holdings_count = len(holding_rows)
-        
-        if holding_rows:
-            symbols = [row[0] for row in holding_rows]
-            current_prices = PriceService.get_latest_prices(symbols)
+        # Group holdings by client
+        client_holdings = {}
+        active_symbols = set()
+        for r_client, r_symbol, r_qty, r_avg in holdings_rows:
+            if r_client not in client_holdings:
+                client_holdings[r_client] = []
+            client_holdings[r_client].append((r_symbol, r_qty, r_avg))
+            active_symbols.add(r_symbol)
             
-            for symbol, quantity, avg_price in holding_rows:
-                price = current_prices.get(symbol, 0.0)
-                strategy_invested += float(quantity) * float(avg_price)
-                strategy_value += float(quantity) * price
+        current_prices = PriceService.get_latest_prices(list(active_symbols))
         
-        pnl = strategy_value - strategy_invested
-        ret_pct = (pnl / strategy_invested * 100) if strategy_invested > 0 else 0.0
+        # Aggregators
+        total_allocated = 0.0
+        total_cash = 0.0
+        total_mv = 0.0
+        total_cost_basis = 0.0
+        holdings_count = 0
+        
+        # For CAGR/XIRR calculation
+        first_trade_date = None
+        strategy_cash_flows = []
+        strategy_cash_flow_dates = []
+        
+        # Get all trades with dates for XIRR
+        trades_for_xirr_query = text("""
+            SELECT client_code, trade_date, side, quantity, price, 
+                   COALESCE(brokerage, 0) as brokerage, COALESCE(taxes, 0) as taxes
+            FROM portfolio_trades
+            WHERE run_id = :run_id
+            ORDER BY trade_date ASC
+        """)
+        all_trades = db.execute(trades_for_xirr_query, {"run_id": run_id}).fetchall()
+        
+        # Group trades by client for XIRR
+        client_trades = {}
+        for t_client, t_date, t_side, t_qty, t_price, t_brok, t_tax in all_trades:
+            if t_client not in client_trades:
+                client_trades[t_client] = []
+            client_trades[t_client].append((t_date, t_side, t_qty, t_price, t_brok, t_tax))
+            
+            # Track first trade date
+            if first_trade_date is None or t_date < first_trade_date:
+                first_trade_date = t_date
+        
+        clients_list = []
+        all_clients = set(allocations.keys()) | set(client_flows.keys()) | set(client_holdings.keys())
+        
+        for client_code in all_clients:
+            period_capital = allocations.get(client_code, 0.0)
+            
+            # Use the global strategy execution count for multiplier
+            # Fallback: if a specific client has MORE unique buy days than the global logic (unlikely but safe), we could use max
+            # For now, sticking to user's logic: Strategy Executed 7 times -> 7 * Capital
+            
+            client_total_allocated = strategy_execution_count * period_capital
+            
+            client_mv = 0.0
+            client_cb = 0.0
+            
+            if client_code in client_holdings:
+                for h_sym, h_qty, h_avg in client_holdings[client_code]:
+                    price = current_prices.get(h_sym, 0.0)
+                    client_mv += float(h_qty) * price
+                    # Invested Amount = Sum(Qty * AvgPrice) i.e. Cost Basis
+                    client_cb += float(h_qty) * float(h_avg)
+                    holdings_count += 1
+            
+            # User Calculated Logic: Cash = Total Allocated - Total Invested (Cost Basis)
+            # This represents "Capital Remaining to be Invested" ignoring realized PnL
+            client_cash = client_total_allocated - client_cb
+                    
+            client_aum = client_cash + client_mv
+            client_pnl = client_mv - client_cb
+            client_ret = (client_pnl / client_cb * 100) if client_cb > 0 else 0.0
+            
+            # Calculate CAGR for this client
+            client_cagr = 0.0
+            client_xirr = 0.0
+            
+            if client_code in client_trades and len(client_trades[client_code]) > 0:
+                client_first_trade = min(t[0] for t in client_trades[client_code])
+                
+                # CAGR: Simple growth from first allocation to current AUM
+                # Initial value = first period capital (not total allocated, since that accumulates)
+                client_cagr = calculate_cagr(
+                    initial_value=period_capital,
+                    current_value=client_aum,
+                    start_date=client_first_trade,
+                    end_date=date.today()
+                )
+                
+                # XIRR: Build cash flows
+                client_cf = []
+                client_cf_dates = []
+                
+                for t_date, t_side, t_qty, t_price, t_brok, t_tax in client_trades[client_code]:
+                    if t_side == 'BUY':
+                        # Negative cash flow (money out)
+                        cf = -1 * float(float(t_qty) * float(t_price) + float(t_brok) + float(t_tax))
+                    else:  # SELL
+                        # Positive cash flow (money in)
+                        cf = float(float(t_qty) * float(t_price) - float(t_brok) - float(t_tax))
+                    
+                    client_cf.append(cf)
+                    client_cf_dates.append(t_date)
+                    
+                    # Add to strategy-level cash flows
+                    strategy_cash_flows.append(cf)
+                    strategy_cash_flow_dates.append(t_date)
+                
+                # Add current AUM as final positive cash flow
+                client_cf.append(client_aum)
+                client_cf_dates.append(date.today())
+                
+                client_xirr = calculate_xirr(client_cf, client_cf_dates)
+            
+            # Add to aggregators
+            total_allocated += client_total_allocated
+            total_cash += client_cash
+            total_mv += client_mv
+            total_cost_basis += client_cb
+            
+            clients_list.append(ClientDetail(
+                client_code=client_code,
+                capital=period_capital, 
+                total_allocated_capital=round(client_total_allocated, 2),
+                market_value=round(client_mv, 2),
+                invested_amount=round(client_cb, 2),
+                cash_balance=round(client_cash, 2),
+                aum=round(client_aum, 2),
+                pnl=round(client_pnl, 2),
+                return_pct=round(client_ret, 2),
+                cagr=client_cagr,
+                xirr=client_xirr
+            ))
+            
+        total_aum = total_cash + total_mv
+        pnl = total_mv - total_cost_basis
+        ret_pct = (pnl / total_cost_basis * 100) if total_cost_basis > 0 else 0.0
+        
+        # Calculate Strategy-level CAGR and XIRR
+        strategy_cagr = 0.0
+        strategy_xirr = 0.0
+        
+        if first_trade_date:
+            # CAGR for strategy
+            # Use sum of first period allocations as initial value
+            initial_strategy_value = sum(allocations.values())
+            strategy_cagr = calculate_cagr(
+                initial_value=initial_strategy_value,
+                current_value=total_aum,
+                start_date=first_trade_date,
+                end_date=date.today()
+            )
+            
+            # XIRR for strategy
+            if len(strategy_cash_flows) > 0:
+                # Add final AUM as positive cash flow
+                strategy_cash_flows.append(total_aum)
+                strategy_cash_flow_dates.append(date.today())
+                
+                strategy_xirr = calculate_xirr(strategy_cash_flows, strategy_cash_flow_dates)
         
         # Get owner name
         owner_email = strategy.get('user_id')
@@ -914,14 +1331,20 @@ async def get_strategy_summary(
             run_id=run_id,
             strategy_name=strategy['strategy_name'],
             strategy_type=strategy['strategy_type'],
-            total_invested=round(strategy_invested, 2),
-            market_value=round(strategy_value, 2),
+            total_invested=round(total_cost_basis, 2),
+            market_value=round(total_mv, 2),
             pnl=round(pnl, 2),
             return_pct=round(ret_pct, 2),
+            total_allocated_capital=round(total_allocated, 2),
+            cash_balance=round(total_cash, 2),
+            aum=round(total_aum, 2),
+            cagr=strategy_cagr,
+            xirr=strategy_xirr,
             holdings_count=holdings_count,
             running_status=strategy.get('status', 'deploy'),
             owner_email=owner_email,
-            owner_name=owner_name
+            owner_name=owner_name,
+            clients=clients_list
         )
         
     except HTTPException:
