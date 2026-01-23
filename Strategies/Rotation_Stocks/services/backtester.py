@@ -609,7 +609,7 @@ class StockRotationBacktester(RotationStrategy):
             data_dict = {}
             for column in ['open', 'high', 'low', 'close', 'volume']:
                 pivot_df = df.pivot(index='date', columns='symbol', values=column)
-                data_dict[column] = pivot_df.fillna(method='ffill').fillna(method='bfill')
+                data_dict[column] = pivot_df.ffill().bfill()
 
             # Cache the result
             self._data_cache[cache_key] = data_dict
