@@ -836,9 +836,15 @@ class InternationalETFRotationBacktester(RotationStrategy):
 
             return data_dict
 
+        except ValueError as e:
+            # Propagate ValueError directly (e.g. no data found)
+            raise e
         except Exception as e:
-            self.logger.progress(f"Error loading data: {e}")
-            return {}
+            self.logger.error(f"Error loading data: {e}")
+            import traceback
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
+            # Re-raise generic exceptions as ValueError to be friendly to the API
+            raise ValueError(f"Failed to load data: {str(e)}")
         finally:
             if session:
                 session.close()
@@ -1901,7 +1907,11 @@ class InternationalETFRotationBacktester(RotationStrategy):
         """Run the complete backtest as per Technical Specification PDF"""
         if self._verbose:
             self.logger.progress("Loading data from database...")
-        data_dict = self.load_data_from_database(tickers, start_date, end_date)
+        
+        try:
+            data_dict = self.load_data_from_database(tickers, start_date, end_date)
+        except Exception as e:
+            return {"error": str(e)}
 
         if not data_dict:
             return {"error": "Failed to load data"}
