@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 from sqlalchemy.orm import Session
 try:
     from .database import ETFData, IndexData, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
@@ -244,11 +244,156 @@ class RSETFStrategyBacktester:
         
         # Weekly stop loss accumulation (for weekly mode)
         self.weekly_stop_loss_exits: List[str] = []
+        
+        # Purchase limit tracking (for diversification)
+        self.etf_purchase_limits = {}      # {ticker: max_purchases}
+        self.etf_purchase_counts = {}      # {ticker: current_count}
+        self.total_etfs = 0
+        self.accumulation_weeks = 0
+        self.logging_config = {}           # Will be loaded from logging_config.json
+        
+        # Load logging configuration
+        self._load_logging_config()
     
     @classmethod
     def from_config_dict(cls, db: Session, config_dict: Dict):
         """Create RSStrategyBacktester instance from config dictionary"""
         return cls(db=db, config_dict=config_dict)
+    
+    def _load_logging_config(self):
+        """Load logging configuration from JSON file"""
+        try:
+            config_path = os.path.join(os.path.dirname(__file__), 'logging_config.json')
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    self.logging_config = json.load(f)
+                self.logger.info("Loaded logging configuration from logging_config.json")
+            else:
+                # Default configuration
+                self.logging_config = {
+                    "purchase_limit_config": {
+                        "enabled": True,
+                        "allocation_multiplier": 1.5
+                    },
+                    "logging": {
+                        "limit": True,
+                        "trade": True,
+                        "error": True
+                    }
+                }
+                self.logger.info("Using default logging configuration (file not found)")
+        except Exception as e:
+            self.logger.error(f"Error loading logging config: {e}")
+            self.logging_config = {}
+    
+    def _log(self, category: str, message: str):
+        """Log message if category is enabled in config"""
+        logging_settings = self.logging_config.get("logging", {})
+        if logging_settings.get(category, False):
+            if category == "limit":
+                self.logger.info(message)
+            elif category == "trade":
+                self.logger.info(message)
+            elif category == "error":
+                self.logger.error(message)
+            else:
+                self.logger.info(message)
+    
+    def initialize_purchase_limits(self, tickers: List[str], accumulation_weeks: int):
+        """
+        Initialize purchase limits for all ETFs based on allocation formula
+        
+        Formula:
+        - allocation_pct = (100 / total_etfs) * allocation_multiplier
+        - limit_per_etf = floor(allocation_pct * accumulation_weeks / 100)
+        
+        This prevents over-concentration and achieves better diversification.
+        
+        Args:
+            tickers: List of ETF tickers
+            accumulation_weeks: Number of accumulation weeks
+        """
+        # Get allocation multiplier from config (default 1.5)
+        purchase_limit_config = self.logging_config.get("purchase_limit_config", {})
+        allocation_multiplier = purchase_limit_config.get("allocation_multiplier", 1.5)
+        limit_enabled = purchase_limit_config.get("enabled", True)
+        
+        self.total_etfs = len(tickers)
+        self.accumulation_weeks = accumulation_weeks
+        
+        # Calculate allocation percentage (round down)
+        allocation_percentage = (100 / self.total_etfs) * allocation_multiplier
+        allocation_percentage = int(allocation_percentage)  # Round down
+        
+        # Calculate limit per ETF (round down)
+        limit_per_etf = int((allocation_percentage * accumulation_weeks) / 100)  # Round down
+        
+        # Initialize limits and counters for all ETFs
+        for ticker in tickers:
+            # If limits disabled, set to infinity (no limit)
+            self.etf_purchase_limits[ticker] = limit_per_etf if limit_enabled else float('inf')
+            self.etf_purchase_counts[ticker] = 0
+        
+        self._log("limit", "=" * 80)
+        self._log("limit", "📊 PURCHASE LIMIT INITIALIZATION")
+        self._log("limit", "=" * 80)
+        self._log("limit", f"   Total ETFs: {self.total_etfs}")
+        self._log("limit", f"   Accumulation Weeks: {accumulation_weeks}")
+        self._log("limit", f"   Allocation Multiplier: {allocation_multiplier}")
+        self._log("limit", f"   Calculation: (100 / {self.total_etfs}) × {allocation_multiplier} = {allocation_percentage}%")
+        self._log("limit", f"   Limit Formula: {allocation_percentage}% × {accumulation_weeks} weeks / 100")
+        if limit_enabled:
+            self._log("limit", f"   ✅ Limit per ETF: {limit_per_etf} purchases maximum")
+        else:
+            self._log("limit", f"   ⚠️ Purchase limits DISABLED (no limit)")
+        self._log("limit", "")
+        self._log("limit", "   ETF Purchase Limits:")
+        for ticker in sorted(tickers):
+            if limit_enabled:
+                self._log("limit", f"      {ticker:12s}: 0/{limit_per_etf} purchases")
+            else:
+                self._log("limit", f"      {ticker:12s}: 0/∞ purchases (unlimited)")
+        self._log("limit", "=" * 80)
+    
+    def get_purchase_limit_status(self) -> Dict[str, Any]:
+        """Get current status of purchase limits for all ETFs"""
+        # Get config values
+        purchase_limit_config = self.logging_config.get("purchase_limit_config", {})
+        allocation_multiplier = purchase_limit_config.get("allocation_multiplier", 1.5)
+        limit_enabled = purchase_limit_config.get("enabled", True)
+        
+        status = {
+            'total_etfs': self.total_etfs,
+            'accumulation_weeks': self.accumulation_weeks,
+            'allocation_multiplier': allocation_multiplier,
+            'limit_enabled': limit_enabled,
+            'etf_status': []
+        }
+        
+        for ticker in sorted(self.etf_purchase_limits.keys()):
+            limit = self.etf_purchase_limits[ticker]
+            count = self.etf_purchase_counts.get(ticker, 0)
+            
+            # Handle infinity (unlimited)
+            if limit == float('inf'):
+                percentage = 0
+                at_limit = False
+                remaining = float('inf')
+            else:
+                percentage = (count / limit * 100) if limit > 0 else 0
+                at_limit = count >= limit
+                remaining = limit - count
+            
+            status['etf_status'].append({
+                'ticker': ticker,
+                'current_purchases': count,
+                'limit': limit if limit != float('inf') else None,
+                'remaining': remaining if remaining != float('inf') else None,
+                'utilization_pct': round(percentage, 1),
+                'at_limit': at_limit
+            })
+        
+        return status
         
     def get_default_dynamic_params(self) -> DynamicParams:
         """Get optimized dynamic parameters for better performance"""
@@ -1076,8 +1221,25 @@ class RSETFStrategyBacktester:
         positive_rs = rankings[rankings['rs_score'] > 0]
         self.logger.info(f"  ETFs with positive RS: {len(positive_rs)}")
         
+        # IMPROVEMENT: Filter out ETFs that have reached purchase limits
+        eligible_indices = []
+        for idx, row in positive_rs.iterrows():
+            symbol = row['symbol']
+            count = self.etf_purchase_counts.get(symbol, 0)
+            limit = self.etf_purchase_limits.get(symbol, float('inf'))
+            
+            if count < limit:
+                eligible_indices.append(idx)
+            else:
+                self._log("limit", f"⚠️ Signal filtered: {symbol} reached purchase limit ({count}/{limit})")
+        
+        # Create filtered dataframe
+        positive_rs_filtered = positive_rs.loc[eligible_indices]
+        if len(positive_rs) != len(positive_rs_filtered):
+            self.logger.info(f"  Available after limit filter: {len(positive_rs_filtered)} (filtered {len(positive_rs) - len(positive_rs_filtered)})")
+        
         # Select top positions for better diversification
-        top_etfs = positive_rs.head(self.dynamic_params.max_positions)
+        top_etfs = positive_rs_filtered.head(self.dynamic_params.max_positions)
         target_symbols = top_etfs['symbol'].tolist()
         self.logger.info(f"  Target symbols: {target_symbols}")
         
@@ -1654,6 +1816,9 @@ class RSETFStrategyBacktester:
             return list(etf_data.index.get_level_values('symbol').unique())
         
         self.logger.info(f"  Price filter: {len(etf_data.index.get_level_values('symbol').unique())} -> {len(filtered_symbols)} ETFs (min price: ₹{self.min_price})")
+        
+        # Add filtered list to allowed list if custom universe is used
+        # This helps in universe management
         return filtered_symbols
      
     def run_backtest(self, start_date: datetime, end_date: datetime) -> Dict:
@@ -1665,6 +1830,12 @@ class RSETFStrategyBacktester:
             if end_date.tzinfo:
                 end_date = end_date.replace(tzinfo=None)
             
+            # IMPROVEMENT: Initialize purchase limits at start of backtest
+            # Using a default of 13 weeks for accumulation calculation if not specified in config
+            acc_weeks = getattr(self.config, 'accumulation_weeks', 13) if self.config else 13
+            # Use the full potential universe for limit calculation
+            self.initialize_purchase_limits(self._get_allowed_etf_list(), acc_weeks)
+
             self.logger.info(f"=== BACKTEST START ===")
             self.logger.info(f"Starting backtest from {start_date} to {end_date}")
             self.logger.info(f"Configuration ID: {self.config.id if self.config else 'Custom Config'}")
@@ -1884,6 +2055,21 @@ class RSETFStrategyBacktester:
             self.logger.trade(f"Total trades executed: {len(self.trades)}")
             self.logger.info(f"Final cash balance: {self.cash_balance:.1f}")
             self.logger.info(f"Final positions: {len(self.positions)}")
+            
+            # NEW: Print Purchase Limit Summary to Terminal
+            print("\n" + "=" * 60)
+            print("PURCHASE LIMIT SUMMARY")
+            print("=" * 60)
+            print(f"{'Ticker':<15} {'Purchases':<10} {'Limit':<10} {'Status':<15}")
+            print("-" * 60)
+            
+            sorted_tickers = sorted(self.etf_purchase_limits.keys())
+            for ticker in sorted_tickers:
+                count = self.etf_purchase_counts.get(ticker, 0)
+                limit = self.etf_purchase_limits.get(ticker, 0)
+                status = "REACHED" if count >= limit else "OK"
+                print(f"{ticker:<15} {count:<10} {limit:<10} {status:<15}")
+            print("=" * 60 + "\n")
             
             # Calculate metrics (with default risk_free_rate, will be overridden by API)
             self.logger.progress("=== CALCULATING METRICS ===")
@@ -2534,6 +2720,16 @@ class RSETFStrategyBacktester:
                 self.logger.progress(f"📊 Portfolio NAV: ₹{portfolio_nav:,.2f}")
                 self.logger.trade(f"💰 Buy Price: ₹{price:,.2f}")
                 self.logger.info(f"💰 Remaining cash: ₹{self.cash_balance:,.2f}")
+                
+                 # NEW: Increment purchase counter
+                self.etf_purchase_counts[symbol] = self.etf_purchase_counts.get(symbol, 0) + 1
+                current_count = self.etf_purchase_counts[symbol]
+                limit = self.etf_purchase_limits.get(symbol, 0)
+                self._log("limit", f"📈 Purchase count incremented: {symbol} = {current_count}/{limit}")
+                
+                 # Print to terminal directly as requested
+                print(f"📊 Purchase Count: {current_count}/{limit} ({ (current_count/limit)*100 if limit > 0 else 0:.0f}% used)")
+                
                 return True
                 
             elif action == "SELL":
@@ -2633,6 +2829,14 @@ class RSETFStrategyBacktester:
                 self.logger.info(f"   Holdings Value: ₹{portfolio_nav - self.cash_balance - self.buffer_capital:,.2f}")
                 print(f"")
                 print(f"")
+                
+                # NEW: Decrement purchase counter
+                if symbol in self.etf_purchase_counts:
+                    self.etf_purchase_counts[symbol] = max(0, self.etf_purchase_counts[symbol] - 1)
+                    new_count = self.etf_purchase_counts[symbol]
+                    limit = self.etf_purchase_limits.get(symbol, 0)
+                    self._log("limit", f"📉 Purchase count decremented: {symbol} = {new_count}/{limit}")
+                
                 return True
                 
         except Exception as e:

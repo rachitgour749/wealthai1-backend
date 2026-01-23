@@ -50,7 +50,7 @@ def safe_power(base, exponent, default=0.0):
 class BenchmarkCalculator:
     """Calculate Nifty 50 buy-and-hold benchmark performance"""
     
-    def __init__(self, initial_capital: float, index_data: pd.DataFrame, trading_dates: List[datetime]):
+    def __init__(self, initial_capital: float, index_data: pd.DataFrame, trading_dates: List[datetime], accumulation_params: Optional[Dict] = None):
         """
         Initialize benchmark calculator
         
@@ -58,15 +58,18 @@ class BenchmarkCalculator:
             initial_capital: Starting capital amount
             index_data: DataFrame with index prices (must have 'adjusted_close' column)
             trading_dates: List of trading dates for the backtest period
+            accumulation_params: Optional dict with 'capital_per_period' and 'period_weeks' for SIP style
         """
         self.initial_capital = initial_capital
         self.index_data = index_data
         self.trading_dates = trading_dates
+        self.accumulation_params = accumulation_params
         self.benchmark_snapshots = []
         
     def calculate_benchmark_values(self) -> List[Dict]:
         """
-        Calculate benchmark buy-and-hold values for each trading date
+        Calculate benchmark values for each trading date.
+        Supports both Lump Sum (Buy & Hold) and SIP (Accumulation) modes.
         
         Returns:
             List of dictionaries with date and benchmark_value
@@ -74,6 +77,15 @@ class BenchmarkCalculator:
         if not self.trading_dates:
             return []
         
+        # Check for SIP mode
+        if self.accumulation_params and self.accumulation_params.get('capital_per_period', 0) > 0:
+            return self._calculate_sip_values()
+            
+        # Default: Lump Sum Mode
+        return self._calculate_lumpsum_values()
+
+    def _calculate_lumpsum_values(self) -> List[Dict]:
+        """Calculate benchmark values using Lump Sum logic"""
         # Get starting index price
         start_date = self.trading_dates[0]
         try:
@@ -104,6 +116,57 @@ class BenchmarkCalculator:
                         'index_price': benchmark_snapshots[-1]['index_price']
                     })
         
+        self.benchmark_snapshots = benchmark_snapshots
+        return benchmark_snapshots
+
+    def _calculate_sip_values(self) -> List[Dict]:
+        """Calculate benchmark values using SIP (Accumulation) logic"""
+        capital_per_period = self.accumulation_params.get('capital_per_period', 0)
+        max_accumulation_weeks = self.accumulation_params.get('period_weeks', 0)
+        
+        accumulated_units = 0.0
+        cash_balance = 0.0
+        cumulative_invested = 0.0
+        
+        benchmark_snapshots = []
+        
+        # Assumption: trading_dates are weekly
+        week_count = 1
+        
+        for date in self.trading_dates:
+            # Add capital if within accumulation period
+            if week_count <= max_accumulation_weeks:
+                capital_injection = capital_per_period
+                cash_balance += capital_injection
+                cumulative_invested += capital_injection
+            else:
+                capital_injection = 0
+            
+            # Get current price
+            try:
+                current_index_price = self.index_data.loc[date]['adjusted_close']
+            except KeyError:
+                # Use previous price or 0
+                current_index_price = benchmark_snapshots[-1]['index_price'] if benchmark_snapshots else 0
+            
+            # Invest cash if price is valid
+            if current_index_price > 0 and cash_balance > 0:
+                units_bought = cash_balance / current_index_price
+                accumulated_units += units_bought
+                cash_balance = 0 # Fully invested
+            
+            # Calculate NAV
+            nav = (accumulated_units * current_index_price) + cash_balance
+            
+            benchmark_snapshots.append({
+                'date': date,
+                'benchmark_value': nav,
+                'index_price': current_index_price,
+                'cumulative_investment': cumulative_invested
+            })
+            
+            week_count += 1
+            
         self.benchmark_snapshots = benchmark_snapshots
         return benchmark_snapshots
     

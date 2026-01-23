@@ -1386,6 +1386,23 @@ class InternationalETFRotationBacktester(RotationStrategy):
         net_amount_for_units = capped_capital - buy_costs_estimate['total_costs']
         units = net_amount_for_units / price if price > 0 else 0
 
+        # BUG FIX: Verify total cost and adjust if needed (Scaling for fractional)
+        # Calculate expected total cost
+        actual_amount = units * price
+        actual_costs = self.calculate_transaction_costs('buy', actual_amount, brokerage_percent)
+        total_cost = actual_costs['net_amount']
+        
+        # Scale down units if cost exceeds available capital
+        # Iterative scaling to converge for fractional shares
+        loop_count = 0
+        while total_cost > available_capital and units > 0 and loop_count < 10:
+            scale_factor = (available_capital / total_cost) * 0.9999  # Slightly aggressive scaling
+            units = units * scale_factor
+            actual_amount = units * price
+            actual_costs = self.calculate_transaction_costs('buy', actual_amount, brokerage_percent)
+            total_cost = actual_costs['net_amount']
+            loop_count += 1
+
         if units <= 0:
             self.logger.info(f"❌ Cannot buy {target_etf}: insufficient capital after costs")
             return {
@@ -1746,6 +1763,16 @@ class InternationalETFRotationBacktester(RotationStrategy):
                 
                 # Step 4: Total cost = actual amount + transaction costs
                 total_cost = actual_costs['net_amount']  # This includes actual_amount + costs
+                
+                # BUG FIX: Ensure total cost fits within available capital (Scaling for fractional)
+                loop_count = 0
+                while total_cost > capital_per_week and units > 0 and loop_count < 10:
+                    scale_factor = (capital_per_week / total_cost) * 0.9999
+                    units = units * scale_factor
+                    actual_amount = units * price
+                    actual_costs = self.calculate_transaction_costs('buy', actual_amount, brokerage_percent)
+                    total_cost = actual_costs['net_amount']
+                    loop_count += 1
 
                 self.logger.info(f"📋 Purchase calculation:")
                 self.logger.info(f"   Gross amount: ₹{gross_amount:,.0f}")
@@ -2156,17 +2183,16 @@ class InternationalETFRotationBacktester(RotationStrategy):
 
     def calculate_benchmark_buyhold(self, start_date: str, end_date: str, total_investment: float,
                                     brokerage_percent: float) -> pd.DataFrame:
-        """Calculate S&P 500 benchmark buy-and-hold performance for international ETF comparison"""
+        """Calculate S&P 500 benchmark buy-and-hold performance (SIP style) matching strategy cash flows"""
         session = None
         try:
             session = self._get_session()
             from sqlalchemy import text
 
             # Use S&P 500 Index as benchmark for international ETF strategy
-            # The sp500_index_data table contains ^GSPC (S&P 500 Index) data
             benchmark_symbols = [
-                '^GSPC',  # S&P 500 Index - Primary benchmark for US/International markets
-                'SPY',    # S&P 500 ETF - Alternative if index data not available
+                '^GSPC',  # S&P 500 Index - Primary benchmark
+                'SPY',    # S&P 500 ETF - Alternative
             ]
 
             benchmark_symbol = None
@@ -2182,6 +2208,7 @@ class InternationalETFRotationBacktester(RotationStrategy):
                 self.logger.info("⚠️ No S&P 500 benchmark found in sp500_index_data table. Benchmark comparison will be skipped.")
                 return pd.DataFrame()
 
+            # Query daily data
             query = text("""
                 SELECT date, close
                 FROM sp500_index_data
@@ -2191,7 +2218,6 @@ class InternationalETFRotationBacktester(RotationStrategy):
                 ORDER BY date
             """)
 
-            # Use session.execute for proper parameter binding
             result = session.execute(query, {
                 "symbol": benchmark_symbol,
                 "start_date": start_date,
@@ -2200,68 +2226,91 @@ class InternationalETFRotationBacktester(RotationStrategy):
             rows = result.fetchall()
             columns = result.keys()
             sp500_df = pd.DataFrame(rows, columns=columns)
-
-            self.logger.performance(f"📊 S&P 500 benchmark query returned {len(sp500_df)} rows for {benchmark_symbol}")
-            self.logger.info(f"   Query params: start_date={start_date}, end_date={end_date}")
-
-            if sp500_df.empty:
-                self.logger.info("⚠️ No S&P 500 benchmark data found - query returned 0 rows")
-                return pd.DataFrame()
             
-            if len(sp500_df) == 1:
-                self.logger.info(f"⚠️ WARNING: Only 1 row returned! Date: {sp500_df['date'].iloc[0]}, Close: {sp500_df['close'].iloc[0]}")
-                self.logger.info(f"   This suggests the benchmark symbol '{benchmark_symbol}' has very limited data in the database")
+            if sp500_df.empty:
+                return pd.DataFrame()
 
             sp500_df['date'] = pd.to_datetime(sp500_df['date'])
-            sp500_df = sp500_df.set_index('date')
+            sp500_daily = sp500_df.set_index('date').sort_index()
 
-            start_price = sp500_df['close'].iloc[0]
-
-            costs = self.calculate_transaction_costs('buy', total_investment, brokerage_percent)
-
-            units = (total_investment / costs['net_amount'] * total_investment / start_price)
-            actual_investment = units * start_price
-            actual_costs = self.calculate_transaction_costs('buy', actual_investment, brokerage_percent)
-
-            sp500_df['nav'] = units * sp500_df['close']
-
-            # FIXED: Align with weekly strategy dates using merge_asof
-            if hasattr(self, 'weekly_nav_df') and not self.weekly_nav_df.empty:
-                weekly_dates = pd.to_datetime(self.weekly_nav_df['date'])
-                
-                self.logger.progress(f"📊 Aligning S&P 500 benchmark data from {len(sp500_df)} daily points to {len(weekly_dates)} weekly dates")
-                
-                # Reset index to prepare for merge
-                sp500_df_daily = sp500_df.reset_index()
-                
-                # Create weekly dates dataframe
-                weekly_df = pd.DataFrame({'date': weekly_dates})
-                
-                # Use merge_asof to match each weekly date to the nearest prior daily benchmark value
-                aligned_df = pd.merge_asof(
-                    weekly_df.sort_values('date'),
-                    sp500_df_daily.sort_values('date'),
-                    on='date',
-                    direction='backward'
-                )
-                
-                # Set date as index
-                sp500_df = aligned_df.set_index('date')
-                
-                self.logger.progress(f"✅ Aligned S&P 500 benchmark data to {len(sp500_df)} weekly dates")
-            else:
-                self.logger.info("⚠️ weekly_nav_df not available, using daily S&P 500 benchmark data")
+            # Get weekly strategy dates for alignment
+            if not len(self.weekly_nav_df) > 0:
+                return pd.DataFrame()
             
-            # Recalculate returns based on weekly aligned data
-            sp500_df['returns'] = sp500_df['nav'].pct_change()
+            # Create a dataframe aligned with the strategy's weekly schedule
+            benchmark_data = []
             
-            sp500_df = sp500_df.reset_index()
-            sp500_df = sp500_df.rename(columns={'index': 'date'})
-
-            return sp500_df
+            # Initialize accumulation state
+            accumulated_units = 0.0
+            cumulative_invested_capital = 0.0
+            cash_balance = 0.0
+            
+            # Iterate through each week recorded in the strategy execution
+            for _, row in self.weekly_nav_df.iterrows():
+                date = row['date']
+                week_num = row['week']
+                # Determine capital injection for this week based on strategy logic
+                capital_injection = 0.0
+                
+                # Check if this week had a capital injection in the strategy
+                # Strategy logic calls accumulation for weeks <= accumulation_weeks
+                if row.get('base_capital_per_week', 0) > 0:
+                     # Calculate change in cumulative investment to prevent double counting
+                     # Or simply use the known capital_per_week if we are in accumulation phase
+                     # The safest way is to match the strategy's cash flow pattern
+                     # In simulate_backtest, cash += capital_per_week happens if week_num <= accumulation_weeks
+                     if week_num <= self.accumulation_weeks:
+                         capital_injection = getattr(self, 'capital_per_week', row.get('base_capital_per_week'))
+                
+                # Add capital
+                cash_balance += capital_injection
+                cumulative_invested_capital += capital_injection
+                
+                # Get benchmark price for this date
+                try:
+                    # Find price on or before the date
+                    price_idx = sp500_daily.index.get_indexer([date], method='pad')[0]
+                    if price_idx == -1:
+                        # Date is before start of data, use first available
+                        price = sp500_daily.iloc[0]['close']
+                    else:
+                        price = sp500_daily.iloc[price_idx]['close']
+                except Exception:
+                    price = 0
+                    
+                # Execute Buy if we have cash and valid price
+                if cash_balance > 0 and price > 0:
+                    # Calculate transaction costs
+                    buy_amount = cash_balance
+                    costs = self.calculate_transaction_costs('buy', buy_amount, brokerage_percent)
+                    net_investment = buy_amount - costs['total_costs']
+                    
+                    if net_investment > 0:
+                        units_bought = net_investment / price
+                        accumulated_units += units_bought
+                        cash_balance = 0 # All cash invested
+                
+                # Calculate current NAV
+                current_nav = (accumulated_units * price) + cash_balance
+                
+                benchmark_data.append({
+                    'date': date,
+                    'close': price,
+                    'nav': current_nav,
+                    'cumulative_investment': cumulative_invested_capital
+                })
+            
+            # Create final DataFrame
+            result_df = pd.DataFrame(benchmark_data)
+            if not result_df.empty:
+                result_df['returns'] = result_df['nav'].pct_change()
+                
+            return result_df
 
         except Exception as e:
-            self.logger.trade(f"Error calculating S&P 500 buy-hold benchmark: {e}")
+            self.logger.trade(f"Error calculating S&P 500 benchmark (SIP): {e}")
+            import traceback
+            self.logger.trade(f"{traceback.format_exc()}")
             return pd.DataFrame()
         finally:
             if session:

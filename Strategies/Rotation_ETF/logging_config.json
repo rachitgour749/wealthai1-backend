@@ -6,6 +6,11 @@
     "progress": true,
     "error": true,
     "trade": true,
-    "performance": true
+    "performance": true,
+    "limit": true
+  },
+  "purchase_limit_config": {
+    "enabled": true,
+    "allocation_multiplier": 1.5
   }
 }

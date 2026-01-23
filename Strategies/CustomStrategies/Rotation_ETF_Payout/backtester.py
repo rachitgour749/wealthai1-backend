@@ -235,6 +235,14 @@ class RotationETFPayoutBacktester(ETFRotationBacktester):
                             'net_proceeds': net_proceeds
                         })
                         
+                        # NEW: Decrement purchase counter when selling
+                        if hasattr(self, 'etf_purchase_counts') and symbol in self.etf_purchase_counts:
+                            self.etf_purchase_counts[symbol] = max(0, self.etf_purchase_counts[symbol] - 1)
+                            new_count = self.etf_purchase_counts[symbol]
+                            limit = self.etf_purchase_limits.get(symbol, 0) if hasattr(self, 'etf_purchase_limits') else 0
+                            if hasattr(self, '_log'): # Safety check
+                                self._log("limit", f"📉 Purchase count decremented: {symbol} = {new_count}/{limit}")
+                        
                         self.logger.trade(f"🔴 Sold {units_to_sell} units of {symbol} @ ₹{price:.2f}")
                         self.logger.trade(f"   Net proceeds: ₹{net_proceeds:,.0f}")
                         self.logger.trade(f"   Total raised: ₹{total_raised:,.0f}")
@@ -269,7 +277,37 @@ class RotationETFPayoutBacktester(ETFRotationBacktester):
         
         # Get the best ETF to buy (closest to 52-week low)
         sorted_for_buy = high_low_data.sort_values('distance_from_low', ascending=True)
-        target_etf = sorted_for_buy.iloc[0]['symbol']
+        
+        # NEW: Check purchase limits
+        target_etf = None
+        
+        for idx, row in sorted_for_buy.iterrows():
+            etf_symbol = row['symbol']
+            
+            # Check limits if they exist
+            if hasattr(self, 'etf_purchase_limits') and hasattr(self, 'etf_purchase_counts'):
+                current_count = self.etf_purchase_counts.get(etf_symbol, 0)
+                limit = self.etf_purchase_limits.get(etf_symbol, float('inf'))
+                
+                if current_count < limit:
+                    target_etf = etf_symbol
+                    distance_from_low = row['distance_from_low']
+                    if hasattr(self, '_log'):
+                        self._log("limit", f"🎯 Reinvestment target: {target_etf} ({distance_from_low:.2f}% from low)")
+                        self._log("limit", f"   Purchase Status: {current_count}/{limit} purchases")
+                    break
+                else:
+                    if hasattr(self, '_log'):
+                        self._log("limit", f"⚠️ Skipped {etf_symbol} for reinvestment: Limit reached ({current_count}/{limit})")
+            else:
+                # Fallback if limits not initialized (should not happen if base class updated)
+                target_etf = etf_symbol
+                break
+        
+        if target_etf is None:
+             self.logger.error("❌ All ETFs at purchase limit - cannot reinvest")
+             # Proceed with empty target, checks below will handle it
+             target_etf = sorted_for_buy.iloc[0]['symbol'] if not sorted_for_buy.empty else None
         
         buy_transaction = {}  # Track buy transaction
         
@@ -279,6 +317,19 @@ class RotationETFPayoutBacktester(ETFRotationBacktester):
             
             # Calculate units to buy directly from reinvestment amount - NEW LOGIC
             units_to_buy = int(reinvestment_amount / price) if price > 0 else 0
+            
+            # BUG FIX: Verify total cost and adjust if needed
+            # Calculate expected total cost
+            actual_amount = units_to_buy * price
+            actual_costs = self.calculate_transaction_costs('buy', actual_amount, brokerage_percent)
+            total_cost = actual_amount + actual_costs['total_costs']
+            
+            # Decrement units if cost exceeds reinvestment amount
+            while total_cost > reinvestment_amount and units_to_buy > 0:
+                units_to_buy -= 1
+                actual_amount = units_to_buy * price
+                actual_costs = self.calculate_transaction_costs('buy', actual_amount, brokerage_percent)
+                total_cost = actual_amount + actual_costs['total_costs']
             
             if units_to_buy > 0:
                 buy_result = self.execute_buy_transaction(
@@ -410,6 +461,14 @@ class RotationETFPayoutBacktester(ETFRotationBacktester):
             # Log transaction costs
             self.log_transaction_costs(week_num, execution_date, 'buy', ticker,
                                       units, price, buy_costs, 0)
+            
+            # NEW: Increment purchase counter
+            if hasattr(self, 'etf_purchase_counts'):
+                self.etf_purchase_counts[ticker] = self.etf_purchase_counts.get(ticker, 0) + 1
+                current_count = self.etf_purchase_counts[ticker]
+                limit = self.etf_purchase_limits.get(ticker, 0) if hasattr(self, 'etf_purchase_limits') else 0
+                if hasattr(self, '_log'):
+                    self._log("limit", f"📈 Purchase count updated: {ticker} = {current_count}/{limit}")
             
             return {
                 'success': True,

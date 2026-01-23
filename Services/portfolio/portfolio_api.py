@@ -28,7 +28,19 @@ from .utils import (
 )
 from .price_service import PriceService
 
-logger = logging.getLogger(__name__)
+# Configure logging for portfolio service
+logger = logging.getLogger('Services.portfolio.portfolio_api')
+logger.setLevel(logging.DEBUG)
+
+# Add console handler if not already present
+if not logger.handlers:
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s')
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+logger.info("Portfolio API module loaded with DEBUG logging enabled")
 
 portfolio_router = APIRouter(prefix="/api/portfolio", tags=["Portfolio"])
 
@@ -901,9 +913,9 @@ async def get_user_portfolio_summary(
                 if client_code in client_trades and len(client_trades[client_code]) > 0:
                     client_first_trade = min(t[0] for t in client_trades[client_code])
                     
-                    # CAGR
+                    # CAGR: Use total allocated capital as initial value
                     client_cagr = calculate_cagr(
-                        initial_value=period_capital,
+                        initial_value=client_total_allocated,
                         current_value=client_aum,
                         start_date=client_first_trade,
                         end_date=date.today()
@@ -962,20 +974,40 @@ async def get_user_portfolio_summary(
             strategy_xirr = 0.0
             
             if first_trade_date:
+                logger.info(f"[STRATEGY CAGR] Calculating for run_id: {run_id}")
+                logger.debug(f"[STRATEGY CAGR] First trade date: {first_trade_date}")
+                logger.debug(f"[STRATEGY CAGR] Number of clients: {len(all_clients)}")
+                
                 # CAGR for strategy
                 initial_strategy_value = sum(allocations.values())
+                logger.debug(f"[STRATEGY CAGR] Initial value (sum of per-period allocations): ₹{initial_strategy_value:,.2f}")
+                logger.debug(f"[STRATEGY CAGR] Current AUM: ₹{strat_aum:,.2f}")
+                logger.debug(f"[STRATEGY CAGR] Total allocated capital: ₹{strat_allocated:,.2f}")
+                logger.debug(f"[STRATEGY CAGR] Market value: ₹{strat_market_value:,.2f}")
+                logger.debug(f"[STRATEGY CAGR] Cash balance: ₹{strat_cash:,.2f}")
+                
                 strategy_cagr = calculate_cagr(
                     initial_value=initial_strategy_value,
                     current_value=strat_aum,
                     start_date=first_trade_date,
                     end_date=date.today()
                 )
+                logger.info(f"[STRATEGY CAGR] Final CAGR: {strategy_cagr}%")
                 
                 # XIRR for strategy
                 if len(strategy_cash_flows) > 0:
+                    logger.debug(f"[STRATEGY XIRR] Number of cash flows: {len(strategy_cash_flows)}")
+                    logger.debug(f"[STRATEGY XIRR] Total cash outflow: ₹{sum(cf for cf in strategy_cash_flows if cf < 0):,.2f}")
+                    logger.debug(f"[STRATEGY XIRR] Total cash inflow: ₹{sum(cf for cf in strategy_cash_flows if cf > 0):,.2f}")
+                    
                     strategy_cash_flows.append(strat_aum)
                     strategy_cash_flow_dates.append(date.today())
+                    logger.debug(f"[STRATEGY XIRR] Added final AUM: ₹{strat_aum:,.2f}")
+                    
                     strategy_xirr = calculate_xirr(strategy_cash_flows, strategy_cash_flow_dates)
+                    logger.info(f"[STRATEGY XIRR] Final XIRR: {strategy_xirr}%")
+            else:
+                logger.warning(f"[STRATEGY CAGR] No trades found for run_id: {run_id}")
             
             strategies_summary.append(UserStrategySummary(
                 run_id=run_id,
@@ -1114,11 +1146,16 @@ async def get_strategy_summary(
         """)
         strategy_execution_count = db.execute(rounds_query, {"run_id": run_id}).scalar() or 0
         
+        logger.info(f"[STRATEGY EXECUTION COUNT] run_id: {run_id}")
+        logger.debug(f"[STRATEGY EXECUTION COUNT] Distinct BUY trade dates: {strategy_execution_count}")
+        
         # If no buy trades yet (just started), count is 0, but allocation implies 1st installment ready
         # However, for cash calculation, if we haven't spent anything, we assume 1 installment if running
         if strategy_execution_count == 0:
              strategy_execution_count = 1
-             
+             logger.warning(f"[STRATEGY EXECUTION COUNT] No BUY trades found, defaulting to 1")
+        
+        logger.info(f"[STRATEGY EXECUTION COUNT] Final count: {strategy_execution_count}")
         # Get Flows
         flow_query = text("""
             SELECT 
@@ -1201,32 +1238,41 @@ async def get_strategy_summary(
         all_clients = set(allocations.keys()) | set(client_flows.keys()) | set(client_holdings.keys())
         
         for client_code in all_clients:
-            period_capital = allocations.get(client_code, 0.0)
+            period_capital = round(float(allocations.get(client_code, 0.0)), 2)
             
             # Use the global strategy execution count for multiplier
             # Fallback: if a specific client has MORE unique buy days than the global logic (unlikely but safe), we could use max
             # For now, sticking to user's logic: Strategy Executed 7 times -> 7 * Capital
             
-            client_total_allocated = strategy_execution_count * period_capital
+            client_total_allocated = round(float(strategy_execution_count) * float(period_capital), 2)
+            
+            logger.debug(f"[CLIENT ALLOCATION] Client: {client_code}")
+            logger.debug(f"[CLIENT ALLOCATION]   Per-period capital: ₹{period_capital:.2f}")
+            logger.debug(f"[CLIENT ALLOCATION]   Execution count: {strategy_execution_count}")
+            logger.debug(f"[CLIENT ALLOCATION]   Total allocated: ₹{client_total_allocated:.2f}")
             
             client_mv = 0.0
             client_cb = 0.0
             
             if client_code in client_holdings:
                 for h_sym, h_qty, h_avg in client_holdings[client_code]:
-                    price = current_prices.get(h_sym, 0.0)
-                    client_mv += float(h_qty) * price
+                    price = round(float(current_prices.get(h_sym, 0.0)), 2)
+                    client_mv += round(float(h_qty) * price, 2)
                     # Invested Amount = Sum(Qty * AvgPrice) i.e. Cost Basis
-                    client_cb += float(h_qty) * float(h_avg)
+                    client_cb += round(float(h_qty) * float(h_avg), 2)
                     holdings_count += 1
+            
+            # Round to 2 decimals
+            client_mv = round(client_mv, 2)
+            client_cb = round(client_cb, 2)
             
             # User Calculated Logic: Cash = Total Allocated - Total Invested (Cost Basis)
             # This represents "Capital Remaining to be Invested" ignoring realized PnL
-            client_cash = client_total_allocated - client_cb
+            client_cash = round(client_total_allocated - client_cb, 2)
                     
-            client_aum = client_cash + client_mv
-            client_pnl = client_mv - client_cb
-            client_ret = (client_pnl / client_cb * 100) if client_cb > 0 else 0.0
+            client_aum = round(client_cash + client_mv, 2)
+            client_pnl = round(client_mv - client_cb, 2)
+            client_ret = round((client_pnl / client_cb * 100) if client_cb > 0 else 0.0, 2)
             
             # Calculate CAGR for this client
             client_cagr = 0.0
@@ -1235,19 +1281,31 @@ async def get_strategy_summary(
             if client_code in client_trades and len(client_trades[client_code]) > 0:
                 client_first_trade = min(t[0] for t in client_trades[client_code])
                 
-                # CAGR: Simple growth from first allocation to current AUM
-                # Initial value = first period capital (not total allocated, since that accumulates)
+                logger.info(f"[CLIENT CAGR] Calculating for client: {client_code}")
+                logger.debug(f"[CLIENT CAGR] Per-period capital: ₹{period_capital:,.2f}")
+                logger.debug(f"[CLIENT CAGR] Total allocated capital: ₹{client_total_allocated:,.2f}")
+                logger.debug(f"[CLIENT CAGR] Invested amount (cost basis): ₹{client_cb:,.2f}")
+                logger.debug(f"[CLIENT CAGR] Market value: ₹{client_mv:,.2f}")
+                logger.debug(f"[CLIENT CAGR] Cash balance: ₹{client_cash:,.2f}")
+                logger.debug(f"[CLIENT CAGR] Current AUM: ₹{client_aum:,.2f}")
+                logger.debug(f"[CLIENT CAGR] First trade date: {client_first_trade}")
+                logger.debug(f"[CLIENT CAGR] Number of trades: {len(client_trades[client_code])}")
+                
+                # CAGR: Use total allocated capital as initial value (not per-period)
+                # This represents the actual capital deployed over time
                 client_cagr = calculate_cagr(
-                    initial_value=period_capital,
+                    initial_value=client_total_allocated,
                     current_value=client_aum,
                     start_date=client_first_trade,
                     end_date=date.today()
                 )
+                logger.info(f"[CLIENT CAGR] Final CAGR for {client_code}: {client_cagr}%")
                 
                 # XIRR: Build cash flows
                 client_cf = []
                 client_cf_dates = []
                 
+                logger.debug(f"[CLIENT XIRR] Building cash flows for {client_code}")
                 for t_date, t_side, t_qty, t_price, t_brok, t_tax in client_trades[client_code]:
                     if t_side == 'BUY':
                         # Negative cash flow (money out)
@@ -1258,6 +1316,7 @@ async def get_strategy_summary(
                     
                     client_cf.append(cf)
                     client_cf_dates.append(t_date)
+                    logger.debug(f"[CLIENT XIRR]   {t_date} | {t_side:4s} | ₹{cf:,.2f}")
                     
                     # Add to strategy-level cash flows
                     strategy_cash_flows.append(cf)
@@ -1266,8 +1325,12 @@ async def get_strategy_summary(
                 # Add current AUM as final positive cash flow
                 client_cf.append(client_aum)
                 client_cf_dates.append(date.today())
+                logger.debug(f"[CLIENT XIRR]   {date.today()} | FINAL | ₹{client_aum:,.2f}")
                 
                 client_xirr = calculate_xirr(client_cf, client_cf_dates)
+                logger.info(f"[CLIENT XIRR] Final XIRR for {client_code}: {client_xirr}%")
+            else:
+                logger.warning(f"[CLIENT CAGR] No trades found for client: {client_code}")
             
             # Add to aggregators
             total_allocated += client_total_allocated

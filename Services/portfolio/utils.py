@@ -5,7 +5,17 @@ from typing import Optional, Dict
 import logging
 import json
 
-logger = logging.getLogger(__name__)
+# Configure logging
+logger = logging.getLogger('Services.portfolio.utils')
+logger.setLevel(logging.DEBUG)
+
+# Add console handler if not already present
+if not logger.handlers:
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s')
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
 
 
 def get_strategy_by_run_id(run_id: str, db: Session) -> Optional[Dict]:
@@ -172,42 +182,79 @@ def calculate_cagr(initial_value: float, current_value: float, start_date: date,
     Returns:
         CAGR as percentage (e.g., 15.5 for 15.5%)
     """
+    # Round inputs to 2 decimals
+    initial_value = round(float(initial_value), 2)
+    current_value = round(float(current_value), 2)
+    
+    logger.debug("="*80)
+    logger.debug("CAGR CALCULATION START")
+    logger.debug(f"  Initial Value: ₹{initial_value:,.2f}")
+    logger.debug(f"  Current Value: ₹{current_value:,.2f}")
+    logger.debug(f"  Start Date: {start_date}")
+    logger.debug(f"  End Date: {end_date}")
+    
     if initial_value <= 0 or current_value <= 0:
+        logger.warning(f"  Invalid values - Initial: {initial_value}, Current: {current_value}")
+        logger.debug("  CAGR Result: 0.0 (invalid values)")
+        logger.debug("="*80)
         return 0.0
     
     # Calculate time period in years
     days_elapsed = (end_date - start_date).days
+    logger.debug(f"  Days Elapsed: {days_elapsed}")
+    
     if days_elapsed <= 0:
+        logger.warning(f"  Invalid time period - Days: {days_elapsed}")
+        logger.debug("  CAGR Result: 0.0 (invalid time period)")
+        logger.debug("="*80)
         return 0.0
     
-    years = days_elapsed / 365.25  # Account for leap years
+    years = round(days_elapsed / 365.25, 4)  # Account for leap years
+    logger.debug(f"  Years: {years:.4f}")
     
-    if years < 0.01:  # Less than ~4 days, too short for meaningful CAGR
+    # Minimum 1 week (7 days) required for CAGR calculation
+    if days_elapsed < 7:
+        logger.warning(f"  Time period too short - Days: {days_elapsed} (minimum 7 required)")
+        logger.debug("  CAGR Result: 0.0 (< 1 week)")
+        logger.debug("="*80)
         return 0.0
     
     try:
         # Check if the ratio is too extreme (would cause overflow)
-        ratio = current_value / initial_value
-        
-        # Cap extreme ratios to prevent overflow
-        # If ratio > 1000, it means 100,000% return which is unrealistic for CAGR
-        if ratio > 1000:
-            logger.warning(f"CAGR: Extreme ratio detected ({ratio:.2f}), capping calculation")
-            return 0.0
+        ratio = round(current_value / initial_value, 4)
+        logger.debug(f"  Ratio (Current/Initial): {ratio:.4f}")
         
         # CAGR formula
-        cagr = (pow(ratio, 1 / years) - 1) * 100
+        exponent = round(1 / years, 4)
+        logger.debug(f"  Exponent (1/years): {exponent:.4f}")
         
-        # Cap CAGR at reasonable bounds (-100% to 1000%)
-        if cagr > 1000:
-            logger.warning(f"CAGR exceeds 1000%, returning 0: {cagr}")
-            return 0.0
+        base_result = round(pow(ratio, exponent), 4)
+        logger.debug(f"  Base Result (ratio^exponent): {base_result:.4f}")
+        
+        cagr = round((base_result - 1) * 100, 2)
+        logger.debug(f"  Raw CAGR: {cagr:.2f}%")
+        
+        # Cap CAGR at reasonable bounds to prevent overflow (-100% to 10,000%)
+        # High values are expected for short-term strategies
+        if cagr > 10000:
+            logger.warning(f"  CAGR exceeds 10,000% ({cagr:.2f}%), capping at 10,000%")
+            logger.debug("  CAGR Result: 10000.00% (capped)")
+            logger.debug("="*80)
+            return 10000.0
         if cagr < -100:
+            logger.warning(f"  CAGR below -100% ({cagr:.2f}%), capping at -100%")
+            logger.debug("  CAGR Result: -100.00% (capped)")
+            logger.debug("="*80)
             return -100.0
-            
-        return round(cagr, 2)
+        
+        final_cagr = round(cagr, 2)
+        logger.debug(f"  CAGR Result: {final_cagr:.2f}%")
+        logger.debug("="*80)
+        return final_cagr
     except (ValueError, ZeroDivisionError, OverflowError) as e:
-        logger.error(f"CAGR calculation error: {e}")
+        logger.error(f"  CAGR calculation error: {e}")
+        logger.debug("  CAGR Result: 0.00 (error)")
+        logger.debug("="*80)
         return 0.0
 
 
