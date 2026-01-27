@@ -245,12 +245,7 @@ class RSETFStrategyBacktester:
         # Weekly stop loss accumulation (for weekly mode)
         self.weekly_stop_loss_exits: List[str] = []
         
-        # Purchase limit tracking (for diversification)
-        self.etf_purchase_limits = {}      # {ticker: max_purchases}
-        self.etf_purchase_counts = {}      # {ticker: current_count}
-        self.total_etfs = 0
-        self.accumulation_weeks = 0
-        self.logging_config = {}           # Will be loaded from logging_config.json
+
         
         # Load logging configuration
         self._load_logging_config()
@@ -299,101 +294,7 @@ class RSETFStrategyBacktester:
             else:
                 self.logger.info(message)
     
-    def initialize_purchase_limits(self, tickers: List[str], accumulation_weeks: int):
-        """
-        Initialize purchase limits for all ETFs based on allocation formula
-        
-        Formula:
-        - allocation_pct = (100 / total_etfs) * allocation_multiplier
-        - limit_per_etf = floor(allocation_pct * accumulation_weeks / 100)
-        
-        This prevents over-concentration and achieves better diversification.
-        
-        Args:
-            tickers: List of ETF tickers
-            accumulation_weeks: Number of accumulation weeks
-        """
-        # Get allocation multiplier from config (default 1.5)
-        purchase_limit_config = self.logging_config.get("purchase_limit_config", {})
-        allocation_multiplier = purchase_limit_config.get("allocation_multiplier", 1.5)
-        limit_enabled = purchase_limit_config.get("enabled", True)
-        
-        self.total_etfs = len(tickers)
-        self.accumulation_weeks = accumulation_weeks
-        
-        # Calculate allocation percentage (round down)
-        allocation_percentage = (100 / self.total_etfs) * allocation_multiplier
-        allocation_percentage = int(allocation_percentage)  # Round down
-        
-        # Calculate limit per ETF (round down)
-        limit_per_etf = int((allocation_percentage * accumulation_weeks) / 100)  # Round down
-        
-        # Initialize limits and counters for all ETFs
-        for ticker in tickers:
-            # If limits disabled, set to infinity (no limit)
-            self.etf_purchase_limits[ticker] = limit_per_etf if limit_enabled else float('inf')
-            self.etf_purchase_counts[ticker] = 0
-        
-        self._log("limit", "=" * 80)
-        self._log("limit", "📊 PURCHASE LIMIT INITIALIZATION")
-        self._log("limit", "=" * 80)
-        self._log("limit", f"   Total ETFs: {self.total_etfs}")
-        self._log("limit", f"   Accumulation Weeks: {accumulation_weeks}")
-        self._log("limit", f"   Allocation Multiplier: {allocation_multiplier}")
-        self._log("limit", f"   Calculation: (100 / {self.total_etfs}) × {allocation_multiplier} = {allocation_percentage}%")
-        self._log("limit", f"   Limit Formula: {allocation_percentage}% × {accumulation_weeks} weeks / 100")
-        if limit_enabled:
-            self._log("limit", f"   ✅ Limit per ETF: {limit_per_etf} purchases maximum")
-        else:
-            self._log("limit", f"   ⚠️ Purchase limits DISABLED (no limit)")
-        self._log("limit", "")
-        self._log("limit", "   ETF Purchase Limits:")
-        for ticker in sorted(tickers):
-            if limit_enabled:
-                self._log("limit", f"      {ticker:12s}: 0/{limit_per_etf} purchases")
-            else:
-                self._log("limit", f"      {ticker:12s}: 0/∞ purchases (unlimited)")
-        self._log("limit", "=" * 80)
-    
-    def get_purchase_limit_status(self) -> Dict[str, Any]:
-        """Get current status of purchase limits for all ETFs"""
-        # Get config values
-        purchase_limit_config = self.logging_config.get("purchase_limit_config", {})
-        allocation_multiplier = purchase_limit_config.get("allocation_multiplier", 1.5)
-        limit_enabled = purchase_limit_config.get("enabled", True)
-        
-        status = {
-            'total_etfs': self.total_etfs,
-            'accumulation_weeks': self.accumulation_weeks,
-            'allocation_multiplier': allocation_multiplier,
-            'limit_enabled': limit_enabled,
-            'etf_status': []
-        }
-        
-        for ticker in sorted(self.etf_purchase_limits.keys()):
-            limit = self.etf_purchase_limits[ticker]
-            count = self.etf_purchase_counts.get(ticker, 0)
-            
-            # Handle infinity (unlimited)
-            if limit == float('inf'):
-                percentage = 0
-                at_limit = False
-                remaining = float('inf')
-            else:
-                percentage = (count / limit * 100) if limit > 0 else 0
-                at_limit = count >= limit
-                remaining = limit - count
-            
-            status['etf_status'].append({
-                'ticker': ticker,
-                'current_purchases': count,
-                'limit': limit if limit != float('inf') else None,
-                'remaining': remaining if remaining != float('inf') else None,
-                'utilization_pct': round(percentage, 1),
-                'at_limit': at_limit
-            })
-        
-        return status
+
         
     def get_default_dynamic_params(self) -> DynamicParams:
         """Get optimized dynamic parameters for better performance"""
@@ -1037,30 +938,57 @@ class RSETFStrategyBacktester:
             month_ago_date = available_etf_dates[current_etf_index - self.lookback_months]                                                                  
             quarter_ago_date = available_etf_dates[current_etf_index - self.lookback_quarters]                                                              
 
-            # Get Past Prices (handle missing index data gracefully if needed, but assuming alignment here for simplicity or tight coupling)
-            # Actually, standard way is to find the index price at those specific dates.
-            # If dates don't exist in index, we might need logic. Assuming index_data is dense.
-            
-            if week_ago_date not in index_prices.index or month_ago_date not in index_prices.index or quarter_ago_date not in index_prices.index:
-                 return None
+            # Get Past Prices using 'asof' for Index to handle mismatches (e.g. holidays, data gaps)
+            # This finds the price at or immediately before the target date
+            try:
+                # Ensure index prices are sorted (they should be, but safety first)
+                if not index_prices.index.is_monotonic_increasing:
+                    index_prices = index_prices.sort_index()
+                
+                # Use get_indexer to find nearest dates efficiently or just use asof
+                # Pandas asof is powerful for this. 
+                # Note: index_prices is a Series with DatetimeIndex
+                
+                if week_ago_date not in index_prices.index:
+                    index_past_w = float(index_prices.asof(week_ago_date))
+                else:
+                    index_past_w = float(index_prices.loc[week_ago_date])
+                    
+                if month_ago_date not in index_prices.index:
+                    index_past_m = float(index_prices.asof(month_ago_date))
+                else:
+                    index_past_m = float(index_prices.loc[month_ago_date])
+                    
+                if quarter_ago_date not in index_prices.index:
+                    index_past_q = float(index_prices.asof(quarter_ago_date))
+                else:
+                    index_past_q = float(index_prices.loc[quarter_ago_date])
+                
+                # Check if any lookups failed (returned NaN)
+                if any(np.isnan(x) for x in [index_past_w, index_past_m, index_past_q]):
+                    return None
+                    
+            except (KeyError, ValueError, IndexError):
+                # If asof fails (e.g. date before first index date), we cannot calculate RS
+                return None
 
             # WEEK (Outperformance)
             etf_past_w = float(etf_prices.loc[week_ago_date])
-            index_past_w = float(index_prices.loc[week_ago_date])
+            # index_past_w already got above
             etf_ret_w = (current_etf_price / etf_past_w) - 1
             index_ret_w = (current_index_price / index_past_w) - 1
             rs_w = etf_ret_w - index_ret_w
 
             # MONTH
             etf_past_m = float(etf_prices.loc[month_ago_date])
-            index_past_m = float(index_prices.loc[month_ago_date])
+            # index_past_m already got above
             etf_ret_m = (current_etf_price / etf_past_m) - 1
             index_ret_m = (current_index_price / index_past_m) - 1
             rs_m = etf_ret_m - index_ret_m
 
             # QUARTER
             etf_past_q = float(etf_prices.loc[quarter_ago_date])
-            index_past_q = float(index_prices.loc[quarter_ago_date])
+            # index_past_q already got above
             etf_ret_q = (current_etf_price / etf_past_q) - 1
             index_ret_q = (current_index_price / index_past_q) - 1
             rs_q = etf_ret_q - index_ret_q
@@ -1221,23 +1149,16 @@ class RSETFStrategyBacktester:
         positive_rs = rankings[rankings['rs_score'] > 0]
         self.logger.info(f"  ETFs with positive RS: {len(positive_rs)}")
         
-        # IMPROVEMENT: Filter out ETFs that have reached purchase limits
-        eligible_indices = []
-        for idx, row in positive_rs.iterrows():
-            symbol = row['symbol']
-            count = self.etf_purchase_counts.get(symbol, 0)
-            limit = self.etf_purchase_limits.get(symbol, float('inf'))
-            
-            if count < limit:
-                eligible_indices.append(idx)
-            else:
-                self._log("limit", f"⚠️ Signal filtered: {symbol} reached purchase limit ({count}/{limit})")
+        # Filter out ETFs that have reached purchase limits - REMOVED AS REQUESTED
+        # eligible_indices = []
+        # for idx, row in positive_rs.iterrows():
+        #     eligible_indices.append(idx)
         
         # Create filtered dataframe
-        positive_rs_filtered = positive_rs.loc[eligible_indices]
+        positive_rs_filtered = positive_rs
         if len(positive_rs) != len(positive_rs_filtered):
             self.logger.info(f"  Available after limit filter: {len(positive_rs_filtered)} (filtered {len(positive_rs) - len(positive_rs_filtered)})")
-        
+    
         # Select top positions for better diversification
         top_etfs = positive_rs_filtered.head(self.dynamic_params.max_positions)
         target_symbols = top_etfs['symbol'].tolist()
@@ -1832,9 +1753,9 @@ class RSETFStrategyBacktester:
             
             # IMPROVEMENT: Initialize purchase limits at start of backtest
             # Using a default of 13 weeks for accumulation calculation if not specified in config
-            acc_weeks = getattr(self.config, 'accumulation_weeks', 13) if self.config else 13
+            # acc_weeks = getattr(self.config, 'accumulation_weeks', 13) if self.config else 13
             # Use the full potential universe for limit calculation
-            self.initialize_purchase_limits(self._get_allowed_etf_list(), acc_weeks)
+            # self.initialize_purchase_limits(self._get_allowed_etf_list(), acc_weeks)
 
             self.logger.info(f"=== BACKTEST START ===")
             self.logger.info(f"Starting backtest from {start_date} to {end_date}")
@@ -1905,12 +1826,9 @@ class RSETFStrategyBacktester:
                     
                     # Removed max holding period check - stocks held until RS ranking drops
                     
-                    # Stop Loss Check - Conditional based on configuration
+                    # Stop Loss Check
                     if self.daily_stop_loss_check:
-                        # DAILY MODE: Check stop loss every day and execute immediately
                         stop_loss_exits = self.check_daily_stop_loss(etf_data, date)
-                        
-                        # Execute stop loss exits immediately
                         for symbol in stop_loss_exits:
                             try:
                                 price_data = etf_data.loc[symbol, date]['adjusted_close']
@@ -1919,109 +1837,90 @@ class RSETFStrategyBacktester:
                             except (KeyError, IndexError):
                                 continue
                     else:
-                        # WEEKLY MODE: Check stop loss daily but accumulate for weekly execution
-                        # Only check on non-signal days (signal day will check separately)
                         if not self.is_friday_or_last_trading_day(date):
                             stop_loss_exits = self.check_daily_stop_loss(etf_data, date)
-                            # Accumulate stop loss exits for Monday execution
                             for symbol in stop_loss_exits:
                                 if symbol not in self.weekly_stop_loss_exits:
                                     self.weekly_stop_loss_exits.append(symbol)
                     
-                    # Initialize entries and exits for each day
+                    # Initialize entries and exits
                     entries, exits = [], []
                     
                     # Generate signals only on Friday (or last trading day of week)
-                    if self.is_friday_or_last_trading_day(date):  # Generate signals only on Friday
+                    if self.is_friday_or_last_trading_day(date): 
+
                         
                         # WEEKLY MODE: Check stop loss on signal day and add to exits
                         if not self.daily_stop_loss_check:
                             stop_loss_exits = self.check_daily_stop_loss(etf_data, date)
-                            # Combine weekly accumulated stop losses with current check
                             all_stop_loss_exits = list(set(self.weekly_stop_loss_exits + stop_loss_exits))
                             if all_stop_loss_exits:
                                 self.logger.info(f"  📊 Weekly Stop Loss Summary: {len(all_stop_loss_exits)} position(s) to exit")
-                                for symbol in all_stop_loss_exits:
-                                    self.logger.info(f"    - {symbol}")
                         
                         entries, exits = self.generate_signals(etf_data, index_data, date)
-                        
+
+
                         # WEEKLY MODE: Add stop loss exits to regular exits
                         if not self.daily_stop_loss_check and all_stop_loss_exits:
-                            # Combine stop loss exits with RS signal exits (avoid duplicates)
                             exits = list(set(exits + all_stop_loss_exits))
-                            self.logger.info(f"  Combined exits: {len(exits)} total (RS signals + stop loss)")
                         
-                        # Apply capital reset logic
                         entries, exits = self.apply_capital_reset_logic(entries, exits)
                         
-                        # Removed max holding period exits - ETFs only exit based on RS ranking
-                        
-                        # Store signals for Monday execution (don't execute immediately)
                         self.pending_entries = entries
                         self.pending_exits = exits
                         self.signal_date = date
                         
-                        # Reset weekly stop loss accumulator
                         if not self.daily_stop_loss_check:
                             self.weekly_stop_loss_exits = []
                         
                         self.logger.info(f"📅 SIGNAL DAY: Friday {date.strftime('%Y-%m-%d (%A)')} - Generated {len(entries)} entries, {len(exits)} exits")
+                        
+                        # Calculate next execution day
+                        next_monday = self.get_next_monday(date)
 
-                        # Weekly Summary Log (matching RS_Stocks enhancement)
-                        week_num = (i // 5) + 1
-                        holdings_summary = [(s, p.quantity) for s, p in self.positions.items()]
-                        self.logger.progress(f"📊 Week {week_num} summary:")
-                        self.logger.info(f"   Date: {date.strftime('%Y-%m-%d')}")
-                        self.logger.info(f"   NAV: ₹{current_portfolio_value:,.2f}")
-                        self.logger.info(f"   Cash: ₹{self.cash_balance:,.2f}")
-                        self.logger.info(f"   Holdings Value: ₹{current_portfolio_value - self.cash_balance:,.2f}")
-                        self.logger.info(f"   Holdings: {holdings_summary}")
-                        self.logger.info("============================================================")
-                    
-                    # Execute trades on Monday (or next available trading day if Monday is holiday)
+                        # Next line will be handled in next iteration or if date == next_monday (impossible if Fri != Mon)
+
+                    # Execute trades on Monday (or next available trading day)
                     if hasattr(self, 'pending_entries') and self.pending_entries is not None:
-                        # Check if this is the execution day (Monday after signal Friday)
                         next_monday = self.get_next_monday(self.signal_date)
                         if next_monday in trading_dates:
                             execution_day = next_monday
                         else:
-                            # Find next available trading day after Monday if Monday is holiday
                             execution_day = self.find_next_available_trading_day(next_monday, trading_dates)
+                            #print(f"DEBUG: Next available trading day for execution: {execution_day} (Target: {next_monday})") # Too noisy
+                        
+                        #print(f"DEBUG: Checking execution for {date}: Target {execution_day}")
                         
                         if date == execution_day:
+
                             self.logger.progress(f"🔄 EXECUTION DAY: Monday {date.strftime('%Y-%m-%d (%A)')} - Executing {len(self.pending_exits)} exits and {len(self.pending_entries)} entries")
                             
-                            # SELL FIRST to free up cash before buying new positions
-                            # SELL FIRST to free up cash before buying new positions
+                            # SELL FIRST
                             for symbol in self.pending_exits:
                                 try:
-                                    # Use OPEN price for execution as per request
                                     if 'open' in etf_data.columns:
                                         price_data = etf_data.loc[symbol, execution_day]['open']
                                     else:
                                         price_data = etf_data.loc[symbol, execution_day]['adjusted_close']
-                                        
                                     price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
                                     self.execute_trade(execution_day, symbol, "SELL", price, "RS Exit")
-                                except (KeyError, IndexError):
+                                except (KeyError, IndexError) as e:
+
                                     continue
                             
-                            # THEN BUY using freed cash (and buffer only if needed)
+                            # THEN BUY
                             for symbol in self.pending_entries:
                                 try:
-                                    # Use OPEN price for execution as per request
                                     if 'open' in etf_data.columns:
                                         price_data = etf_data.loc[symbol, execution_day]['open']
                                     else:
                                         price_data = etf_data.loc[symbol, execution_day]['adjusted_close']
-                                        
                                     price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
                                     self.execute_trade(execution_day, symbol, "BUY", price, "RS Signal")
-                                except (KeyError, IndexError):
+                                except (KeyError, IndexError) as e:
+
                                     continue
                             
-                            # Clear pending signals after execution
                             self.pending_entries = None
                             self.pending_exits = None
                     
@@ -2037,9 +1936,9 @@ class RSETFStrategyBacktester:
                             'current_price': pos.current_price,
                             'unrealized_pnl': pos.unrealized_pnl
                         } for symbol, pos in self.positions.items()},
-                        'daily_pnl': 0,  # Will be calculated later
+                        'daily_pnl': 0,
                         'cumulative_pnl': portfolio_value - self.total_capital,
-                        'drawdown_pct': 0  # Will be calculated later
+                        'drawdown_pct': 0
                     }
                     self.portfolio_snapshots.append(snapshot)
                     
@@ -2048,6 +1947,8 @@ class RSETFStrategyBacktester:
                         
                 except Exception as e:
                     self.logger.progress(f"Error processing date {date}: {e}")
+                    import traceback
+                    traceback.print_exc()
                     continue
             
             self.logger.info(f"=== BACKTEST COMPLETE ===")
@@ -2056,21 +1957,11 @@ class RSETFStrategyBacktester:
             self.logger.info(f"Final cash balance: {self.cash_balance:.1f}")
             self.logger.info(f"Final positions: {len(self.positions)}")
             
-            # NEW: Print Purchase Limit Summary to Terminal
-            print("\n" + "=" * 60)
-            print("PURCHASE LIMIT SUMMARY")
-            print("=" * 60)
-            print(f"{'Ticker':<15} {'Purchases':<10} {'Limit':<10} {'Status':<15}")
-            print("-" * 60)
-            
-            sorted_tickers = sorted(self.etf_purchase_limits.keys())
-            for ticker in sorted_tickers:
-                count = self.etf_purchase_counts.get(ticker, 0)
-                limit = self.etf_purchase_limits.get(ticker, 0)
-                status = "REACHED" if count >= limit else "OK"
-                print(f"{ticker:<15} {count:<10} {limit:<10} {status:<15}")
-            print("=" * 60 + "\n")
-            
+            # NEW: Print Purchase Limit Summary to Terminal - REMOVED
+            # print("\n" + "=" * 60)
+            # print("PURCHASE LIMIT SUMMARY")
+            # print("=" * 60)
+            # ...
             # Calculate metrics (with default risk_free_rate, will be overridden by API)
             self.logger.progress("=== CALCULATING METRICS ===")
             metrics = self.calculate_metrics(risk_free_rate=6.0)
@@ -2721,14 +2612,14 @@ class RSETFStrategyBacktester:
                 self.logger.trade(f"💰 Buy Price: ₹{price:,.2f}")
                 self.logger.info(f"💰 Remaining cash: ₹{self.cash_balance:,.2f}")
                 
-                 # NEW: Increment purchase counter
-                self.etf_purchase_counts[symbol] = self.etf_purchase_counts.get(symbol, 0) + 1
-                current_count = self.etf_purchase_counts[symbol]
-                limit = self.etf_purchase_limits.get(symbol, 0)
-                self._log("limit", f"📈 Purchase count incremented: {symbol} = {current_count}/{limit}")
+                 # NEW: Purchase counter logic REMOVED
+                # self.etf_purchase_counts[symbol] = self.etf_purchase_counts.get(symbol, 0) + 1
+                # current_count = self.etf_purchase_counts[symbol]
+                # limit = self.etf_purchase_limits.get(symbol, 0)
+                # self._log("limit", f"📈 Purchase count incremented: {symbol} = {current_count}/{limit}")
                 
                  # Print to terminal directly as requested
-                print(f"📊 Purchase Count: {current_count}/{limit} ({ (current_count/limit)*100 if limit > 0 else 0:.0f}% used)")
+                # print(f"📊 Purchase Count: {current_count}/{limit} ({ (current_count/limit)*100 if limit > 0 else 0:.0f}% used)")
                 
                 return True
                 
@@ -2830,12 +2721,12 @@ class RSETFStrategyBacktester:
                 print(f"")
                 print(f"")
                 
-                # NEW: Decrement purchase counter
-                if symbol in self.etf_purchase_counts:
-                    self.etf_purchase_counts[symbol] = max(0, self.etf_purchase_counts[symbol] - 1)
-                    new_count = self.etf_purchase_counts[symbol]
-                    limit = self.etf_purchase_limits.get(symbol, 0)
-                    self._log("limit", f"📉 Purchase count decremented: {symbol} = {new_count}/{limit}")
+                # NEW: Decrement purchase counter logic REMOVED
+                # if symbol in self.etf_purchase_counts:
+                #     self.etf_purchase_counts[symbol] = max(0, self.etf_purchase_counts[symbol] - 1)
+                #     new_count = self.etf_purchase_counts[symbol]
+                #     limit = self.etf_purchase_limits.get(symbol, 0)
+                #     self._log("limit", f"📉 Purchase count decremented: {symbol} = {new_count}/{limit}")
                 
                 return True
                 
