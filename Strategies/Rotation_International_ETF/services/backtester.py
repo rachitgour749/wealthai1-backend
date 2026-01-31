@@ -797,7 +797,7 @@ class InternationalETFRotationBacktester(RotationStrategy):
                     high,
                     low,
                     volume,
-                    adj_close AS adjusted_close
+                    adj_close AS close
                 FROM us_etf_market
                 WHERE symbol IN ({placeholders})
                 AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
