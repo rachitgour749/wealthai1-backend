@@ -16,10 +16,10 @@ parent_dir = os.path.dirname(os.path.dirname(current_dir))
 databases_path = os.path.join(parent_dir, 'Databases')
 sys.path.insert(0, databases_path)
 
-from market_data_db_connection import (
-    create_connection as create_market_data_connection,
-    get_session as get_market_data_session,
-    init_database as init_market_data_database
+from app_data_db_connection import (
+    create_connection as create_app_data_connection,
+    get_session as get_app_data_session,
+    init_database as init_app_data_database
 )
 from sqlalchemy import text
 import pandas as pd
@@ -43,17 +43,17 @@ def check_stock_data_availability() -> Dict:
         - stocks_no_data: List of stocks with no data
     """
     # Initialize database connection
-    if not create_market_data_connection():
-        raise RuntimeError("Failed to connect to MarketData database")
+    if not create_app_data_connection():
+        raise RuntimeError("Failed to connect to ApplicationData database")
     
-    init_market_data_database()
-    session = get_market_data_session()
+    init_app_data_database()
+    session = get_app_data_session()
     
     try:
         # Get all unique stock symbols
         query_all_symbols = text("""
             SELECT DISTINCT symbol
-            FROM stock_data
+            FROM stock_market
             ORDER BY symbol
         """)
         
@@ -76,7 +76,7 @@ def check_stock_data_availability() -> Dict:
                     MIN(date) as min_date, 
                     MAX(date) as max_date,
                     COUNT(*) as record_count
-                FROM stock_data
+                FROM stock_market
                 WHERE symbol = :symbol
             """)
             

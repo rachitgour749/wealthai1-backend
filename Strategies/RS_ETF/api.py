@@ -68,7 +68,7 @@ class StrategyConfigCreate(BaseModel):
     lookback_weeks: int = 5
     lookback_months: int = 20
     lookback_quarters: int = 60
-    max_positions: int = 20
+    max_positions: int
     position_size_pct: float = 5.0
     buffer_capital_pct: float = 10.0
     total_capital: float = 1000000.0
@@ -132,7 +132,7 @@ class BacktestRequest(BaseModel):
     main_index: str = "^NSEI"
     etf_universe: str = "ALL_ETFS"
     custom_etfs: Optional[List[str]] = None  # Custom ETF selection
-    max_positions: int = 20
+    max_positions: int
     position_size_pct: Optional[float] = None  # Optional - will be auto-calculated if not provided
     total_capital: float = 1000000.0
     stop_loss_pct: float = 15.0

@@ -25,12 +25,12 @@ databases_path = os.path.join(project_root, 'Databases')
 if databases_path not in sys.path:
     sys.path.insert(0, databases_path)
 
-from market_data_db_connection import (
-    create_connection as create_market_data_connection,
-    get_session as get_market_data_session,
-    init_database as init_market_data_database,
-    StockData,  # Stock data model (uses stock_data table) - metadata calculated from this
-    IndexData  # Index data for RS calculations (uses index_data table)
+from app_data_db_connection import (
+    create_connection as create_app_data_connection,
+    get_session as get_app_data_session,
+    init_database as init_app_data_database,
+    StockMarket as StockData,  # Primary Stock data model (uses stock_market table)
+    Nifty50IndexMarket as IndexData  # Index data for RS calculations (uses nifty_50_index_market table)
 )
 
 # Import base class for OOP refactoring
@@ -61,12 +61,12 @@ class StockRotationBacktester(RotationStrategy):
         # Initialize centralized logger AFTER parent init to prevent override
         self.logger = StrategyLogger('Rotation_Stocks')
         
-        # Initialize PostgreSQL connection
-        if not create_market_data_connection():
-            raise RuntimeError("Failed to connect to MarketData database")
+        # Initialize PostgreSQL connection to ApplicationData
+        if not create_app_data_connection():
+            raise RuntimeError("Failed to connect to ApplicationData database")
         
         # Initialize database tables
-        init_market_data_database()
+        init_app_data_database()
         
         self.portfolio_log = []
         self.weekly_nav_df = pd.DataFrame()
@@ -75,7 +75,8 @@ class StockRotationBacktester(RotationStrategy):
         self.purchase_history = {}
         
         # Strategy-specific table configuration (must be set before method calls)
-        self.data_table = "stock_data"  # Stocks are stored in stock_data table (metadata calculated from this)
+        # Strategy-specific table configuration (must be set before method calls)
+        self.data_table = "stock_market"  # Stocks are stored in stock_market table
         
         self.available_databases = []  # Not needed for PostgreSQL
         self.stock_metadata = self.load_metadata()
@@ -106,8 +107,8 @@ class StockRotationBacktester(RotationStrategy):
         self._verbose = verbose
 
     def _get_session(self):
-        """Get database session for PostgreSQL"""
-        return get_market_data_session()
+        """Get database session for PostgreSQL (ApplicationData)"""
+        return get_app_data_session()
     
     def load_data(self, start_date: datetime, end_date: datetime) -> Dict[str, pd.DataFrame]:
         """
@@ -201,9 +202,9 @@ class StockRotationBacktester(RotationStrategy):
             from sqlalchemy import text
             
             # Use stock_data table directly
-            table_name = 'stock_data'
+            table_name = 'stock_market'
             
-            # Query metadata from stock_data - date column is of type DATE/TIMESTAMP
+            # Query metadata from stock_market - date column is of type DATE/TIMESTAMP
             # Fix: Cast dates to timestamp to get proper interval for EXTRACT
             query_str = """
                 SELECT 
@@ -212,7 +213,7 @@ class StockRotationBacktester(RotationStrategy):
                     MAX(date)::text as end_date,
                     COUNT(*) as total_records,
                     ROUND(EXTRACT(EPOCH FROM (MAX(date)::timestamp - MIN(date)::timestamp)) / 86400.0 / 365.25, 1) as years_available
-                FROM stock_data
+                FROM stock_market
                 GROUP BY symbol
                 ORDER BY symbol
             """
@@ -228,7 +229,7 @@ class StockRotationBacktester(RotationStrategy):
                         'end_date': str(row[2]) if row[2] else None,
                         'years_available': float(row[4]) if row[4] else 0,
                         'total_records': int(row[3]) if row[3] else 0,
-                        'data_source': 'stock_data'
+                        'data_source': 'stock_market'
                     }
                 except Exception as row_error:
                     continue
@@ -248,92 +249,101 @@ class StockRotationBacktester(RotationStrategy):
 
     def generate_asset_description(self, symbol: str) -> str:
         """Generate intelligent stock descriptions based on symbol names"""
-        stock_mappings = {
-            'NIFTYBEES': 'Nifty 50 stock - Broad Market',
-            'BANKBEES': 'Banking Sector stock',
-            'JUNIORBEES': 'Nifty Next 50 stock - Mid Cap',
-            'ITBEES': 'Information Technology stock',
-            'PHARMABEES': 'Pharmaceutical Sector stock',
-            'INFRABEES': 'Infrastructure Sector stock',
-            'GOLDBEES': 'Gold Commodity stock',
-            'METALIstock': 'Metal & Mining Sector stock',
-            'OILIstock': 'Oil & Gas Sector stock',
-            'LIQUIDBEES': 'Liquid Fund stock - Money Market',
-            'CPSEstock': 'CPSE (Central PSE) stock',
-            'PSUBNKBEES': 'PSU Banking stock',
-            'MON100': 'NASDAQ 100 stock - US Tech',
-            'MODEFENCE': 'Defence Sector stock',
-            'MIDCAPstock': 'Mid Cap stock',
+        # Dictionary of common stock descriptions
+        desc_map = {
+             # Nifty 50
+            'RELIANCE': 'Reliance Industries Ltd.', 'HDFCBANK': 'HDFC Bank Ltd.', 'ICICIBANK': 'ICICI Bank Ltd.',
+            'INFY': 'Infosys Ltd.', 'HDFC': 'Housing Development Finance Corp', 'TCS': 'Tata Consultancy Services',
+            'ITC': 'ITC Ltd.', 'KOTAKBANK': 'Kotak Mahindra Bank', 'LT': 'Larsen & Toubro Ltd.',
+            'AXISBANK': 'Axis Bank Ltd.', 'HINDUNILVR': 'Hindustan Unilever Ltd.', 'SBIN': 'State Bank of India',
+            'BHARTIARTL': 'Bharti Airtel Ltd.', 'BAJFINANCE': 'Bajaj Finance Ltd.', 'ASIANPAINTS': 'Asian Paints Ltd.',
+            'MARUTI': 'Maruti Suzuki India Ltd.', 'HCLTECH': 'HCL Technologies Ltd.', 'SUNPHARMA': 'Sun Pharmaceutical Inds.',
+            'TITAN': 'Titan Company Ltd.', 'M&M': 'Mahindra & Mahindra Ltd.', 'ULTRACEMCO': 'UltraTech Cement Ltd.',
+            'BAJAJFINSV': 'Bajaj Finserv Ltd.', 'WIPRO': 'Wipro Ltd.', 'NESTLEIND': 'Nestle India Ltd.',
+            'POWERGRID': 'Power Grid Corp. of India', 'TATASTEEL': 'Tata Steel Ltd.', 'JSWSTEEL': 'JSW Steel Ltd.',
+            'NTPC': 'NTPC Ltd.', 'GRASIM': 'Grasim Industries Ltd.', 'TECHM': 'Tech Mahindra Ltd.',
+            'ADANIGREEN': 'Adani Green Energy Ltd.', 'ADANIENT': 'Adani Enterprises Ltd.', 'ADANIPORTS': 'Adani Ports & SEZ',
+            'DIVISLAB': 'Divi\'s Laboratories Ltd.', 'HDFCLIFE': 'HDFC Life Insurance Co.', 'SBILIFE': 'SBI Life Insurance Co.',
+            'BPCL': 'Bharat Petroleum Corp.', 'TATAMOTORS': 'Tata Motors Ltd.', 'ONGC': 'Oil & Natural Gas Corp.',
+            'EICHERMOT': 'Eicher Motors Ltd.', 'DRREDDY': 'Dr. Reddy\'s Laboratories', 'BRITANNIA': 'Britannia Industries',
+            'CIPLA': 'Cipla Ltd.', 'COALINDIA': 'Coal India Ltd.', 'TATACONSUM': 'Tata Consumer Products',
+            'HINDALCO': 'Hindalco Industries Ltd.', 'UPL': 'UPL Ltd.', 'JIOFIN': 'Jio Financial Services'
         }
+        
+        if symbol in desc_map:
+            return desc_map[symbol]
 
-        if symbol in stock_mappings:
-            return stock_mappings[symbol]
-
-        symbol_lower = symbol.lower()
-
-        if 'pharma' in symbol_lower:
-            return 'Pharmaceutical Sector stock'
-        elif 'bank' in symbol_lower:
-            return 'Banking Sector stock'
-        elif 'it' in symbol_lower or 'tech' in symbol_lower:
-            return 'Technology Sector stock'
-        elif 'gold' in symbol_lower:
-            return 'Gold Commodity stock'
-        elif 'oil' in symbol_lower or 'energy' in symbol_lower:
-            return 'Oil & Gas Sector stock'
-        elif 'metal' in symbol_lower:
-            return 'Metal & Mining Sector stock'
-        elif 'infra' in symbol_lower:
-            return 'Infrastructure Sector stock'
-        elif 'defence' in symbol_lower or 'defense' in symbol_lower:
-            return 'Defence Sector stock'
-        elif 'midcap' in symbol_lower or 'mid' in symbol_lower:
-            return 'Mid Cap stock'
-        elif 'smallcap' in symbol_lower or 'small' in symbol_lower:
-            return 'Small Cap stock'
-        elif 'liquid' in symbol_lower:
-            return 'Liquid Fund stock'
-        elif 'nifty' in symbol_lower:
-            return 'Nifty Index stock'
-        elif 'sensex' in symbol_lower:
-            return 'Sensex Index stock'
-        elif 'psu' in symbol_lower:
-            return 'PSU Sector stock'
-        elif 'cpse' in symbol_lower:
-            return 'CPSE stock'
-        elif 'dividend' in symbol_lower:
-            return 'Dividend stock'
-        elif 'momentum' in symbol_lower:
-            return 'Momentum stock'
-        elif 'value' in symbol_lower:
-            return 'Value stock'
-        elif 'quality' in symbol_lower:
-            return 'Quality stock'
-        elif any(geo in symbol_lower for geo in ['us', 'usa', 'nasdaq', 'sp500', 'dow']):
-            return 'International stock'
-        elif 'consumption' in symbol_lower or 'consumer' in symbol_lower:
-            return 'Consumer Sector stock'
-        elif 'auto' in symbol_lower:
-            return 'Automotive Sector stock'
-        elif 'realty' in symbol_lower or 'real' in symbol_lower:
-            return 'Real Estate stock'
-        elif 'healthcare' in symbol_lower or 'health' in symbol_lower:
-            return 'Healthcare Sector stock'
-        elif 'fmcg' in symbol_lower:
-            return 'FMCG Sector stock'
-        elif 'pvt' in symbol_lower or 'private' in symbol_lower:
-            return 'Private Bank stock'
-        else:
-            return f'{symbol} stock'
+        # Artifact cleanup and fallbacks
+        stock_mappings_legacy = {
+            'NIFTYBEES': 'Nifty 50 ETF',
+            'BANKBEES': 'Banking ETF',
+            'JUNIORBEES': 'Nifty Next 50 ETF',
+            'ITBEES': 'IT ETF',
+            'GOLDBEES': 'Gold ETF',
+            'LIQUIDBEES': 'Liquid ETF'
+        }
+        if symbol in stock_mappings_legacy:
+            return stock_mappings_legacy[symbol]
+            
+        return f'{symbol} Stock'
 
     def get_asset_sector_classification(self, symbol: str) -> str:
         """Classify stock into sector categories"""
+        
+        # Robust Sector Mapping for Top Stocks
+        sector_map = {
+            # Financials
+            'HDFCBANK': 'Financials', 'ICICIBANK': 'Financials', 'SBIN': 'Financials', 'AXISBANK': 'Financials',
+            'KOTAKBANK': 'Financials', 'BAJFINANCE': 'Financials', 'BAJAJFINSV': 'Financials', 'HDFCLIFE': 'Financials',
+            'SBILIFE': 'Financials', 'INDUSINDBK': 'Financials', 'BANKBARODA': 'Financials', 'PNB': 'Financials',
+            'JIOFIN': 'Financials', 'PFC': 'Financials', 'RECLTD': 'Financials', 'SHRIRAMFIN': 'Financials',
+            'CHOLAFIN': 'Financials', 'MUTHOOTFIN': 'Financials',
+            
+            # Technology
+            'TCS': 'Technology', 'INFY': 'Technology', 'HCLTECH': 'Technology', 'WIPRO': 'Technology',
+            'TECHM': 'Technology', 'LTIM': 'Technology', 'PERSISTENT': 'Technology', 'COFORGE': 'Technology',
+            'MPHASIS': 'Technology', 'LTTS': 'Technology', 'KPITTECH': 'Technology', 'TATAELXSI': 'Technology',
+            
+            # Energy & Oil
+            'RELIANCE': 'Energy', 'ONGC': 'Energy', 'BPCL': 'Energy', 'POWERGRID': 'Utilities',
+            'NTPC': 'Utilities', 'ADANIGREEN': 'Utilities', 'TATAPOWER': 'Utilities', 'IOC': 'Energy',
+            'GAIL': 'Energy', 'HPCL': 'Energy',
+            
+            # FMCG & Consumption
+            'HINDUNILVR': 'FMCG', 'ITC': 'FMCG', 'NESTLEIND': 'FMCG', 'BRITANNIA': 'FMCG',
+            'TITAN': 'Consumer Discretionary', 'ASIANPAINTS': 'Materials', 'MARICO': 'FMCG',
+            'DABUR': 'FMCG', 'GODREJCP': 'FMCG', 'TATACONSUM': 'FMCG', 'VARUN': 'FMCG',
+            
+            # Auto
+            'TATAMOTORS': 'Automotive', 'MARUTI': 'Automotive', 'M&M': 'Automotive', 'BAJAJ-AUTO': 'Automotive',
+            'EICHERMOT': 'Automotive', 'HEROMOTOCO': 'Automotive', 'TVSMOTOR': 'Automotive', 'BHARATFORG': 'Automotive',
+            
+            # Healthcare
+            'SUNPHARMA': 'Healthcare', 'DRREDDY': 'Healthcare', 'CIPLA': 'Healthcare', 'DIVISLAB': 'Healthcare',
+            'APOLLOHOSP': 'Healthcare', 'LUPIN': 'Healthcare', 'TORNTPHARM': 'Healthcare', 'MANKIND': 'Healthcare',
+            
+            # Materials & Metals
+            'TATASTEEL': 'Materials', 'JSWSTEEL': 'Materials', 'HINDALCO': 'Materials', 'VEDANTA': 'Materials',
+            'ULTRACEMCO': 'Materials', 'AMBUJACEM': 'Materials', 'PIDILITIND': 'Materials', 'JUBLFOOD': 'Consumer Services',
+            
+            # Infrastructure & Capital Goods
+            'LT': 'Infrastructure', 'SIEMENS': 'Capital Goods', 'ABB': 'Capital Goods', 'HAL': 'Defence',
+            'BEL': 'Defence', 'ADANIENT': 'Services', 'ADANIPORTS': 'Infrastructure',
+            
+            # Telecom
+            'BHARTIARTL': 'Telecommunication', 'VODAFONE': 'Telecommunication', 'INDUSINDBK': 'Financials'
+        }
+        
+        if symbol in sector_map:
+            return sector_map[symbol]
+            
+        # Fallback substring logic
         symbol_lower = symbol.lower()
 
         if symbol in ['NIFTYBEES', 'JUNIORBEES', 'MIDCAPstock']:
             return 'Broad Market'
         elif 'bank' in symbol_lower or 'psu' in symbol_lower:
-            return 'Financial'
+            return 'Financials'
         elif 'it' in symbol_lower or 'tech' in symbol_lower or 'mon100' in symbol_lower:
             return 'Technology'
         elif 'pharma' in symbol_lower or 'health' in symbol_lower:
@@ -352,6 +362,14 @@ class StockRotationBacktester(RotationStrategy):
             return 'Cash/Liquid'
         elif 'cpse' in symbol_lower:
             return 'PSU'
+        elif 'fmcg' in symbol_lower:
+            return 'FMCG'
+        elif 'auto' in symbol_lower:
+            return 'Automotive'
+        elif 'realty' in symbol_lower or 'real' in symbol_lower:
+            return 'Real Estate'
+        elif 'consumer' in symbol_lower:
+            return 'Consumption'
         else:
             return 'Other'
 
@@ -396,7 +414,7 @@ class StockRotationBacktester(RotationStrategy):
                     MIN(date) as start_date,
                     MAX(date) as end_date,
                     COUNT(*) as total_records
-                FROM stock_data
+                FROM stock_market
                 WHERE symbol IN ({placeholders})
                 GROUP BY symbol
                 ORDER BY symbol
@@ -546,7 +564,7 @@ class StockRotationBacktester(RotationStrategy):
             
             query = text(f"""
                 SELECT DISTINCT symbol 
-                FROM stock_data 
+                FROM stock_market 
                 WHERE symbol IN ({placeholders})
                 AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
             """)
@@ -578,8 +596,8 @@ class StockRotationBacktester(RotationStrategy):
                     low,
                     close,
                     volume,
-                    adj_close
-                FROM stock_data
+                    adj_close AS adjusted_close
+                FROM stock_market
                 WHERE symbol IN ({placeholders})
                 AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
                 ORDER BY date, symbol
@@ -1216,7 +1234,7 @@ class StockRotationBacktester(RotationStrategy):
                 }
                 
                 # Check actual data count
-                query = text("SELECT COUNT(*), MIN(date), MAX(date) FROM stock_data WHERE symbol = :symbol")
+                query = text("SELECT COUNT(*), MIN(date), MAX(date) FROM stock_market WHERE symbol = :symbol")
                 result = session.execute(query, {"symbol": ticker}).fetchone()
                 
                 if result:
@@ -1239,6 +1257,91 @@ class StockRotationBacktester(RotationStrategy):
         finally:
             if session:
                 session.close()
+
+
+    def compute_52_week_high_low(self, df: pd.DataFrame, current_date: datetime) -> pd.DataFrame:
+        """Calculate rolling 52-week high/low for each ticker at signal date"""
+        # Get data up to current date (signal date - typically Friday)
+        historical_data = df[df.index <= current_date]
+
+        # As per PDF specification: Requires minimum 252 trading days for accurate momentum signals
+        required_trading_days = 252
+        available_days = len(historical_data)
+
+        self.logger.progress(f"📊 Momentum Calculation for {current_date.strftime('%Y-%m-%d')}:")
+        self.logger.info(f"   Available historical data: {available_days} days")
+        self.logger.info(f"   Required for 52-week calc: {required_trading_days} days")
+
+        if available_days < required_trading_days:
+            # Insufficient data for proper 52-week calculation
+            self.logger.info(f"   ❌ Insufficient data: {available_days} < {required_trading_days} required")
+            self.logger.info(f"   📋 Available Stocks: {list(historical_data.columns)}")
+            self.logger.progress(f"   🔄 Strategy will use fallback logic during accumulation")
+            return pd.DataFrame()
+
+        # Use exactly 252 trading days as per PDF specification
+        window_data = historical_data.tail(252)
+        self.logger.progress(f"   ✅ Using exactly {len(window_data)} trading days for momentum")
+
+        if window_data.empty:
+            self.logger.info("   ❌ Window data is empty after filtering")
+            return pd.DataFrame()
+
+        # Calculate 52-week highs and lows as per PDF specification
+        highs_52w = window_data.max()  # Maximum closing price in trailing 252 trading days
+        lows_52w = window_data.min()  # Minimum closing price in trailing 252 trading days
+        current_prices = historical_data.iloc[-1] if not historical_data.empty else pd.Series()
+
+        self.logger.progress(f"   📈 52-week highs calculated for {len(highs_52w)} Stocks")
+        self.logger.progress(f"   📉 52-week lows calculated for {len(lows_52w)} Stocks")
+        self.logger.progress(f"   💰 Current prices available for {len(current_prices)} Stocks")
+
+        # Create result DataFrame with exact PDF specification calculations
+        result_data = []
+        valid_items = 0
+
+        for symbol in highs_52w.index:
+            if (not pd.isna(highs_52w[symbol]) and not pd.isna(lows_52w[symbol]) and
+                    not pd.isna(current_prices[symbol]) and
+                    highs_52w[symbol] > 0 and lows_52w[symbol] > 0 and current_prices[symbol] > 0):
+
+                # Ensure data integrity: high >= low
+                if highs_52w[symbol] >= lows_52w[symbol]:
+                    # Calculate distances exactly as per PDF specification
+                    distance_from_low = (current_prices[symbol] - lows_52w[symbol]) / lows_52w[symbol] * 100
+                    distance_from_high = (highs_52w[symbol] - current_prices[symbol]) / highs_52w[symbol] * 100
+
+                    result_data.append({
+                        'symbol': symbol,
+                        '52w_high': highs_52w[symbol],
+                        '52w_low': lows_52w[symbol],
+                        'current_price': current_prices[symbol],
+                        'distance_from_low': distance_from_low,
+                        'distance_from_high': distance_from_high
+                    })
+
+                    valid_items += 1
+                    # self.logger.progress(
+                    #     f"   ✅ {symbol}: High=₹{highs_52w[symbol]:.2f}, Low=₹{lows_52w[symbol]:.2f}, Current=₹{current_prices[symbol]:.2f}")
+                    # self.logger.progress(
+                    #     f"       Distance from Low: {distance_from_low:.2f}%, Distance from High: {distance_from_high:.2f}%")
+                else:
+                    self.logger.info(
+                        f"   ❌ {symbol}: Data integrity issue - high ({highs_52w[symbol]:.2f}) < low ({lows_52w[symbol]:.2f})")
+            else:
+                self.logger.info(f"   ❌ {symbol}: Invalid data - contains NaN or zero values")
+
+        result_df = pd.DataFrame(result_data)
+        self.logger.progress(f"   🎯 Final momentum result: {len(result_df)} valid Stocks with proper 52-week data")
+
+        if not result_df.empty:
+            # Sort by distance from low for accumulation phase (buy closest to low)
+            result_df_sorted = result_df.sort_values('distance_from_low')
+            self.logger.progress(f"   📊 Stock Rankings (closest to 52-week low first):")
+            for idx, row in result_df_sorted.head().iterrows():
+                self.logger.info(f"      {idx + 1}. {row['symbol']}: {row['distance_from_low']:.2f}% from low")
+
+        return result_df
 
     def run_backtest(self, tickers: List[str], start_date: str, end_date: str,
                      capital_per_week: float, accumulation_weeks: int,
@@ -1304,64 +1407,135 @@ class StockRotationBacktester(RotationStrategy):
                 # 2. Calculate Momentum (52-week High/Low)
                 # Use signal_date already calculated above
                 
+                # ===== 52-WEEK MOMENTUM CALCULATION =====
                 if signal_date:
+                    self.logger.progress(f"📊 Computing 52-week momentum for signal date...")
                     high_low_data = self.compute_52_week_high_low(close_df, signal_date)
-                    
-                    if not high_low_data.empty:
-                        # 3. Execute Strategy
-                        if week_num <= accumulation_weeks:
-                            # Accumulation Phase: Buy stock closest to 52-week low
-                            reallocation_result = self.execute_reallocation_process(
-                                week_num=week_num,
-                                execution_date=current_date,
-                                high_low_data=high_low_data,
-                                open_prices=current_prices,
-                                current_holdings=holdings,
-                                available_cash=cash,
-                                brokerage_percent=brokerage_percent,
-                                target_allocation=capital_per_week
-                            )
-                            
-                            buy_transaction = reallocation_result['buy_transaction']
-                            holdings = reallocation_result['holdings']
-                            cash = reallocation_result['remaining_cash']
-                            
-                            if buy_transaction:
-                                self.portfolio_log.append({
-                                    'week': week_num,
-                                    'execution_date': current_date,
-                                    'action': 'buy',
-                                    'ticker': buy_transaction['ticker'],
-                                    'units': buy_transaction['units'],
-                                    'price': buy_transaction['price'],
-                                    'amount': buy_transaction['amount'],
-                                    'nav': self.calculate_nav(holdings, current_prices, cash),
-                                    'costs': buy_transaction['costs']
-                                })
-                        else:
-                            # Churning Phase
-                            current_nav = self.calculate_nav(holdings, current_prices, cash)
-                            target_churn = self.calculate_dynamic_churn_amount(
-                                current_nav, cash, capital_per_week, accumulation_weeks, compounding_enabled
-                            )
-                            
-                            churn_result = self.execute_churning_phase(
-                                week_num=week_num,
-                                execution_date=current_date,
-                                high_low_data=high_low_data,
-                                open_prices=current_prices,
-                                current_holdings=holdings,
-                                cash=cash,
-                                target_capital=target_churn,
-                                brokerage_percent=brokerage_percent
-                            )
-                            
-                            holdings = churn_result['holdings']
-                            cash = churn_result['cash']
-                            
+                else:
+                    high_low_data = pd.DataFrame()
+
                 # Update state
                 self.current_cash = cash
                 self.current_holdings = holdings
+                
+                # Calculate current NAV
+                nav_display = self.calculate_nav(holdings, current_prices, cash)
+                
+                # Calculate dynamic capital per week (with compounding if enabled)
+                dynamic_capital_per_week = self.calculate_dynamic_churn_amount(
+                    nav_display, cash, capital_per_week, accumulation_weeks, compounding_enabled
+                )
+                
+                # Initialize trade log for this week with all required fields
+                trade_log = {
+                    'week': week_num,
+                    'signal_date': signal_date,
+                    'execution_date': current_date,
+                    'action': 'none',
+                    'ticker': '',
+                    'units': 0,
+                    'price': 0,
+                    'amount': 0,
+                    'costs': {},
+                    'capital_gains_tax': 0,
+                    'cash_before': cash - (capital_per_week if is_accumulation else 0), # Approximate cash before allocation
+                    'cash_after': cash,
+                    'holdings': holdings.copy(),
+                    'nav': nav_display,
+                    'base_capital_per_week': capital_per_week,
+                    'dynamic_capital_per_week': dynamic_capital_per_week,
+                    'compounding_enabled': compounding_enabled,
+                    'debug_info': {
+                        'momentum_data_available': not high_low_data.empty if signal_date else False,
+                        'momentum_stocks_count': len(high_low_data) if signal_date and not high_low_data.empty else 0,
+                        'available_prices_count': len(current_prices),
+                        'phase': 'accumulation' if is_accumulation else 'churning'
+                    }
+                }
+
+                # 3. Execute Strategy
+                if signal_date and not high_low_data.empty:
+                    if week_num <= accumulation_weeks:
+                        # Accumulation Phase: Buy stock closest to 52-week low
+                        reallocation_result = self.execute_reallocation_process(
+                            week_num=week_num,
+                            execution_date=current_date,
+                            high_low_data=high_low_data,
+                            open_prices=current_prices,
+                            current_holdings=holdings,
+                            available_cash=cash,
+                            brokerage_percent=brokerage_percent,
+                            target_allocation=capital_per_week
+                        )
+                        
+                        buy_transaction = reallocation_result['buy_transaction']
+                        holdings = reallocation_result['holdings']
+                        cash = reallocation_result['remaining_cash']
+                        
+                        if buy_transaction:
+                            # Enhance with detailed buy info
+                            buy_amount = buy_transaction['amount']
+                            buy_costs = buy_transaction['costs']
+                            total_cost = buy_transaction.get('net_amount', buy_amount + buy_costs.get('total_costs', 0))
+                            
+                            trade_log.update({
+                                'action': 'buy',
+                                'ticker': buy_transaction['ticker'],
+                                'units': buy_transaction['units'],
+                                'price': buy_transaction['price'],
+                                'amount': buy_amount,
+                                'costs': buy_costs,
+                                'cash_after': cash,
+                                'total_cost': total_cost,
+                                'buy_details': {
+                                    'gross_amount': buy_amount,
+                                    'brokerage': buy_costs.get('brokerage', 0),
+                                    'stt': buy_costs.get('stt', 0),
+                                    'stamp_duty': buy_costs.get('stamp_duty', 0),
+                                    'exchange_charges': buy_costs.get('exchange_charges', 0),
+                                    'sebi_charges': buy_costs.get('sebi_charges', 0),
+                                    'gst': buy_costs.get('gst', 0),
+                                    'total_transaction_costs': buy_costs.get('total_costs', 0),
+                                    'total_cost': total_cost,
+                                    # Handle simplified costs dict that might lack total_costs key if old format
+                                    'cost_percentage': (buy_costs.get('total_costs', 0) / buy_amount * 100) if buy_amount > 0 else 0
+                                }
+                            })
+                            
+                            self.log_transaction_costs(week_num, current_date, 'buy', buy_transaction['ticker'],
+                                                       buy_transaction['units'], buy_transaction['price'],
+                                                       buy_transaction['costs'])
+                    else:
+                        # Churning Phase
+                        trade_log['target_capital'] = dynamic_capital_per_week
+                        
+                        churn_result = self.execute_churning_phase(
+                            week_num=week_num,
+                            execution_date=current_date,
+                            high_low_data=high_low_data,
+                            open_prices=current_prices,
+                            current_holdings=holdings,
+                            cash=cash,
+                            target_capital=dynamic_capital_per_week,
+                            brokerage_percent=brokerage_percent
+                        )
+                        
+                        holdings = churn_result['holdings']
+                        cash = churn_result['cash']
+                        
+                        # Generate summary similar to ETF backtester
+                        churning_summary = self.get_churning_summary(churn_result)
+                        
+                        # Merge results
+                        trade_log.update(churn_result)
+                        trade_log.update(churning_summary)
+                            
+                # Update final state in log
+                trade_log['holdings'] = holdings.copy()
+                trade_log['cash_after'] = cash
+                trade_log['nav'] = self.calculate_nav(holdings, current_prices, cash)
+                
+                self.portfolio_log.append(trade_log)
                 
                 # Weekly Summary Log (matching user request)
                 nav_display = self.calculate_nav(holdings, current_prices, cash)
@@ -1406,6 +1580,90 @@ class StockRotationBacktester(RotationStrategy):
             traceback.print_exc()
             return {"error": str(e)}
 
+    def get_churning_summary(self, churn_result: Dict) -> Dict:
+        """
+        Generate a comprehensive summary of the churning operation
+
+        This method provides detailed analysis of both buy and sell operations
+        including cost breakdown, efficiency metrics, and portfolio impact
+        """
+        if churn_result.get('action') != 'churn':
+            return {'error': 'Not a churning operation'}
+
+        sell_summary = churn_result.get('sell_summary', {})
+        buy_summary = churn_result.get('buy_summary', {})
+        portfolio_state = churn_result.get('portfolio_state', {})
+        churning_metrics = churn_result.get('churning_metrics', {})
+
+        # Calculate detailed metrics
+        total_sell_amount = sum(txn.get('amount', 0) for txn in sell_summary.get('sell_transactions', []))
+        total_sell_costs = sum(
+            txn.get('costs', {}).get('total_costs', 0) for txn in sell_summary.get('sell_transactions', []))
+        total_buy_amount = buy_summary.get('buy_amount', 0)
+        total_buy_costs = buy_summary.get('buy_costs', {}).get('total_costs', 0)
+
+        return {
+            'churning_summary': {
+                'week': churn_result.get('week'),
+                'execution_date': churn_result.get('execution_date'),
+                'target_capital': churn_result.get('target_capital'),
+
+                # === SELL OPERATIONS SUMMARY ===
+                'sell_operations': {
+                    'total_transactions': sell_summary.get('number_of_sell_transactions', 0),
+                    'total_gross_amount': total_sell_amount,
+                    'total_transaction_costs': total_sell_costs,
+                    'total_capital_gains_tax': sell_summary.get('total_capital_gains_tax', 0),
+                    'total_deductions': total_sell_costs + sell_summary.get('total_capital_gains_tax', 0),
+                    'net_proceeds': sell_summary.get('total_raised', 0),
+                    'cost_efficiency': (total_sell_costs / total_sell_amount * 100) if total_sell_amount > 0 else 0,
+                    'tax_efficiency': (sell_summary.get('total_capital_gains_tax',
+                                                        0) / total_sell_amount * 100) if total_sell_amount > 0 else 0,
+                    'net_efficiency': (sell_summary.get('total_raised',
+                                                        0) / total_sell_amount * 100) if total_sell_amount > 0 else 0,
+                    'transactions': sell_summary.get('sell_transactions', [])
+                },
+
+                # === BUY OPERATIONS SUMMARY ===
+                'buy_operations': {
+                    'target_ticker': buy_summary.get('target_ticker'),
+                    'units_purchased': buy_summary.get('units_bought', 0),
+                    'gross_amount': total_buy_amount,
+                    'transaction_costs': total_buy_costs,
+                    'total_cost': buy_summary.get('total_buy_cost', 0),
+                    'cost_efficiency': (total_buy_costs / total_buy_amount * 100) if total_buy_amount > 0 else 0,
+                    'effective_price_per_unit': buy_summary.get('total_buy_cost', 0) / buy_summary.get('units_bought',
+                                                                                                       1) if buy_summary.get(
+                        'units_bought', 0) > 0 else 0
+                },
+
+                # === OVERALL CHURNING METRICS ===
+                'overall_metrics': {
+                    'capital_raised_vs_target': (
+                                sell_summary.get('total_raised', 0) / churn_result.get('target_capital',
+                                                                                       1) * 100) if churn_result.get(
+                        'target_capital', 0) > 0 else 0,
+                    'capital_deployed': (buy_summary.get('total_buy_cost', 0) / sell_summary.get('total_raised',
+                                                                                                 1) * 100) if sell_summary.get(
+                        'total_raised', 0) > 0 else 0,
+                    'total_costs_percentage': ((total_sell_costs + total_buy_costs + sell_summary.get(
+                        'total_capital_gains_tax', 0)) / total_sell_amount * 100) if total_sell_amount > 0 else 0,
+                    'net_cash_flow': portfolio_state.get('net_cash_flow', 0),
+                    'reallocation_success': churning_metrics.get('reallocation_success', False)
+                },
+
+                # === PORTFOLIO IMPACT ===
+                'portfolio_impact': {
+                    'cash_change': portfolio_state.get('cash_after', 0) - portfolio_state.get('cash_before', 0),
+                    'holdings_change': {
+                        'before': portfolio_state.get('holdings_before', {}),
+                        'after': portfolio_state.get('holdings_after', {})
+                    },
+                    'net_portfolio_value_change': portfolio_state.get('net_cash_flow', 0)
+                }
+            }
+        }
+
     def process_results(self, price_df: pd.DataFrame, capital_per_week: float, accumulation_weeks: int):
         """Process backtest results into DataFrames"""
         nav_data = []
@@ -1442,7 +1700,8 @@ class StockRotationBacktester(RotationStrategy):
                 'date': date,
                 'nav': nav,
                 'cumulative_investment': cumulative_investment,
-                'week': i
+                'week': i,
+                'base_capital_per_week': capital_per_week
             })
             
         self.weekly_nav_df = pd.DataFrame(nav_data)
@@ -1455,24 +1714,30 @@ class StockRotationBacktester(RotationStrategy):
 
     def calculate_benchmark_buyhold(self, start_date: str, end_date: str, total_investment: float,
                                     brokerage_percent: float) -> pd.DataFrame:
-        """Calculate benchmark buy-and-hold performance using Nifty50 index"""
+        """
+        Calculate benchmark performance using SIP (Systematic Investment Plan) approach
+        to match the strategy's weekly capital injection during accumulation phase.
+        Uses NIFTY50 from index_data.
+        """
         session = None
         try:
             session = self._get_session()
             from sqlalchemy import text
+            
+            benchmark_symbol = "NIFTY_50"
 
-            # Query Nifty50 index data from index_data table
+            # Load benchmark data for the entire period
             query = text("""
-                SELECT date, close
-                FROM index_data
-                WHERE symbol = 'NIFTY50'
+                SELECT date, COALESCE(adj_close, close) AS close
+                FROM nifty_50_index_market
+                WHERE symbol = :symbol
                 AND date >= CAST(:start_date AS DATE)
                 AND date <= CAST(:end_date AS DATE)
                 ORDER BY date
             """)
 
-            # Execute query
             result = session.execute(query, {
+                "symbol": benchmark_symbol,
                 "start_date": start_date,
                 "end_date": end_date
             })
@@ -1481,31 +1746,104 @@ class StockRotationBacktester(RotationStrategy):
             nifty_df = pd.DataFrame(rows, columns=columns)
 
             if nifty_df.empty:
-                self.logger.info("⚠️ No Nifty50 benchmark data found in index_data table")
+                self.logger.info("⚠️ No Nifty50 benchmark data found in index_data")
                 return pd.DataFrame()
-
-            self.logger.progress(f"✅ Loaded {len(nifty_df)} days of Nifty50 benchmark data")
 
             nifty_df['date'] = pd.to_datetime(nifty_df['date'])
             nifty_df = nifty_df.set_index('date')
 
-            start_price = nifty_df['close'].iloc[0]
+            # Get strategy execution dates and capital flows from weekly_nav_df
+            if hasattr(self, 'weekly_nav_df') and not self.weekly_nav_df.empty:
+                weekly_data = self.weekly_nav_df.copy()
+                weekly_data['date'] = pd.to_datetime(weekly_data['date'])
+                
+                # Align benchmark data to weekly dates
+                benchmark_log = []
+                
+                # SIP Parameters
+                units_held = 0
+                cash_balance = 0
+                total_invested_so_far = 0
+                
+                self.logger.progress(f"📊 Calculating Nift50 SIP Benchmark Performance...")
+                
+                for _, row in weekly_data.iterrows():
+                    date = row['date']
+                    week_num = row['week']
+                    
+                    # 1. Get weekly capital injection (if any)
+                    capital_injection = 0
+                    if 'base_capital_per_week' in row:
+                        capital_per_week = row['base_capital_per_week']
+                        # Assuming strategy injects capital as long as week_num <= accumulation_weeks
+                        # We can derive accumulation_weeks roughly if not available
+                        
+                        if capital_per_week > 0:
+                            # Heuristic: if total_investment is known, derive accumulation weeks
+                            derived_acc_weeks = int(total_investment / capital_per_week)
+                            if week_num <= derived_acc_weeks:
+                                capital_injection = capital_per_week
+                    
+                    # 2. Add capital to cash
+                    cash_balance += capital_injection
+                    total_invested_so_far += capital_injection
+                    
+                    # 3. Find benchmark price for this date (or nearest prior)
+                    price = 0
+                    if date in nifty_df.index:
+                        price = nifty_df.loc[date]['close']
+                    else:
+                        # Find nearest prior date
+                        prior_dates = nifty_df.index[nifty_df.index <= date]
+                        if not prior_dates.empty:
+                            price = nifty_df.loc[prior_dates[-1]]['close']
 
-            # Calculate transaction costs for initial investment
-            costs = self.calculate_transaction_costs('buy', total_investment, brokerage_percent)
+                    if price is not None:
+                        try:
+                            price = float(price)
+                        except (TypeError, ValueError):
+                            price = 0
 
-            # Calculate units that can be bought
-            units = int(total_investment / costs['net_amount'] * total_investment / start_price)
-            actual_investment = units * start_price
-            actual_costs = self.calculate_transaction_costs('buy', actual_investment, brokerage_percent)
-
-            # Calculate NAV over time
-            nifty_df['nav'] = units * nifty_df['close']
-            nifty_df['returns'] = nifty_df['close'].pct_change()
-
-            nifty_df = nifty_df.reset_index()
-
-            return nifty_df
+                    if price and price > 0:
+                        # 4. Buy units if we have cash
+                        units_to_buy = int(cash_balance / price)
+                        
+                        if units_to_buy > 0:
+                            transaction_amt = units_to_buy * price
+                            txn_costs = self.calculate_transaction_costs('buy', transaction_amt, brokerage_percent)
+                            total_outflow = transaction_amt + txn_costs['total_costs']
+                            
+                            # Adjust if costs exceed cash
+                            while total_outflow > cash_balance and units_to_buy > 0:
+                                units_to_buy -= 1
+                                transaction_amt = units_to_buy * price
+                                txn_costs = self.calculate_transaction_costs('buy', transaction_amt, brokerage_percent)
+                                total_outflow = transaction_amt + txn_costs['total_costs']
+                            
+                            if units_to_buy > 0:
+                                units_held += units_to_buy
+                                cash_balance -= total_outflow
+                    
+                    # 5. Calculate NAV
+                    current_nav = (units_held * price) + cash_balance
+                    
+                    benchmark_log.append({
+                        'date': date,
+                        'nav': current_nav,
+                        'cumulative_investment': total_invested_so_far
+                    })
+                
+                # Create final dataframe
+                nifty_weekly_df = pd.DataFrame(benchmark_log)
+                if not nifty_weekly_df.empty:
+                    nifty_weekly_df['returns'] = nifty_weekly_df['nav'].pct_change()
+                
+                self.logger.progress(f"✅ Calculated SIP Benchmark for {len(nifty_weekly_df)} weeks")
+                return nifty_weekly_df
+            
+            else:
+                 # Fallback to old simple calculation if no weekly data (should not happen in normal flows)
+                 return pd.DataFrame()
 
         except Exception as e:
             self.logger.trade(f"Error calculating Nifty50 buy-hold benchmark: {e}")
@@ -1572,6 +1910,7 @@ class StockRotationBacktester(RotationStrategy):
             'Max Drawdown': f"{max_drawdown:.2f}%",
             'Calmar Ratio': f"{calmar:.2f}",
             'Total Weeks': len(df),
+            'Total Trades': len(self.transaction_costs_log),
             'Win Rate': f"{(weekly_returns > 0).mean() * 100:.1f}%" if len(weekly_returns) > 0 else "N/A"
         }
 
@@ -1785,16 +2124,46 @@ class StockRotationBacktester(RotationStrategy):
         ]
         return pd.DataFrame(data)
 
-    def get_transaction_costs_summary(self) -> Dict[str, str]:
-        """Get summary of transaction costs"""
+    def get_transaction_costs_summary(self) -> Dict:
+        """Get summary of transaction costs grouped by year (Simplified Format)"""
         if not self.transaction_costs_log:
             return {}
             
-        total_costs = sum(l['total_impact'] for l in self.transaction_costs_log)
+        costs_df = pd.DataFrame(self.transaction_costs_log)
         
-        return {
-            'Total All Costs': f"₹{total_costs:,.2f}",
-            'Capital Gains Tax': f"₹{sum(l['capital_gains_tax'] for l in self.transaction_costs_log):,.2f}",
-            'Cost as % of Volume': "0.5%", # Placeholder
-            'Total Transactions': str(len(self.transaction_costs_log))
-        }
+        # Robustly determine column to use for year
+        date_col = None
+        if 'date' in costs_df.columns:
+            date_col = 'date'
+        elif 'execution_date' in costs_df.columns:
+            date_col = 'execution_date'
+            
+        if date_col:
+            costs_df['year'] = pd.to_datetime(costs_df[date_col]).dt.year.astype(str)
+        else:
+             print(f"[DEBUG] Stock Rotation get_transaction_costs_summary: Missing date column! Columns found: {costs_df.columns.tolist()}")
+             costs_df['year'] = "Total"
+
+        summary = {}
+
+        def calculate_metrics(df):
+             transaction_costs = df['total_costs'].sum()
+             capital_gains_tax = df['capital_gains_tax'].sum()
+             total_costs = transaction_costs + capital_gains_tax
+             brokerage = df['brokerage'].sum()
+             transactions = df['week'].nunique()
+             
+             return {
+                'transaction_costs': round(transaction_costs, 2),
+                'capital_gains_tax': round(capital_gains_tax, 2),
+                'total_costs': round(total_costs, 2),
+                'total_brokerage': round(brokerage, 2),
+                'transactions': transactions
+             }
+        
+        # Yearly summary
+        if 'year' in costs_df.columns:
+             for year, group in costs_df.groupby('year'):
+                 summary[str(year)] = calculate_metrics(group)
+                 
+        return summary

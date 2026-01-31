@@ -128,15 +128,15 @@ class LiveStockSignalGenerator:
     
     def get_stock_data_for_signals(self, days_back: int = 365) -> List[str]:
         """
-        Get stock symbols for signal generation from stock_data table
-        Note: stock_data table should only contain stocks (ETFs are in etf_data table)
+        Get stock symbols for signal generation from stock_market table
+        Note: stock_market table should only contain stocks (ETFs are in etf_market table)
         """
-        from market_data_db_connection import get_session as get_market_data_session
+        from app_data_db_connection import get_session as get_app_data_session
         from sqlalchemy import text
         
         session = None
         try:
-            session = get_market_data_session()
+            session = get_app_data_session()
             
             # Calculate the most recent Friday (same logic as ETF signal generator)
             today = datetime.now()
@@ -148,8 +148,8 @@ class LiveStockSignalGenerator:
             start_date = (test_date - timedelta(days=days_back)).strftime('%Y-%m-%d')
             self.logger.info(f"Using last Friday's date: {end_date} for stock signal generation")
             
-            # Get all symbols from stock_data table (should only contain stocks)
-            query = text("SELECT DISTINCT symbol FROM stock_data ORDER BY symbol")
+            # Get all symbols from stock_market table
+            query = text("SELECT DISTINCT symbol FROM stock_market ORDER BY symbol")
             result = session.execute(query)
             stock_symbols = [row[0] for row in result.fetchall()]
             
@@ -157,7 +157,7 @@ class LiveStockSignalGenerator:
             valid_stock_symbols = []
             for symbol in stock_symbols:
                 query = text("""
-                    SELECT COUNT(*) FROM stock_data 
+                    SELECT COUNT(*) FROM stock_market 
                     WHERE symbol = :symbol AND date >= :start_date AND date <= :end_date
                 """)
                 result = session.execute(query, {"symbol": symbol, "start_date": start_date, "end_date": end_date})
@@ -177,7 +177,7 @@ class LiveStockSignalGenerator:
     
     def load_stock_data_from_database(self, symbol: str, start_date: str, end_date: str) -> pd.DataFrame:
         """Load stock data from PostgreSQL database"""
-        from market_data_db_connection import get_session as get_market_data_session
+        from app_data_db_connection import get_session as get_app_data_session
         from sqlalchemy import text
         
         session = None
@@ -186,7 +186,7 @@ class LiveStockSignalGenerator:
             
             query = text("""
                 SELECT date, open, high, low, close, volume, adj_close
-                FROM stock_data
+                FROM stock_market
                 WHERE symbol = :symbol AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
                 ORDER BY date
             """)

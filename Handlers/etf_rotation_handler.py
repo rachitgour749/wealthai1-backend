@@ -7,6 +7,7 @@ import os
 from typing import Dict, Any
 from datetime import datetime
 from sqlalchemy.orm import Session
+import pandas as pd
 
 # Add Strategies path for imports
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Strategies'))
@@ -69,12 +70,38 @@ class ETFRotationHandler(BaseStrategyHandler):
                     error=result["error"]
                 )
             
-            # Calculate metrics
+            # Calculate metrics (Raw values)
             etf_metrics = backtester.calculate_metrics(
                 request.capital_per_week,
                 request.accumulation_weeks,
                 request.risk_free_rate or 8.0
             )
+            
+            # Helper to parse string values back to float
+            def parse_metric(val):
+                if isinstance(val, (int, float)): return val
+                if isinstance(val, str):
+                    clean = val.replace('₹', '').replace(',', '').replace('%', '')
+                    try:
+                        return float(clean)
+                    except ValueError:
+                        return val
+                return val
+
+            # Standardize Strategy Metrics
+            flat_metrics = {
+                "total_investment": parse_metric(etf_metrics.get('Total Investment', 0)),
+                "final_capital": parse_metric(etf_metrics.get('Final Value', 0)),
+                "total_return_pct": parse_metric(etf_metrics.get('Total Return', 0)),
+                "cagr": parse_metric(etf_metrics.get('CAGR', 0)),
+                "xirr": parse_metric(etf_metrics.get('XIRR', 0)),
+                "sharpe_ratio": parse_metric(etf_metrics.get('Sharpe Ratio', 0)),
+                "calmar_ratio": parse_metric(etf_metrics.get('Calmar Ratio', 0)),
+                "max_drawdown_pct": parse_metric(etf_metrics.get('Max Drawdown', 0)),
+                "volatility": parse_metric(etf_metrics.get('Volatility', 0)),
+                "total_trades": etf_metrics.get('Total Trades', 0),
+                "win_rate_pct": parse_metric(etf_metrics.get('Win Rate', 0))
+            }
             
             # Calculate benchmark metrics
             total_investment = request.accumulation_weeks * request.capital_per_week
@@ -82,6 +109,18 @@ class ETFRotationHandler(BaseStrategyHandler):
                 total_investment,
                 request.risk_free_rate or 8.0
             )
+            
+            flat_benchmark_metrics = {
+                "total_investment": parse_metric(benchmark_metrics.get('Total Investment', 0)),
+                "final_capital": parse_metric(benchmark_metrics.get('Final Value', 0)),
+                "total_return_pct": parse_metric(benchmark_metrics.get('Total Return', 0)),
+                "cagr": parse_metric(benchmark_metrics.get('CAGR', 0)),
+                "xirr": parse_metric(benchmark_metrics.get('XIRR', 0)),
+                "sharpe_ratio": parse_metric(benchmark_metrics.get('Sharpe Ratio', 0)),
+                "calmar_ratio": parse_metric(benchmark_metrics.get('Calmar Ratio', 0)),
+                "max_drawdown_pct": parse_metric(benchmark_metrics.get('Max Drawdown', 0)),
+                "volatility": parse_metric(benchmark_metrics.get('Volatility', 0))
+            }
             
             # Prepare performance data
             performance_data = {
@@ -93,48 +132,49 @@ class ETFRotationHandler(BaseStrategyHandler):
             
             if not backtester.weekly_nav_df.empty:
                 performance_data["dates"] = [str(date) for date in backtester.weekly_nav_df['date']]
-                performance_data["etf_strategy"] = backtester.weekly_nav_df['nav'].tolist()
+                performance_data["strategy"] = backtester.weekly_nav_df['nav'].tolist()
                 performance_data["cumulative_investment"] = backtester.weekly_nav_df['cumulative_investment'].tolist()
                 
                 if not backtester.nifty50_df.empty:
-                    performance_data["benchmark_buyhold"] = backtester.nifty50_df['nav'].tolist()
+                    # Resample benchmark data to match strategy dates
+                    strategy_dates = pd.to_datetime(backtester.weekly_nav_df['date'])
+                    
+                    # Ensure benchmark df index is datetime
+                    if not isinstance(backtester.nifty50_df.index, pd.DatetimeIndex):
+                        backtester.nifty50_df.index = pd.to_datetime(backtester.nifty50_df['date'])
+                    
+                    # Reindex/Resample
+                    # Using asof to get closest value on or before the date
+                    benchmark_aligned = backtester.nifty50_df.reindex(strategy_dates, method='ffill')
+                    
+                    performance_data["benchmark_buyhold"] = benchmark_aligned['nav'].fillna(method='ffill').tolist()
             
             # Prepare transaction log
-            transaction_log = []
-            for log in backtester.portfolio_log:
-                costs = log.get('costs', {})
-                transaction_costs = costs.get('total_costs', 0) if costs else 0
-                
-                transaction_log.append({
-                    'week': log.get('week', 0),
-                    'date': log.get('execution_date', '').strftime('%Y-%m-%d') if hasattr(log.get('execution_date', ''), 'strftime') else str(log.get('execution_date', '')),
-                    'action': log.get('action', 'NONE'),
-                    'ticker': log.get('ticker', ''),
-                    'units': log.get('units', 0),
-                    'price': log.get('price', 0),
-                    'amount': log.get('amount', 0),
-                    'transaction_costs': transaction_costs,
-                    'capital_gains_tax': log.get('capital_gains_tax', 0),
-                    'nav': log.get('nav', 0)
-                })
+            # Use full portfolio log with all details (costs, debug_info, etc.)
+            transaction_log = backtester.portfolio_log
             
-            # Normalize benchmark metrics
-            benchmark_metrics = self._normalize_benchmark_metrics(benchmark_metrics)
-            
+            # Get cost breakdown
+            cost_breakdown = backtester.get_transaction_costs_summary()
+
+            # Combined final metrics
+            metrics = {
+                **flat_metrics,
+                "benchmark_metrics": flat_benchmark_metrics
+            }
+
             # Sanitize all data
-            metrics = self._sanitize_data({
-                **etf_metrics,
-                "benchmark_metrics": benchmark_metrics
-            })
+            metrics = self._sanitize_data(metrics)
             performance_data = self._sanitize_data(performance_data)
             transaction_log = self._sanitize_data(transaction_log)
+            # cost_breakdown values must be sanitized for numpy support
+            cost_breakdown = self._sanitize_data(cost_breakdown)
             
             # Cache backtest results
             print(f"[ETF_ROTATION_HANDLER] About to cache results...")
             print(f"[ETF_ROTATION_HANDLER] Backtester has {len(backtester.portfolio_log)} portfolio log entries")
             
             try:
-                from APIs.centralized_backtest import cache_backtest_results
+                from APIs.common.cache import cache_backtest_results
                 print(f"[ETF_ROTATION_HANDLER] Calling cache_backtest_results...")
                 cache_backtest_results("ETF_Rotation", backtester)
                 print(f"[ETF_ROTATION_HANDLER] ✅ Cache call completed")
@@ -148,7 +188,8 @@ class ETFRotationHandler(BaseStrategyHandler):
                 strategy_type=request.strategy_type,
                 metrics=metrics,
                 performance_data=performance_data,
-                transaction_log=transaction_log
+                transaction_log=transaction_log,
+                cost_breakdown=cost_breakdown
             )
             
         except Exception as e:

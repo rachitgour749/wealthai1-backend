@@ -5,11 +5,11 @@ from typing import List, Dict, Any, Optional, Tuple
 import warnings
 import os
 import json
-from Databases.market_data_db_connection import (
-    create_connection as create_market_data_connection,
-    get_session as get_market_data_session,
-    init_database as init_market_data_database,
-    InternationalETFData  # International ETF data model (uses international_etf_data table)
+from Databases.app_data_db_connection import (
+    create_connection as create_app_data_connection,
+    get_session as get_app_data_session,
+    init_database as init_app_data_database,
+    USETFMarket as InternationalETFData  # Uses us_etf_market table
 )
 
 # Import base class for OOP refactoring
@@ -43,12 +43,12 @@ class InternationalETFRotationBacktester(RotationStrategy):
         # Call base class constructor (initializes common attributes)
         super().__init__()
         
-        # Initialize PostgreSQL connection
-        if not create_market_data_connection():
-            raise RuntimeError("Failed to connect to MarketData database")
+        # Initialize PostgreSQL connection to ApplicationData
+        if not create_app_data_connection():
+            raise RuntimeError("Failed to connect to ApplicationData database")
 
         # Initialize database tables
-        init_market_data_database()
+        init_app_data_database()
 
         # Initialize attributes before calling load_metadata (which uses _verbose)
         self.portfolio_log = []
@@ -74,7 +74,7 @@ class InternationalETFRotationBacktester(RotationStrategy):
         self.logging_config = self._load_logging_config()
         
         # Strategy-specific table configuration (must be set before method calls)
-        self.data_table = "international_etf_data"  # International ETFs stored in international_etf_data table
+        self.data_table = "us_etf_market"  # US ETFs stored in us_etf_market table
         
         self.available_databases = []  # Not needed for PostgreSQL
         
@@ -237,8 +237,8 @@ class InternationalETFRotationBacktester(RotationStrategy):
         self._verbose = verbose
 
     def _get_session(self):
-        """Get database session for PostgreSQL"""
-        return get_market_data_session()
+        """Get database session for PostgreSQL (ApplicationData)"""
+        return get_app_data_session()
     
     def load_data(self, start_date: datetime, end_date: datetime) -> Dict[str, pd.DataFrame]:
         """
@@ -313,15 +313,15 @@ class InternationalETFRotationBacktester(RotationStrategy):
         return []
 
     def load_metadata(self) -> Dict[str, Dict]:
-        """Load International ETF metadata by calculating directly from international_etf_data table"""
+        """Load International ETF metadata by calculating directly from us_etf_market table"""
         session = None
         try:
             session = self._get_session()
             
-            # Calculate metadata directly from international_etf_data table
+            # Calculate metadata directly from us_etf_market table
             metadata = self.calculate_metadata_from_data(session)
             if self._verbose:
-                self.logger.debug(f"Calculated metadata for {len(metadata)} International ETFs from international_etf_data table")
+                self.logger.debug(f"Calculated metadata for {len(metadata)} International ETFs from us_etf_market table")
             
             return metadata
             
@@ -336,12 +336,12 @@ class InternationalETFRotationBacktester(RotationStrategy):
                 session.close()
 
     def calculate_metadata_from_data(self, session) -> Dict[str, Dict]:
-        """Calculate metadata directly from international_etf_data table"""
+        """Calculate metadata directly from us_etf_market table"""
         try:
             from sqlalchemy import text
             
-            # Use international_etf_data table directly
-            table_name = 'international_etf_data'
+            # Use us_etf_market table directly
+            table_name = 'us_etf_market'
             
             # Check if table exists and has data
             count_check = session.execute(text(f"SELECT COUNT(*) as count FROM {table_name}"))
@@ -354,7 +354,7 @@ class InternationalETFRotationBacktester(RotationStrategy):
             if self._verbose:
                 self.logger.debug(f"Found {total_count} total records in {table_name} table")
             
-            # Query metadata from international_etf_data - date column is of type DATE
+            # Query metadata from us_etf_market - date column is of type DATE
             # Fix: Cast dates to timestamp to get proper interval for EXTRACT
             query_str = """
                 SELECT 
@@ -363,12 +363,12 @@ class InternationalETFRotationBacktester(RotationStrategy):
                     MAX(date)::text as end_date,
                     COUNT(*) as total_records,
                     ROUND(EXTRACT(EPOCH FROM (MAX(date)::timestamp - MIN(date)::timestamp)) / 86400.0 / 365.25, 1) as years_available
-                FROM international_etf_data
+                FROM us_etf_market
                 GROUP BY symbol
                 ORDER BY symbol
             """
             
-            self.logger.debug("Executing metadata query from international_etf_data...")
+            self.logger.debug("Executing metadata query from us_etf_market...")
             result = session.execute(text(query_str))
             rows = result.fetchall()
             
@@ -388,18 +388,18 @@ class InternationalETFRotationBacktester(RotationStrategy):
                         'end_date': str(end_date) if end_date else None,
                         'years_available': float(years_available) if years_available else 0,
                         'total_records': int(total_records) if total_records else 0,
-                        'data_source': 'international_etf_data'
+                        'data_source': 'us_etf_market'
                     }
                 except Exception as row_error:
                     self.logger.error(f"Error processing row: {row_error}")
                     continue
             
-            self.logger.debug(f"Successfully processed {len(metadata)} International ETFs from international_etf_data")
+            self.logger.debug(f"Successfully processed {len(metadata)} International ETFs from us_etf_market")
             return metadata
             
         except Exception as e:
             import traceback
-            self.logger.error(f"Error calculating metadata from international_etf_data: {e}")
+            self.logger.error(f"Error calculating metadata from us_etf_market: {e}")
             self.logger.error(f"Traceback: {traceback.format_exc()}")
             
             # Rollback the session to clear the failed transaction
@@ -603,19 +603,19 @@ class InternationalETFRotationBacktester(RotationStrategy):
             session = self._get_session()
             from sqlalchemy import text
             
-            self.logger.debug(f"Querying international_etf_data table for date ranges of: {selected_etfs}")
+            self.logger.debug(f"Querying us_etf_market table for date ranges of: {selected_etfs}")
             
             # Build placeholders for IN clause
             placeholders = ','.join([f':ticker_{i}' for i in range(len(selected_etfs))])
             
-            # Query to get MIN and MAX dates for each ETF directly from international_etf_data table
+            # Query to get MIN and MAX dates for each ETF directly from us_etf_market table
             query = text(f"""
                 SELECT 
                     symbol,
                     MIN(date) as start_date,
                     MAX(date) as end_date,
                     COUNT(*) as total_records
-                FROM international_etf_data
+                FROM us_etf_market
                 WHERE symbol IN ({placeholders})
                 GROUP BY symbol
                 ORDER BY symbol
@@ -628,7 +628,7 @@ class InternationalETFRotationBacktester(RotationStrategy):
             rows = result.fetchall()
             
             if not rows:
-                self.logger.error(f"No data found in international_etf_data table for: {selected_etfs}")
+                self.logger.error(f"No data found in us_etf_market table for: {selected_etfs}")
                 return None, None, 0.0
             
             # Parse results
@@ -660,7 +660,7 @@ class InternationalETFRotationBacktester(RotationStrategy):
                 self.logger.info(f"No data found for: {missing_etfs}")
             
             if not etf_date_ranges:
-                self.logger.error(f"None of the requested ETFs found in international_etf_data table: {selected_etfs}")
+                self.logger.error(f"None of the requested ETFs found in us_etf_market table: {selected_etfs}")
                 return None, None, 0.0
             
             # Calculate common date range
@@ -671,7 +671,7 @@ class InternationalETFRotationBacktester(RotationStrategy):
             latest_start = max(start_dates)
             common_end = min(end_dates)
             
-            self.logger.info(f"📅 International ETF Data Ranges (from international_etf_data table):")
+            self.logger.info(f"📅 International ETF Data Ranges (from us_etf_market table):")
             for symbol, data in etf_date_ranges.items():
                 years = data['years_available']
                 self.logger.info(f"   {symbol:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years:.1f} years, {data['total_records']} records)")
@@ -727,7 +727,7 @@ class InternationalETFRotationBacktester(RotationStrategy):
             return strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
             
         except Exception as e:
-            self.logger.error(f"Error calculating date range from international_etf_data table: {e}")
+            self.logger.error(f"Error calculating date range from us_etf_market table: {e}")
             import traceback
             self.logger.error(f"Traceback: {traceback.format_exc()}")
             return None, None, 0.0
@@ -758,14 +758,14 @@ class InternationalETFRotationBacktester(RotationStrategy):
                 self.logger.progress(f"   Data loading period: {buffer_start_date} to {end_date}")
                 self.logger.info(f"   Buffer: 400 calendar days (~252 trading days) for momentum calculations")
 
-            # Use international_etf_data table - column names match directly
+            # Use us_etf_market table - column names match directly
             # Get available symbols using proper parameterization
             # Build placeholders for IN clause
             placeholders = ','.join([f':ticker_{i}' for i in range(len(tickers))])
 
             query = text(f"""
                 SELECT DISTINCT symbol 
-                FROM international_etf_data 
+                FROM us_etf_market 
                 WHERE symbol IN ({placeholders})
                 AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
             """)
@@ -796,10 +796,9 @@ class InternationalETFRotationBacktester(RotationStrategy):
                     open,
                     high,
                     low,
-                    close,
                     volume,
-                    adjusted_close
-                FROM international_etf_data
+                    adj_close AS adjusted_close
+                FROM us_etf_market
                 WHERE symbol IN ({placeholders})
                 AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
                 ORDER BY date, symbol
@@ -2207,21 +2206,21 @@ class InternationalETFRotationBacktester(RotationStrategy):
 
             benchmark_symbol = None
             for symbol in benchmark_symbols:
-                query = text("SELECT DISTINCT symbol FROM sp500_index_data WHERE symbol = :symbol LIMIT 1")
+                query = text("SELECT DISTINCT symbol FROM s_p_500_index_market WHERE symbol = :symbol LIMIT 1")
                 result = session.execute(query, {"symbol": symbol})
                 if result.fetchone():
                     benchmark_symbol = symbol
-                    self.logger.progress(f"✅ Using {benchmark_symbol} as S&P 500 benchmark")
+                    self.logger.progress(f"Using {benchmark_symbol} as S&P 500 benchmark")
                     break
 
             if not benchmark_symbol:
-                self.logger.info("⚠️ No S&P 500 benchmark found in sp500_index_data table. Benchmark comparison will be skipped.")
+                self.logger.info("⚠️ No S&P 500 benchmark found in s_p_500_index_market table. Benchmark comparison will be skipped.")
                 return pd.DataFrame()
 
             # Query daily data
             query = text("""
-                SELECT date, close
-                FROM sp500_index_data
+                SELECT date, COALESCE(adj_close, close) AS close
+                FROM s_p_500_index_market
                 WHERE symbol = :symbol
                 AND date >= CAST(:start_date AS DATE)
                 AND date <= CAST(:end_date AS DATE)
@@ -2287,6 +2286,13 @@ class InternationalETFRotationBacktester(RotationStrategy):
                         price = sp500_daily.iloc[price_idx]['close']
                 except Exception:
                     price = 0
+
+                # Ensure price is valid float
+                if price is not None:
+                    try:
+                        price = float(price)
+                    except (TypeError, ValueError):
+                        price = 0
                     
                 # Execute Buy if we have cash and valid price
                 if cash_balance > 0 and price > 0:
@@ -2522,6 +2528,7 @@ class InternationalETFRotationBacktester(RotationStrategy):
             'Max Drawdown': f"{max_drawdown:.2f}%",
             'Calmar Ratio': f"{calmar:.2f}",
             'Total Weeks': len(df),
+            'Total Trades': len(set(t['week'] for t in self.transaction_costs_log)),
             'Win Rate': f"{(weekly_returns > 0).mean() * 100:.1f}%" if len(weekly_returns) > 0 else "N/A"
         }
 
@@ -2611,28 +2618,48 @@ class InternationalETFRotationBacktester(RotationStrategy):
 
         buy_transactions = len(costs_df[costs_df['action'] == 'buy'])
         sell_transactions = len(costs_df[costs_df['action'] == 'sell'])
-        total_transactions = buy_transactions + sell_transactions
+        """Get summary of transaction costs grouped by year (Simplified Format)"""
+        if not self.transaction_costs_log:
+            return {}
 
-        cost_percentage = (total_all_costs / total_volume * 100) if total_volume > 0 else 0
+        costs_df = pd.DataFrame(self.transaction_costs_log)
+        
+        # Robustly determine column to use for year
+        date_col = None
+        if 'date' in costs_df.columns:
+            date_col = 'date'
+        elif 'execution_date' in costs_df.columns:
+            date_col = 'execution_date'
+        
+        if date_col:
+             costs_df['year'] = pd.to_datetime(costs_df[date_col]).dt.year.astype(str)
+        else:
+             print(f"[DEBUG] International ETF get_transaction_costs_summary: Missing date column! Columns found: {costs_df.columns.tolist()}")
+             costs_df['year'] = "Total"
 
-        return {
-            'Total Transaction Costs': f"₹{total_transaction_costs:,.0f}",
-            'Capital Gains Tax': f"₹{total_capital_gains_tax:,.0f}",
-            'Total All Costs': f"₹{total_all_costs:,.0f}",
-            'Cost as % of Volume': f"{cost_percentage:.3f}%",
-            'Brokerage': f"₹{total_brokerage:,.0f}",
-            'STT': f"₹{total_stt:,.0f}",
-            'Stamp Duty': f"₹{total_stamp_duty:,.0f}",
-            'Exchange Charges': f"₹{total_exchange_charges:,.0f}",
-            'SEBI Charges': f"₹{total_sebi_charges:,.0f}",
-            'GST': f"₹{total_gst:,.0f}",
-            'Total Volume': f"₹{total_volume:,.0f}",
-            'Buy Volume': f"₹{total_buy_volume:,.0f}",
-            'Sell Volume': f"₹{total_sell_volume:,.0f}",
-            'Total Transactions': total_transactions,
-            'Buy Transactions': buy_transactions,
-            'Sell Transactions': sell_transactions
-        }
+        summary = {}
+
+        def calculate_metrics(df):
+            # Same logic as other backtesters
+            transaction_costs = df['total_costs'].sum()
+            capital_gains_tax = df['capital_gains_tax'].sum()
+            total_costs = transaction_costs + capital_gains_tax
+            brokerage = df['brokerage'].sum()
+            transactions = df['week'].nunique()
+            
+            return {
+                'transaction_costs': round(transaction_costs, 2),
+                'capital_gains_tax': round(capital_gains_tax, 2),
+                'total_costs': round(total_costs, 2),
+                'total_brokerage': round(brokerage, 2),
+                'transactions': transactions
+            }
+
+        if 'year' in costs_df.columns:
+             for year, group in costs_df.groupby('year'):
+                 summary[str(year)] = calculate_metrics(group)
+                 
+        return summary
 
     def plot_equity_curve(self, show_benchmark: bool = True, show_etf_strategy: bool = True):
         """Create interactive equity curve plot with optional ETF strategy and benchmark comparison"""

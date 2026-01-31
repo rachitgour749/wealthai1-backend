@@ -4,6 +4,7 @@ Handles backtest execution for RS ETF Rotation strategy
 """
 import sys
 import os
+import logging
 from datetime import datetime
 from sqlalchemy.orm import Session
 
@@ -14,6 +15,8 @@ from APIs.unified_schemas import UnifiedBacktestRequest, UnifiedBacktestResponse
 from Strategies.RS_ETF.rs_etf_backtester_core import RSETFStrategyBacktester
 
 
+logger = logging.getLogger(__name__)
+
 class RSETFHandler(BaseStrategyHandler):
     """Handler for RS ETF Rotation strategy"""
     
@@ -23,115 +26,123 @@ class RSETFHandler(BaseStrategyHandler):
             raise ValueError("RS_ETF_Rotation requires 'total_capital' parameter")
     
     async def run_backtest(self, request: UnifiedBacktestRequest) -> UnifiedBacktestResponse:
-        """Run RS ETF backtest"""
+        """Run RS ETF Backtest using Level 4 Optimized Strategy"""
         db_created = False
         db_session = self.db
         
         try:
-            self.validate_request(request)
-            
-            # Ensure we have a database session
+            # Ensure we have a database session if not provided
             if db_session is None:
                 from Strategies.RS_ETF.database import get_db
                 db_session = next(get_db())
                 db_created = True
+
+            # Import new Level 4 Strategy and Config Loader
+            from Strategies.RS_ETF.RSETFStrategy import RSETFStrategy
+            from Strategies.RS.rs_config_loader import get_rs_config
+            rs_global_config = get_rs_config()
             
-            # Create config dict
+            # Prepare config
+            # Priority: API Parameter (stop_loss_pct or stop_loss) > Global Config Default
+            sl_val = request.stop_loss_pct if request.stop_loss_pct is not None else getattr(request, 'stop_loss', None)
+            if sl_val is None:
+                sl_val = rs_global_config.get_stop_loss_pct()
+            
             config_dict = {
-                'main_index': self._clean_tickers(request.main_index) or "^NSEI",
-                'etf_universe': request.etf_universe or "ALL_ETFS",
-                'custom_etfs': self._clean_tickers(request.custom_etfs),
-                'max_positions': request.max_positions or 20,
-                'position_size_pct': request.position_size_pct,
                 'total_capital': request.total_capital,
-                'stop_loss_pct': request.stop_loss_pct or 15.0,
-                'buffer_capital_pct': request.buffer_capital_pct or 10.0,
-                'capital_reset_threshold_pct': request.capital_reset_threshold_pct or 25.0,
-                'max_holding_period': request.max_holding_period or 52,
-                'transaction_cost_pct': request.transaction_cost_pct or 0.1,
-                'min_price': request.min_price or 10.0,
-                'min_turnover': request.min_turnover or 1000000.0,
                 'lookback_weeks': request.lookback_weeks or 5,
                 'lookback_months': request.lookback_months or 20,
-                'lookback_quarters': request.lookback_quarters or 60
+                'lookback_quarters': request.lookback_quarters or 60,
+                # Map alternate/legacy parameter names
+                'max_positions': request.max_positions or getattr(request, 'no_of_positions', 4), # Default to 4 if missing
+                'risk_free_rate': request.risk_free_rate or 8.0,
+                'custom_etfs': self._clean_tickers(request.custom_etfs or request.tickers),
+                'transaction_cost_pct': request.transaction_cost_pct or 0.1,
+                'stop_loss_pct': sl_val,
+                'daily_stop_loss_check': getattr(request, 'daily_stop_loss_check', rs_global_config.get_daily_stop_loss_check()),
+                'buffer_capital_pct': request.buffer_capital_pct or getattr(request, 'buffer_capital', 10.0),
+                'capital_reset_threshold_pct': request.capital_reset_threshold_pct or getattr(request, 'compounding_threshold', 25.0)
             }
             
-            # Initialize backtester
-            backtester = RSETFStrategyBacktester.from_config_dict(db_session, config_dict)
+            logger.info(f"Initialized RSETFStrategy with config: {config_dict}")
             
-            # Convert dates
-            start_date = datetime.fromisoformat(request.start_date.replace('Z', '+00:00')).replace(tzinfo=None)
-            end_date = datetime.fromisoformat(request.end_date.replace('Z', '+00:00')).replace(tzinfo=None)
+            # Initialize Strategy
+            strategy = RSETFStrategy(db_session, config_dict)
             
-            # Run backtest
-            backtester.run_backtest(start_date, end_date)
-            results = backtester.calculate_metrics(risk_free_rate=request.risk_free_rate or 8.0)
+            # Run Backtest
+            start_dt = datetime.fromisoformat(request.start_date.replace('Z', '+00:00')).replace(tzinfo=None)
+            end_dt = datetime.fromisoformat(request.end_date.replace('Z', '+00:00')).replace(tzinfo=None)
             
-            # Prepare performance data
+            results = strategy.run_backtest(start_dt, end_dt)
+            
+            # Sanitize data (convert datetime objects to strings)
             portfolio_snapshots = results.get('portfolio_snapshots', [])
+            trades = results.get('trades', [])
+            benchmark = results.get('benchmark_buyhold', [])
+            
+            # Convert datetime objects in snapshots
+            sanitized_snapshots = []
+            for snap in portfolio_snapshots:
+                sanitized_snap = snap.copy()
+                if 'date' in sanitized_snap and hasattr(sanitized_snap['date'], 'isoformat'):
+                    sanitized_snap['date'] = sanitized_snap['date'].isoformat()
+                sanitized_snapshots.append(sanitized_snap)
+            
+            # Convert datetime objects in trades
+            sanitized_trades = []
+            for trade in trades:
+                sanitized_trade = trade.copy()
+                if 'date' in sanitized_trade and hasattr(sanitized_trade['date'], 'isoformat'):
+                    sanitized_trade['date'] = sanitized_trade['date'].isoformat()
+                sanitized_trades.append(sanitized_trade)
+            
+            # Build performance data
             performance_data = {
-                "dates": [],
-                "rs_strategy": [],
-                "cumulative_investment": [],
-                "benchmark_buyhold": []
+                'dates': [],
+                'strategy': [],
+                'cumulative_investment': [],
+                'benchmark_buyhold': benchmark
             }
             
-            if portfolio_snapshots:
-                performance_data["dates"] = [
-                    snapshot.get('date') if isinstance(snapshot.get('date'), str) 
-                    else snapshot.get('date').isoformat() if hasattr(snapshot.get('date'), 'isoformat')
-                    else str(snapshot.get('date'))
-                    for snapshot in portfolio_snapshots
-                ]
-                performance_data["rs_strategy"] = [snapshot.get('total_value', 0) for snapshot in portfolio_snapshots]
-                performance_data["cumulative_investment"] = [request.total_capital] * len(portfolio_snapshots)
-                performance_data["benchmark_buyhold"] = results.get('benchmark_buyhold', [])
+            if sanitized_snapshots:
+                performance_data['dates'] = [s['date'] for s in sanitized_snapshots]
+                performance_data['strategy'] = [s['total_value'] for s in sanitized_snapshots]
+                performance_data['cumulative_investment'] = [request.total_capital] * len(sanitized_snapshots)
             
-            # Prepare metrics
+            # Build metrics from strategy results
+            strategy_metrics = results.get('strategy_metrics', {})
+            benchmark_metrics = results.get('benchmark_metrics', {})
+            
+            # Combine into single metrics dict for response
+            # Combine into single metrics dict for response
             metrics = {
-                'total_return': results.get('total_return_pct', 0),
-                'annualized_return_pct': results.get('annualized_return_pct', 0),
-                'cagr_pct': results.get('cagr_pct', 0),
-                'xirr_pct': results.get('xirr_pct', 0),
-                'max_drawdown': results.get('max_drawdown_pct', 0),
-                'sharpe_ratio': results.get('sharpe_ratio', 0),
-                'beta': results.get('beta', 1.0),
-                'treynor_ratio': results.get('treynor_ratio', 0.0),
-                'calmar_ratio': results.get('calmar_ratio', 0.0),
-                'win_rate_pct': results.get('win_rate_pct', 0),
-                'total_trades': results.get('total_trades', 0),
-                'final_capital': results.get('final_capital', 0),
-                'benchmark_metrics': self._normalize_benchmark_metrics(results.get('benchmark_metrics', {})),
-                'alpha_pct': results.get('alpha_pct', 0)
+                "xirr": strategy_metrics.get('xirr', 0),
+                "volatility": strategy_metrics.get('volatility', 0),
+                "win_rate_pct": strategy_metrics.get('win_rate_pct', 0),
+                "total_trades": len(results.get('trades', [])),
+                **strategy_metrics,
+                "benchmark_metrics": benchmark_metrics
             }
             
-            # Sanitize data
-            metrics = self._sanitize_data(metrics)
-            performance_data = self._sanitize_data(performance_data)
-            transaction_log = self._sanitize_data(results.get('trades', []))
-            
-            # Cache backtest results
-            try:
-                from APIs.centralized_backtest import cache_backtest_results
-                cache_backtest_results("RS_ETF_Rotation", backtester)
-            except Exception as e:
-                print(f"[RS_ETF_HANDLER] Warning: Could not cache backtest results: {e}")
-            
-            return UnifiedBacktestResponse(
+            response = UnifiedBacktestResponse(
                 success=True,
-                strategy_type=request.strategy_type,
+                strategy_type="RS_ETF_Rotation",
                 metrics=metrics,
                 performance_data=performance_data,
-                transaction_log=transaction_log,
-                portfolio_snapshots=self._sanitize_data(portfolio_snapshots)
+                transaction_log=sanitized_trades,
+                portfolio_snapshots=sanitized_snapshots
             )
             
+            return response
+            
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return UnifiedBacktestResponse(
-                success=False,
-                strategy_type=request.strategy_type,
-                metrics={},
-                error=f"RS ETF backtest failed: {str(e)}"
+                success=False, 
+                error=str(e), 
+                strategy_type="RS_ETF_Rotation",
+                metrics={}
             )
         finally:
             if db_created and db_session:

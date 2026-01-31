@@ -39,7 +39,7 @@ class RSEODDataFetcher:
         databases_path = os.path.join(parent_dir, 'Databases')
         sys.path.insert(0, databases_path)
         
-        from market_data_db_connection import (
+        from app_data_db_connection import (
             create_connection as create_market_data_connection,
             get_session as get_market_data_session,
             init_database as init_market_data_database
@@ -272,7 +272,7 @@ class RSEODDataFetcher:
         """
         session = None
         try:
-            from market_data_db_connection import StockData
+            from app_data_db_connection import StockMarket
             from sqlalchemy.dialects.postgresql import insert
             from datetime import datetime
             
@@ -286,7 +286,7 @@ class RSEODDataFetcher:
                     record_date = record['date']
                 
                 # Use PostgreSQL UPSERT
-                stmt = insert(StockData).values(
+                stmt = insert(StockMarket).values(
                     symbol=record['symbol'],
                     date=record_date,
                     open=record['open'],
@@ -331,7 +331,7 @@ class RSEODDataFetcher:
         """
         session = None
         try:
-            from market_data_db_connection import IndexData
+            from app_data_db_connection import Nifty50IndexMarket
             from sqlalchemy.dialects.postgresql import insert
             from datetime import datetime
             
@@ -345,7 +345,7 @@ class RSEODDataFetcher:
                     record_date = record['date']
                 
                 # Use PostgreSQL UPSERT
-                stmt = insert(IndexData).values(
+                stmt = insert(Nifty50IndexMarket).values(
                     symbol=record['symbol'],
                     date=record_date,
                     open=record['open'],
@@ -573,12 +573,12 @@ class RSEODDataFetcher:
             session = self.get_session()
             
             # Delete old stock data
-            query = text("DELETE FROM stock_data WHERE date < :cutoff_date")
+            query = text("DELETE FROM stock_market WHERE date < :cutoff_date")
             result = session.execute(query, {"cutoff_date": cutoff_date_str})
             stock_deleted = result.rowcount
             
             # Delete old index data
-            query = text("DELETE FROM index_data WHERE date < :cutoff_date")
+            query = text("DELETE FROM nifty_50_index_market WHERE date < :cutoff_date")
             result = session.execute(query, {"cutoff_date": cutoff_date_str})
             index_deleted = result.rowcount
             

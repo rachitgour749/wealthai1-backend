@@ -20,7 +20,7 @@ def load_stock_data(symbols: Optional[List[str]] = None,
     Returns:
         DataFrame with stock data
     """
-    query = "SELECT * FROM stock_data WHERE 1=1"
+    query = "SELECT * FROM stock_market WHERE 1=1"
     params = []
     
     if symbols:
@@ -58,7 +58,7 @@ def load_index_data(start_date: Optional[str] = None,
     Returns:
         DataFrame with index data
     """
-    query = "SELECT * FROM index_data WHERE 1=1"
+    query = "SELECT id, symbol, date, open, high, low, close, volume, COALESCE(adj_close, close) AS adj_close FROM nifty_50_index_market WHERE 1=1"
     params = []
     
     if start_date:
@@ -86,7 +86,7 @@ def get_available_symbols() -> List[str]:
     Returns:
         List of symbols
     """
-    df = execute_query("SELECT DISTINCT symbol FROM stock_data ORDER BY symbol")
+    df = execute_query("SELECT DISTINCT symbol FROM stock_market ORDER BY symbol")
     return df['symbol'].tolist()
 
 
@@ -99,12 +99,12 @@ def get_date_range() -> dict:
     """
     stock_range = execute_query("""
         SELECT MIN(date) as min_date, MAX(date) as max_date 
-        FROM stock_data
+        FROM stock_market
     """)
     
     index_range = execute_query("""
         SELECT MIN(date) as min_date, MAX(date) as max_date 
-        FROM index_data
+        FROM nifty_50_index_market
     """)
     
     return {
@@ -122,9 +122,9 @@ def check_data_availability() -> dict:
     Returns:
         Dictionary with data statistics
     """
-    stock_count = execute_query("SELECT COUNT(*) as count FROM stock_data")
-    index_count = execute_query("SELECT COUNT(*) as count FROM index_data")
-    symbol_count = execute_query("SELECT COUNT(DISTINCT symbol) as count FROM stock_data")
+    stock_count = execute_query("SELECT COUNT(*) as count FROM stock_market")
+    index_count = execute_query("SELECT COUNT(*) as count FROM nifty_50_index_market")
+    symbol_count = execute_query("SELECT COUNT(DISTINCT symbol) as count FROM stock_market")
     
     date_range = get_date_range()
     

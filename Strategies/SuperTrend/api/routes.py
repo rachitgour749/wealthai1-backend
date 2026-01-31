@@ -38,7 +38,7 @@ async def root():
 async def get_config():
     """Get current strategy configuration"""
     try:
-        df = execute_query("SELECT * FROM strategy_config ORDER BY id DESC LIMIT 1")
+        df = execute_query("SELECT * FROM supertrend_strategy_config ORDER BY id DESC LIMIT 1")
         
         if df.empty:
             raise HTTPException(status_code=404, detail="Configuration not found")
@@ -55,11 +55,11 @@ async def update_config(config: StrategyConfig):
     """Update strategy configuration"""
     try:
         # Delete old config
-        execute_write("DELETE FROM strategy_config")
+        execute_write("DELETE FROM supertrend_strategy_config")
         
         # Insert new config
         query = """
-            INSERT INTO strategy_config 
+            INSERT INTO supertrend_strategy_config 
             (ema_short, ema_long, supertrend_period, supertrend_stop_pct, max_holdings, buffer_pct,
              price_floor, liquidity_cr, rs_window_1, rs_window_2, rs_window_3, benchmark, universe)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -382,7 +382,7 @@ async def run_eod():
 async def get_candidates():
     """Get current candidate stocks"""
     try:
-        df = execute_query("SELECT * FROM candidates ORDER BY rank")
+        df = execute_query("SELECT * FROM supertrend_candidates ORDER BY rank")
         
         candidates = []
         for _, row in df.iterrows():
@@ -411,7 +411,7 @@ async def get_candidates():
 async def get_positions():
     """Get current positions"""
     try:
-        df = execute_query("SELECT * FROM current_positions")
+        df = execute_query("SELECT * FROM supertrend_current_positions")
         
         positions = []
         total_value = 0

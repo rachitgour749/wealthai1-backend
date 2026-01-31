@@ -243,10 +243,10 @@ class RSETFStrategyBacktester:
         params = (data_start_date, end_date)
         symbol_limit = ""
         
-        # Use raw SQL to query etf_data table (no asset_type filter needed)
+        # Use raw SQL to query etf_market table (no asset_type filter needed)
         sql = f"""
-        SELECT symbol, date, adjusted_close
-        FROM etf_data 
+        SELECT symbol, date, adj_close AS adjusted_close
+        FROM etf_market 
         WHERE date >= ? AND date <= ? {symbol_limit}
         ORDER BY symbol, date
         """
@@ -287,7 +287,7 @@ class RSETFStrategyBacktester:
                 # Query min and max dates for this ETF
                 sql = """
                 SELECT MIN(date) as min_date, MAX(date) as max_date
-                FROM etf_data 
+                FROM etf_market 
                 WHERE symbol = ?
                 """
                 result = pd.read_sql(sql, self.db.bind, params=(etf,))
@@ -370,15 +370,15 @@ class RSETFStrategyBacktester:
         # Use raw SQL to avoid SQLAlchemy model issues
         # Handle multiple symbol formats for NSEI index
         symbol_variants = [self.main_index]
-        if self.main_index in ['^NSEI', 'NSEI', 'NIFTY50']:
-            symbol_variants = ['^NSEI', 'NSEI', 'NIFTY50']
-        elif self.main_index in ['^NIFTY50', 'NIFTY50']:
-            symbol_variants = ['^NIFTY50', 'NIFTY50', 'NSEI']
+        if self.main_index in ['^NSEI', 'NSEI', 'NIFTY50', 'NIFTY_50']:
+            symbol_variants = ['^NSEI', 'NSEI', 'NIFTY50', 'NIFTY_50']
+        elif self.main_index in ['^NIFTY50', 'NIFTY50', 'NIFTY_50']:
+            symbol_variants = ['^NIFTY50', 'NIFTY50', 'NSEI', 'NIFTY_50']
         
         placeholders = ','.join(['?' for _ in symbol_variants])
         sql = f"""
-        SELECT symbol, date, open, high, low, close, adjusted_close, volume
-        FROM index_data 
+        SELECT symbol, date, open, high, low, close, COALESCE(adj_close, close) AS adjusted_close, volume
+        FROM nifty_50_index_market 
         WHERE symbol IN ({placeholders}) AND date >= ? AND date <= ?
         ORDER BY date
         """
@@ -389,7 +389,7 @@ class RSETFStrategyBacktester:
         
         print(f"Raw index data query returned: {len(df)} records")
         
-        # Column is already named adjusted_close in MarketData.sqlite
+        # Use adj_close from ApplicationData
         # No renaming needed
         
         # Convert timezone-aware dates to timezone-naive
@@ -892,7 +892,7 @@ class RSETFStrategyBacktester:
         
         query = text("""
             SELECT symbol, date, adj_close as adjusted_close
-            FROM stock_data 
+            FROM stock_market 
             WHERE symbol = ANY(:symbols)
             AND date BETWEEN :start_date AND :end_date
             ORDER BY date, symbol

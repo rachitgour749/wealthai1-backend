@@ -131,7 +131,7 @@ class Position:
     buy_date: datetime
     current_price: float
     unrealized_pnl: float
-    stop_loss_price: float
+    stop_loss_price: Optional[float] = None
 
 class RSETFStrategyBacktester:
     def __init__(self, db: Session, config_id: int = None, config_dict: Dict = None):
@@ -166,7 +166,12 @@ class RSETFStrategyBacktester:
             
             self.buffer_capital_pct = config_dict.get('buffer_capital_pct', 10.0) / 100
             self.total_capital = config_dict.get('total_capital', 1000000.0)
-            self.stop_loss_pct = config_dict.get('stop_loss_pct', 15.0) / 100
+            # Load RS configuration for stop loss behavior
+            rs_config_obj = get_rs_config() # Use object for default
+            sl_pct = config_dict.get('stop_loss_pct')
+            if sl_pct is None:
+                sl_pct = rs_config_obj.get_stop_loss_pct()
+            self.stop_loss_pct = sl_pct / 100
             self.capital_reset_threshold_pct = config_dict.get('capital_reset_threshold_pct', 25.0) / 100
             # Removed max_holding_period - stocks held until RS ranking drops
             self.transaction_cost_pct = config_dict.get('transaction_cost_pct', 0.1) / 100
@@ -211,6 +216,7 @@ class RSETFStrategyBacktester:
             self.daily_stop_loss_check = rs_config.get_daily_stop_loss_check()
         
         self.logger.info(f"Stop Loss Mode: {'Daily Check' if self.daily_stop_loss_check else 'Weekly Check (Signal Day Only)'}")
+        self.log_stop_loss_mode()
         
         # Calculated values for dynamic buffer system
         self.buffer_capital = self.total_capital * self.buffer_capital_pct  # Initial buffer amount
@@ -244,157 +250,13 @@ class RSETFStrategyBacktester:
         
         # Weekly stop loss accumulation (for weekly mode)
         self.weekly_stop_loss_exits: List[str] = []
-        
-        # Purchase limit tracking (for diversification)
-        self.etf_purchase_limits = {}      # {ticker: max_purchases}
-        self.etf_purchase_counts = {}      # {ticker: current_count}
-        self.total_etfs = 0
-        self.accumulation_weeks = 0
-        self.logging_config = {}           # Will be loaded from logging_config.json
-        
-        # Load logging configuration
-        self._load_logging_config()
     
     @classmethod
     def from_config_dict(cls, db: Session, config_dict: Dict):
         """Create RSStrategyBacktester instance from config dictionary"""
         return cls(db=db, config_dict=config_dict)
     
-    def _load_logging_config(self):
-        """Load logging configuration from JSON file"""
-        try:
-            config_path = os.path.join(os.path.dirname(__file__), 'logging_config.json')
-            if os.path.exists(config_path):
-                with open(config_path, 'r') as f:
-                    self.logging_config = json.load(f)
-                self.logger.info("Loaded logging configuration from logging_config.json")
-            else:
-                # Default configuration
-                self.logging_config = {
-                    "purchase_limit_config": {
-                        "enabled": True,
-                        "allocation_multiplier": 1.5
-                    },
-                    "logging": {
-                        "limit": True,
-                        "trade": True,
-                        "error": True
-                    }
-                }
-                self.logger.info("Using default logging configuration (file not found)")
-        except Exception as e:
-            self.logger.error(f"Error loading logging config: {e}")
-            self.logging_config = {}
     
-    def _log(self, category: str, message: str):
-        """Log message if category is enabled in config"""
-        logging_settings = self.logging_config.get("logging", {})
-        if logging_settings.get(category, False):
-            if category == "limit":
-                self.logger.info(message)
-            elif category == "trade":
-                self.logger.info(message)
-            elif category == "error":
-                self.logger.error(message)
-            else:
-                self.logger.info(message)
-    
-    def initialize_purchase_limits(self, tickers: List[str], accumulation_weeks: int):
-        """
-        Initialize purchase limits for all ETFs based on allocation formula
-        
-        Formula:
-        - allocation_pct = (100 / total_etfs) * allocation_multiplier
-        - limit_per_etf = floor(allocation_pct * accumulation_weeks / 100)
-        
-        This prevents over-concentration and achieves better diversification.
-        
-        Args:
-            tickers: List of ETF tickers
-            accumulation_weeks: Number of accumulation weeks
-        """
-        # Get allocation multiplier from config (default 1.5)
-        purchase_limit_config = self.logging_config.get("purchase_limit_config", {})
-        allocation_multiplier = purchase_limit_config.get("allocation_multiplier", 1.5)
-        limit_enabled = purchase_limit_config.get("enabled", True)
-        
-        self.total_etfs = len(tickers)
-        self.accumulation_weeks = accumulation_weeks
-        
-        # Calculate allocation percentage (round down)
-        allocation_percentage = (100 / self.total_etfs) * allocation_multiplier
-        allocation_percentage = int(allocation_percentage)  # Round down
-        
-        # Calculate limit per ETF (round down)
-        limit_per_etf = int((allocation_percentage * accumulation_weeks) / 100)  # Round down
-        
-        # Initialize limits and counters for all ETFs
-        for ticker in tickers:
-            # If limits disabled, set to infinity (no limit)
-            self.etf_purchase_limits[ticker] = limit_per_etf if limit_enabled else float('inf')
-            self.etf_purchase_counts[ticker] = 0
-        
-        self._log("limit", "=" * 80)
-        self._log("limit", "📊 PURCHASE LIMIT INITIALIZATION")
-        self._log("limit", "=" * 80)
-        self._log("limit", f"   Total ETFs: {self.total_etfs}")
-        self._log("limit", f"   Accumulation Weeks: {accumulation_weeks}")
-        self._log("limit", f"   Allocation Multiplier: {allocation_multiplier}")
-        self._log("limit", f"   Calculation: (100 / {self.total_etfs}) × {allocation_multiplier} = {allocation_percentage}%")
-        self._log("limit", f"   Limit Formula: {allocation_percentage}% × {accumulation_weeks} weeks / 100")
-        if limit_enabled:
-            self._log("limit", f"   ✅ Limit per ETF: {limit_per_etf} purchases maximum")
-        else:
-            self._log("limit", f"   ⚠️ Purchase limits DISABLED (no limit)")
-        self._log("limit", "")
-        self._log("limit", "   ETF Purchase Limits:")
-        for ticker in sorted(tickers):
-            if limit_enabled:
-                self._log("limit", f"      {ticker:12s}: 0/{limit_per_etf} purchases")
-            else:
-                self._log("limit", f"      {ticker:12s}: 0/∞ purchases (unlimited)")
-        self._log("limit", "=" * 80)
-    
-    def get_purchase_limit_status(self) -> Dict[str, Any]:
-        """Get current status of purchase limits for all ETFs"""
-        # Get config values
-        purchase_limit_config = self.logging_config.get("purchase_limit_config", {})
-        allocation_multiplier = purchase_limit_config.get("allocation_multiplier", 1.5)
-        limit_enabled = purchase_limit_config.get("enabled", True)
-        
-        status = {
-            'total_etfs': self.total_etfs,
-            'accumulation_weeks': self.accumulation_weeks,
-            'allocation_multiplier': allocation_multiplier,
-            'limit_enabled': limit_enabled,
-            'etf_status': []
-        }
-        
-        for ticker in sorted(self.etf_purchase_limits.keys()):
-            limit = self.etf_purchase_limits[ticker]
-            count = self.etf_purchase_counts.get(ticker, 0)
-            
-            # Handle infinity (unlimited)
-            if limit == float('inf'):
-                percentage = 0
-                at_limit = False
-                remaining = float('inf')
-            else:
-                percentage = (count / limit * 100) if limit > 0 else 0
-                at_limit = count >= limit
-                remaining = limit - count
-            
-            status['etf_status'].append({
-                'ticker': ticker,
-                'current_purchases': count,
-                'limit': limit if limit != float('inf') else None,
-                'remaining': remaining if remaining != float('inf') else None,
-                'utilization_pct': round(percentage, 1),
-                'at_limit': at_limit
-            })
-        
-        return status
-        
     def get_default_dynamic_params(self) -> DynamicParams:
         """Get optimized dynamic parameters for better performance"""
         return DynamicParams(
@@ -438,10 +300,10 @@ class RSETFStrategyBacktester:
         placeholders = ','.join(['%s'] * len(selected_etfs))
         symbol_limit = f"AND symbol IN ({placeholders})"
         
-        # Use raw SQL to query etf_data table with symbol filtering
+        # Use raw SQL to query etf_market table with symbol filtering
         sql = f"""
-        SELECT symbol, date, adjusted_close, open
-        FROM etf_data 
+        SELECT symbol, date, adj_close AS adjusted_close, open
+        FROM etf_market 
         WHERE date >= %s AND date <= %s {symbol_limit}
         ORDER BY symbol, date
         """
@@ -486,7 +348,7 @@ class RSETFStrategyBacktester:
                 # Query min and max dates for this ETF
                 sql = """
                 SELECT MIN(date) as min_date, MAX(date) as max_date
-                FROM etf_data 
+                FROM etf_market 
                 WHERE symbol = %s
                 """
                 result = pd.read_sql(sql, self.db.bind, params=(etf,))
@@ -581,15 +443,15 @@ class RSETFStrategyBacktester:
         # Use raw SQL to avoid SQLAlchemy model issues
         # Handle multiple symbol formats for NSEI index
         symbol_variants = [self.main_index]
-        if self.main_index in ['^NSEI', 'NSEI', 'NIFTY50']:
-            symbol_variants = ['^NSEI', 'NSEI', 'NIFTY50']
-        elif self.main_index in ['^NIFTY50', 'NIFTY50']:
-            symbol_variants = ['^NIFTY50', 'NIFTY50', 'NSEI']
+        if self.main_index in ['^NSEI', 'NSEI', 'NIFTY50', 'NIFTY_50']:
+            symbol_variants = ['^NSEI', 'NSEI', 'NIFTY50', 'NIFTY_50']
+        elif self.main_index in ['^NIFTY50', 'NIFTY50', 'NIFTY_50']:
+            symbol_variants = ['^NIFTY50', 'NIFTY50', 'NSEI', 'NIFTY_50']
         
         placeholders = ','.join(['%s' for _ in symbol_variants])
         sql = f"""
-        SELECT symbol, date, open, high, low, close, adj_close, volume
-        FROM index_data 
+        SELECT symbol, date, open, high, low, close, COALESCE(adj_close, close) AS adjusted_close, volume
+        FROM nifty_50_index_market 
         WHERE symbol IN ({placeholders}) AND date >= %s AND date <= %s
         ORDER BY date
         """
@@ -616,164 +478,6 @@ class RSETFStrategyBacktester:
             self.logger.info(f"Date range: {df.index.min()} to {df.index.max()}")
         
         return df
-
-
-    def get_nifty50_custom_stocks(self) -> List[str]:
-        """Deprecated: This method is not used for ETF strategy. Use get_custom_etf_universe() instead."""
-        # Return empty list - this method should not be called for ETF strategy
-        return []
-        return [
-            'RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'HINDUNILVR',
-            'ICICIBANK', 'KOTAKBANK', 'ITC', 'BHARTIARTL','M&M',
-            'SBIN', 'BAJFINANCE', 'ASIANPAINT', 'MARUTI', 'LT',
-            'AXISBANK', 'NESTLEIND', 'ULTRACEMCO', 'SUNPHARMA', 'TITAN',
-            'POWERGRID', 'NTPC', 'ONGC', 'TECHM', 'WIPRO',
-            'HCLTECH', 'BAJAJFINSV', 'DRREDDY', 'CIPLA', 'GRASIM',
-            'JSWSTEEL', 'TATAMOTORS', 'INDUSINDBK', 'COALINDIA', 'BPCL',
-            'TATASTEEL', 'EICHERMOT', 'HEROMOTOCO', 'ADANIPORTS', 'SHREECEM',
-            'BRITANNIA', 'DIVISLAB', 'APOLLOHOSP', 'HINDALCO', 'UPL',
-            'BAJAJ-AUTO', 'TATACONSUM', 'DABUR', 'GODREJCP', 'PIDILITIND'
-        ]
-    
-    # def get_nifty100_custom_stocks(self) -> List[str]:
-    #     """Your best selected Nifty 100 stocks"""
-    #     nifty50 = self.get_nifty50_custom_stocks()
-    #     additional_stocks = [
-    #         'VEDL', 'GAIL', 'IOC', 'PETRONET', 'BANDHANBNK', 
-    #         'MOTHERSON', 'BOSCHLTD', 'BERGEPAINT', 'GODREJPROP', 'MFSL',
-    #         'BIOCON', 'COLPAL', 'HDFCLIFE', 'ICICIGI', 'ICICIPRULI',
-    #         'MARICO', 'MPHASIS', 'MRF', 'SAIL', 'SIEMENS',
-    #         'TATACHEM', 'TATAPOWER', 'TORNTPHARM', 'TVSMOTOR', 'UBL',
-    #         'ZEEL', 'ZYDUSLIFE', 'ABBOTINDIA', 'ADANIENT', 'ADANIGREEN',
-    #         'ALKEM', 'AMBUJACEM', 'APLLTD', 'ASHOKLEY', 'ASTRAL',
-    #         'ATUL', 'AUBANK', 'AUROPHARMA', 'BAJAJHLDNG', 'BALRAMCHIN',
-    #         'BATAINDIA', 'BEL', 'BEML', 'BHARATFORG', 'BHEL',
-    #         'BLUEDART', 'BLUESTARCO', 'CANBK', 'CENTRALBK', 'CESC'
-    #     ]
-    #     return nifty50 + additional_stocks
-    
-    # def get_nifty200_custom_stocks(self) -> List[str]:
-    #     """Your best selected Nifty 200 stocks"""
-    #     nifty100 = self.get_nifty100_custom_stocks()
-    #     additional_stocks = [
-    #         'BEML', 'BHARATFORG', 'CANFINHOME', 'CHOLAFIN', 'CONCOR',
-    #         'CROMPTON', 'CUMMINSIND', 'DALBHARAT', 'DEEPAKNTR', 'DLF',
-    #         'ESCORTS', 'EXIDEIND', 'FEDERALBNK', 'GLENMARK', 'GRANULES',
-    #         'GUJGASLTD', 'HAL', 'HAVELLS', 'HDFCAMC', 'HINDPETRO',
-    #         'IBULHSGFIN', 'IDBI', 'IDFCFIRSTB', 'IGL', 'INDHOTEL',
-    #         'INDIANB', 'INDIGO', 'IPCALAB', 'IRCTC', 'JINDALSTEL',
-    #         'JKCEMENT', 'JUBLFOOD', 'JUSTDIAL', 'LICHSGFIN', 'LTTS',
-    #         'LUPIN', 'M&M', 'M&MFIN', 'MANAPPURAM', 'MUTHOOTFIN',
-    #         'NATIONALUM', 'NAUKRI', 'NMDC', 'OBEROI', 'OFSS',
-    #         'PAGEIND', 'PEL', 'PNB', 'POLYCAB', 'PVR',
-    #         'RBLBANK', 'RECLTD', 'SBICARD', 'SBILIFE', 'SRF',
-    #         'SUNTV', 'TRENT', 'VOLTAS', 'YESBANK', '3MINDIA',
-    #         'ABB', 'ACC', 'ADANIPOWER', 'ADANITRANS', 'APOLLOTYRE',
-    #         'ASHOKLEY', 'ASTRAL', 'ATUL', 'AUBANK', 'AUROPHARMA',
-    #         'BAJAJHLDNG', 'BALRAMCHIN', 'BANDHANBNK', 'BATAINDIA', 'BEL',
-    #         'BEML', 'BERGEPAINT', 'BHARATFORG', 'BIOCON', 'BOSCHLTD',
-    #         'CADILAHC', 'CANFINHOME', 'CHOLAFIN', 'CIPLA', 'COLPAL',
-    #         'CONCOR', 'CROMPTON', 'CUMMINSIND', 'DABUR', 'DALBHARAT',
-    #         'DEEPAKNTR', 'DIVISLAB', 'DLF', 'DRREDDY', 'EICHERMOT',
-    #         'ESCORTS', 'EXIDEIND', 'FEDERALBNK', 'GAIL', 'GLENMARK',
-    #         # 'GODREJCP', 'GODREJPROP', 'GRANULES', 'GRASIM', 'GUJGASLTD',
-    #         # 'HAL', 'HAVELLS', 'HCLTECH', 'HDFCAMC', 'HDFCLIFE',
-    #         # 'HEROMOTOCO', 'HINDALCO', 'HINDPETRO', 'HINDUNILVR', 'IBULHSGFIN',
-    #         # 'ICICIGI', 'ICICIPRULI', 'IDBI', 'IDFCFIRSTB', 'IGL',
-    #         # 'INDHOTEL', 'INDIANB', 'INDIGO', 'INDUSINDBK', 'INFY',
-    #         # 'IOC', 'IPCALAB', 'IRCTC', 'ITC', 'JINDALSTEL',
-    #         # 'JKCEMENT', 'JSWSTEEL', 'JUBLFOOD', 'JUSTDIAL', 'KOTAKBANK',
-    #         # 'LALPATHLAB', 'LICHSGFIN', 'LT', 'LTTS', 'LUPIN',
-    #         # 'M&M', 'M&MFIN', 'MANAPPURAM', 'MARICO', 'MARUTI',
-    #         # 'MCDOWELL-N', 'MFSL', 'MINDTREE', 'MOTHERSON', 'MPHASIS',
-    #         # 'MRF', 'MUTHOOTFIN', 'NATIONALUM', 'NAUKRI', 'NESTLEIND',
-    #         # 'NMDC', 'NTPC', 'OBEROI', 'OFSS', 'ONGC',
-    #         # 'PAGEIND', 'PEL', 'PETRONET', 'PIDILITIND', 'PNB',
-    #         # 'POLYCAB', 'POWERGRID', 'PVR', 'RBLBANK', 'RECLTD',
-    #         # 'RELAXO', 'RELIANCE', 'SAIL', 'SBICARD', 'SBILIFE',
-    #         # 'SBIN', 'SHREECEM', 'SIEMENS', 'SRF', 'SUNPHARMA',
-    #         # 'SUNTV', 'TATACHEM', 'TATACONSUM', 'TATAMOTORS', 'TATAPOWER',
-    #         # 'TATASTEEL', 'TCS', 'TECHM', 'TITAN', 'TORNTPHARM',
-    #         # 'TRENT', 'TVSMOTORS', 'UBL', 'ULTRACEMCO', 'UPL',
-    #         # 'VEDL', 'VOLTAS', 'WIPRO', 'YESBANK', 'ZEEL',
-    #         # 'ZYDUSLIFE'
-    #     ]
-    #     return nifty100 + additional_stocks
-    
-    # def get_nifty300_custom_stocks(self) -> List[str]:
-    #     """Your best selected Nifty 300 stocks"""
-    #     nifty200 = self.get_nifty200_custom_stocks()
-    #     additional_stocks = [
-    #         '3MINDIA', 'ABB', 'ACC', 'ADANIENT', 'ADANIGREEN',
-    #         'ADANIPORTS', 'ADANITRANS', 'ADANIPOWER', 'ALKEM', 'AMBUJACEM',
-    #         'APLLTD', 'ASHOKLEY', 'ASTRAL', 'ATUL', 'AUBANK',
-    #         'AUROPHARMA', 'BAJAJHLDNG', 'BALRAMCHIN', 'BANDHANBNK', 'BATAINDIA',
-    #         'BEL', 'BEML', 'BERGEPAINT', 'BHARATFORG', 'BIOCON',
-    #         'BOSCHLTD', 'CADILAHC', 'CANFINHOME', 'CHOLAFIN', 'CIPLA',
-    #         'COLPAL', 'CONCOR', 'CROMPTON', 'CUMMINSIND', 'DABUR',
-    #         'DALBHARAT', 'DEEPAKNTR', 'DIVISLAB', 'DLF', 'DRREDDY',
-    #         'EICHERMOT', 'ESCORTS', 'EXIDEIND', 'FEDERALBNK', 'GAIL',
-    #         'GLENMARK', 'GODREJCP', 'GODREJPROP', 'GRANULES', 'GRASIM',
-    #         'GUJGASLTD', 'HAL', 'HAVELLS', 'HCLTECH', 'HDFCAMC',
-    #         'HDFCLIFE', 'HEROMOTOCO', 'HINDALCO', 'HINDPETRO', 'HINDUNILVR',
-    #         'IBULHSGFIN', 'ICICIGI', 'ICICIPRULI', 'IDBI', 'IDFCFIRSTB',
-    #         'IGL', 'INDHOTEL', 'INDIANB', 'INDIGO', 'INDUSINDBK',
-    #         'INFY', 'IOC', 'IPCALAB', 'IRCTC', 'ITC',
-    #         'JINDALSTEL', 'JKCEMENT', 'JSWSTEEL', 'JUBLFOOD', 'JUSTDIAL',
-    #         'KOTAKBANK', 'LALPATHLAB', 'LICHSGFIN', 'LT', 'LTTS',
-    #         'LUPIN', 'M&M', 'M&MFIN', 'MANAPPURAM', 'MARICO',
-    #         'MARUTI', 'MCDOWELL-N', 'MFSL', 'MINDTREE', 'MOTHERSON',
-    #         'MPHASIS', 'MRF', 'MUTHOOTFIN', 'NATIONALUM', 'NAUKRI',
-    #         # 'NESTLEIND', 'NMDC', 'NTPC', 'OBEROI', 'OFSS',
-    #         # 'ONGC', 'PAGEIND', 'PEL', 'PETRONET', 'PIDILITIND',
-    #         # 'PNB', 'POLYCAB', 'POWERGRID', 'PVR', 'RBLBANK',
-    #         # 'RECLTD', 'RELAXO', 'RELIANCE', 'SAIL', 'SBICARD',
-    #         # 'SBILIFE', 'SBIN', 'SHREECEM', 'SIEMENS', 'SRF',
-    #         # 'SUNPHARMA', 'SUNTV', 'TATACHEM', 'TATACONSUM', 'TATAMOTORS',
-    #         # 'TATAPOWER', 'TATASTEEL', 'TCS', 'TECHM', 'TITAN',
-    #         # 'TORNTPHARM', 'TRENT', 'TVSMOTORS', 'UBL', 'ULTRACEMCO',
-    #         # 'UPL', 'VEDL', 'VOLTAS', 'WIPRO', 'YESBANK',
-    #         # 'ZEEL', 'ZYDUSLIFE'
-    #     ]
-    #     return nifty200 + additional_stocks
-    
-    # def get_nifty500_custom_stocks(self) -> List[str]:
-    #     """Your best selected Nifty 500 stocks"""
-    #     nifty300 = self.get_nifty300_custom_stocks()
-    #     additional_stocks = [
-    #         '3MINDIA', 'ABB', 'ACC', 'ADANIENT', 'ADANIGREEN',
-    #         'ADANIPORTS', 'ADANITRANS', 'ADANIPOWER', 'ALKEM', 'AMBUJACEM',
-    #         'APLLTD', 'ASHOKLEY', 'ASTRAL', 'ATUL', 'AUBANK',
-    #         'AUROPHARMA', 'BAJAJHLDNG', 'BALRAMCHIN', 'BANDHANBNK', 'BATAINDIA',
-    #         'BEL', 'BEML', 'BERGEPAINT', 'BHARATFORG', 'BIOCON',
-    #         'BOSCHLTD', 'CADILAHC', 'CANFINHOME', 'CHOLAFIN', 'CIPLA',
-    #         'COLPAL', 'CONCOR', 'CROMPTON', 'CUMMINSIND', 'DABUR',
-    #         'DALBHARAT', 'DEEPAKNTR', 'DIVISLAB', 'DLF', 'DRREDDY',
-    #         'EICHERMOT', 'ESCORTS', 'EXIDEIND', 'FEDERALBNK', 'GAIL',
-    #         'GLENMARK', 'GODREJCP', 'GODREJPROP', 'GRANULES', 'GRASIM',
-    #         'GUJGASLTD', 'HAL', 'HAVELLS', 'HCLTECH', 'HDFCAMC',
-    #         'HDFCLIFE', 'HEROMOTOCO', 'HINDALCO', 'HINDPETRO', 'HINDUNILVR',
-    #         'IBULHSGFIN', 'ICICIGI', 'ICICIPRULI', 'IDBI', 'IDFCFIRSTB',
-    #         'IGL', 'INDHOTEL', 'INDIANB', 'INDIGO', 'INDUSINDBK',
-    #         'INFY', 'IOC', 'IPCALAB', 'IRCTC', 'ITC',
-    #         'JINDALSTEL', 'JKCEMENT', 'JSWSTEEL', 'JUBLFOOD', 'JUSTDIAL',
-    #         'KOTAKBANK', 'LALPATHLAB', 'LICHSGFIN', 'LT', 'LTTS',
-    #         'LUPIN', 'M&M', 'M&MFIN', 'MANAPPURAM', 'MARICO',
-    #         'MARUTI', 'MCDOWELL-N', 'MFSL', 'MINDTREE', 'MOTHERSON',
-    #         'MPHASIS', 'MRF', 'MUTHOOTFIN', 'NATIONALUM', 'NAUKRI',
-    #         'NESTLEIND', 'NMDC', 'NTPC', 'OBEROI', 'OFSS',
-    #         'ONGC', 'PAGEIND', 'PEL', 'PETRONET', 'PIDILITIND',
-    #         'PNB', 'POLYCAB', 'POWERGRID', 'PVR', 'RBLBANK',
-    #         'RECLTD', 'RELAXO', 'RELIANCE', 'SAIL', 'SBICARD',
-    #         'SBILIFE', 'SBIN', 'SHREECEM', 'SIEMENS', 'SRF',
-    #         'SUNPHARMA', 'SUNTV', 'TATACHEM', 'TATACONSUM', 'TATAMOTORS',
-    #         'TATAPOWER', 'TATASTEEL', 'TCS', 'TECHM', 'TITAN',
-    #         'TORNTPHARM', 'TRENT', 'TVSMOTORS', 'UBL', 'ULTRACEMCO',
-    #         'UPL', 'VEDL', 'VOLTAS', 'WIPRO', 'YESBANK',
-    #         # 'ZEEL', 'ZYDUSLIFE'
-    #     ]
-    #     return nifty300 + additional_stocks
-    
     
     def get_custom_etf_universe(self) -> List[str]:
         """Get custom list of ETFs based on user selection or configuration"""
@@ -832,7 +536,7 @@ class RSETFStrategyBacktester:
                     MAX(date)::text as end_date,
                     COUNT(*) as total_records,
                     ROUND(EXTRACT(EPOCH FROM (MAX(date)::timestamp - MIN(date)::timestamp)) / 86400.0 / 365.25, 1) as years_available
-                FROM etf_data
+                FROM etf_market
                 GROUP BY symbol
                 ORDER BY symbol
             """
@@ -854,7 +558,7 @@ class RSETFStrategyBacktester:
                         'end_date': str(end_date) if end_date else None,
                         'years_available': float(years_available) if years_available else 0,
                         'total_records': int(total_records) if total_records else 0,
-                        'data_source': 'etf_data'
+                        'data_source': 'etf_market'
                     }
                 except Exception:
                     continue
@@ -936,7 +640,7 @@ class RSETFStrategyBacktester:
         """Get the allowed list of ETFs for RS ETF Strategy - Dynamic from DB"""
         try:
             # Query the database for all available unique symbols in etf_data
-            sql = "SELECT DISTINCT symbol FROM etf_data ORDER BY symbol"
+            sql = "SELECT DISTINCT symbol FROM etf_market ORDER BY symbol"
             result = pd.read_sql(sql, self.db.bind)
             
             if not result.empty:
@@ -1073,26 +777,9 @@ class RSETFStrategyBacktester:
         except (KeyError, IndexError, ValueError, ZeroDivisionError) as e:
             return None
     
-    def calculate_single_rs(self, etf_current: float, etf_past: float,
-                           index_current: float, index_past: float) -> Optional[float]:
-        """Calculate single period RS"""
-        try:
-            if etf_past == 0 or index_past == 0:
-                return None
-            rs = (etf_current / etf_past) / (index_current / index_past) - 1
-            return rs
-        except (ZeroDivisionError, ValueError):
-            return None
+
     
-    def get_trading_date_before(self, date: datetime, days_back: int) -> Optional[datetime]:
-        """Get trading date N days before given date"""
-        # Calculate actual trading days (approximately 5 trading days per week)
-        trading_days_back = int(days_back * 7 / 5)
-        
-        # Go back the calculated number of days
-        target_date = date - timedelta(days=trading_days_back)
-        
-        return target_date
+
     
     def is_friday_or_last_trading_day(self, date: datetime) -> bool:
         """Check if date is the last trading day of the week"""
@@ -1221,20 +908,15 @@ class RSETFStrategyBacktester:
         positive_rs = rankings[rankings['rs_score'] > 0]
         self.logger.info(f"  ETFs with positive RS: {len(positive_rs)}")
         
-        # IMPROVEMENT: Filter out ETFs that have reached purchase limits
-        eligible_indices = []
-        for idx, row in positive_rs.iterrows():
-            symbol = row['symbol']
-            count = self.etf_purchase_counts.get(symbol, 0)
-            limit = self.etf_purchase_limits.get(symbol, float('inf'))
-            
-            if count < limit:
-                eligible_indices.append(idx)
-            else:
-                self._log("limit", f"⚠️ Signal filtered: {symbol} reached purchase limit ({count}/{limit})")
+        # Select top N ETFs with positive RS scores (more opportunities)
+        positive_rs = rankings[rankings['rs_score'] > 0]
+        self.logger.info(f"  ETFs with positive RS: {len(positive_rs)}")
+        
+        # Removed purchase limit filtering logic
         
         # Create filtered dataframe
-        positive_rs_filtered = positive_rs.loc[eligible_indices]
+        positive_rs_filtered = positive_rs
+
         if len(positive_rs) != len(positive_rs_filtered):
             self.logger.info(f"  Available after limit filter: {len(positive_rs_filtered)} (filtered {len(positive_rs) - len(positive_rs_filtered)})")
         
@@ -1373,308 +1055,6 @@ class RSETFStrategyBacktester:
         # For very long backtests, periodically clean old snapshots to save memory
         if len(self.portfolio_snapshots) > 10000:  # Keep last 10k snapshots max
             self.portfolio_snapshots = self.portfolio_snapshots[-5000:]  # Keep last 5k
-    
-    # def run_backtest(self, start_date: datetime, end_date: datetime) -> Dict:
-    #     """Run the complete backtest"""
-    #     # Ensure dates are timezone-naive
-    #     if start_date.tzinfo:
-    #         start_date = start_date.replace(tzinfo=None)
-    #     if end_date.tzinfo:
-    #         end_date = end_date.replace(tzinfo=None)
-            
-        
-    #     # Validate data range before starting
-    #     if not self.validate_data_range(start_date, end_date):
-        
-    #     # Load data
-    #     etf_data = self.load_etf_data(start_date, end_date)
-        
-    #     index_data = self.load_index_data(start_date, end_date)
-        
-    #     if etf_data.empty or index_data.empty:
-    #         raise ValueError("No data available for backtest period")
-        
-    #     # Get all trading dates (should be timezone-naive now)
-    #     trading_dates = sorted(etf_data.index.get_level_values('date').unique())
-        
-    #     # Calculate last trading days of each week
-    #     self.calculate_last_trading_days(trading_dates)
-        
-    #     signal_count = 0
-    #     trade_count = 0
-    #     total_dates = len(trading_dates)
-    #     progress_interval = max(1, total_dates // 20)  # Show progress every 5%
-        
-        
-    #     for i, date in enumerate(trading_dates):
-    #         # Progress reporting for long backtests
-    #         if i % progress_interval == 0 or i == total_dates - 1:
-    #             progress_pct = (i / total_dates) * 100
-    #         # Take portfolio snapshot
-    #         self.take_portfolio_snapshot(stock_data, index_data, date)
-            
-    #         # Check capital reset threshold
-    #         current_portfolio_value = self.calculate_portfolio_value(stock_data, date)
-    #         self.check_capital_reset_threshold(current_portfolio_value, date)
-            
-    #         # Check max holding period exits
-    #         max_holding_exits = self.check_max_holding_period(date)
-            
-    #         # Generate signals on last trading day of week
-    #         if self.is_friday_or_last_trading_day(date):
-    #             signal_count += 1
-                
-    #             # Print Friday signal date and Monday execution date
-    #             next_monday = self.get_next_monday(date)
-                
-    #             entries, exits = self.generate_signals(stock_data, index_data, date)
-                
-    #             # Add max holding period exits
-    #             exits.extend(max_holding_exits)
-                
-    #             # Apply capital reset logic
-    #             entries, exits = self.apply_capital_reset_logic(entries, exits)
-                
-    #             # Execute trades on next Monday
-    #             if next_monday <= end_date:
-    #                 # Execute exits
-    #                 for symbol in exits:
-    #                     try:
-    #                         price = stock_data.loc[symbol, next_monday]['adjusted_close']
-    #                         self.execute_trade(next_monday, symbol, "SELL", price, "Exit Signal")
-    #                         trade_count += 1
-    #                     except (KeyError, IndexError):
-    #                         continue
-                    
-    #                 # Execute entries
-    #                 rankings = self.rank_stocks(stock_data, index_data, date)  # Calculate once per signal
-    #                 for symbol in entries:
-    #                     try:
-    #                         price = stock_data.loc[symbol, next_monday]['adjusted_close']
-    #                         if not rankings.empty and symbol in rankings['symbol'].values:
-    #                             symbol_rank = rankings[rankings['symbol'] == symbol]
-    #                             rs_score = symbol_rank['rs_score'].iloc[0]
-    #                             rs_rank = symbol_rank['rank'].iloc[0]
-    #                             self.execute_trade(next_monday, symbol, "BUY", price, "Entry Signal", 
-    #                                              rs_score, rs_rank)
-    #                             trade_count += 1
-    #                     except (KeyError, IndexError):
-    #                         continue
-        
-        
-    #     # Calculate final metrics
-    #     metrics = self.calculate_backtest_metrics()
-    #     return metrics
-    
-    # def calculate_cagr(self, start_value: float, end_value: float, start_date: datetime, end_date: datetime) -> float:
-    #     """Calculate Compound Annual Growth Rate (CAGR)"""
-    #     if start_value <= 0 or end_value <= 0:
-    #         return 0.0
-        
-    #     # Calculate years between dates
-    #     years = (end_date - start_date).days / 365.25
-        
-    #     if years <= 0:
-    #         return 0.0
-        
-    #     # CAGR formula: (End Value / Start Value)^(1/years) - 1 - SAFE VERSION
-    #     if years > 0 and start_value > 0:
-    #         cagr = safe_power(end_value / start_value, 1 / years, 1.0) - 1
-    #     else:
-    #         cagr = 0.0
-    #     return safe_float(cagr * 100)  # Return as percentage
-    
-    # def calculate_rule_of_72_metrics(self, cagr_pct: float, years: float) -> Dict:
-    #     """Calculate Rule of 72 metrics for compounding analysis"""
-    #     if cagr_pct <= 0:
-    #         return {
-    #             'years_to_double': float('inf'),
-    #             'expected_doublings': 0.0,
-    #             'rule_of_72_return': 0.0,
-    #             'compounding_factor': 1.0
-    #         }
-        
-    #     # Rule of 72: Years to double = 72 / Annual Rate - SAFE VERSION
-    #     years_to_double = safe_divide(72, cagr_pct, 0.0)
-        
-    #     # Calculate how many times the investment should double
-    #     expected_doublings = safe_divide(years, years_to_double, 0.0)
-        
-    #     # Calculate expected return using Rule of 72
-    #     # Each doubling = 2x, so 2^doublings
-    #     compounding_factor = safe_power(2, expected_doublings, 1.0)
-    #     rule_of_72_return = safe_float((compounding_factor - 1) * 100)
-        
-    #     return {
-    #         'years_to_double': years_to_double,
-    #         'expected_doublings': expected_doublings,
-    #         'rule_of_72_return': rule_of_72_return,
-    #         'compounding_factor': compounding_factor
-    #     }
-    
-    # def calculate_xirr(self, cash_flows: List[Tuple[datetime, float]]) -> float:
-    #     """Calculate Extended Internal Rate of Return (XIRR) using Newton-Raphson method"""
-    #     if len(cash_flows) < 2:
-    #         return 0.0
-        
-    #     # Sort cash flows by date
-    #     cash_flows.sort(key=lambda x: x[0])
-        
-    #     # Extract dates and amounts
-    #     dates = [cf[0] for cf in cash_flows]
-    #     amounts = [cf[1] for cf in cash_flows]
-        
-    #     # Convert dates to years from first date
-    #     first_date = dates[0]
-    #     years = [(date - first_date).days / 365.25 for date in dates]
-        
-    #     try:
-    #         # Simple IRR calculation using Newton-Raphson method
-    #         def npv(rate):
-    #             return sum(amount / (1 + rate) ** year for amount, year in zip(amounts, years))
-            
-    #         def npv_derivative(rate):
-    #             return sum(-amount * year / (1 + rate) ** (year + 1) for amount, year in zip(amounts, years))
-            
-    #         # Initial guess
-    #         rate = 0.1
-            
-    #         # Newton-Raphson iteration
-    #         for _ in range(100):  # Max 100 iterations
-    #             npv_val = npv(rate)
-    #             if abs(npv_val) < 1e-6:  # Convergence
-    #                 break
-    #             derivative = npv_derivative(rate)
-    #             if abs(derivative) < 1e-10:  # Avoid division by zero
-    #                 break
-    #             rate = rate - npv_val / derivative
-            
-    #         # Check if result is reasonable
-    #         if np.isnan(rate) or np.isinf(rate) or rate < -0.99 or rate > 10:
-    #             return 0.0
-            
-    #         return rate * 100  # Return as percentage
-    #     except:
-    #         return 0.0
-    
-    # def calculate_backtest_metrics(self) -> Dict:
-    #     """Calculate backtest performance metrics"""
-        
-    #     if not self.portfolio_snapshots:
-    #         return {}
-        
-    #     snapshots = pd.DataFrame(self.portfolio_snapshots)
-    #     snapshots['returns'] = snapshots['total_value'].pct_change()
-        
-        
-    #     # Basic metrics - SAFE VERSION
-    #     start_val = snapshots['total_value'].iloc[0]
-    #     end_val = snapshots['total_value'].iloc[-1]
-    #     total_return = safe_float((safe_divide(end_val, start_val, 1.0) - 1) * 100)
-        
-    #     # Calculate CAGR
-    #     start_date = snapshots['date'].iloc[0]
-    #     end_date = snapshots['date'].iloc[-1]
-    #     start_value = snapshots['total_value'].iloc[0]
-    #     end_value = snapshots['total_value'].iloc[-1]
-    #     cagr = self.calculate_cagr(start_value, end_value, start_date, end_date)
-        
-    #     # Calculate Rule of 72 metrics
-    #     years = (end_date - start_date).days / 365.25
-    #     rule_72_metrics = self.calculate_rule_of_72_metrics(cagr, years)
-        
-    #     # Calculate XIRR from cash flows
-    #     cash_flows = []
-    #     # Initial investment (negative cash flow)
-    #     cash_flows.append((start_date, -self.total_capital))
-        
-    #     # Add trade cash flows
-    #     for trade in self.trades:
-    #         if trade.action == "BUY":
-    #             cash_flows.append((trade.date, -trade.amount))  # Negative for outflow
-    #         elif trade.action == "SELL":
-    #             cash_flows.append((trade.date, trade.amount))   # Positive for inflow
-        
-    #     # Final portfolio value (positive cash flow)
-    #     cash_flows.append((end_date, end_value))
-        
-    #     xirr = self.calculate_xirr(cash_flows)
-        
-    #     # Annualized return (legacy calculation) - SAFE VERSION
-    #     days = (end_date - start_date).days
-    #     if days > 0 and start_value > 0:
-    #         annualized_return = safe_float(((end_value / start_value) ** (365 / days) - 1) * 100)
-    #     else:
-    #         annualized_return = 0.0
-        
-    #     # Max drawdown - SAFE VERSION
-    #     peak = snapshots['total_value'].expanding().max()
-    #     drawdown = (snapshots['total_value'] - peak) / peak * 100
-    #     # Handle division by zero and infinity values
-    #     drawdown = drawdown.replace([float('inf'), float('-inf')], 0.0).fillna(0.0)
-    #     max_drawdown = safe_float(drawdown.min())
-        
-    #     # Sharpe ratio (simplified) - SAFE VERSION
-    #     returns_std = snapshots['returns'].std()
-    #     returns_mean = snapshots['returns'].mean()
-    #     if returns_std > 0 and not math.isnan(returns_std) and not math.isinf(returns_std):
-    #         sharpe_ratio = safe_float(returns_mean / returns_std * safe_sqrt(252))
-    #     else:
-    #         sharpe_ratio = 0.0
-        
-    #     # Win rate
-    #     winning_trades = len([t for t in self.trades if t.action == "SELL" and t.amount > 0])
-    #     total_sell_trades = len([t for t in self.trades if t.action == "SELL"])
-    #     win_rate = (winning_trades / total_sell_trades * 100) if total_sell_trades > 0 else 0
-        
-    #     # Smart snapshot sampling for long backtests
-    #     total_snapshots = len(self.portfolio_snapshots)
-    #     if total_snapshots <= 500:
-    #         # For short backtests, keep all snapshots
-    #         snapshot_sample = self.portfolio_snapshots
-    #     else:
-    #         # For long backtests, sample intelligently
-    #         # Keep first 50, last 50, and sample middle evenly
-    #         step = max(1, (total_snapshots - 100) // 400)  # Sample ~400 from middle
-    #         indices = (list(range(50)) + 
-    #                   list(range(50, total_snapshots - 50, step)) + 
-    #                   list(range(total_snapshots - 50, total_snapshots)))
-    #         snapshot_sample = [self.portfolio_snapshots[i] for i in indices if i < total_snapshots]
-        
-    #     simplified_snapshots = []
-    #     for snapshot in snapshot_sample:
-    #         simplified_snapshot = {
-    #             'date': snapshot['date'].isoformat() if hasattr(snapshot['date'], 'isoformat') else str(snapshot['date']),
-    #             'total_value': float(snapshot.get('total_value', 0)),
-    #             'cash_balance': float(snapshot.get('cash_balance', 0)),
-    #             'daily_pnl': float(snapshot.get('daily_pnl', 0)),
-    #             'cumulative_pnl': float(snapshot.get('cumulative_pnl', 0)),
-    #             'drawdown_pct': float(snapshot.get('drawdown_pct', 0)),
-    #             'position_count': len(snapshot.get('positions', {}))
-    #         }
-    #         simplified_snapshots.append(simplified_snapshot)
-        
-    #     metrics = {
-    #         'total_return_pct': safe_float(total_return),
-    #         'annualized_return_pct': safe_float(annualized_return),
-    #         'cagr_pct': safe_float(cagr),
-    #         'xirr_pct': safe_float(xirr),
-    #         'max_drawdown_pct': safe_float(max_drawdown),
-    #         'sharpe_ratio': safe_float(sharpe_ratio),
-    #         'win_rate_pct': safe_float(win_rate),
-    #         'total_trades': int(len(self.trades)),
-    #         'final_capital': safe_float(snapshots['total_value'].iloc[-1]),
-    #         'portfolio_snapshots': simplified_snapshots,
-    #         'trades': [self.trade_to_dict(t) for t in self.trades],
-    #         'rule_of_72': {
-    #             'years_to_double': safe_float(rule_72_metrics['years_to_double']),
-    #             'expected_doublings': safe_float(rule_72_metrics['expected_doublings']),
-    #             'rule_of_72_return_pct': safe_float(rule_72_metrics['rule_of_72_return']),
-    #             'compounding_factor': safe_float(rule_72_metrics['compounding_factor'])
-    #         }
-    #     }
-        
-    #     return metrics
     
     def convert_to_json_safe(self, obj):
         """Recursively convert any object to JSON-safe format"""
@@ -1824,17 +1204,14 @@ class RSETFStrategyBacktester:
     def run_backtest(self, start_date: datetime, end_date: datetime) -> Dict:
         """Run the complete backtest"""
         try:
-             # Ensure dates are timezone-naive
+            # Ensure dates are timezone-naive
             if start_date.tzinfo:
                 start_date = start_date.replace(tzinfo=None)
             if end_date.tzinfo:
                 end_date = end_date.replace(tzinfo=None)
             
-            # IMPROVEMENT: Initialize purchase limits at start of backtest
-            # Using a default of 13 weeks for accumulation calculation if not specified in config
-            acc_weeks = getattr(self.config, 'accumulation_weeks', 13) if self.config else 13
-            # Use the full potential universe for limit calculation
-            self.initialize_purchase_limits(self._get_allowed_etf_list(), acc_weeks)
+            # Purchase limit initialization removed
+
 
             self.logger.info(f"=== BACKTEST START ===")
             self.logger.info(f"Starting backtest from {start_date} to {end_date}")
@@ -2056,22 +1433,10 @@ class RSETFStrategyBacktester:
             self.logger.info(f"Final cash balance: {self.cash_balance:.1f}")
             self.logger.info(f"Final positions: {len(self.positions)}")
             
-            # NEW: Print Purchase Limit Summary to Terminal
-            print("\n" + "=" * 60)
-            print("PURCHASE LIMIT SUMMARY")
-            print("=" * 60)
-            print(f"{'Ticker':<15} {'Purchases':<10} {'Limit':<10} {'Status':<15}")
-            print("-" * 60)
-            
-            sorted_tickers = sorted(self.etf_purchase_limits.keys())
-            for ticker in sorted_tickers:
-                count = self.etf_purchase_counts.get(ticker, 0)
-                limit = self.etf_purchase_limits.get(ticker, 0)
-                status = "REACHED" if count >= limit else "OK"
-                print(f"{ticker:<15} {count:<10} {limit:<10} {status:<15}")
-            print("=" * 60 + "\n")
+            # NEW: Print Purchase Limit Summary to Terminal - REMOVED
             
             # Calculate metrics (with default risk_free_rate, will be overridden by API)
+
             self.logger.progress("=== CALCULATING METRICS ===")
             metrics = self.calculate_metrics(risk_free_rate=6.0)
             
@@ -2139,7 +1504,7 @@ class RSETFStrategyBacktester:
         }
 
     def calculate_metrics(self, risk_free_rate: float = 6.0) -> Dict:
-        """Calculate comprehensive performance metrics"""
+        """Calculate comprehensive performance metrics with smart sampling"""
         try:
             if not self.portfolio_snapshots:
                 self.logger.info("ERROR: No portfolio snapshots available")
@@ -2169,9 +1534,6 @@ class RSETFStrategyBacktester:
             # Calculate Rule of 72 metrics
             years = (end_date - start_date).days / 365.25
             rule_72_metrics = self.calculate_rule_of_72_metrics(cagr, years)
-            self.logger.info(f"Rule of 72 - Years to double: {rule_72_metrics['years_to_double']:.1f}")
-            self.logger.performance(f"Rule of 72 - Expected return: {rule_72_metrics['rule_of_72_return']:.1f}%")
-            self.logger.info(f"Rule of 72 - Doublings: {rule_72_metrics['expected_doublings']:.2f}")
             
             # Calculate XIRR from cash flows
             cash_flows = []
@@ -2189,43 +1551,68 @@ class RSETFStrategyBacktester:
             cash_flows.append((end_date, end_value))
             
             xirr = self.calculate_xirr(cash_flows)
-            self.logger.info(f"XIRR: {xirr}%")
             
-            # Calculate annualized return
-            annualized_return = safe_float((safe_power(safe_divide(end_value, start_value, 1.0), safe_divide(365.25, (end_date - start_date).days, 1.0)) - 1) * 100)
-            self.logger.performance(f"Annualized return: {annualized_return}% (over {(end_date - start_date).days} days)")
+            # Annualized return (legacy calculation) - SAFE VERSION
+            days = (end_date - start_date).days
+            if days > 0 and start_value > 0:
+                annualized_return = safe_float(((end_value / start_value) ** (365 / days) - 1) * 100)
+            else:
+                annualized_return = 0.0
             
-            # Calculate maximum drawdown
-            max_drawdown = self.calculate_max_drawdown(snapshots)
-            self.logger.performance(f"Max drawdown: {max_drawdown}%")
+            # Max drawdown - SAFE VERSION
+            peak = snapshots['total_value'].expanding().max()
+            drawdown = (snapshots['total_value'] - peak) / peak * 100
+            # Handle division by zero and infinity values
+            drawdown = drawdown.replace([float('inf'), float('-inf')], 0.0).fillna(0.0)
+            max_drawdown = safe_float(drawdown.min())
             
-            # Calculate Sharpe ratio
-            sharpe_ratio = self.calculate_sharpe_ratio(snapshots)
-            self.logger.performance(f"Sharpe ratio: {sharpe_ratio}")
+            # Sharpe ratio (simplified) - SAFE VERSION
+            returns_std = snapshots['returns'].std()
+            returns_mean = snapshots['returns'].mean()
+            if returns_std > 0 and not math.isnan(returns_std) and not math.isinf(returns_std):
+                sharpe_ratio = safe_float(returns_mean / returns_std * safe_sqrt(252))
+            else:
+                sharpe_ratio = 0.0
             
             # Calculate Beta and Treynor ratio
             beta, treynor_ratio = self.calculate_beta_and_treynor(snapshots, risk_free_rate)
-            self.logger.info(f"Beta: {beta:.2f}")
-            self.logger.info(f"Treynor ratio: {treynor_ratio:.2f}%")
             
             # Calculate Calmar ratio: abs(CAGR / max_drawdown) if max_drawdown < 0
             calmar_ratio = abs(cagr / max_drawdown) if max_drawdown < 0 else 0.0
-            self.logger.info(f"Calmar ratio: {calmar_ratio:.2f}")
             
             # Calculate win rate
             win_rate = self.calculate_win_rate()
-            self.logger.trade(f"Win rate: {win_rate}% ({len([t for t in self.trades if t.action == 'SELL' and self.get_trade_pnl(t) > 0])}/{len([t for t in self.trades if t.action == 'SELL'])})")
             
+            # Smart snapshot sampling implementation
+            # This reduces JSON payload size by >80% for long backtests while maintaining chart fidelity
+            total_snapshots = len(self.portfolio_snapshots)
+            if total_snapshots <= 500:
+                # For short backtests, keep all snapshots
+                snapshot_sample = self.portfolio_snapshots
+            else:
+                # For long backtests, sample intelligently
+                # Keep first 50 (start details), last 50 (end details), and sample middle evenly
+                step = max(1, (total_snapshots - 100) // 400)  # Target ~400 samples from middle
+                
+                indices = (list(range(50)) + 
+                          list(range(50, total_snapshots - 50, step)) + 
+                          list(range(total_snapshots - 50, total_snapshots)))
+                          
+                # Ensure unique, valid indices in order
+                indices = sorted(list(set([i for i in indices if i < total_snapshots])))
+                snapshot_sample = [self.portfolio_snapshots[i] for i in indices]
+                
+                self.logger.info(f"Smart sampling: Reduced snapshots from {total_snapshots} to {len(snapshot_sample)} for optimization")
+
             # Convert snapshots to JSON-safe format
             simplified_snapshots = []
-            for snapshot in self.portfolio_snapshots:
+            for snapshot in snapshot_sample:
                 simplified_snapshot = {
                     'date': snapshot['date'].isoformat() if hasattr(snapshot['date'], 'isoformat') else str(snapshot['date']),
                     'total_value': float(snapshot.get('total_value', 0)),
                     'cash_balance': float(snapshot.get('cash_balance', 0)),
-                    'daily_pnl': float(snapshot.get('daily_pnl', 0)),
-                    'cumulative_pnl': float(snapshot.get('cumulative_pnl', 0)),
                     'drawdown_pct': float(snapshot.get('drawdown_pct', 0)),
+                    # Omit detailed positions in list to save space, only send count
                     'position_count': len(snapshot.get('positions', {}))
                 }
                 simplified_snapshots.append(simplified_snapshot)
@@ -2256,14 +1643,21 @@ class RSETFStrategyBacktester:
             # Calculate benchmark buy-and-hold metrics
             self.logger.progress("=== CALCULATING BENCHMARK METRICS ===")
             try:
-                trading_dates = [snap['date'] for snap in self.portfolio_snapshots]
+                # Use ALL original dates for accurate benchmark calculation, not sampled ones
+                all_dates = [snap['date'] for snap in self.portfolio_snapshots]
                 benchmark_calc = BenchmarkCalculator(
                     initial_capital=self.total_capital,
                     index_data=self.index_data,
-                    trading_dates=trading_dates
+                    trading_dates=all_dates
                 )
                 benchmark_metrics = benchmark_calc.calculate_benchmark_metrics(risk_free_rate)
-                benchmark_values = benchmark_calc.get_benchmark_values_array()
+                
+                # Sample benchmark values to match snapshot sampling for charts
+                full_benchmark_values = benchmark_calc.get_benchmark_values_array()
+                if total_snapshots > 500 and len(full_benchmark_values) == total_snapshots:
+                     benchmark_values = [full_benchmark_values[i] for i in indices]
+                else:
+                    benchmark_values = full_benchmark_values
                 
                 # Add benchmark data to metrics
                 metrics['benchmark_metrics'] = benchmark_metrics
@@ -2271,7 +1665,6 @@ class RSETFStrategyBacktester:
                 metrics['alpha_pct'] = safe_float(cagr - benchmark_metrics['cagr_pct'])
                 
                 self.logger.performance(f"Benchmark Total Return: {benchmark_metrics['total_return_pct']:.2f}%")
-                self.logger.performance(f"Benchmark CAGR: {benchmark_metrics['cagr_pct']:.2f}%")
                 self.logger.info(f"Strategy Alpha: {metrics['alpha_pct']:.2f}%")
             except Exception as e:
                 self.logger.progress(f"Error calculating benchmark metrics: {e}")
@@ -2284,27 +1677,13 @@ class RSETFStrategyBacktester:
             
         except Exception as e:
             self.logger.progress(f"Error calculating metrics: {e}")
+            import traceback
+            traceback.print_exc()
             return {
                 'total_return_pct': 0.0,
-                'annualized_return_pct': 0.0,
-                'cagr_pct': 0.0,
-                'xirr_pct': 0.0,
-                'max_drawdown_pct': 0.0,
-                'sharpe_ratio': 0.0,
-                'beta': 1.0,
-                'treynor_ratio': 0.0,
-                'calmar_ratio': 0.0,
-                'win_rate_pct': 0.0,
-                'total_trades': 0,
                 'final_capital': self.total_capital,
                 'portfolio_snapshots': [],
-                'trades': [],
-                'rule_of_72': {
-                    'years_to_double': 0.0,
-                    'expected_doublings': 0.0,
-                    'rule_of_72_return_pct': 0.0,
-                    'compounding_factor': 1.0
-                }
+                'trades': []
             }
     
     def calculate_cagr(self, start_value: float, end_value: float, start_date: datetime, end_date: datetime) -> float:
@@ -2662,7 +2041,12 @@ class RSETFStrategyBacktester:
                     self.logger.info(f"  Used cash: ₹{original_cash_used:.2f}, buffer: ₹{needed_from_buffer:.2f}")
                 
                 # Calculate stop loss price
-                stop_loss_price = price * (1 - self.stop_loss_pct)
+                if self.stop_loss_pct > 0:
+                    stop_loss_price = price * (1 - self.stop_loss_pct)
+                    self.logger.info(f"  🛑 Stoploss set to ₹{stop_loss_price:.2f} (Formula: ₹{price:.2f} * (1 - {self.stop_loss_pct*100:.1f}/100))")
+                else:
+                    stop_loss_price = None
+                    self.logger.info(f"  ℹ️  Stoploss disabled (0%)")
                 
                 # Create position
                 position = Position(
@@ -2721,14 +2105,7 @@ class RSETFStrategyBacktester:
                 self.logger.trade(f"💰 Buy Price: ₹{price:,.2f}")
                 self.logger.info(f"💰 Remaining cash: ₹{self.cash_balance:,.2f}")
                 
-                 # NEW: Increment purchase counter
-                self.etf_purchase_counts[symbol] = self.etf_purchase_counts.get(symbol, 0) + 1
-                current_count = self.etf_purchase_counts[symbol]
-                limit = self.etf_purchase_limits.get(symbol, 0)
-                self._log("limit", f"📈 Purchase count incremented: {symbol} = {current_count}/{limit}")
-                
-                 # Print to terminal directly as requested
-                print(f"📊 Purchase Count: {current_count}/{limit} ({ (current_count/limit)*100 if limit > 0 else 0:.0f}% used)")
+                 # Purchase count increment removed
                 
                 return True
                 
@@ -2830,18 +2207,23 @@ class RSETFStrategyBacktester:
                 print(f"")
                 print(f"")
                 
-                # NEW: Decrement purchase counter
-                if symbol in self.etf_purchase_counts:
-                    self.etf_purchase_counts[symbol] = max(0, self.etf_purchase_counts[symbol] - 1)
-                    new_count = self.etf_purchase_counts[symbol]
-                    limit = self.etf_purchase_limits.get(symbol, 0)
-                    self._log("limit", f"📉 Purchase count decremented: {symbol} = {new_count}/{limit}")
+                # NEW: Decrement purchase counter - REMOVED
                 
                 return True
                 
         except Exception as e:
             self.logger.trade(f"Error executing trade {action} {symbol}: {e}")
             return False
+
+    def log_stop_loss_mode(self):
+        """Explicitly log the stop loss configuration"""
+        mode = "DAILY Check" if self.daily_stop_loss_check else "WEEKLY Check (on Friday/Signal Day)"
+        self.logger.info(f"\n{'='*40}")
+        self.logger.info(f"🛡️  STOP LOSS CONFIGURATION")
+        self.logger.info(f"   Mode: {mode}")
+        self.logger.info(f"   Threshold: {self.stop_loss_pct * 100:.1f}%")
+        self.logger.info(f"   Formula: Stoploss Price = Buy Price * (1 - {self.stop_loss_pct*100:.1f}/100)")
+        self.logger.info(f"{'='*40}\n")
 
     def check_daily_stop_loss(self, etf_data: pd.DataFrame, current_date: datetime) -> List[str]:
         """Check stop loss for all positions and return ETFs to sell"""
@@ -2862,13 +2244,15 @@ class RSETFStrategyBacktester:
                     current_price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
                     
                     # Check if stop loss hit
-                    if current_price <= position.stop_loss_price:
+                    # Check if stop loss hit
+                    if position.stop_loss_price is not None and current_price <= position.stop_loss_price:
                         stop_loss_exits.append(symbol)
                         loss_pct = ((current_price - position.buy_price) / position.buy_price * 100)
-                        self.logger.info(f"  ⚠️  STOP LOSS HIT: {symbol} - Current: ₹{current_price:.2f} <= Stop Loss: ₹{position.stop_loss_price:.2f} (Loss: {loss_pct:.2f}%)")
+                        self.logger.info(f"  ⚠️  STOP LOSS HIT: {symbol} @ ₹{current_price:.2f} <= SL: ₹{position.stop_loss_price:.2f} (Drakedown: {loss_pct:+.2f}%)")
                     else:
-                        # Print that stop loss not reached for this stock
-                        self.logger.info(f"  ✓ {symbol}: Current ₹{current_price:.2f} > Stop Loss ₹{position.stop_loss_price:.2f} (Safe)")
+                        # Explicitly log safe status
+                        loss_pct = ((current_price - position.buy_price) / position.buy_price * 100)
+                        self.logger.info(f"  ✓  Stoploss safe: {symbol} @ ₹{current_price:.2f} > SL: ₹{position.stop_loss_price:.2f} (Drakedown: {loss_pct:+.2f}%)")
                         
                 except (KeyError, IndexError):
                     # Stock data not available for this date

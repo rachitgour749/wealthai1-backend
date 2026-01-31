@@ -133,7 +133,7 @@ class Position:
     buy_date: datetime
     current_price: float
     unrealized_pnl: float
-    stop_loss_price: float
+    stop_loss_price: Optional[float] = None
 
 class RSStrategyBacktester:
     def __init__(self, db: Session, config_id: int = None, config_dict: Dict = None):
@@ -168,7 +168,13 @@ class RSStrategyBacktester:
             
             self.buffer_capital_pct = config_dict.get('buffer_capital_pct', 10.0) / 100
             self.total_capital = config_dict.get('total_capital', 1000000.0)
-            self.stop_loss_pct = config_dict.get('stop_loss_pct', 15.0) / 100
+            
+            # Load RS configuration for stop loss behavior
+            rs_config_obj = get_rs_config() # Use object for default
+            sl_pct = config_dict.get('stop_loss_pct')
+            if sl_pct is None:
+                sl_pct = rs_config_obj.get_stop_loss_pct()
+            self.stop_loss_pct = sl_pct / 100
             self.capital_reset_threshold_pct = config_dict.get('capital_reset_threshold_pct', 25.0) / 100
             # Removed max_holding_period - stocks held until RS ranking drops
             self.transaction_cost_pct = config_dict.get('transaction_cost_pct', 0.1) / 100
@@ -213,6 +219,7 @@ class RSStrategyBacktester:
             self.daily_stop_loss_check = rs_config.get_daily_stop_loss_check()
         
         self.logger.info(f"Stop Loss Mode: {'Daily Check' if self.daily_stop_loss_check else 'Weekly Check (Signal Day Only)'}")
+        self.log_stop_loss_mode()
         
         # Calculated values for dynamic buffer system
         self.buffer_capital = self.total_capital * self.buffer_capital_pct  # Initial buffer amount
@@ -299,7 +306,7 @@ class RSStrategyBacktester:
         # Using ANY(:symbols) for efficient array filtering in Postgres
         query = text("""
             SELECT symbol, date, adj_close as adjusted_close
-            FROM stock_data 
+            FROM stock_market 
             WHERE symbol = ANY(:symbols) 
             AND date >= :start_date AND date <= :end_date
             ORDER BY symbol, date
@@ -358,7 +365,7 @@ class RSStrategyBacktester:
                     symbol,
                     MIN(date) as min_date, 
                     MAX(date) as max_date
-                FROM stock_data
+                FROM stock_market
                 WHERE symbol IN ({placeholders})
                 GROUP BY symbol
             """)
@@ -496,18 +503,18 @@ class RSStrategyBacktester:
         
         # Handle multiple symbol formats for NSEI index
         symbol_variants = [self.main_index]
-        if self.main_index in ['^NSEI', 'NSEI', 'NIFTY50']:
-            symbol_variants = ['^NSEI', 'NSEI', 'NIFTY50']
-        elif self.main_index in ['^NIFTY50', 'NIFTY50']:
-            symbol_variants = ['^NIFTY50', 'NIFTY50', 'NSEI']
+        if self.main_index in ['^NSEI', 'NSEI', 'NIFTY50', 'NIFTY_50']:
+            symbol_variants = ['^NSEI', 'NSEI', 'NIFTY50', 'NIFTY_50']
+        elif self.main_index in ['^NIFTY50', 'NIFTY50', 'NIFTY_50']:
+            symbol_variants = ['^NIFTY50', 'NIFTY50', 'NSEI', 'NIFTY_50']
         
         # Build placeholders for IN clause
         placeholders = ','.join([f':symbol_{i}' for i in range(len(symbol_variants))])
         
         # Query using SQLAlchemy text() with PostgreSQL parameter binding
         query = text(f"""
-            SELECT symbol, date, open, high, low, close, adj_close, volume
-            FROM index_data 
+            SELECT symbol, date, open, high, low, close, COALESCE(adj_close, close) AS adjusted_close, volume
+            FROM nifty_50_index_market 
             WHERE symbol IN ({placeholders}) AND date >= :start_date AND date <= :end_date
             ORDER BY date
         """)
@@ -880,7 +887,7 @@ class RSStrategyBacktester:
                     MAX(date)::text as end_date,
                     COUNT(*) as total_records,
                     ROUND(EXTRACT(EPOCH FROM (MAX(date)::timestamp - MIN(date)::timestamp)) / 86400.0 / 365.25, 1) as years_available
-                FROM stock_data
+                FROM stock_market
                 GROUP BY symbol
                 ORDER BY symbol
             """
@@ -896,7 +903,7 @@ class RSStrategyBacktester:
                         'end_date': str(row[2]) if row[2] else None,
                         'years_available': float(row[4]) if row[4] else 0,
                         'total_records': int(row[3]) if row[3] else 0,
-                        'data_source': 'stock_data'
+                        'data_source': 'stock_market'
                     }
                 except Exception:
                     continue
@@ -1235,7 +1242,7 @@ class RSStrategyBacktester:
         
         query = text("""
             SELECT symbol, date, adj_close as adjusted_close, open
-            FROM stock_data 
+            FROM stock_market 
             WHERE symbol = ANY(:symbols)
             AND date BETWEEN :start_date AND :end_date
             ORDER BY date, symbol
@@ -1467,7 +1474,7 @@ class RSStrategyBacktester:
                     try:
                         if isinstance(stock_data.index, pd.MultiIndex):
                              if (symbol, date) in stock_data.index:
-                                stock_price = float(stock_data.loc[(symbol, date), 'adjusted_close'])
+                                stock_price = float(stock_data.loc[(symbol, date), 'adj_close'])
                         else:
                             # Flat df
                             mask = (stock_data['date'] == date) & (stock_data['symbol'] == symbol)
@@ -2843,7 +2850,12 @@ class RSStrategyBacktester:
                     self.logger.info(f"  Used cash: ₹{original_cash_used:.2f}, buffer: ₹{needed_from_buffer:.2f}")
                 
                 # Calculate stop loss price
-                stop_loss_price = price * (1 - self.stop_loss_pct)
+                if self.stop_loss_pct > 0:
+                    stop_loss_price = price * (1 - self.stop_loss_pct)
+                    self.logger.info(f"  🛑 Stoploss set to ₹{stop_loss_price:.2f} (Formula: ₹{price:.2f} * (1 - {self.stop_loss_pct*100:.1f}/100))")
+                else:
+                    stop_loss_price = None
+                    self.logger.info(f"  ℹ️  Stoploss disabled (0%)")
                 
                 # Create position
                 position = Position(
@@ -3005,6 +3017,16 @@ class RSStrategyBacktester:
             self.logger.trade(f"Error executing trade {action} {symbol}: {e}")
             return False
     
+    def log_stop_loss_mode(self):
+        """Explicitly log the stop loss configuration"""
+        mode = "DAILY Check" if self.daily_stop_loss_check else "WEEKLY Check (on Friday/Signal Day)"
+        self.logger.info(f"\n{'='*40}")
+        self.logger.info(f"🛡️  STOP LOSS CONFIGURATION")
+        self.logger.info(f"   Mode: {mode}")
+        self.logger.info(f"   Threshold: {self.stop_loss_pct * 100:.1f}%")
+        self.logger.info(f"   Formula: Stoploss Price = Buy Price * (1 - {self.stop_loss_pct*100:.1f}/100)")
+        self.logger.info(f"{'='*40}\n")
+
     def check_daily_stop_loss(self, stock_data: pd.DataFrame, current_date: datetime) -> List[str]:
         """Check stop loss for all positions and return stocks to sell"""
         stop_loss_exits = []
@@ -3021,13 +3043,14 @@ class RSStrategyBacktester:
                     current_price = float(price_data.iloc[0]) if hasattr(price_data, 'iloc') else float(price_data)
                     
                     # Check if stop loss hit
-                    if current_price <= position.stop_loss_price:
+                    if position.stop_loss_price is not None and current_price <= position.stop_loss_price:
                         stop_loss_exits.append(symbol)
                         loss_pct = ((current_price - position.buy_price) / position.buy_price * 100)
-                        self.logger.info(f"  ⚠️  STOP LOSS HIT: {symbol} - Current: ₹{current_price:.2f} <= Stop Loss: ₹{position.stop_loss_price:.2f} (Loss: {loss_pct:.2f}%)")
+                        self.logger.info(f"  ⚠️  STOP LOSS HIT: {symbol} @ ₹{current_price:.2f} <= SL: ₹{position.stop_loss_price:.2f} (Drakedown: {loss_pct:+.2f}%)")
                     else:
-                        # Silent when safe - reduces verbosity
-                        pass
+                        # Explicitly log safe status
+                        loss_pct = ((current_price - position.buy_price) / position.buy_price * 100)
+                        self.logger.info(f"  ✓  Stoploss safe: {symbol} @ ₹{current_price:.2f} > SL: ₹{position.stop_loss_price:.2f} (Drakedown: {loss_pct:+.2f}%)")
                         
                 except (KeyError, IndexError):
                     # Stock data not available - skip silently

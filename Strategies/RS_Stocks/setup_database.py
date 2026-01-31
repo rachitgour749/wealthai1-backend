@@ -16,15 +16,13 @@ parent_dir = os.path.dirname(os.path.dirname(current_dir))
 databases_path = os.path.join(parent_dir, 'Databases')
 sys.path.insert(0, databases_path)
 
-from market_data_db_connection import (
+from app_data_db_connection import (
     create_connection,
     get_engine,
     init_database,
-    Base as MarketDataBase,
-    StockData,
-    StockMetadata,
-    IndexData,
-    Nifty500Metadata
+    Base,
+    StockMarket as StockData,
+    Nifty50IndexMarket as IndexData
 )
 
 # Import strategy-specific models from local database.py
@@ -43,12 +41,12 @@ def setup_database():
     
     print("🚀 Setting up RS Strategy Database")
     print("=" * 50)
-    print(f"Database: PostgreSQL MarketData (Neon)")
+    print(f"Database: PostgreSQL ApplicationData (Neon)")
     
     try:
         # Ensure connection is established
         if not create_connection():
-            print("❌ Failed to connect to PostgreSQL MarketData database")
+            print("❌ Failed to connect to PostgreSQL ApplicationData database")
             return False
         
         # Initialize all tables
@@ -59,7 +57,7 @@ def setup_database():
         
         # Create all tables using Base metadata
         engine = get_engine()
-        MarketDataBase.metadata.create_all(bind=engine)
+        Base.metadata.create_all(bind=engine)
         print("✅ All tables created successfully!")
         
         # Verify tables were created
@@ -67,12 +65,13 @@ def setup_database():
         inspector = inspect(engine)
         tables = inspector.get_table_names()
         
-        # Market data tables (in MarketData database)
+        # Market data tables (in ApplicationData database)
         market_data_tables = [
-            'stock_data',
-            'stock_metadata',
-            'index_data', 
-            'nifty500_metadata',
+            'stock_market',
+            'etf_market',
+            'nifty_50_index_market', 
+            's_p_500_index_market',
+            'us_etf_market'
         ]
         
         # Strategy tables (also in MarketData database)
@@ -136,17 +135,18 @@ def check_existing_data():
     print("\n🔍 Checking existing data...")
     
     try:
-        from market_data_db_connection import get_session
+        from app_data_db_connection import get_session
         from sqlalchemy import text
         
         session = get_session()
         
         # Check each table
         tables_to_check = [
-            'stock_data',
-            'stock_metadata',
-            'index_data', 
-            'nifty500_metadata',
+            'stock_market',
+            'etf_market',
+            'nifty_50_index_market', 
+            's_p_500_index_market',
+            'us_etf_market',
             'strategy_config',
             'backtest_results',
             'trade_logs',

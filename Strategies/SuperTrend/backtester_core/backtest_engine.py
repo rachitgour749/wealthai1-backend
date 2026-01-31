@@ -587,7 +587,7 @@ class BacktestEngine:
             'win_rate': safe_round(win_rate),
             'avg_win': safe_round(avg_win),
             'avg_loss': safe_round(avg_loss),
-            'total_trades': len(trades_df),
+            'total_trades': trades_df['date'].nunique() if not trades_df.empty else 0,
             'final_value': safe_round(self.portfolio_manager.portfolio_value),
             'initial_capital': self.portfolio_manager.initial_capital
         }
@@ -603,58 +603,68 @@ class BacktestEngine:
     def calculate_cost_analysis(self, trades, total_costs):
         """
         Calculate comprehensive cost analysis for the cost tab
-        
-        Args:
-            trades: List of trade records
-            total_costs: Total transaction costs paid
-            
-        Returns:
-            Dictionary with cost analysis data
+        Standardized format to match Rotation strategies (Year-wise breakdown)
         """
         if not trades:
-            return None
+            return {}
+            
+        df = pd.DataFrame(trades)
         
-        # Calculate cost breakdown
-        cost_breakdown = {
-            'brokerage': sum(trade.get('brokerage', 0) for trade in trades),
-            'stt': sum(trade.get('stt', 0) for trade in trades),
-            'stamp_duty': sum(trade.get('stamp_duty', 0) for trade in trades),
-            'exchange_charges': sum(trade.get('exchange_charges', 0) for trade in trades),
-            'sebi_charges': sum(trade.get('sebi_charges', 0) for trade in trades),
-            'gst': sum(trade.get('gst', 0) for trade in trades),
-            'other_costs': 0
-        }
-        
-        # Calculate buy vs sell costs
-        buy_trades = [t for t in trades if t.get('action') == 'BUY']
-        sell_trades = [t for t in trades if t.get('action') == 'SELL']
-        
-        buy_costs = sum(t.get('total_costs', 0) for t in buy_trades)
-        sell_costs = sum(t.get('total_costs', 0) for t in sell_trades)
-        
-        # Calculate cost statistics
-        trade_costs = [t.get('total_costs', 0) for t in trades if t.get('total_costs', 0) > 0]
-        
-        # Calculate cost impact on returns
-        cost_impact = -((total_costs / self.portfolio_manager.initial_capital) * 100) if self.portfolio_manager.initial_capital > 0 else 0
-        
-        return {
-            'cost_summary': {
-                'total_transaction_costs': total_costs,
-                'cost_percentage': (total_costs / self.portfolio_manager.initial_capital) * 100 if self.portfolio_manager.initial_capital > 0 else 0,
-                'average_cost_per_trade': total_costs / len(trades) if trades else 0,
-                'cost_impact_on_returns': cost_impact
-            },
-            'cost_breakdown': cost_breakdown,
-            'cost_analysis': {
-                'buy_costs': buy_costs,
-                'sell_costs': sell_costs,
-                'cost_per_buy': buy_costs / len(buy_trades) if buy_trades else 0,
-                'cost_per_sell': sell_costs / len(sell_trades) if sell_trades else 0,
-                'highest_cost_trade': max(trade_costs) if trade_costs else 0,
-                'lowest_cost_trade': min(trade_costs) if trade_costs else 0
+        # Robust date column
+        if 'date' in df.columns:
+            df['year'] = pd.to_datetime(df['date']).dt.year.astype(str)
+        else:
+             df['year'] = "Total"
+
+        summary = {}
+
+        def calculate_metrics(d):
+            # Calculate raw values
+            transaction_costs = d['total_costs'].sum()
+            # Capital gains tax is not explicitly tracked in SuperTrend trades yet, assume 0 or derived
+            capital_gains_tax = d['capital_gains_tax'].sum() if 'capital_gains_tax' in d.columns else 0
+            total_costs = transaction_costs + capital_gains_tax
+            brokerage = d['brokerage'].sum() if 'brokerage' in d.columns else 0
+            # Use unique dates as "Transactions" count (Trading Days) to match Rotation logic
+            transactions = d['date'].nunique()
+            
+            # Return simplified dictionary with numeric values
+            return {
+                'transaction_costs': round(transaction_costs, 2),
+                'capital_gains_tax': round(capital_gains_tax, 2),
+                'total_costs': round(total_costs, 2),
+                'total_brokerage': round(brokerage, 2),
+                'transactions': transactions
             }
-        }
+        
+        if 'year' in df.columns:
+             for year, group in df.groupby('year'):
+                 summary[str(year)] = calculate_metrics(group)
+                 
+        # Ensure Total is present (or calculated by frontend? Rotation backend provides Total?)
+        # Rotation code: 'year' column has "Total" if date missing.
+        # But if date present, Rotation code usually iterates groupby.
+        # The user's JSON had "Total" key.
+        # Wait, Rotation `get_transaction_costs_summary` ONLY returns the grouped dict.
+        # Does it include "Total"?
+        # My previous code in Rotation:
+        # summary[str(year)] = ...
+        # It does NOT explicitly add "Total" key if groups exist.
+        # But the USER showed "Total" key in their output.
+        # Maybe the frontend sums it up?
+        # Or maybe I missed where "Total" is added?
+        # Re-check Rotation code.
+        # Step 1600 (Rotation ETF):
+        # for year, group in costs_df.groupby('year'): summary[str(year)] = ...
+        # return summary
+        # It does NOT add "Total".
+        # So "Total" in user screenshot/json MUST come from Frontend sum or somewhere else.
+        # OR "Total" comes when `date` is missing.
+        # But user showed "2022", "2023"... AND "Total" row in table.
+        # Usually table computes Total row.
+        # So I just need to return Yearly keys.
+        
+        return summary
 
 
 if __name__ == "__main__":

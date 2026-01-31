@@ -2,8 +2,8 @@
 Unified Schemas for Centralized Backtest API
 Supports all strategy types with a single request model
 """
-from pydantic import BaseModel, validator, Field
-from typing import List, Optional, Literal, Dict, Any
+from pydantic import BaseModel, field_validator, Field, ConfigDict
+from typing import List, Optional, Literal, Dict, Any, Union
 from datetime import datetime
 
 
@@ -28,9 +28,10 @@ class UnifiedBacktestRequest(BaseModel):
         "RS_ETF_Rotation", 
         "RS_Stocks",
         "International_ETF_Rotation",
-        "Rotation_Stocks",
+        "Stock_Rotation",
         "ETF_Payout",
-        "SuperTrend"
+        "SuperTrend",
+        "ETF_Buy_on_Dip"
     ] = Field(..., description="Type of strategy to run")
     
     start_date: str = Field(..., description="Backtest start date (YYYY-MM-DD or ISO format)")
@@ -50,6 +51,7 @@ class UnifiedBacktestRequest(BaseModel):
     # For Rotation strategies (weekly SIP model)
     capital_per_week: Optional[float] = Field(None, description="Weekly investment amount")
     accumulation_weeks: Optional[int] = Field(None, description="Number of weeks to invest")
+    capital_per_month: Optional[float] = Field(None, description="Monthly base capital for Buy-on-Dip")
     
     # For RS strategies (lump sum model)
     total_capital: Optional[float] = Field(None, description="Total capital for RS strategies")
@@ -108,27 +110,30 @@ class UnifiedBacktestRequest(BaseModel):
     # VALIDATORS
     # ============================================================================
     
-    @validator('strategy_type')
-    def validate_strategy_type(cls, v):
+    @field_validator('strategy_type')
+    @classmethod
+    def validate_strategy_type(cls, v: str) -> str:
         """Validate strategy type"""
         valid_types = [
             "ETF_Rotation", "RS_ETF_Rotation", "RS_Stocks",
-            "International_ETF_Rotation", "Rotation_Stocks",
-            "ETF_Payout", "SuperTrend"
+            "International_ETF_Rotation", "Stock_Rotation",
+            "ETF_Payout", "SuperTrend", "ETF_Buy_on_Dip"
         ]
         if v not in valid_types:
             raise ValueError(f"Invalid strategy_type. Must be one of: {valid_types}")
         return v
     
-    @validator('*', pre=True)
-    def empty_str_to_none(cls, v):
+    @field_validator('*', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v: Any) -> Any:
         """Convert empty strings to None"""
         if v == '':
             return None
         return v
     
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        extra='allow',  # Allow extra fields for legacy parameters
+        json_schema_extra={
             "example": {
                 "strategy_type": "ETF_Rotation",
                 "start_date": "2020-01-01",
@@ -141,6 +146,7 @@ class UnifiedBacktestRequest(BaseModel):
                 "risk_free_rate": 8.0
             }
         }
+    )
 
 
 class UnifiedBacktestResponse(BaseModel):
@@ -150,11 +156,12 @@ class UnifiedBacktestResponse(BaseModel):
     metrics: Dict[str, Any]
     performance_data: Optional[Dict[str, Any]] = None
     transaction_log: Optional[List[Dict[str, Any]]] = None
+    cost_breakdown: Optional[Dict[str, Any]] = None
     portfolio_snapshots: Optional[List[Dict[str, Any]]] = None
     error: Optional[str] = None
     
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "success": True,
                 "strategy_type": "ETF_Rotation",
@@ -170,6 +177,7 @@ class UnifiedBacktestResponse(BaseModel):
                 }
             }
         }
+    )
 
 
 # ============================================================================
@@ -183,9 +191,10 @@ class DateRangeRequest(BaseModel):
         "RS_ETF_Rotation", 
         "RS_Stocks",
         "International_ETF_Rotation",
-        "Rotation_Stocks",
+        "Stock_Rotation",
         "ETF_Payout",
-        "SuperTrend"
+        "SuperTrend",
+        "ETF_Buy_on_Dip"
     ]
     
     # For Rotation strategies
@@ -210,8 +219,9 @@ class SaveStrategyRequest(BaseModel):
         "ETF_Rotation", 
         "RS_ETF_Rotation", 
         "International_ETF_Rotation",
-        "Rotation_Stocks",
-        "ETF_Payout"
+        "Stock_Rotation",
+        "ETF_Payout",
+        "ETF_Buy_on_Dip"
     ]
     user_id: str
     strategy_name: str

@@ -9,20 +9,20 @@ import time
 import logging
 from contextlib import contextmanager
 
-# Import market data database connection for market data tables
+# Import application data database connection for all tables
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(os.path.dirname(current_dir))
 databases_path = os.path.join(parent_dir, 'Databases')
 sys.path.insert(0, databases_path)
 
-from market_data_db_connection import (
-    create_connection as create_market_data_connection,
-    get_session as get_market_data_session,
-    get_engine as get_market_data_engine,
-    init_database as init_market_data_database,
-    Base as MarketDataBase,
-    ETFData,
-    IndexData
+from app_data_db_connection import (
+    create_connection as create_app_data_connection,
+    get_session as get_app_data_session,
+    get_engine as get_app_data_engine,
+    init_database as init_app_data_database,
+    Base,
+    ETFMarket as ETFData,
+    Nifty50IndexMarket as IndexData
 )
 
 # Use market data connection for market data tables
@@ -33,8 +33,8 @@ def ensure_connection():
     """Ensure database connection is established (lazy initialization)"""
     global _connection_initialized
     if not _connection_initialized:
-        if not create_market_data_connection():
-            raise RuntimeError("Failed to connect to MarketData database")
+        if not create_app_data_connection():
+            raise RuntimeError("Failed to connect to ApplicationData database")
         _connection_initialized = True
     return True
 
@@ -42,7 +42,7 @@ def ensure_connection():
 def get_engine():
     """Get database engine, initializing connection if needed"""
     ensure_connection()
-    return get_market_data_engine()
+    return get_app_data_engine()
 
 def get_session_maker():
     """Get session maker, initializing connection if needed"""
@@ -52,7 +52,7 @@ def get_session_maker():
 # Initialize engine and SessionLocal lazily
 engine = None
 SessionLocal = None
-Base = MarketDataBase  # Use the same Base for all models
+# Base is imported from app_data_db_connection
 
 def _init_engine_and_session():
     """Initialize engine and SessionLocal if not already done"""
@@ -80,9 +80,8 @@ def get_db():
             except Exception as e:
                 logging.error(f"Error closing database session: {e}")
 
-# ETF data model - using models from market_data_db_connection
-# ETFData and IndexData are imported from market_data_db_connection
-# Note: ETFMetadata was deprecated - metadata is now calculated directly from etf_data table
+# ETF data model - using models from app_data_db_connection
+# ETFData (ETFMarket) and IndexData (Nifty50IndexMarket) are imported from app_data_db_connection
 
 # Strategy configuration
 class StrategyConfig(Base):
@@ -206,7 +205,7 @@ class SavedETFStrategy(Base):
     status = Column(String, default="deploy")   # deploy, paused, stopped
 
 # Backtest database setup - use same PostgreSQL connection for market data
-# Strategy-specific tables (backtest_results, trade_logs, etc.) can use the same connection
+# Strategy-specific tables (backtest_results, trade_logs, etc.) use the same ApplicationData connection
 backtest_engine = None  # Will be initialized lazily
 BacktestSessionLocal = None  # Will be initialized lazily
 

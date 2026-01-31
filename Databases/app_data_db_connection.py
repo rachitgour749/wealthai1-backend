@@ -2,9 +2,12 @@
 Neon PostgreSQL Database Connection Module
 
 This module provides connection to Neon PostgreSQL database for all backend storage
-including strategy configurations, live signals, and execution tracking.
-Market data (ETF/Stock prices) is also stored in PostgreSQL.
+including strategy configurations, live signals, execution tracking, and consolidated
+market data (ETF, Stock, and Index prices).
 """
+
+from sqlalchemy import Column, Integer, String, Float, DateTime, UniqueConstraint
+from sqlalchemy.sql import func
 
 import os
 import sys
@@ -12,17 +15,128 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.pool import QueuePool
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Neon PostgreSQL Database URL
-# Format: postgresql://user:password@host/database?sslmode=require&channel_binding=require
-NEON_DATABASE_URL = "postgresql://neondb_owner:npg_WgVhOYtnP12l@ep-solitary-silence-a1yoj91r.ap-southeast-1.aws.neon.tech/ApplicationData?sslmode=require&channel_binding=require"
+
+NEON_DATABASE_URL = os.getenv("DATABASE_STRING")
+
+if not NEON_DATABASE_URL:
+    raise ValueError("DATABASE_STRING environment variable is not set")
 
 # Base for SQLAlchemy models
 Base = declarative_base()
+
+
+# ============================================================================
+# CONSOLIDATED MARKET DATA MODELS
+# ============================================================================
+
+class ETFMarket(Base):
+    """Model for Indian ETF market data"""
+    __tablename__ = "etf_market"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    symbol = Column(String, nullable=False, index=True)
+    date = Column(DateTime, nullable=False, index=True)
+    open = Column(Float)
+    high = Column(Float)
+    low = Column(Float)
+    close = Column(Float)
+    volume = Column(Integer)
+    adj_close = Column(Float)
+    created_at = Column(DateTime, server_default=func.now())
+    
+    __table_args__ = (
+        UniqueConstraint('symbol', 'date', name='uq_etf_market_symbol_date'),
+    )
+
+
+class StockMarket(Base):
+    """Model for Indian Stock market data"""
+    __tablename__ = "stock_market"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    symbol = Column(String, nullable=False, index=True)
+    date = Column(DateTime, nullable=False, index=True)
+    open = Column(Float)
+    high = Column(Float)
+    low = Column(Float)
+    close = Column(Float)
+    adj_close = Column(Float)
+    volume = Column(Integer)
+    created_at = Column(DateTime, server_default=func.now())
+    
+    __table_args__ = (
+        UniqueConstraint('symbol', 'date', name='uq_stock_market_symbol_date'),
+    )
+
+
+class Nifty50IndexMarket(Base):
+    """Model for Nifty 50 Index market data (Benchmark)"""
+    __tablename__ = "nifty_50_index_market"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    symbol = Column(String, nullable=False, index=True)
+    date = Column(DateTime, nullable=False, index=True)
+    open = Column(Float)
+    high = Column(Float)
+    low = Column(Float)
+    close = Column(Float)
+    adj_close = Column(Float)
+    volume = Column(Integer)
+    created_at = Column(DateTime, server_default=func.now())
+    
+    __table_args__ = (
+        UniqueConstraint('symbol', 'date', name='uq_nifty_50_index_market_symbol_date'),
+    )
+
+
+class SP500IndexMarket(Base):
+    """Model for S&P 500 Index market data (US Benchmark)"""
+    __tablename__ = "s_p_500_index_market"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    symbol = Column(String, nullable=False, index=True)
+    date = Column(DateTime, nullable=False, index=True)
+    open = Column(Float)
+    high = Column(Float)
+    low = Column(Float)
+    close = Column(Float)
+    adj_close = Column(Float)
+    volume = Column(Integer)
+    created_at = Column(DateTime, server_default=func.now())
+    
+    __table_args__ = (
+        UniqueConstraint('symbol', 'date', name='uq_s_p_500_index_market_symbol_date'),
+    )
+
+
+class USETFMarket(Base):
+    """Model for US ETF market data"""
+    __tablename__ = "us_etf_market"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    symbol = Column(String, nullable=False, index=True)
+    date = Column(DateTime, nullable=False, index=True)
+    open = Column(Float)
+    high = Column(Float)
+    low = Column(Float)
+    close = Column(Float)
+    volume = Column(Integer)
+    adj_close = Column(Float)
+    created_at = Column(DateTime, server_default=func.now())
+    
+    __table_args__ = (
+        UniqueConstraint('symbol', 'date', name='uq_us_etf_market_symbol_date'),
+    )
 
 # Global engine and session maker
 engine = None

@@ -15,25 +15,24 @@ parent_dir = os.path.dirname(os.path.dirname(current_dir))
 databases_path = os.path.join(parent_dir, 'Databases')
 sys.path.insert(0, databases_path)
 
-from market_data_db_connection import (
-    create_connection as create_market_data_connection,
-    get_session as get_market_data_session,
-    get_engine as get_market_data_engine,
-    init_database as init_market_data_database,
-    Base as MarketDataBase,
-    StockData,
-    IndexData,
-    StockMetadata
+from app_data_db_connection import (
+    create_connection as create_app_data_connection,
+    get_session as get_app_data_session,
+    get_engine as get_app_data_engine,
+    init_database as init_app_data_database,
+    Base,
+    StockMarket as StockData,
+    Nifty50IndexMarket as IndexData
 )
 
-# Use market data connection for market data tables
+# Use application data connection for all tables
 # Initialize connection
-if not create_market_data_connection():
-    raise RuntimeError("Failed to connect to MarketData database")
+if not create_app_data_connection():
+    raise RuntimeError("Failed to connect to ApplicationData database")
 
-engine = get_market_data_engine()
+engine = get_app_data_engine()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = MarketDataBase  # Use the same Base for all models
+# Base is imported from app_data_db_connection
 
 # Dependency to get database session with enhanced error handling
 def get_db():
@@ -53,9 +52,8 @@ def get_db():
             except Exception as e:
                 logging.error(f"Error closing database session: {e}")
 
-# Stock data model - using models from market_data_db_connection
-# StockData and IndexData are imported from market_data_db_connection
-# Note: Nifty500Metadata was deprecated - metadata is now calculated directly from stock_data table
+# Stock data model - using models from app_data_db_connection
+# StockData (StockMarket) and IndexData (Nifty50IndexMarket) are imported from app_data_db_connection
 
 # Strategy configuration
 class StrategyConfig(Base):
@@ -205,7 +203,7 @@ class RSLiveSignal(Base):
     created_at = Column(DateTime, default=datetime.now)
 
 # Backtest database setup - use same PostgreSQL connection for market data
-# Strategy-specific tables (backtest_results, trade_logs, etc.) can use the same connection
+# Strategy-specific tables (backtest_results, trade_logs, etc.) use the same ApplicationData connection
 backtest_engine = engine  # Use the same engine
 BacktestSessionLocal = SessionLocal  # Use the same session maker
 

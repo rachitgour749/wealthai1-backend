@@ -1102,100 +1102,9 @@ async def get_saved_etf_strategy_by_id(strategy_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving strategy: {str(e)}")
 
-@international_etf_router.delete("/delete-saved-strategy/{strategy_id}")
-async def delete_saved_etf_strategy(strategy_id: int):
-    """Delete a saved ETF strategy by ID"""
-    session = None
-    try:
-        # Initialize the table if it doesn't exist
-        if not init_saved_etf_strategies_table():
-            raise HTTPException(status_code=500, detail="Failed to initialize database table")
-        
-        from Databases.app_data_db_connection import get_session
-        from sqlalchemy import text
-        
-        session = get_session()
-        
-        # Check if strategy exists
-        result = session.execute(text("SELECT id FROM etf_saved_strategy WHERE id = :strategy_id"), {"strategy_id": strategy_id})
-        if not result.fetchone():
-            raise HTTPException(status_code=404, detail="Strategy not found")
-        
-        # Delete the strategy
-        session.execute(text("DELETE FROM etf_saved_strategy WHERE id = :strategy_id"), {"strategy_id": strategy_id})
-        session.commit()
-        
-        return {
-            "success": True,
-            "message": "Strategy deleted successfully"
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        if session:
-            session.rollback()
-        raise HTTPException(status_code=500, detail=f"Error deleting strategy: {str(e)}")
-    finally:
-        if session:
-            session.close()
 
-@international_etf_router.put("/update-saved-strategy/{strategy_id}")
-async def update_saved_etf_strategy(strategy_id: int, request: SaveETFStrategyRequest):
-    """Update a saved ETF strategy"""
-    try:
-        # Initialize the table if it doesn't exist
-        if not init_saved_etf_strategies_table():
-            raise HTTPException(status_code=500, detail="Failed to initialize database table")
-        
-        # Import helper functions
-        from Databases.strategy_db_helpers import get_etf_strategy_by_id, save_etf_strategy as save_strategy_db
-        
-        # Check if strategy exists
-        existing_strategy = get_etf_strategy_by_id(strategy_id)
-        if not existing_strategy:
-            raise HTTPException(status_code=404, detail="Strategy not found")
-        
-        # Convert tickers list to JSON string
-        tickers_json = json.dumps(request.tickers)
-        
-        # Convert backtest_results to JSON string (handle None values)
-        backtest_results_dict = request.backtest_results.dict()
-        # Filter out None values
-        backtest_results_dict = {k: v for k, v in backtest_results_dict.items() if v is not None}
-        backtest_results_json = json.dumps(backtest_results_dict)
-        
-        # Prepare strategy data for update
-        strategy_data = {
-            'id': strategy_id,
-            'strategy_name': request.strategy_name,
-            'strategy_type': request.strategy_type,
-            'user_id': request.user_id,
-            'tickers': tickers_json,
-            'start_date': request.start_date,
-            'end_date': request.end_date,
-            'capital_per_week': request.capital_per_week,
-            'accumulation_weeks': request.accumulation_weeks,
-            'brokerage_percent': request.brokerage_percent,
-            'compounding_enabled': request.compounding_enabled,
-            'risk_free_rate': request.risk_free_rate,
-            'use_custom_dates': request.use_custom_dates,
-            'backtest_results': backtest_results_json,
-            'created_at': request.created_at
-        }
-        
-        # Update in PostgreSQL
-        save_strategy_db(strategy_data)
-        
-        return {
-            "success": True,
-            "message": "Strategy updated successfully"
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error updating strategy: {str(e)}")
+
+
 
 @international_etf_router.get("/get-saved-strategies-count/{user_id}")
 async def get_saved_etf_strategies_count(user_id: str):
@@ -1358,38 +1267,7 @@ async def restart_etf_strategy(request: dict):
         if session:
             session.close()
 
-@international_etf_router.delete("/delete-etf-strategy/{strategy_id}")
-async def delete_etf_strategy(strategy_id: int):
-    """Delete an ETF strategy"""
-    session = None
-    try:
-        from Databases.app_data_db_connection import get_session
-        from sqlalchemy import text
-        
-        session = get_session()
-        
-        # Delete the strategy
-        result = session.execute(text("DELETE FROM etf_saved_strategy WHERE id = :strategy_id"), {"strategy_id": strategy_id})
-        
-        if result.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Strategy not found")
-        
-        session.commit()
-        
-        return {
-            "success": True,
-            "message": "ETF strategy deleted successfully"
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        if session:
-            session.rollback()
-        raise HTTPException(status_code=500, detail=f"Error deleting ETF strategy: {str(e)}")
-    finally:
-        if session:
-            session.close()
+
 
 @international_etf_router.post("/stop-strategy/{strategy_id}")
 async def stop_etf_strategy(strategy_id: int):
@@ -1513,60 +1391,7 @@ async def restart_etf_strategy(strategy_id: int):
         if session:
             session.close()
 
-@international_etf_router.delete("/delete-strategy-by-run-id/{run_id}")
-async def delete_etf_strategy_by_run_id(run_id: str):
-    """
-    Delete an ETF strategy by run_id
-    
-    Database: PostgreSQL (Neon) - app_data_db_connection (ApplicationData database)
-    Table: etf_saved_strategy
-    """
-    session = None
-    try:
-        # Initialize the table if it doesn't exist
-        if not init_saved_etf_strategies_table():
-            raise HTTPException(status_code=500, detail="Failed to initialize database table")
-        
-        # Use PostgreSQL connection
-        from Databases.app_data_db_connection import get_session
-        from sqlalchemy import text
-        
-        session = get_session()
-        
-        # Check if strategy exists
-        result = session.execute(text("""
-            SELECT id FROM etf_saved_strategy 
-            WHERE run_id = :run_id
-        """), {"run_id": run_id})
-        
-        strategy = result.fetchone()
-        
-        if not strategy:
-            raise HTTPException(status_code=404, detail="Strategy not found")
-        
-        # Delete the strategy
-        result = session.execute(text("""
-            DELETE FROM etf_saved_strategy 
-            WHERE run_id = :run_id
-        """), {"run_id": run_id})
-        
-        session.commit()
-        
-        return {
-            "success": True,
-            "message": "Strategy deleted successfully",
-            "run_id": run_id
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        if session:
-            session.rollback()
-        logger.error(f"Error deleting strategy by run_id: {e}")
-        raise HTTPException(status_code=500, detail=f"Error deleting strategy: {str(e)}")
-    finally:
-        if session:
-            session.close()
+
 
 # ============================================================================
 # ETF SIGNAL GENERATION ENDPOINTS

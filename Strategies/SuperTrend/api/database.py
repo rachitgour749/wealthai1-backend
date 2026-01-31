@@ -14,7 +14,6 @@ databases_path = os.path.join(parent_dir, 'Databases')
 sys.path.insert(0, databases_path)
 
 from Databases.app_data_db_connection import get_session, create_connection, init_database
-from Databases.market_data_db_connection import get_session as get_market_data_session, create_connection as create_market_data_connection
 from Databases.strategy_models import (
     SuperTrendStrategyConfig, SuperTrendBacktestResult, 
     SuperTrendCurrentPosition, SuperTrendCandidate
@@ -29,88 +28,53 @@ def get_connection():
 
 def execute_query(query: str, params: Optional[tuple] = None) -> pd.DataFrame:
     """Execute a query and return results as DataFrame (PostgreSQL)"""
-    # Determine which database to use based on table name
-    query_lower = query.lower()
-    if 'stock_data' in query_lower or 'index_data' in query_lower:
-        # Use MarketData database for market data
-        session = get_market_data_session()
-        try:
-            # Convert SQLite placeholders (?) to PostgreSQL (%s)
-            pg_query = query.replace('?', '%s')
-            if params:
-                result = session.execute(text(pg_query), params)
-            else:
-                result = session.execute(text(pg_query))
-            rows = result.fetchall()
-            columns = list(result.keys())
-            df = pd.DataFrame(rows, columns=columns)
-            return df
-        finally:
-            session.close()
-    else:
-        # Use ApplicationData database for strategy tables
-        session = get_session()
-        try:
-            # Convert SQLite placeholders (?) to PostgreSQL (%s)
-            pg_query = query.replace('?', '%s')
-            if params:
-                result = session.execute(text(pg_query), params)
-            else:
-                result = session.execute(text(pg_query))
-            rows = result.fetchall()
-            columns = list(result.keys())
-            df = pd.DataFrame(rows, columns=columns)
-            return df
-        finally:
-            session.close()
+    # Use ApplicationData database for all tables
+    session = get_session()
+    try:
+        # Map old table names to new ones in consolidated database
+        pg_query = query.replace('?', '%s')
+        pg_query = pg_query.replace('stock_data', 'stock_market')
+        pg_query = pg_query.replace('index_data', 'nifty_50_index_market')
+        
+        if params:
+            result = session.execute(text(pg_query), params)
+        else:
+            result = session.execute(text(pg_query))
+        rows = result.fetchall()
+        columns = list(result.keys())
+        df = pd.DataFrame(rows, columns=columns)
+        return df
+    finally:
+        session.close()
 
 
 def execute_write(query: str, params: Optional[tuple] = None):
     """Execute a write query (INSERT, UPDATE, DELETE) - PostgreSQL"""
-    # Determine which database to use based on table name
-    if 'stock_data' in query.lower() or 'index_data' in query.lower():
-        # Use MarketData database for market data
-        session = get_market_data_session()
-        try:
-            # Convert SQLite placeholders (?) to PostgreSQL (%s)
-            pg_query = query.replace('?', '%s')
-            if params:
-                session.execute(text(pg_query), params)
-            else:
-                session.execute(text(pg_query))
-            session.commit()
-        except Exception as e:
-            session.rollback()
-            raise
-        finally:
-            session.close()
-    else:
-        # Use ApplicationData database for strategy tables
-        session = get_session()
-        try:
-            # Convert SQLite placeholders (?) to PostgreSQL (%s)
-            pg_query = query.replace('?', '%s')
-            if params:
-                session.execute(text(pg_query), params)
-            else:
-                session.execute(text(pg_query))
-            session.commit()
-        except Exception as e:
-            session.rollback()
-            raise
-        finally:
-            session.close()
+    # Use ApplicationData database for all tables
+    session = get_session()
+    try:
+        # Map old table names to new ones and convert placeholders
+        pg_query = query.replace('?', '%s')
+        pg_query = pg_query.replace('stock_data', 'stock_market')
+        pg_query = pg_query.replace('index_data', 'nifty_50_index_market')
+        
+        if params:
+            session.execute(text(pg_query), params)
+        else:
+            session.execute(text(pg_query))
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def init_database():
     """Initialize database tables in PostgreSQL"""
-    # Ensure connections are established
+    # Ensure connection is established
     if not create_connection():
         print("Failed to connect to ApplicationData database")
-        return False
-    
-    if not create_market_data_connection():
-        print("Failed to connect to MarketData database")
         return False
     
     # Initialize ApplicationData tables (strategy-specific)
@@ -118,8 +82,8 @@ def init_database():
         print("Failed to initialize ApplicationData database tables")
         return False
     
-    # Note: stock_data and index_data tables are in MarketData database
-    # and are managed by market_data_db_connection
+    # Note: market data tables are consolidated in ApplicationData database
+    # and are managed by app_data_db_connection
     
     # Insert default config if not exists
     session = get_session()

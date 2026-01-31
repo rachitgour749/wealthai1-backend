@@ -242,6 +242,9 @@ class RotationETFPayoutBacktester(ETFRotationBacktester):
                             limit = self.etf_purchase_limits.get(symbol, 0) if hasattr(self, 'etf_purchase_limits') else 0
                             if hasattr(self, '_log'): # Safety check
                                 self._log("limit", f"📉 Purchase count decremented: {symbol} = {new_count}/{limit}")
+                                
+                                # Print to terminal directly as requested
+                                print(f"📉 Purchase Count Decremented (Payout): {symbol} {new_count}/{limit}")
                         
                         self.logger.trade(f"🔴 Sold {units_to_sell} units of {symbol} @ ₹{price:.2f}")
                         self.logger.trade(f"   Net proceeds: ₹{net_proceeds:,.0f}")
@@ -469,6 +472,9 @@ class RotationETFPayoutBacktester(ETFRotationBacktester):
                 limit = self.etf_purchase_limits.get(ticker, 0) if hasattr(self, 'etf_purchase_limits') else 0
                 if hasattr(self, '_log'):
                     self._log("limit", f"📈 Purchase count updated: {ticker} = {current_count}/{limit}")
+                
+                # Print to terminal directly as requested
+                print(f"📊 Purchase Count (Payout): {ticker} {current_count}/{limit}")
             
             return {
                 'success': True,

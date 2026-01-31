@@ -6,11 +6,11 @@ import warnings
 import os
 import json
 import math
-from Databases.market_data_db_connection import (
-    create_connection as create_market_data_connection,
-    get_session as get_market_data_session,
-    init_database as init_market_data_database,
-    ETFData  # Primary ETF data model (uses etf_data table) - metadata calculated from this
+from Databases.app_data_db_connection import (
+    create_connection as create_app_data_connection,
+    get_session as get_app_data_session,
+    init_database as init_app_data_database,
+    ETFMarket as ETFData  # Primary ETF data model (uses etf_market table)
 )
 
 # Import base class for OOP refactoring
@@ -41,12 +41,12 @@ class ETFRotationBacktester(RotationStrategy):
         # Call base class constructor (initializes common attributes)
         super().__init__()
         
-        # Initialize PostgreSQL connection
-        if not create_market_data_connection():
-            raise RuntimeError("Failed to connect to MarketData database")
+        # Initialize PostgreSQL connection to ApplicationData
+        if not create_app_data_connection():
+            raise RuntimeError("Failed to connect to ApplicationData database")
 
         # Initialize database tables
-        init_market_data_database()
+        init_app_data_database()
 
         # Initialize attributes before calling load_metadata (which uses _verbose)
         self.portfolio_log = []
@@ -63,7 +63,7 @@ class ETFRotationBacktester(RotationStrategy):
         self.logger = StrategyLogger('Rotation_ETF')
         
         # Strategy-specific table configuration (must be set before method calls)
-        self.data_table = "etf_data"  # ETFs are stored in etf_data table (metadata calculated from this)
+        self.data_table = "etf_market"  # ETFs are stored in etf_market table
         
         self.available_databases = []  # Not needed for PostgreSQL
         
@@ -233,8 +233,8 @@ class ETFRotationBacktester(RotationStrategy):
         self._verbose = verbose
 
     def _get_session(self):
-        """Get database session for PostgreSQL"""
-        return get_market_data_session()
+        """Get database session for PostgreSQL (ApplicationData)"""
+        return get_app_data_session()
     
     def load_data(self, start_date: datetime, end_date: datetime) -> Dict[str, pd.DataFrame]:
         """
@@ -309,15 +309,15 @@ class ETFRotationBacktester(RotationStrategy):
         return []
 
     def load_metadata(self) -> Dict[str, Dict]:
-        """Load ETF metadata by calculating directly from etf_data table"""
+        """Load ETF metadata by calculating directly from etf_market table"""
         session = None
         try:
             session = self._get_session()
             
-            # Calculate metadata directly from etf_data table
+            # Calculate metadata directly from etf_market table
             metadata = self.calculate_metadata_from_data(session)
             if self._verbose:
-                self.logger.debug(f"Calculated metadata for {len(metadata)} ETFs from etf_data table")
+                self.logger.debug(f"Calculated metadata for {len(metadata)} ETFs from etf_market table")
             
             return metadata
             
@@ -332,12 +332,12 @@ class ETFRotationBacktester(RotationStrategy):
                 session.close()
 
     def calculate_metadata_from_data(self, session) -> Dict[str, Dict]:
-        """Calculate metadata directly from etf_data table"""
+        """Calculate metadata directly from etf_market table"""
         try:
             from sqlalchemy import text
             
-            # Use etf_data table directly
-            table_name = 'etf_data'
+            # Use etf_market table directly
+            table_name = 'etf_market'
             
             # Check if table exists and has data
             count_check = session.execute(text(f"SELECT COUNT(*) as count FROM {table_name}"))
@@ -350,7 +350,7 @@ class ETFRotationBacktester(RotationStrategy):
             if self._verbose:
                 self.logger.debug(f"Found {total_count} total records in {table_name} table")
             
-            # Query metadata from etf_data - date column is of type DATE
+            # Query metadata from etf_market - date column is of type DATE
             # Fix: Cast dates to timestamp to get proper interval for EXTRACT
             query_str = """
                 SELECT 
@@ -359,12 +359,12 @@ class ETFRotationBacktester(RotationStrategy):
                     MAX(date)::text as end_date,
                     COUNT(*) as total_records,
                     ROUND(EXTRACT(EPOCH FROM (MAX(date)::timestamp - MIN(date)::timestamp)) / 86400.0 / 365.25, 1) as years_available
-                FROM etf_data
+                FROM etf_market
                 GROUP BY symbol
                 ORDER BY symbol
             """
             
-            self.logger.debug("Executing metadata query from etf_data...")
+            self.logger.debug("Executing metadata query from etf_market...")
             result = session.execute(text(query_str))
             rows = result.fetchall()
             
@@ -379,23 +379,29 @@ class ETFRotationBacktester(RotationStrategy):
                     total_records = row[3]
                     years_available = row[4]
                     
+                    # Generate derived metadata
+                    category = self.get_asset_sector_classification(symbol)
+                    name = self.generate_asset_description(symbol)
+                    
                     metadata[symbol] = {
                         'start_date': str(start_date) if start_date else None,
                         'end_date': str(end_date) if end_date else None,
                         'years_available': float(years_available) if years_available else 0,
                         'total_records': int(total_records) if total_records else 0,
-                        'data_source': 'etf_data'
+                        'data_source': 'etf_market',
+                        'category': category,
+                        'name': name
                     }
                 except Exception as row_error:
                     self.logger.error(f"Error processing row: {row_error}")
                     continue
             
-            self.logger.debug(f"Successfully processed {len(metadata)} ETFs from etf_data")
+            self.logger.debug(f"Successfully processed {len(metadata)} ETFs from etf_market")
             return metadata
             
         except Exception as e:
             import traceback
-            self.logger.error(f"Error calculating metadata from etf_data: {e}")
+            self.logger.error(f"Error calculating metadata from etf_market: {e}")
             self.logger.error(f"Traceback: {traceback.format_exc()}")
             
             # Rollback the session to clear the failed transaction
@@ -488,9 +494,79 @@ class ETFRotationBacktester(RotationStrategy):
 
     def get_asset_sector_classification(self, symbol: str) -> str:
         """Classify ETF into sector categories"""
+        # Strip suffix for mapping check
+        clean_symbol = symbol.replace('.NS', '').replace('.BO', '')
         symbol_lower = symbol.lower()
+        
+        # Robust Sector Map (Shared with Stocks logic)
+        sector_map = {
+            # Financials
+            'HDFCBANK': 'Financials', 'ICICIBANK': 'Financials', 'SBIN': 'Financials', 'AXISBANK': 'Financials',
+            'KOTAKBANK': 'Financials', 'BAJFINANCE': 'Financials', 'BAJAJFINSV': 'Financials', 'HDFCLIFE': 'Financials',
+            'SBILIFE': 'Financials', 'INDUSINDBK': 'Financials', 'BANKBARODA': 'Financials', 'PNB': 'Financials',
+            'JIOFIN': 'Financials', 'PFC': 'Financials', 'RECLTD': 'Financials', 'SHRIRAMFIN': 'Financials',
+            'CHOLAFIN': 'Financials', 'MUTHOOTFIN': 'Financials', 'PSUBANK': 'Financials', 'BANKBEES': 'Financials',
+            'BANKETF': 'Financials', 'PVTBANK': 'Financials', 'HDFCPVTBAN': 'Financials', 'HDFCPSUBK': 'Financials',
+            
+            # Technology
+            'TCS': 'Technology', 'INFY': 'Technology', 'HCLTECH': 'Technology', 'WIPRO': 'Technology',
+            'TECHM': 'Technology', 'LTIM': 'Technology', 'PERSISTENT': 'Technology', 'COFORGE': 'Technology',
+            'MPHASIS': 'Technology', 'LTTS': 'Technology', 'KPITTECH': 'Technology', 'TATAELXSI': 'Technology',
+            'ITBEES': 'Technology', 'ITETF': 'Technology', 'HDFCNIFIT': 'Technology', 'MAHKTECH': 'Technology',
+            'ICICITECH': 'Technology', 'MOCAPITAL': 'Technology',
+            
+            # Energy & Oil
+            'RELIANCE': 'Energy', 'ONGC': 'Energy', 'BPCL': 'Energy', 'POWERGRID': 'Utilities',
+            'NTPC': 'Utilities', 'ADANIGREEN': 'Utilities', 'TATAPOWER': 'Utilities', 'IOC': 'Energy',
+            'GAIL': 'Energy', 'HPCL': 'Energy', 'COALINDIA': 'Energy', 'MOENERGY': 'Energy',
+            
+            # FMCG & Consumption
+            'HINDUNILVR': 'FMCG', 'ITC': 'FMCG', 'NESTLEIND': 'FMCG', 'BRITANNIA': 'FMCG', 'COLPAL': 'FMCG',
+            'TITAN': 'Consumer Discretionary', 'ASIANPAINTS': 'Materials', 'MARICO': 'FMCG',
+            'DABUR': 'FMCG', 'GODREJCP': 'FMCG', 'TATACONSUM': 'FMCG', 'VARUN': 'FMCG',
+            'FMCGIETF': 'FMCG', 'CONSUMBEES': 'FMCG', 'ICICIFMCG': 'FMCG', 'CONSUMER': 'Consumption',
+            
+            # Auto
+            'TATAMOTORS': 'Automotive', 'MARUTI': 'Automotive', 'M&M': 'Automotive', 'BAJAJ-AUTO': 'Automotive',
+            'EICHERMOT': 'Automotive', 'HEROMOTOCO': 'Automotive', 'TVSMOTOR': 'Automotive', 'BHARATFORG': 'Automotive',
+            'AUTOBEES': 'Automotive', 'AUTOIETF': 'Automotive', 'ICICIAUTO': 'Automotive',
+            
+            # Healthcare
+            'SUNPHARMA': 'Healthcare', 'DRREDDY': 'Healthcare', 'CIPLA': 'Healthcare', 'DIVISLAB': 'Healthcare',
+            'APOLLOHOSP': 'Healthcare', 'LUPIN': 'Healthcare', 'TORNTPHARM': 'Healthcare', 'MANKIND': 'Healthcare',
+            'PHARMABEES': 'Healthcare', 'HEALTHY': 'Healthcare', 'HDFCHEALTH': 'Healthcare', 'ICICIPHARM': 'Healthcare',
+            
+            # Materials & Metals
+            'TATASTEEL': 'Materials', 'JSWSTEEL': 'Materials', 'HINDALCO': 'Materials', 'VEDANTA': 'Materials', 'VEDL': 'Materials',
+            'ULTRACEMCO': 'Materials', 'AMBUJACEM': 'Materials', 'PIDILITIND': 'Materials', 'JUBLFOOD': 'Consumer Services',
+            'SAIL': 'Materials', 'JINDALSTEL': 'Materials', 'SHREECEM': 'Materials', 'GRASIM': 'Materials',
+            'METALIETF': 'Materials', 'METAL': 'Materials', 'HDFCSILVER': 'Commodities', 'SILVERBEES': 'Commodities',
+            
+            # Infrastructure & Capital Goods
+            'LT': 'Infrastructure', 'SIEMENS': 'Capital Goods', 'ABB': 'Capital Goods', 'HAL': 'Defence',
+            'BEL': 'Defence', 'ADANIENT': 'Services', 'ADANIPORTS': 'Infrastructure',
+            'INFRABEES': 'Infrastructure', 'INFRAIETF': 'Infrastructure', 'ICICIINFRA': 'Infrastructure',
+            
+            # Telecom
+            'BHARTIARTL': 'Telecommunication', 'VODAFONE': 'Telecommunication',
+            
+            # Broad Market / Indices
+            'NIFTYBEES': 'Broad Market', 'JUNIORBEES': 'Mid Cap', 'MIDCAPETF': 'Mid Cap', 
+            'ELM250': 'Broad Market', 'EQUAL200': 'Broad Market', 'EMULTIMQ': 'Multi-Factor',
+            'MON100': 'Technology (US)', 'MAFANG': 'Technology (US)', 'GOLDBEES': 'Commodities',
+            'LIQUIDBEES': 'Cash/Liquid', 'CPSEETF': 'PSU', 'PSUBNKBEES': 'PSU Banking'
+        }
+        
+        # Check specific map first (clean symbol)
+        if clean_symbol in sector_map:
+            return sector_map[clean_symbol]
+            
+        # Also check with suffix if needed (rare case where suffix matters differently)
+        if symbol in sector_map:
+            return sector_map[symbol]
 
-        if symbol in ['NIFTYBEES', 'JUNIORBEES', 'MIDCAPETF']:
+        # Fallback substring logic
+        if symbol in ['NIFTYBEES', 'JUNIORBEES', 'MIDCAPETF', 'ELM250', 'EQUAL200', 'EMULTIMQ']:
             return 'Broad Market'
         elif 'bank' in symbol_lower or 'psu' in symbol_lower:
             return 'Financial'
@@ -498,7 +574,7 @@ class ETFRotationBacktester(RotationStrategy):
             return 'Technology'
         elif 'pharma' in symbol_lower or 'health' in symbol_lower:
             return 'Healthcare'
-        elif 'gold' in symbol_lower:
+        elif 'gold' in symbol_lower or 'silver' in symbol_lower:
             return 'Commodity'
         elif 'oil' in symbol_lower or 'energy' in symbol_lower:
             return 'Energy'
@@ -512,6 +588,14 @@ class ETFRotationBacktester(RotationStrategy):
             return 'Cash/Liquid'
         elif 'cpse' in symbol_lower:
             return 'PSU'
+        elif 'fmcg' in symbol_lower:
+            return 'FMCG'
+        elif 'auto' in symbol_lower:
+            return 'Automotive'
+        elif 'realty' in symbol_lower or 'real' in symbol_lower:
+            return 'Real Estate'
+        elif 'consumer' in symbol_lower:
+            return 'Consumption'
         else:
             return 'Other'
 
@@ -534,7 +618,7 @@ class ETFRotationBacktester(RotationStrategy):
         return selected
 
     def calculate_common_date_range(self, selected_etfs: List[str]) -> Tuple[Optional[str], Optional[str], float]:
-        """Calculate common date range for selected ETFs by querying etf_data table directly"""
+        """Calculate common date range for selected ETFs by querying etf_market table directly"""
         if not selected_etfs:
             self.logger.error("No ETFs provided for date range calculation")
             return None, None, 0.0
@@ -544,19 +628,19 @@ class ETFRotationBacktester(RotationStrategy):
             session = self._get_session()
             from sqlalchemy import text
             
-            self.logger.debug(f"Querying etf_data table for date ranges of: {selected_etfs}")
+            self.logger.debug(f"Querying etf_market table for date ranges of: {selected_etfs}")
             
             # Build placeholders for IN clause
             placeholders = ','.join([f':ticker_{i}' for i in range(len(selected_etfs))])
             
-            # Query to get MIN and MAX dates for each ETF directly from etf_data table
+            # Query to get MIN and MAX dates for each ETF directly from etf_market table
             query = text(f"""
                 SELECT 
                     symbol,
                     MIN(date) as start_date,
                     MAX(date) as end_date,
                     COUNT(*) as total_records
-                FROM etf_data
+                FROM etf_market
                 WHERE symbol IN ({placeholders})
                 GROUP BY symbol
                 ORDER BY symbol
@@ -569,7 +653,7 @@ class ETFRotationBacktester(RotationStrategy):
             rows = result.fetchall()
             
             if not rows:
-                self.logger.error(f"No data found in etf_data table for: {selected_etfs}")
+                self.logger.error(f"No data found in etf_market table for: {selected_etfs}")
                 return None, None, 0.0
             
             # Parse results
@@ -601,7 +685,7 @@ class ETFRotationBacktester(RotationStrategy):
                 self.logger.info(f"No data found for: {missing_etfs}")
             
             if not etf_date_ranges:
-                self.logger.error(f"None of the requested ETFs found in etf_data table: {selected_etfs}")
+                self.logger.error(f"None of the requested ETFs found in etf_market table: {selected_etfs}")
                 return None, None, 0.0
             
             # Calculate common date range
@@ -612,7 +696,7 @@ class ETFRotationBacktester(RotationStrategy):
             latest_start = max(start_dates)
             common_end = min(end_dates)
             
-            self.logger.info(f"📅 ETF Data Ranges (from etf_data table):")
+            self.logger.info(f"📅 ETF Data Ranges (from etf_market table):")
             for symbol, data in etf_date_ranges.items():
                 years = data['years_available']
                 self.logger.info(f"   {symbol:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years:.1f} years, {data['total_records']} records)")
@@ -668,7 +752,7 @@ class ETFRotationBacktester(RotationStrategy):
             return strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
             
         except Exception as e:
-            self.logger.error(f"Error calculating date range from etf_data table: {e}")
+            self.logger.error(f"Error calculating date range from etf_market table: {e}")
             import traceback
             self.logger.error(f"Traceback: {traceback.format_exc()}")
             return None, None, 0.0
@@ -699,14 +783,14 @@ class ETFRotationBacktester(RotationStrategy):
                 self.logger.progress(f"   Data loading period: {buffer_start_date} to {end_date}")
                 self.logger.info(f"   Buffer: 400 calendar days (~252 trading days) for momentum calculations")
 
-            # Use etf_data table - column names match directly
+            # Use etf_market table - column names match directly
             # Get available symbols using proper parameterization
             # Build placeholders for IN clause
             placeholders = ','.join([f':ticker_{i}' for i in range(len(tickers))])
 
             query = text(f"""
                 SELECT DISTINCT symbol 
-                FROM etf_data 
+                FROM etf_market 
                 WHERE symbol IN ({placeholders})
                 AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
             """)
@@ -739,8 +823,8 @@ class ETFRotationBacktester(RotationStrategy):
                     low,
                     close,
                     volume,
-                    adjusted_close
-                FROM etf_data
+                    adj_close AS adjusted_close
+                FROM etf_market
                 WHERE symbol IN ({placeholders})
                 AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
                 ORDER BY date, symbol
@@ -1195,6 +1279,9 @@ class ETFRotationBacktester(RotationStrategy):
                         new_count = self.etf_purchase_counts[ticker]
                         limit = self.etf_purchase_limits.get(ticker, 0)
                         self._log("limit", f"📉 Purchase count decremented: {ticker} = {new_count}/{limit}")
+                        
+                        # Print to terminal directly as requested
+                        print(f"📉 Purchase Count Decremented: {ticker} {new_count}/{limit}")
 
                     # Record transaction
                     sell_transactions.append(sell_result)
@@ -1502,8 +1589,10 @@ class ETFRotationBacktester(RotationStrategy):
             limit = self.etf_purchase_limits.get(ticker, 0)
             self._log("limit", f"📈 Purchase count updated: {ticker} = {current_count}/{limit}")
             
+            self._log("limit", f"📈 Purchase count updated: {ticker} = {current_count}/{limit}")
+            
             # Print to terminal directly as requested
-            print(f"📊 Purchase Count: {current_count}/{limit} ({ (current_count/limit)*100 if limit > 0 else 0:.0f}% used)")
+            print(f"📊 Purchase Count: {ticker} {current_count}/{limit} ({ (current_count/limit)*100 if limit > 0 else 0:.0f}% used)")
 
             # Log transaction costs
             self.log_transaction_costs(week_num, execution_date, 'buy', ticker,
@@ -1699,6 +1788,15 @@ class ETFRotationBacktester(RotationStrategy):
 
                     # Record purchase in FIFO tracking system
                     self.add_purchase_record(target_etf, units, price, execution_date)
+
+                    # NEW: Increment purchase counter (Fix for Accumulation Phase)
+                    self.etf_purchase_counts[target_etf] = self.etf_purchase_counts.get(target_etf, 0) + 1
+                    current_count = self.etf_purchase_counts[target_etf]
+                    limit = self.etf_purchase_limits.get(target_etf, 0)
+                    self._log("limit", f"📈 Purchase count updated (Accumulation): {target_etf} = {current_count}/{limit}")
+                    
+                    # Print to terminal directly as requested
+                    print(f"📊 Purchase Count (Accumulation): {target_etf} {current_count}/{limit}")
 
                     # Log transaction costs
                     self.log_transaction_costs(week_num, execution_date, 'buy', target_etf,
@@ -2110,58 +2208,84 @@ class ETFRotationBacktester(RotationStrategy):
             session = self._get_session()
             from sqlalchemy import text
 
-            # Try multiple potential benchmark symbols in order of preference
-            benchmark_symbols = [
-                'NIFTYBEES',  # Nifty ETF (without suffix) - HAS DATA
-                'BANKBEES',  # Banking ETF (without suffix) - HAS DATA
-                'JUNIORBEES',  # Nifty Next 50 ETF (without suffix) - HAS DATA
-                'ITBEES',  # IT Sector ETF (without suffix) - HAS DATA
-                'NIFTYBEES.NS',  # Nifty ETF (with suffix) - LIMITED DATA
-                'NIFTY50',  # NSE Nifty 50 Index
-                'SENSEX',  # BSE Sensex
-                'BANKBEES.NS',  # Banking ETF (with suffix) - LIMITED DATA
-                'JUNIORBEES.NS',  # Nifty Next 50 ETF (with suffix) - LIMITED DATA
-                'ITBEES.NS'  # IT Sector ETF (with suffix) - LIMITED DATA
-            ]
-
-            benchmark_symbol = None
-            for symbol in benchmark_symbols:
-                query = text("SELECT DISTINCT symbol FROM etf_data WHERE symbol = :symbol LIMIT 1")
-                result = session.execute(query, {"symbol": symbol})
-                if result.fetchone():
-                    benchmark_symbol = symbol
-                    self.logger.progress(f"✅ Using {benchmark_symbol} as market benchmark (SIP Mode)")
-                    break
-
-            if not benchmark_symbol:
-                self.logger.info("⚠️ No suitable benchmark found in database. Benchmark comparison will be skipped.")
-                return pd.DataFrame()
-
-            # Load benchmark data for the entire period
-            query = text("""
-                SELECT date, close
-                FROM etf_data
-                WHERE symbol = :symbol
+            # Check for NIFTY_50 in index market table first
+            index_query = text("""
+                SELECT date, COALESCE(adj_close, close) as close 
+                FROM nifty_50_index_market 
+                WHERE symbol = 'NIFTY_50'
                 AND date >= CAST(:start_date AS DATE)
                 AND date <= CAST(:end_date AS DATE)
                 ORDER BY date
             """)
-
-            result = session.execute(query, {
-                "symbol": benchmark_symbol,
+            
+            result = session.execute(index_query, {
                 "start_date": start_date,
                 "end_date": end_date
             })
             rows = result.fetchall()
-            columns = result.keys()
-            nifty_df = pd.DataFrame(rows, columns=columns)
+            
+            if rows:
+                benchmark_symbol = 'NIFTY_50'
+                self.logger.progress(f"Using {benchmark_symbol} as market benchmark (Index Data)")
+                columns = result.keys()
+                nifty_df = pd.DataFrame(rows, columns=columns)
+            else:
+                # Fallback to ETF Market search
+                # Try multiple potential benchmark symbols in order of preference
+                benchmark_symbols = [
+                    'NIFTYBEES',  # Nifty ETF (without suffix) - HAS DATA
+                    'BANKBEES',  # Banking ETF (without suffix) - HAS DATA
+                    'JUNIORBEES',  # Nifty Next 50 ETF (without suffix) - HAS DATA
+                    'ITBEES',  # IT Sector ETF (without suffix) - HAS DATA
+                    'NIFTYBEES.NS',  # Nifty ETF (with suffix) - LIMITED DATA
+                    'NIFTY50',  # NSE Nifty 50 Index
+                    'SENSEX',  # BSE Sensex
+                    'BANKBEES.NS',  # Banking ETF (with suffix) - LIMITED DATA
+                    'JUNIORBEES.NS',  # Nifty Next 50 ETF (with suffix) - LIMITED DATA
+                    'ITBEES.NS'  # IT Sector ETF (with suffix) - LIMITED DATA
+                ]
+
+                benchmark_symbol = None
+                for symbol in benchmark_symbols:
+                    query = text("SELECT DISTINCT symbol FROM etf_market WHERE symbol = :symbol LIMIT 1")
+                    result = session.execute(query, {"symbol": symbol})
+                    if result.fetchone():
+                        benchmark_symbol = symbol
+                        self.logger.progress(f"Using {benchmark_symbol} as market benchmark (SIP Mode)")
+                        break
+
+                if not benchmark_symbol:
+                    self.logger.info("⚠️ No suitable benchmark found in database. Benchmark comparison will be skipped.")
+                    return pd.DataFrame()
+
+                # Load benchmark data for the entire period
+                query = text("""
+                    SELECT date, close
+                    FROM etf_market
+                    WHERE symbol = :symbol
+                    AND date >= CAST(:start_date AS DATE)
+                    AND date <= CAST(:end_date AS DATE)
+                    ORDER BY date
+                """)
+
+                result = session.execute(query, {
+                    "symbol": benchmark_symbol,
+                    "start_date": start_date,
+                    "end_date": end_date
+                })
+                rows = result.fetchall()
+                columns = result.keys()
+                nifty_df = pd.DataFrame(rows, columns=columns)
 
             if nifty_df.empty:
                 self.logger.info("⚠️ No benchmark data found")
                 return pd.DataFrame()
 
             nifty_df['date'] = pd.to_datetime(nifty_df['date'])
-            nifty_df = nifty_df.set_index('date')
+            nifty_df = nifty_df.set_index('date', drop=False).sort_index()
+            # Ensure index is DatetimeIndex
+            if not isinstance(nifty_df.index, pd.DatetimeIndex):
+                nifty_df.index = pd.to_datetime(nifty_df.index)
 
             # Get strategy execution dates and capital flows from weekly_nav_df
             if hasattr(self, 'weekly_nav_df') and not self.weekly_nav_df.empty:
@@ -2169,7 +2293,6 @@ class ETFRotationBacktester(RotationStrategy):
                 weekly_data['date'] = pd.to_datetime(weekly_data['date'])
                 
                 # Align benchmark data to weekly dates
-                # Create a complete weekly dataframe for the benchmark
                 benchmark_log = []
                 
                 # SIP Parameters
@@ -2177,118 +2300,79 @@ class ETFRotationBacktester(RotationStrategy):
                 cash_balance = 0
                 total_invested_so_far = 0
                 
-                self.logger.progress(f"📊 Calculating SIP Benchmark Performance...")
+                self.logger.progress(f"Calculating SIP Benchmark Performance...")
                 
                 for _, row in weekly_data.iterrows():
-                    date = row['date']
-                    week_num = row['week']
-                    
-                    # 1. Get weekly capital injection (if any)
-                    # We infer this from the strategy log or use the saved per-week capital
-                    # The strategy log has 'base_capital_per_week'
-                    capital_injection = 0
-                    if 'base_capital_per_week' in row:
-                        capital_per_week = row['base_capital_per_week']
-                        # Check if this week had an injection in the strategy
-                        # Strategy injects capital in accumulation weeks
-                        # This info is best derived from seeing if the strategy cash/NAV increased by capital amount
-                        # simpler way: check row['week'] against accumulation_weeks if we have it, 
-                        # or infer from the strategy behavior. 
-                        # Ideally pass accumulation_weeks to this method if needed, but we can relay on week num
-                        # For now, let's assume if base_capital_per_week is set, it's the amount.
+                    try:
+                        date = pd.to_datetime(row['date'])
+                        week_num = row['week']
                         
-                        # We need to know if we are in accumulation phase.
-                        # The implementation plan says "For each week where week_num <= accumulation_weeks"
-                        # But we don't have accumulation_weeks passed here directly unless we change signature OR 
-                        # we can infer it from the total_investment / capital_per_week
-                        
-                        # Let's derive accumulation_weeks
-                        if capital_per_week > 0:
-                            derived_acc_weeks = int(total_investment / capital_per_week)
-                        else:
-                            derived_acc_weeks = 0
-                            
-                        if week_num <= derived_acc_weeks:
-                            capital_injection = capital_per_week
-                    
-                    # 2. Add capital to cash
-                    cash_balance += capital_injection
-                    total_invested_so_far += capital_injection
-                    
-                    # 3. Find benchmark price for this date (or nearest prior)
-                    # Use the daily nifty_df we loaded
-                    # get_indexer returns indexer, so we use asof behavior via slice or similar
-                    # easier: use the daily price if exists, else nearest prior
-                    
-                    price = 0
-                    if date in nifty_df.index:
-                        price = nifty_df.loc[date]['close']
-                    else:
-                        # Find nearest prior date
-                        prior_dates = nifty_df.index[nifty_df.index <= date]
-                        if not prior_dates.empty:
-                            price = nifty_df.loc[prior_dates[-1]]['close']
-                    
-                    if price > 0:
-                        # 4. Buy units if we have cash
-                        # Estimate costs (simulated)
-                        estimated_costs = 0 # Simplify benchmark costs or mirror strategy?
-                        # Usually benchmark is "frictionless" or low cost index fund. 
-                        # Let's deduct standard brokerage to be fair if strategy has it.
-                        # Using the passed brokerage_percent
-                        
-                        costs = self.calculate_transaction_costs('buy', cash_balance, brokerage_percent)
-                        net_cash = costs['net_amount'] # Actually calculate_transaction_costs returns buy costs for AMOUNT
-                        
-                        # Logic: we have CASH. We want to spend it all.
-                        # Cost = Brokerage * Amount
-                        # Cash = Amount + Cost = Amount * (1 + rate)
-                        # Amount = Cash / (1 + rate) approximately
-                        # Let's use simpler logic: 
-                        # units = int(cash / price)
-                        # actual_cost = units * price * (1 + cost_rate)
-                        # if actual_cost > cash: units -= 1
-                        
-                        units_to_buy = int(cash_balance / price)
-                        
-                        if units_to_buy > 0:
-                            transaction_amt = units_to_buy * price
-                            txn_costs = self.calculate_transaction_costs('buy', transaction_amt, brokerage_percent)
-                            total_outflow = transaction_amt + txn_costs['total_costs']
-                            
-                            if total_outflow <= cash_balance:
-                                units_held += units_to_buy
-                                cash_balance -= total_outflow
+                        # 1. Get weekly capital injection (if any)
+                        capital_injection = 0
+                        if 'base_capital_per_week' in row:
+                            capital_per_week = row['base_capital_per_week']
+                            if capital_per_week > 0:
+                                derived_acc_weeks = int(total_investment / capital_per_week)
                             else:
-                                # Start reducing units until it fits
-                                while total_outflow > cash_balance and units_to_buy > 0:
-                                    units_to_buy -= 1
-                                    transaction_amt = units_to_buy * price
-                                    txn_costs = self.calculate_transaction_costs('buy', transaction_amt, brokerage_percent)
-                                    total_outflow = transaction_amt + txn_costs['total_costs']
+                                derived_acc_weeks = 0
                                 
-                                if units_to_buy > 0:
-                                    units_held += units_to_buy
-                                    cash_balance -= total_outflow
-                    
-                    # 5. Calculate NAV
-                    current_nav = (units_held * price) + cash_balance
-                    
-                    benchmark_log.append({
-                        'date': date,
-                        'nav': current_nav,
-                        'cumulative_investment': total_invested_so_far
-                    })
-                
-                # Create final dataframe
+                            if week_num <= derived_acc_weeks:
+                                capital_injection = capital_per_week
+                        
+                        # 2. Add capital to cash
+                        cash_balance += capital_injection
+                        total_invested_so_far += capital_injection
+                        
+                        # 3. Find benchmark price using asof (nearest price on or before date)
+                        price = 0
+                        try:
+                            # Use asof to find the nearest date in the sorted index
+                            # ENSURE DATE IS TIMESTAMP
+                            search_date = pd.to_datetime(date)
+                            asof_date = nifty_df.index.asof(search_date)
+                            if pd.notna(asof_date):
+                                price_val = nifty_df.loc[asof_date]['close']
+                                # Handle cases where loc might return a Series
+                                price = float(price_val.iloc[0]) if hasattr(price_val, 'iloc') else float(price_val)
+                        except:
+                            # Fallback to nearest prior date comparison if asof fails
+                            try:
+                                subset = nifty_df[nifty_df.index <= date]
+                                if not subset.empty:
+                                    price = float(subset['close'].iloc[-1])
+                            except:
+                                price = 0
+
+                        if price and price > 0:
+                            # 4. Buy units if we have cash
+                            costs = self.calculate_transaction_costs('buy', cash_balance, brokerage_percent)
+                            net_cash = cash_balance - costs['total_costs']
+                            
+                            if net_cash > 0:
+                                units_to_buy = net_cash / price
+                                units_held += units_to_buy
+                                cash_balance = 0 # Invested all net cash
+                        
+                        # Calculate NAV
+                        current_nav = (units_held * (price if price > 0 else 0)) + cash_balance
+                        benchmark_log.append({
+                            'date': date,
+                            'nav': current_nav,
+                            'cumulative_investment': total_invested_so_far
+                        })
+                    except Exception as e:
+                        # Fallback for unexpected benchmark errors to prevent strategy failure
+                        self.logger.error(f"Error calculating benchmark at {row.get('date')}: {e}")
+                        benchmark_log.append({
+                            'date': row.get('date'),
+                            'nav': total_invested_so_far, # Fallback to invested capital
+                            'cumulative_investment': total_invested_so_far
+                        })
+
                 nifty_weekly_df = pd.DataFrame(benchmark_log)
-                nifty_weekly_df['returns'] = nifty_weekly_df['nav'].pct_change()
-                
-                # Fill missing pieces
-                # Rename for consistency with original expected output structure if needed
-                # The original code expected 'date' and 'close' but mostly used 'nav' and 'returns'
-                
-                self.logger.progress(f"✅ Calculated SIP Benchmark for {len(nifty_weekly_df)} weeks")
+                if not nifty_weekly_df.empty:
+                    nifty_weekly_df = nifty_weekly_df.set_index('date', drop=False)
+                    nifty_weekly_df['returns'] = nifty_weekly_df['nav'].pct_change().fillna(0)
                 return nifty_weekly_df
             
             else:
@@ -2531,6 +2615,7 @@ class ETFRotationBacktester(RotationStrategy):
             'Max Drawdown': f"{max_drawdown:.2f}%",
             'Calmar Ratio': f"{calmar:.2f}",
             'Total Weeks': len(df),
+            'Total Trades': len(set(t['week'] for t in self.transaction_costs_log)),
             'Win Rate': f"{(weekly_returns > 0).mean() * 100:.1f}%" if len(weekly_returns) > 0 else "N/A"
         }
 
@@ -2598,50 +2683,55 @@ class ETFRotationBacktester(RotationStrategy):
         }
 
     def get_transaction_costs_summary(self) -> Dict:
-        """Get summary of all transaction costs"""
+        """Get summary of transaction costs grouped by year (Simplified Format)"""
         if not self.transaction_costs_log:
             return {}
 
         costs_df = pd.DataFrame(self.transaction_costs_log)
+        
+        # Robustly determine column to use for year
+        date_col = None
+        if 'date' in costs_df.columns:
+            date_col = 'date'
+        elif 'execution_date' in costs_df.columns:
+            date_col = 'execution_date'
+        
+        if date_col:
+             costs_df['year'] = pd.to_datetime(costs_df[date_col]).dt.year.astype(str)
+        else:
+             print(f"[DEBUG] get_transaction_costs_summary: Missing date column! Columns found: {costs_df.columns.tolist()}")
+             costs_df['year'] = "Total"
 
-        total_brokerage = costs_df['brokerage'].sum()
-        total_stt = costs_df['stt'].sum()
-        total_stamp_duty = costs_df['stamp_duty'].sum()
-        total_exchange_charges = costs_df['exchange_charges'].sum()
-        total_sebi_charges = costs_df['sebi_charges'].sum()
-        total_gst = costs_df['gst'].sum()
-        total_capital_gains_tax = costs_df['capital_gains_tax'].sum()
-        total_transaction_costs = costs_df['total_costs'].sum()
-        total_all_costs = total_transaction_costs + total_capital_gains_tax
+        summary = {}
 
-        total_buy_volume = costs_df[costs_df['action'] == 'buy']['amount'].sum()
-        total_sell_volume = costs_df[costs_df['action'] == 'sell']['amount'].sum()
-        total_volume = total_buy_volume + total_sell_volume
+        def calculate_metrics(df):
+            # Calculate raw values
+            transaction_costs = df['total_costs'].sum()
+            capital_gains_tax = df['capital_gains_tax'].sum()
+            total_costs = transaction_costs + capital_gains_tax
+            brokerage = df['brokerage'].sum()
+            total_costs = transaction_costs + capital_gains_tax
+            brokerage = df['brokerage'].sum()
+            transactions = df['week'].nunique()
+            
+            # Return simplified dictionary with numeric values
+            return {
+                'transaction_costs': round(transaction_costs, 2),
+                'capital_gains_tax': round(capital_gains_tax, 2),
+                'total_costs': round(total_costs, 2),
+                'total_brokerage': round(brokerage, 2),
+                'transactions': transactions
+            }
+        
+        # Generate year-wise summary only (user requested format doesn't seem to explicitly require a total key, 
+        # but usually it's helpful. User example showed years. I will output years.)
+        if 'year' in costs_df.columns:
+             for year, group in costs_df.groupby('year'):
+                 summary[str(year)] = calculate_metrics(group)
+                 
+        return summary
+            
 
-        buy_transactions = len(costs_df[costs_df['action'] == 'buy'])
-        sell_transactions = len(costs_df[costs_df['action'] == 'sell'])
-        total_transactions = buy_transactions + sell_transactions
-
-        cost_percentage = (total_all_costs / total_volume * 100) if total_volume > 0 else 0
-
-        return {
-            'Total Transaction Costs': f"₹{total_transaction_costs:,.0f}",
-            'Capital Gains Tax': f"₹{total_capital_gains_tax:,.0f}",
-            'Total All Costs': f"₹{total_all_costs:,.0f}",
-            'Cost as % of Volume': f"{cost_percentage:.3f}%",
-            'Brokerage': f"₹{total_brokerage:,.0f}",
-            'STT': f"₹{total_stt:,.0f}",
-            'Stamp Duty': f"₹{total_stamp_duty:,.0f}",
-            'Exchange Charges': f"₹{total_exchange_charges:,.0f}",
-            'SEBI Charges': f"₹{total_sebi_charges:,.0f}",
-            'GST': f"₹{total_gst:,.0f}",
-            'Total Volume': f"₹{total_volume:,.0f}",
-            'Buy Volume': f"₹{total_buy_volume:,.0f}",
-            'Sell Volume': f"₹{total_sell_volume:,.0f}",
-            'Total Transactions': total_transactions,
-            'Buy Transactions': buy_transactions,
-            'Sell Transactions': sell_transactions
-        }
 
     def plot_equity_curve(self, show_benchmark: bool = True, show_etf_strategy: bool = True):
         """Create interactive equity curve plot with optional ETF strategy and benchmark comparison"""

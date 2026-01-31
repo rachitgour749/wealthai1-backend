@@ -64,15 +64,40 @@ class ETFPayoutHandler(BaseStrategyHandler):
                     error=result["error"]
                 )
             
-            # Calculate metrics
+            # Calculate metrics (Raw values)
             metrics = backtester.calculate_metrics(
                 request.capital_per_week,
                 request.accumulation_weeks,
                 request.risk_free_rate or 8.0
             )
             
-            # Add payout-specific metrics
-            metrics['total_withdrawn'] = backtester.total_withdrawn_amount
+            # Helper to parse string values back to float
+            def parse_metric(val):
+                if isinstance(val, (int, float)): return val
+                if isinstance(val, str):
+                    clean = val.replace('₹', '').replace(',', '').replace('%', '')
+                    try:
+                        return float(clean)
+                    except ValueError:
+                        return val
+                return val
+
+            # Standardize Strategy Metrics
+            flat_metrics = {
+                "total_investment": parse_metric(metrics.get('Total Investment', 0)),
+                "final_capital": parse_metric(metrics.get('Final Value', 0)),
+                "total_return_pct": parse_metric(metrics.get('Total Return', 0)),
+                "cagr": parse_metric(metrics.get('CAGR', 0)),
+                "xirr": parse_metric(metrics.get('XIRR', 0)),
+                "sharpe_ratio": parse_metric(metrics.get('Sharpe Ratio', 0)),
+                "calmar_ratio": parse_metric(metrics.get('Calmar Ratio', 0)),
+                "max_drawdown_pct": parse_metric(metrics.get('Max Drawdown', 0)),
+                "volatility": parse_metric(metrics.get('Volatility', 0)),
+                "total_trades": metrics.get('Total Trades', 0),
+                "win_rate_pct": parse_metric(metrics.get('Win Rate', 0)),
+                "withdraw_amount": backtester.total_withdrawn_amount,
+                "total_withdrawn": backtester.total_withdrawn_amount
+            }
             
             # Calculate benchmark metrics
             total_investment = request.accumulation_weeks * request.capital_per_week
@@ -87,6 +112,18 @@ class ETFPayoutHandler(BaseStrategyHandler):
                 total_investment,
                 request.risk_free_rate or 8.0
             )
+
+            flat_benchmark_metrics = {
+                "total_investment": parse_metric(benchmark_metrics.get('Total Investment', 0)),
+                "final_capital": parse_metric(benchmark_metrics.get('Final Value', 0)),
+                "total_return_pct": parse_metric(benchmark_metrics.get('Total Return', 0)),
+                "cagr": parse_metric(benchmark_metrics.get('CAGR', 0)),
+                "xirr": parse_metric(benchmark_metrics.get('XIRR', 0)),
+                "sharpe_ratio": parse_metric(benchmark_metrics.get('Sharpe Ratio', 0)),
+                "calmar_ratio": parse_metric(benchmark_metrics.get('Calmar Ratio', 0)),
+                "max_drawdown_pct": parse_metric(benchmark_metrics.get('Max Drawdown', 0)),
+                "volatility": parse_metric(benchmark_metrics.get('Volatility', 0))
+            }
             
             # Prepare performance data
             performance_data = {
@@ -99,7 +136,7 @@ class ETFPayoutHandler(BaseStrategyHandler):
             
             if not backtester.weekly_nav_df.empty:
                 performance_data["dates"] = [str(date) for date in backtester.weekly_nav_df['date']]
-                performance_data["etf_strategy"] = backtester.weekly_nav_df['nav'].tolist()
+                performance_data["strategy"] = backtester.weekly_nav_df['nav'].tolist()
                 performance_data["cumulative_investment"] = backtester.weekly_nav_df['cumulative_investment'].tolist()
                 
                 # Populate benchmark_buyhold if available
@@ -117,19 +154,26 @@ class ETFPayoutHandler(BaseStrategyHandler):
                         cumulative_withdrawn = withdrawal_dict[date_str]
                     performance_data["cumulative_withdrawn"].append(cumulative_withdrawn)
             
-            # Normalize benchmark metrics
-            benchmark_metrics = self._normalize_benchmark_metrics(benchmark_metrics)
-            
+            # Get transaction log and cost breakdown
+            transaction_log = backtester.portfolio_log
+            cost_breakdown = backtester.get_transaction_costs_summary()
+
+            # Combined final metrics
+            metrics = {
+                **flat_metrics,
+                "benchmark_metrics": flat_benchmark_metrics
+            }
+
             # Sanitize all data
-            metrics = self._sanitize_data({
-                **metrics,
-                "benchmark_metrics": benchmark_metrics
-            })
+            metrics = self._sanitize_data(metrics)
             performance_data = self._sanitize_data(performance_data)
+            transaction_log = self._sanitize_data(transaction_log)
+            # cost_breakdown must be sanitized for numpy safety
+            cost_breakdown = self._sanitize_data(cost_breakdown)
             
             # Cache backtest results for transaction-log endpoint
             try:
-                from APIs.centralized_backtest import cache_backtest_results
+                from APIs.common.cache import cache_backtest_results
                 cache_backtest_results("ETF_Payout", backtester)
             except Exception as e:
                 print(f"[ETF_PAYOUT_HANDLER] Warning: Could not cache backtest results: {e}")
@@ -138,7 +182,9 @@ class ETFPayoutHandler(BaseStrategyHandler):
                 success=True,
                 strategy_type=request.strategy_type,
                 metrics=metrics,
-                performance_data=performance_data
+                performance_data=performance_data,
+                transaction_log=transaction_log,
+                cost_breakdown=cost_breakdown
             )
             
         except Exception as e:

@@ -119,16 +119,14 @@ if os.getenv('DEBUG', '').lower() == 'true':
 # GLOBAL STATE VARIABLES
 # =========================
 # Initialize with False - will be set during async startup
-stock_backtester_initialized: bool = False
-etf_backtester_initialized: bool = False
+
 subscription_service_initialized: bool = False
 webhook_service_initialized: bool = False
 custom_strategy_service_initialized: bool = False
 single_sign_on_service_initialized: bool = False
 
 # Lazy loaded backtesters - initialized on first use
-_stock_backtester = None
-_etf_backtester = None
+
 _initialization_lock = asyncio.Lock()
 
 # =========================
@@ -147,14 +145,7 @@ def _lazy_import_chatai():
 def _lazy_import_backtesters():
     """Lazy import backtester initialization functions"""
     try:
-        from Strategies.Rotation_Stocks.api.stock_routes import (
-            initialize_stock_backtester, cleanup_stock_backtester
-        )
-        from Strategies.Rotation_ETF.api.etf_routes import (
-            initialize_etf_backtester, cleanup_etf_backtester
-        )
-        return initialize_stock_backtester, initialize_etf_backtester, \
-               cleanup_stock_backtester, cleanup_etf_backtester
+        return None, None, None, None
     except Exception:
         return None, None, None, None
 
@@ -246,41 +237,8 @@ async def _init_database_services() -> Dict[str, bool]:
     return results
 
 async def _init_backtesters_lazy():
-    """Lazy initialize backtesters in background (non-blocking for startup)"""
-    global stock_backtester_initialized, etf_backtester_initialized
-    
-    init_stock, init_etf, _, _ = _lazy_import_backtesters()
-    
-    if not init_stock or not init_etf:
-        return
-    
-    async def init_stock_backtester():
-        """Initialize stock backtester in background"""
-        try:
-            loop = asyncio.get_event_loop()
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                result = await loop.run_in_executor(executor, init_stock)
-            global stock_backtester_initialized
-            stock_backtester_initialized = bool(result)
-        except Exception as e:
-            logger.error(f"Stock backtester init failed: {e}")
-            stock_backtester_initialized = False
-    
-    async def init_etf_backtester():
-        """Initialize ETF backtester in background"""
-        try:
-            loop = asyncio.get_event_loop()
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                result = await loop.run_in_executor(executor, init_etf)
-            global etf_backtester_initialized
-            etf_backtester_initialized = bool(result)
-        except Exception as e:
-            logger.error(f"ETF backtester init failed: {e}")
-            etf_backtester_initialized = False
-    
-    # Start backtesters in background (non-blocking)
-    asyncio.create_task(init_stock_backtester())
-    asyncio.create_task(init_etf_backtester())
+    """Lazy initialize backtesters - disabled"""
+    pass
 
 # =========================
 # CHATAI INTEGRATION (New)
@@ -414,9 +372,18 @@ async def get_documentation(username: str = Depends(get_current_username)):
 @app.get("/openapi.json", include_in_schema=False)
 async def get_open_api_endpoint(username: str = Depends(get_current_username)):
     """Protected OpenAPI JSON with Bearer Auth configuration"""
-    openapi_schema = get_openapi(title="WealthAI1 API", version="1.0.0", routes=app.routes)
+    if app.openapi_schema:
+        return app.openapi_schema
+        
+    openapi_schema = get_openapi(
+        title="WealthAI1 API",
+        version="1.0.0",
+        description="High-performance financial backtesting and trading strategy API",
+        routes=app.routes,
+    )
     
     # Configure Bearer Authentication Scheme
+    # This adds the "Authorize" button to Swagger UI
     if "components" not in openapi_schema:
         openapi_schema["components"] = {}
         
@@ -424,15 +391,16 @@ async def get_open_api_endpoint(username: str = Depends(get_current_username)):
         "BearerAuth": {
             "type": "http",
             "scheme": "bearer",
-            "bearerFormat": "Google-Token",
-            "description": "Enter your Google OAuth Token"
+            "bearerFormat": "JWT",
+            "description": "Enter your Session Token (Bearer <token>)"
         }
     }
     
     # Apply security globally to all operations
     openapi_schema["security"] = [{"BearerAuth": []}]
     
-    return openapi_schema
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
 
 # =========================
 # SINGLE SESSION MIDDLEWARE
@@ -455,7 +423,9 @@ try:
             "/",
             "/api/chat/health", # Exempt ChatAI health
             "/health", # ChatAI health
-            "/api/run_backtest" # Exempt centralized backtest for verified access
+            "/api/run_backtest", # Exempt centralized backtest for verified access
+            "/api/strategies", # Exempt centralized list strategies
+            "/api/strategy" # Exempt centralized strategy details
         ]
     )
     logger.info("✅ SingleSessionMiddleware added")
@@ -503,60 +473,21 @@ single_sign_on_router = None
 chatai1_new_settings = None
 chatai1_new = None
 
-try:
-    from Strategies.Rotation_Stocks.api.stock_routes import stock_router
-except Exception as e:
-    logger.error(f"Failed to import stock_router: {e}")
 
-try:
-    from Strategies.Rotation_ETF.api.etf_routes import etf_router
-except Exception as e:
-    logger.error(f"Failed to import etf_router: {e}")
-
-try:
-    from Strategies.Rotation_International_ETF.api.routes import (
-        international_etf_router,
-        initialize_international_etf_backtester
-    )
-except Exception as e:
-    logger.error(f"Failed to import international_etf_router: {e}")
-    international_etf_router = None
-    initialize_international_etf_backtester = None
-
-try:
-    from Strategies.RS_Stocks.api import router as rs_router
-except Exception as e:
-    logger.error(f"Failed to import rs_router: {e}")
-
-try:
-    from Strategies.RS_ETF.api import router as rs_etf_router
-except Exception as e:
-    logger.error(f"Failed to import rs_etf_router: {e}")
+etf_router = None
+rs_etf_router = None
 
 try:
     from Strategies.customStrategy.api import custom_strategy_router
 except Exception as e:
     logger.error(f"Failed to import custom_strategy_router: {e}")
 
-try:
-    from Strategies.SuperTrend.api.routes import router as supertrend_router
-except Exception as e:
-    logger.error(f"Failed to import supertrend_router: {e}")
+supertrend_router = None
 
-try:
-    from Strategies.CustomStrategies.Rotation_ETF_Payout.api_routes import (
-        rotation_etf_payout_router,
-        initialize_rotation_etf_payout_backtester
-    )
-except Exception as e:
-    logger.error(f"Failed to import rotation_etf_payout_router: {e}")
-    rotation_etf_payout_router = None
-    initialize_rotation_etf_payout_backtester = None
+rotation_etf_payout_router = None
+initialize_rotation_etf_payout_backtester = None
 
-try:
-    from Services.webhook.webhook_api import router as webhook_router
-except Exception as e:
-    logger.error(f"Failed to import webhook_router: {e}")
+webhook_router = None
 
 # Critical: Subscription routers - provide detailed error info
 try:
@@ -617,10 +548,7 @@ except Exception as e:
     google_oauth_router = None
     hierarchy_router = None
 
-try:
-    from Services.Deployments_helper.deployment_helper import deployment_router
-except Exception as e:
-    logger.error(f"Failed to import deployment_router: {e}")
+deployment_router = None
 
 # Portfolio router
 portfolio_router = None
@@ -642,24 +570,18 @@ except Exception as e:
     logger.error(f"Failed to import ChatAI1 (Legacy): {e}")
 
 # Centralized Backtest API (New)
-centralized_backtest_router = None
-try:
-    from APIs.centralized_backtest import centralized_router as centralized_backtest_router
-    logger.info("✅ Centralized Backtest API router loaded successfully")
-except Exception as e:
-    logger.error(f"Failed to import centralized_backtest_router: {e}")
+# Centralized Backtest API (New) - Consolidated in APIs.routes
+# Consolidated Strategy API (New) - Consolidated in APIs.routes
+# Centralized Strategy Management API (New) - Consolidated in APIs.routes
 
-# Centralized Strategy API (New)
-centralized_strategy_router = None
 try:
-    from APIs.centralized_strategy import strategy_router as centralized_strategy_router
-    logger.info("✅ Centralized Strategy API router loaded successfully")
+    from APIs.routes import api_router as unified_api_router
+    logger.info("✅ Unified API router loaded successfully from APIs.routes")
 except Exception as e:
-    logger.error(f"Failed to import centralized_strategy_router: {e}")
-
-# Centralized Strategy Management API (New - Save/Deploy/Stop/etc)
-from APIs.strategy_management import strategy_mgmt_router
-logger.info("✅ Strategy Management API router loaded successfully")
+    logger.error(f"Failed to import unified_api_router: {e}")
+    import traceback
+    logger.error(f"Traceback: {traceback.format_exc()}")
+    unified_api_router = None
 
 # =========================
 # CORE ROUTES
@@ -669,8 +591,8 @@ async def root():
     """Root endpoint - fast response"""
     return {
         "message": "WealthAI1 API Running ✅",
-        "version": "1.0.0",
-        "strategies": ["stock", "etf", "rs-strategy", "custom-strategy", "chat"],
+        "version": "1.0.1 (API Verif)",
+        "strategies": ["rs-strategy", "custom-strategy", "chat"],
         "services": ["subscription", "webhook", "single-sign-on", "deployments"],
         "status": "operational"
     }
@@ -680,8 +602,6 @@ async def health_check():
     """Health check endpoint - shows initialization status"""
     return {
         "api_status": "healthy",
-        "stock_backtester": "ready" if stock_backtester_initialized else "initializing",
-        "etf_backtester": "ready" if etf_backtester_initialized else "initializing",
         "services": {
             "subscription": subscription_service_initialized,
             "webhook": webhook_service_initialized,
@@ -699,30 +619,18 @@ async def favicon():
 # =========================
 # INCLUDE ROUTERS (only include if successfully imported)
 # =========================
-if stock_router:
-    app.include_router(stock_router)
-if etf_router:
-    app.include_router(etf_router)
+
+
 
 # International ETF router
-if international_etf_router:
-    app.include_router(international_etf_router)
-    # Initialize the backtester
-    if initialize_international_etf_backtester:
-        try:
-            initialize_international_etf_backtester()
-            logger.info("✅ International ETF backtester initialized successfully")
-        except Exception as e:
-            logger.error(f"❌ Failed to initialize International ETF backtester: {e}")
+
 
 if rs_router:
     app.include_router(rs_router, prefix="/api/rs-strategy", tags=["RS Strategy"])
-if rs_etf_router:
-    app.include_router(rs_etf_router, prefix="/api/rs-etf-strategy", tags=["RS ETF Strategy"])
+
 if custom_strategy_router:
     app.include_router(custom_strategy_router)
-if webhook_router:
-    app.include_router(webhook_router)
+
 if subscription_router:
     app.include_router(subscription_router)
 else:
@@ -750,21 +658,12 @@ if hierarchy_router:
 else:
     logger.error("⚠️  Hierarchy router not loaded - hierarchy endpoints will not be available")
 
-if deployment_router:
-    app.include_router(deployment_router)
+
 if single_sign_on_router:
     app.include_router(single_sign_on_router)
 
 # Rotation ETF Payout router
-if rotation_etf_payout_router:
-    app.include_router(rotation_etf_payout_router)
-    # Initialize the backtester
-    if initialize_rotation_etf_payout_backtester:
-        try:
-            initialize_rotation_etf_payout_backtester()
-            logger.info("✅ Rotation ETF Payout backtester initialized successfully")
-        except Exception as e:
-            logger.error(f"❌ Failed to initialize Rotation ETF Payout backtester: {e}")
+
 
 # ChatAI router (Legacy)
 if chatai1_new and hasattr(chatai1_new, 'router'):
@@ -776,28 +675,13 @@ if chatai_availabe and chatai_router:
     logger.info("✅ ChatAI (New) router mounted successfully")
 
 # SuperTrend router (handle duplicate root route)
-try:
-    supertrend_router.routes = [
-        route for route in supertrend_router.routes
-        if not (isinstance(route, APIRoute) and route.path == "/")
-    ]
-    app.include_router(supertrend_router, tags=["SuperTrend"])
-except Exception as e:
-    logger.error(f"SuperTrend router failed: {e}")
+
 
 # Centralized Backtest API (New)
-if centralized_backtest_router:
-    app.include_router(centralized_backtest_router)
-    logger.info("✅ Centralized Backtest API mounted at /api/run_backtest")
-
-# Centralized Strategy API (New)
-if centralized_strategy_router:
-    app.include_router(centralized_strategy_router)
-    logger.info("✅ Centralized Strategy API mounted at /api/assets, /api/date-range, etc.")
-
-# Centralized Strategy Management API (New - Save/Deploy/Stop/etc)
-app.include_router(strategy_mgmt_router, prefix="/api")
-logger.info("✅ Strategy Management API mounted successfully")
+# Unified API Router (Consolidated)
+if unified_api_router:
+    app.include_router(unified_api_router)
+    logger.info("✅ Unified API router mounted at /api")
 
 # =========================
 # CHATAI ENDPOINTS (Fallback if router not available)
@@ -825,96 +709,17 @@ async def chat_health():
     """ChatAI health endpoint"""
     return {"status": "healthy"}
 
-# =========================
-# DELETE CLIENT API
-# =========================
 
-class DeleteClientRequest(BaseModel):
-    strategy_type: str
-    strategy_id: int
-    client_id: List[str]
-
-@app.post("/api/delete-client")
-async def delete_client(request: DeleteClientRequest):
-    """
-    Delete specific client(s) from a saved strategy's client_information_json.
-    """
-    session = None
-    try:
-        from Databases.app_data_db_connection import get_session
-        from sqlalchemy import text
-        
-        # Table mapping logic
-        table_name = None
-        if request.strategy_type in ["ETF_Rotation", "ETF_Payout", "International ETF Rotation"]:
-            table_name = "etf_saved_strategy"
-        elif request.strategy_type == "RS_ETF_Rotation":
-            table_name = "rs_etf_instance"
-        else:
-            raise HTTPException(status_code=400, detail=f"Unsupported strategy_type: {request.strategy_type}")
-            
-        session = get_session()
-        
-        # Retrieve existing client_information_json
-        query = text(f"SELECT client_information_json FROM {table_name} WHERE id = :strategy_id")
-        result = session.execute(query, {"strategy_id": request.strategy_id}).fetchone()
-        
-        if not result:
-            raise HTTPException(status_code=404, detail="Strategy not found")
-        
-        client_info_raw = result[0]
-        client_info = {}
-        
-        if client_info_raw:
-            if isinstance(client_info_raw, str):
-                try:
-                    client_info = json.loads(client_info_raw)
-                except json.JSONDecodeError:
-                    client_info = {}
-            elif isinstance(client_info_raw, dict):
-                client_info = client_info_raw
-        
-        # Remove client_id(s)
-        removed_clients = []
-        for cid in request.client_id:
-            if cid in client_info:
-                del client_info[cid]
-                removed_clients.append(cid)
-        
-        # Save back to database
-        updated_client_info_json = json.dumps(client_info)
-        update_query = text(f"UPDATE {table_name} SET client_information_json = :client_info WHERE id = :strategy_id")
-        session.execute(update_query, {"client_info": updated_client_info_json, "strategy_id": request.strategy_id})
-        
-        session.commit()
-        
-        return {
-            "success": True,
-            "message": f"Successfully removed {len(removed_clients)} client(s)",
-            "removed_clients": removed_clients
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        if session:
-            session.rollback()
-        logger.error(f"Error in delete_client API: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Error deleting client: {str(e)}")
-    finally:
-        if session:
-            session.close()
 
 # =========================
 # LOCAL RUN
 # =========================
 if __name__ == "__main__":
+    port = int(os.environ.get('PORT', 8000))
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=8000,
+        port=port,
         log_level="error",  # Suppress uvicorn access logs
         access_log=False    # Disable access log completely
     )
