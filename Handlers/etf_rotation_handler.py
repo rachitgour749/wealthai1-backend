@@ -147,7 +147,7 @@ class ETFRotationHandler(BaseStrategyHandler):
                     # Using asof to get closest value on or before the date
                     benchmark_aligned = backtester.nifty50_df.reindex(strategy_dates, method='ffill')
                     
-                    performance_data["benchmark_buyhold"] = benchmark_aligned['nav'].fillna(method='ffill').tolist()
+                    performance_data["benchmark_buyhold"] = benchmark_aligned['nav'].ffill().tolist()
             
             # Prepare transaction log
             # Use full portfolio log with all details (costs, debug_info, etc.)
