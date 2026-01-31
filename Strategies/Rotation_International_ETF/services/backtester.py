@@ -2200,8 +2200,9 @@ class InternationalETFRotationBacktester(RotationStrategy):
 
             # Use S&P 500 Index as benchmark for international ETF strategy
             benchmark_symbols = [
-                '^GSPC',  # S&P 500 Index - Primary benchmark
-                'SPY',    # S&P 500 ETF - Alternative
+                'S&P_500', # Primary benchmark (Found in DB)
+                '^GSPC',   # S&P 500 Index - Alternative
+                'SPY',     # S&P 500 ETF - Alternative
             ]
 
             benchmark_symbol = None
