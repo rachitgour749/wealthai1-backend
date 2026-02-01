@@ -824,9 +824,21 @@ class InternationalETFRotationBacktester(RotationStrategy):
 
             df['date'] = pd.to_datetime(df['date'])
 
+            # Normalize column names (handle case where DB driver ignores alias)
+            if 'adj_close' in df.columns and 'close' not in df.columns:
+                df.rename(columns={'adj_close': 'close'}, inplace=True)
+                if self._verbose:
+                    self.logger.info("Renamed 'adj_close' to 'close'")
+
+            # Check for required columns
+            required_columns = ['open', 'high', 'low', 'close', 'volume']
+            missing_cols = [c for c in required_columns if c not in df.columns]
+            if missing_cols:
+                raise ValueError(f"Missing required columns in data: {missing_cols}. Available: {df.columns.tolist()}")
+
             # Optimized pivot operations
             data_dict = {}
-            for column in ['open', 'high', 'low', 'close', 'volume']:
+            for column in required_columns:
                 pivot_df = df.pivot(index='date', columns='symbol', values=column)
                 data_dict[column] = pivot_df.ffill().bfill()
 
