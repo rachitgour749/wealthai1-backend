@@ -2705,13 +2705,21 @@ class ETFRotationBacktester(RotationStrategy):
         summary = {}
 
         def calculate_metrics(df):
-            # Calculate raw values
-            transaction_costs = df['total_costs'].sum()
+            # Calculate individual fee components
+            brokerage = df['brokerage'].sum()
+            stt = df['stt'].sum()
+            stamp_duty = df['stamp_duty'].sum()
+            exchange_charges = df['exchange_charges'].sum()
+            sebi_charges = df['sebi_charges'].sum()
+            gst = df['gst'].sum()
             capital_gains_tax = df['capital_gains_tax'].sum()
-            total_costs = transaction_costs + capital_gains_tax
-            brokerage = df['brokerage'].sum()
-            total_costs = transaction_costs + capital_gains_tax
-            brokerage = df['brokerage'].sum()
+            
+            # transaction_costs = all fees except brokerage
+            transaction_costs = stt + stamp_duty + exchange_charges + sebi_charges + gst
+            
+            # total_costs = all fees + brokerage + capital gains tax
+            total_costs = transaction_costs + brokerage + capital_gains_tax
+            
             transactions = df['week'].nunique()
             
             # Return simplified dictionary with numeric values

@@ -2609,28 +2609,6 @@ class InternationalETFRotationBacktester(RotationStrategy):
         }
 
     def get_transaction_costs_summary(self) -> Dict:
-        """Get summary of all transaction costs"""
-        if not self.transaction_costs_log:
-            return {}
-
-        costs_df = pd.DataFrame(self.transaction_costs_log)
-
-        total_brokerage = costs_df['brokerage'].sum()
-        total_stt = costs_df['stt'].sum()
-        total_stamp_duty = costs_df['stamp_duty'].sum()
-        total_exchange_charges = costs_df['exchange_charges'].sum()
-        total_sebi_charges = costs_df['sebi_charges'].sum()
-        total_gst = costs_df['gst'].sum()
-        total_capital_gains_tax = costs_df['capital_gains_tax'].sum()
-        total_transaction_costs = costs_df['total_costs'].sum()
-        total_all_costs = total_transaction_costs + total_capital_gains_tax
-
-        total_buy_volume = costs_df[costs_df['action'] == 'buy']['amount'].sum()
-        total_sell_volume = costs_df[costs_df['action'] == 'sell']['amount'].sum()
-        total_volume = total_buy_volume + total_sell_volume
-
-        buy_transactions = len(costs_df[costs_df['action'] == 'buy'])
-        sell_transactions = len(costs_df[costs_df['action'] == 'sell'])
         """Get summary of transaction costs grouped by year (Simplified Format)"""
         if not self.transaction_costs_log:
             return {}
@@ -2653,11 +2631,21 @@ class InternationalETFRotationBacktester(RotationStrategy):
         summary = {}
 
         def calculate_metrics(df):
-            # Same logic as other backtesters
-            transaction_costs = df['total_costs'].sum()
-            capital_gains_tax = df['capital_gains_tax'].sum()
-            total_costs = transaction_costs + capital_gains_tax
+            # Calculate individual fee components
             brokerage = df['brokerage'].sum()
+            stt = df['stt'].sum()
+            stamp_duty = df['stamp_duty'].sum()
+            exchange_charges = df['exchange_charges'].sum()
+            sebi_charges = df['sebi_charges'].sum()
+            gst = df['gst'].sum()
+            capital_gains_tax = df['capital_gains_tax'].sum()
+            
+            # transaction_costs = all fees except brokerage
+            transaction_costs = stt + stamp_duty + exchange_charges + sebi_charges + gst
+            
+            # total_costs = all fees + brokerage + capital gains tax
+            total_costs = transaction_costs + brokerage + capital_gains_tax
+            
             transactions = df['week'].nunique()
             
             return {

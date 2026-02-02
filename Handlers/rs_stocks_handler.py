@@ -148,11 +148,20 @@ class RSStocksHandler(BaseStrategyHandler):
                         'transactions': 0
                      }
                  
-                 # Convert to DF for easy summation if needed, or simple sum
-                 total_costs = sum(t.get('total_costs', 0) for t in trades_list)
-                 capital_gains_tax = sum(t.get('capital_gains_tax', 0) for t in trades_list)
+                 # Calculate individual fee components
                  brokerage = sum(t.get('brokerage', 0) for t in trades_list)
-                 transaction_costs = total_costs - capital_gains_tax # Derived if total includes tax
+                 stt = sum(t.get('stt', 0) for t in trades_list)
+                 stamp_duty = sum(t.get('stamp_duty', 0) for t in trades_list)
+                 exchange_charges = sum(t.get('exchange_charges', 0) for t in trades_list)
+                 sebi_charges = sum(t.get('sebi_charges', 0) for t in trades_list)
+                 gst = sum(t.get('gst', 0) for t in trades_list)
+                 capital_gains_tax = sum(t.get('capital_gains_tax', 0) for t in trades_list)
+                 
+                 # transaction_costs = all fees except brokerage
+                 transaction_costs = stt + stamp_duty + exchange_charges + sebi_charges + gst
+                 
+                 # total_costs = all fees + brokerage + capital gains tax
+                 total_costs = transaction_costs + brokerage + capital_gains_tax
                  
                  # Logic for transactions count (Unique Dates to match Rotation's 'Active Periods')
                  dates = set(t.get('date') for t in trades_list if t.get('date'))

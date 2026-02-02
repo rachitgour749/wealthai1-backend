@@ -59,17 +59,42 @@ class ETFBuyOnDipHandler(BaseStrategyHandler):
             transaction_log = results.get("transaction_log", [])
             
             # Helper to calculate costs for a list of trades
-            # Helper to calculate costs for a list of trades
             def calculate_costs_for_trades(trades_list):
-                 transaction_costs = sum(t.get('transaction_costs', 0) for t in trades_list)
-                 capital_gains_tax = 0.0
+                 if not trades_list:
+                     return {
+                        'transaction_costs': 0.0,
+                        'capital_gains_tax': 0.0,
+                        'total_costs': 0.0,
+                        'total_brokerage': 0.0,
+                        'transactions': 0
+                     }
+                 
+                 # Calculate individual fee components if available
+                 brokerage = sum(t.get('brokerage', 0) for t in trades_list)
+                 stt = sum(t.get('stt', 0) for t in trades_list)
+                 stamp_duty = sum(t.get('stamp_duty', 0) for t in trades_list)
+                 exchange_charges = sum(t.get('exchange_charges', 0) for t in trades_list)
+                 sebi_charges = sum(t.get('sebi_charges', 0) for t in trades_list)
+                 gst = sum(t.get('gst', 0) for t in trades_list)
+                 capital_gains_tax = sum(t.get('capital_gains_tax', 0) for t in trades_list)
+                 
+                 # If detailed breakdown not available, use transaction_costs field
+                 if stt == 0 and stamp_duty == 0:
+                     transaction_costs = sum(t.get('transaction_costs', 0) for t in trades_list)
+                 else:
+                     # transaction_costs = all fees except brokerage
+                     transaction_costs = stt + stamp_duty + exchange_charges + sebi_charges + gst
+                 
+                 # total_costs = all fees + brokerage + capital gains tax
+                 total_costs = transaction_costs + brokerage + capital_gains_tax
+                 
                  transactions = len(trades_list)
                  
                  return {
                     'transaction_costs': round(transaction_costs, 2),
                     'capital_gains_tax': round(capital_gains_tax, 2),
-                    'total_costs': round(transaction_costs + capital_gains_tax, 2),
-                    'total_brokerage': 0.0, # Not detailed in simple Buy on Dip
+                    'total_costs': round(total_costs, 2),
+                    'total_brokerage': round(brokerage, 2),
                     'transactions': transactions
                  }
 
