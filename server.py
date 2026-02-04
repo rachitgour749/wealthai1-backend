@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, JSONResponse
 from fastapi.routing import APIRoute
@@ -124,6 +124,7 @@ subscription_service_initialized: bool = False
 webhook_service_initialized: bool = False
 custom_strategy_service_initialized: bool = False
 single_sign_on_service_initialized: bool = False
+broker_service_initialized: bool = False
 
 # Lazy loaded backtesters - initialized on first use
 
@@ -158,7 +159,8 @@ async def _init_database_services() -> Dict[str, bool]:
         'subscription': False,
         'webhook': False,
         'custom_strategy': False,
-        'single_sign_on': False
+        'single_sign_on': False,
+        'broker': False
     }
     
     async def init_subscription():
@@ -225,12 +227,27 @@ async def _init_database_services() -> Dict[str, bool]:
             logger.error(f"SingleSignOn init failed: {e}")
             results['single_sign_on'] = False
     
+    async def init_broker():
+        """Initialize Broker database (broker_sessions table)"""
+        try:
+            from Databases.app_data_db_connection import init_database as init_broker_db
+            loop = asyncio.get_event_loop()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                broker_init = await loop.run_in_executor(executor, init_broker_db)
+            results['broker'] = bool(broker_init)
+            if broker_init:
+                logger.info("✅ Broker database initialized (broker_sessions table created)")
+        except Exception as e:
+            logger.error(f"Broker database init failed: {e}")
+            results['broker'] = False
+    
     # Run all database initializations in parallel
     await asyncio.gather(
         init_subscription(),
         init_webhook(),
         init_custom_strategy(),
         init_single_sign_on(),
+        init_broker(),
         return_exceptions=True
     )
     
@@ -284,6 +301,7 @@ async def lifespan(app: FastAPI):
     """Optimized lifespan with async parallel initialization"""
     global subscription_service_initialized, webhook_service_initialized
     global custom_strategy_service_initialized, single_sign_on_service_initialized
+    global broker_service_initialized
     
     # Initialize ChatAI database (Legacy ChatAI1 - Optional/Deprecated)
     chatai1_new_settings, init_db, close_db, chatai1_new = _lazy_import_chatai()
@@ -300,9 +318,23 @@ async def lifespan(app: FastAPI):
     webhook_service_initialized = db_results['webhook']
     custom_strategy_service_initialized = db_results['custom_strategy']
     single_sign_on_service_initialized = db_results['single_sign_on']
+    broker_service_initialized = db_results['broker']
     
     # Start backtesters in background (non-blocking)
     await _init_backtesters_lazy()
+    
+    # Initialize and start the scheduler service
+    try:
+        from Services.scheduler.scheduler_service import start_scheduler
+        logger.info("="*60)
+        logger.info("STARTING SCHEDULER SERVICE")
+        logger.info("="*60)
+        scheduler = start_scheduler()
+        logger.info("✅ Scheduler service started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start scheduler service: {e}")
+        import traceback
+        traceback.print_exc()
     
     # Use ChatAI (New) lifespan if available
     if chatai_availabe and chatai_lifespan:
@@ -316,15 +348,29 @@ async def lifespan(app: FastAPI):
         yield
     
     # Shutdown
+    # Shutdown scheduler
+    try:
+        from Services.scheduler.scheduler_service import get_scheduler
+        scheduler = get_scheduler()
+        scheduler.shutdown()
+        logger.info("✅ Scheduler shut down successfully")
+    except Exception as e:
+        logger.error(f"Failed to shutdown scheduler: {e}")
+    
     if close_db:
         try:
             await close_db()
         except Exception as e:
             logger.error(f"ChatAI1 (Legacy) database close failed: {e}")
 
+
 # =========================
 # FASTAPI APP CREATION (Fast - no blocking operations)
 # =========================
+# Define global security dependency to force header input in Swagger
+def security_header(Authorization: str = Header(None, description="Enter 'Bearer <token>'")):
+    pass
+
 app = FastAPI(
     title="WealthAI1 API",
     version="1.0.0",
@@ -332,7 +378,8 @@ app = FastAPI(
     description="High-performance financial backtesting and trading strategy API",
     docs_url="/docs",       # Enable default docs for better visibility of all routes
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
+    dependencies=[Depends(security_header)] # This adds the header input to all endpoints
 )
 
 # Register ChatAI Rate Limiter if available
@@ -372,34 +419,42 @@ async def get_documentation(username: str = Depends(get_current_username)):
 @app.get("/openapi.json", include_in_schema=False)
 async def get_open_api_endpoint(username: str = Depends(get_current_username)):
     """Protected OpenAPI JSON with Bearer Auth configuration"""
-    if app.openapi_schema:
-        return app.openapi_schema
-        
-    openapi_schema = get_openapi(
-        title="WealthAI1 API",
-        version="1.0.0",
-        description="High-performance financial backtesting and trading strategy API",
-        routes=app.routes,
-    )
+    if not app.openapi_schema:
+        app.openapi_schema = get_openapi(
+            title="WealthAI1 API",
+            version="1.0.0",
+            description="High-performance financial backtesting and trading strategy API",
+            routes=app.routes,
+        )
     
-    # Configure Bearer Authentication Scheme
-    # This adds the "Authorize" button to Swagger UI
-    if "components" not in openapi_schema:
-        openapi_schema["components"] = {}
+    # Always ensure components dict exists
+    if "components" not in app.openapi_schema:
+        app.openapi_schema["components"] = {}
         
-    openapi_schema["components"]["securitySchemes"] = {
-        "BearerAuth": {
+    # Get or create securitySchemes dict
+    security_schemes = app.openapi_schema["components"].get("securitySchemes", {})
+    
+    # Add BearerAuth if not present
+    if "BearerAuth" not in security_schemes:
+        security_schemes["BearerAuth"] = {
             "type": "http",
             "scheme": "bearer",
             "bearerFormat": "JWT",
             "description": "Enter your Session Token (Bearer <token>)"
         }
-    }
+        
+    # Update the schema
+    app.openapi_schema["components"]["securitySchemes"] = security_schemes
     
     # Apply security globally to all operations
-    openapi_schema["security"] = [{"BearerAuth": []}]
+    if "security" not in app.openapi_schema:
+        app.openapi_schema["security"] = []
+        
+    # Check if BearerAuth is already in security requirements
+    has_bearer = any("BearerAuth" in req for req in app.openapi_schema["security"])
+    if not has_bearer:
+        app.openapi_schema["security"].append({"BearerAuth": []})
     
-    app.openapi_schema = openapi_schema
     return app.openapi_schema
 
 # =========================
@@ -470,6 +525,7 @@ hierarchy_router = None
 portfolio_router = None
 deployment_router = None
 single_sign_on_router = None
+broker_router = None
 chatai1_new_settings = None
 chatai1_new = None
 
@@ -483,6 +539,12 @@ except Exception as e:
     logger.error(f"Failed to import custom_strategy_router: {e}")
 
 supertrend_router = None
+
+try:
+    from APIs.broker_routes import router as broker_router
+    logger.info("✅ Broker router loaded successfully")
+except Exception as e:
+    logger.error(f"Failed to import broker_router: {e}")
 
 rotation_etf_payout_router = None
 initialize_rotation_etf_payout_backtester = None
@@ -607,6 +669,7 @@ async def health_check():
             "webhook": webhook_service_initialized,
             "custom_strategy": custom_strategy_service_initialized,
             "single_sign_on": single_sign_on_service_initialized,
+            "broker": broker_service_initialized,
         }
     }
 
@@ -661,6 +724,10 @@ else:
 
 if single_sign_on_router:
     app.include_router(single_sign_on_router)
+
+# Broker Router
+if broker_router:
+    app.include_router(broker_router, prefix="/api/broker", tags=["Broker Integration"])
 
 # Rotation ETF Payout router
 

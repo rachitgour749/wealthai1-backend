@@ -1,0 +1,194 @@
+{
+    "timezone": "Asia/Kolkata",
+    "trading_calendar": {
+        "nse_holidays_2026": [
+            "2026-01-15",
+            "2026-01-26",
+            "2026-03-03",
+            "2026-03-26",
+            "2026-03-31",
+            "2026-04-03",
+            "2026-04-14",
+            "2026-05-01",
+            "2026-05-28",
+            "2026-06-26",
+            "2026-09-14",
+            "2026-10-02",
+            "2026-10-20",
+            "2026-11-10",
+            "2026-11-24",
+            "2026-12-25"
+        ],
+        "us_holidays_2026": [
+            "2026-01-01",
+            "2026-01-19",
+            "2026-02-16",
+            "2026-04-03",
+            "2026-05-25",
+            "2026-06-19",
+            "2026-07-03",
+            "2026-09-07",
+            "2026-11-26",
+            "2026-12-25"
+        ],
+        "us_early_close_2026": [
+            "2026-11-27",
+            "2026-12-24"
+        ],
+        "weekend_days": [
+            5,
+            6
+        ]
+    },
+    "strategies": {
+        "rotation_etf": {
+            "enabled": true,
+            "signal_generation": {
+                "frequency": "weekly",
+                "day_of_week": "friday",
+                "time": "16:00",
+                "skip_holidays": true,
+                "execution_rule": "last_trading_day_of_week"
+            },
+            "signal_execution": {
+                "frequency": "weekly",
+                "execution_rule": "first_trading_day_of_week",
+                "time": "09:15",
+                "skip_holidays": true
+            },
+            "generator_module": "Services.scheduler.generators.etf_rotation_generator",
+            "generator_function": "generate_etf_rotation_signals",
+            "signal_table": "etf_signals",
+            "strategy_table": "saved_instances",
+            "strategy_filter": {
+                "strategy_name": "ETF_Rotation",
+                "status": "running"
+            }
+        },
+        "rotation_stocks": {
+            "enabled": false,
+            "signal_generation": {
+                "frequency": "weekly",
+                "day_of_week": "friday",
+                "time": "16:00",
+                "skip_holidays": true,
+                "execution_rule": "last_trading_day_of_week"
+            },
+            "signal_execution": {
+                "frequency": "weekly",
+                "execution_rule": "first_trading_day_of_week",
+                "time": "09:15",
+                "skip_holidays": true
+            },
+            "generator_module": "Services.scheduler.generators.rotation_stocks_generator",
+            "generator_function": "generate_stock_rotation_signals",
+            "signal_table": "stock_signals",
+            "strategy_table": "saved_instances",
+            "strategy_filter": {
+                "strategy_name": "Rotation_Stocks",
+                "status": "running"
+            }
+        },
+        "rotation_international_etf": {
+            "enabled": false,
+            "signal_generation": {
+                "frequency": "weekly",
+                "day_of_week": "friday",
+                "time": "02:00",
+                "skip_holidays": true,
+                "execution_rule": "last_trading_day_of_week",
+                "market": "US"
+            },
+            "signal_execution": {
+                "frequency": "weekly",
+                "execution_rule": "first_trading_day_of_week",
+                "time": "19:30",
+                "skip_holidays": true,
+                "market": "US"
+            },
+            "generator_module": "Services.scheduler.generators.international_etf_generator",
+            "generator_function": "generate_international_etf_signals",
+            "signal_table": "international_etf_signals",
+            "strategy_table": "saved_instances",
+            "strategy_filter": {
+                "strategy_name": "Rotation_International_ETF",
+                "status": "running"
+            }
+        },
+        "market_data_etf": {
+            "enabled": false,
+            "data_fetch": {
+                "frequency": "daily",
+                "time": "18:00",
+                "skip_holidays": true,
+                "skip_weekends": true
+            },
+            "fetch_module": "Market_Data.etf_data",
+            "fetch_function": "main",
+            "description": "Daily Indian ETF EOD data fetch"
+        },
+        "market_data_stock": {
+            "enabled": false,
+            "data_fetch": {
+                "frequency": "daily",
+                "time": "18:30",
+                "skip_holidays": true,
+                "skip_weekends": true
+            },
+            "fetch_module": "Market_Data.stock_data",
+            "fetch_function": "main",
+            "description": "Daily Indian Stock EOD data fetch"
+        },
+        "market_data_index": {
+            "enabled": false,
+            "data_fetch": {
+                "frequency": "daily",
+                "time": "19:00",
+                "skip_holidays": true,
+                "skip_weekends": true
+            },
+            "fetch_module": "Market_Data.index_data",
+            "fetch_function": "main",
+            "description": "Daily Indian Index EOD data fetch"
+        },
+        "market_data_us_etf": {
+            "enabled": false,
+            "data_fetch": {
+                "frequency": "daily",
+                "time": "02:00",
+                "skip_holidays": true,
+                "skip_weekends": true,
+                "market": "US"
+            },
+            "fetch_module": "Market_Data.us_etf_data",
+            "fetch_function": "main",
+            "description": "Daily US ETF EOD data fetch"
+        }
+    },
+    "execution_settings": {
+        "max_retries": 3,
+        "retry_delay_minutes": 5,
+        "webhook_timeout_seconds": 30,
+        "cleanup_executed_signals": false,
+        "signal_expiry_days": 7
+    },
+    "logging": {
+        "level": "INFO",
+        "log_dir": "logs/scheduler",
+        "max_file_size_mb": 10,
+        "backup_count": 5,
+        "log_to_console": true,
+        "log_format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    },
+    "notifications": {
+        "enabled": true,
+        "email_on_error": false,
+        "slack_webhook_url": null,
+        "discord_webhook_url": null
+    },
+    "metadata": {
+        "version": "1.0.0",
+        "last_updated": "2026-02-03",
+        "description": "Centralized scheduler configuration for all WealthAI strategies and data fetching jobs"
+    }
+}

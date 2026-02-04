@@ -254,6 +254,8 @@ def init_database():
     try:
         # Import strategy models to register them with Base
         from Databases import strategy_models  # noqa: F401
+        from Databases import broker_models # noqa: F401
+        from Databases import signal_models  # noqa: F401  # Trading signals for all strategies
         
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables initialized successfully")
