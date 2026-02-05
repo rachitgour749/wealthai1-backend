@@ -120,6 +120,11 @@ def _generate_signals_for_instance(
     
     # Get tickers from instance
     tickers = instance.get('tickers', [])
+    
+    # Handle string format (comma-separated)
+    if isinstance(tickers, str):
+        tickers = [t.strip() for t in tickers.split(',') if t.strip()]
+        
     if not tickers:
         logger.warning(f"No tickers found for instance {instance['id']}")
         return []
@@ -165,20 +170,24 @@ def _generate_signals_for_instance(
     }
     
     # Create trading signal
+    # Create trading signal
     signal = create_signal(
-        strategy_name='ETF_Rotation',
         user_id=instance['user_id'],
+        run_id=instance.get('run_id'),
         user_code=instance['user_code'],
-        instance_id=instance['id'],
-        signal_type='BUY',
-        symbol=top_etf['symbol'],
-        price=float(top_etf['current_price']),
-        signal_date=signal_date,
-        strategy_metadata=metadata,
-        client_info=instance.get('client_info', {}),
+        strategy_name='ETF_Rotation',
+        strategy_type=instance.get('strategy_type', 'ETF Strategy'),
+        order_side='BUY',
+        symbol_name=top_etf['symbol'],
+        client_json=instance.get('client_json', {}),
         webhook_url=instance.get('webhook_url'),
+        signal_date=signal_date,
         score=float(top_etf['distance_from_low']),
-        execution_date=signal_date + timedelta(days=1)  # Execute next trading day
+        price=float(top_etf['current_price']),
+        high_52=float(top_etf['52w_high']),
+        low_52=float(top_etf['52w_low']),
+        executed_at=None,
+        execution_status='pending'
     )
     
     return [signal]
@@ -222,6 +231,8 @@ def _fetch_market_data(tickers: List[str], signal_date: datetime) -> pd.DataFram
             })
         
         df = pd.DataFrame(rows)
+        if not df.empty:
+            df['date'] = pd.to_datetime(df['date'])
         
         # Pivot to get close prices (index=date, columns=symbols)
         close_df = df.pivot(index='date', columns='symbol', values='close')
@@ -232,9 +243,13 @@ def _fetch_market_data(tickers: List[str], signal_date: datetime) -> pd.DataFram
         return close_df
         
     except Exception as e:
-        logger.error(f"Error fetching market data: {e}")
+        logger.error(f"Failed to fetch market data.")
+        logger.error(f"  Tickers ({len(tickers)}): {tickers}")
+        logger.error(f"  Date Range: {lookback_start.date()} to {signal_date.date()}")
+        logger.error(f"  Error: {str(e)}")
+        # Only print traceback for unexpected errors, or keep it but cleaner
         import traceback
-        traceback.print_exc()
+        logger.error(f"  Traceback: {traceback.format_exc()}")
         return pd.DataFrame()
         
     finally:

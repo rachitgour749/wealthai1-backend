@@ -904,6 +904,13 @@ class ETFRotationBacktester(RotationStrategy):
 
     def compute_52_week_high_low(self, df: pd.DataFrame, current_date: datetime) -> pd.DataFrame:
         """Calculate rolling 52-week high/low for each ticker at signal date"""
+        # Ensure index is datetime objects
+        if not isinstance(df.index, pd.DatetimeIndex):
+            df.index = pd.to_datetime(df.index)
+            
+        # Ensure current_date is compatible
+        current_date = pd.to_datetime(current_date)
+
         # Get data up to current date (signal date - typically Friday)
         historical_data = df[df.index <= current_date]
 

@@ -93,6 +93,11 @@ def _generate_signals_for_instance(
     logger.info(f"\nProcessing instance {instance['id']} for user {instance['user_id']}")
     
     tickers = instance.get('tickers', [])
+    
+    # Handle string format (comma-separated)
+    if isinstance(tickers, str):
+        tickers = [t.strip() for t in tickers.split(',') if t.strip()]
+        
     if not tickers:
         logger.warning(f"No tickers found for instance {instance['id']}")
         return []
@@ -131,19 +136,22 @@ def _generate_signals_for_instance(
     }
     
     signal = create_signal(
-        strategy_name='Rotation_Stocks',
         user_id=instance['user_id'],
+        run_id=instance.get('run_id'), # Now available from fetch_active_instances
         user_code=instance['user_code'],
-        instance_id=instance['id'],
-        signal_type='BUY',
-        symbol=top_stock['symbol'],
-        price=float(top_stock['current_price']),
-        signal_date=signal_date,
-        strategy_metadata=metadata,
-        client_info=instance.get('client_info', {}),
+        strategy_name='Rotation_Stocks',
+        strategy_type=instance.get('strategy_type', 'Stock Strategy'),
+        order_side='BUY',
+        symbol_name=top_stock['symbol'],
+        client_json=instance.get('client_json', {}), # mapped in base
         webhook_url=instance.get('webhook_url'),
+        signal_date=signal_date,
         score=float(top_stock['distance_from_low']),
-        execution_date=signal_date + timedelta(days=1)
+        price=float(top_stock['current_price']),
+        high_52=float(top_stock['52w_high']),
+        low_52=float(top_stock['52w_low']),
+        executed_at=None, # Pending execution
+        execution_status='pending'
     )
     
     return [signal]
@@ -156,6 +164,7 @@ def _fetch_market_data(tickers: List[str], signal_date: datetime) -> pd.DataFram
     try:
         lookback_start = signal_date - timedelta(days=400)
         
+        # Query Stock market data
         data = session.query(StockMarket).filter(
             StockMarket.symbol.in_(tickers),
             StockMarket.date >= lookback_start,
@@ -175,6 +184,9 @@ def _fetch_market_data(tickers: List[str], signal_date: datetime) -> pd.DataFram
             })
         
         df = pd.DataFrame(rows)
+        if not df.empty:
+            df['date'] = pd.to_datetime(df['date'])
+
         close_df = df.pivot(index='date', columns='symbol', values='close')
         close_df = close_df.sort_index()
         
@@ -183,9 +195,12 @@ def _fetch_market_data(tickers: List[str], signal_date: datetime) -> pd.DataFram
         return close_df
         
     except Exception as e:
-        logger.error(f"Error fetching market data: {e}")
+        logger.error(f"Failed to fetch market data.")
+        logger.error(f"  Tickers ({len(tickers)}): {tickers}")
+        logger.error(f"  Date Range: {lookback_start.date()} to {signal_date.date()}")
+        logger.error(f"  Error: {str(e)}")
         import traceback
-        traceback.print_exc()
+        logger.error(f"  Traceback: {traceback.format_exc()}")
         return pd.DataFrame()
         
     finally:

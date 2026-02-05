@@ -193,8 +193,8 @@ def format_symbol_for_cash(symbol, exchange):
     # Check if symbol is an ETF
     is_etf = any(indicator in symbol.upper() for indicator in etf_indicators)
     
-    # Add -EQ suffix for stocks only on NSE/BSE cash segments
-    if exchange in ["NSE", "NSECM", "BSE", "BSECM"] and not is_etf:
+    # Add -EQ suffix for stocks and ETFs on NSE/BSE cash segments
+    if exchange in ["NSE", "NSECM", "BSE", "BSECM"]:
         if not symbol.endswith('-EQ'):
             symbol = f"{symbol}-EQ"
     

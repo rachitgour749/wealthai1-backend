@@ -20,81 +20,69 @@ class TradingSignal(Base):
     
     # Primary identification
     id = Column(Integer, primary_key=True, autoincrement=True)
-    signal_id = Column(String(50), unique=True, nullable=False)  # UUID for tracking
-    
-    # Strategy and user information
-    strategy_name = Column(String(100), index=True, nullable=False)  # ETF_Rotation, Rotation_Stocks, etc.
     user_id = Column(String(100), index=True, nullable=False)
+    run_id = Column(String(100), nullable=True) # Added as requested
     user_code = Column(String(100))
-    instance_id = Column(Integer)  # Reference to saved_instances
+    strategy_name = Column(String(100), index=True, nullable=False)
+    strategy_type = Column(String(100), nullable=True) # Added as requested
     
     # Signal details
-    signal_type = Column(String(20), nullable=False)  # BUY, SELL, HOLD
-    symbol = Column(String(50), nullable=False)
-    quantity = Column(Integer, nullable=True)
-    
-    # Pricing and metrics (strategy-specific)
-    price = Column(Float)
-    score = Column(Float, nullable=True)  # Strategy-specific score
-    strategy_metadata = Column(JSON)  # Flexible field for strategy-specific data
-    # Example strategy_metadata for rotation strategies:
-    # {
-    #   '52w_high': 1234.56,
-    #   '52w_low': 987.65,
-    #   'distance_from_low': 5.2,
-    #   'distance_from_high': 15.8,
-    #   'current_price': 1050.00
-    # }
+    order_side = Column(String(20), nullable=False) # Renamed from signal_type
+    symbol_name = Column(String(50), nullable=False) # Renamed from symbol
     
     # Execution details
-    client_info = Column(JSON)  # Client IDs for order placement
+    client_json = Column(JSON) # Renamed from client_info
     webhook_url = Column(Text, nullable=True)
     
     # Timing
-    signal_date = Column(DateTime, index=True, nullable=False)  # When signal was generated
-    execution_date = Column(DateTime, nullable=True)  # When to execute
-    expiry_date = Column(DateTime, nullable=True)
+    signal_date = Column(DateTime, index=True, nullable=False)
+    
+    # Metrics
+    score = Column(Float, nullable=True)
+    price = Column(Float)
+    high_52 = Column(Float, nullable=True) # Added as requested
+    low_52 = Column(Float, nullable=True) # Added as requested
     
     # Status tracking
-    status = Column(String(20), default='pending', index=True)  # pending, executed, failed, expired
-    execution_result = Column(JSON, nullable=True)
-    
-    # Audit
     created_at = Column(DateTime, default=func.now(), nullable=False)
+    executed_at = Column(DateTime, nullable=True) # Renamed from execution_date
+    execution_status = Column(String(20), default='pending', index=True) # Renamed from status
+    
+    # Fields not explicitly requested but likely needed for compatibility or audit (keeping minimum)
+    expiry_date = Column(DateTime, nullable=True)
+    execution_result = Column(JSON, nullable=True)
     updated_at = Column(DateTime, onupdate=func.now())
     
     # Indexes for performance
     __table_args__ = (
-        Index('idx_strategy_status', 'strategy_name', 'status'),
+        Index('idx_strategy_status', 'strategy_name', 'execution_status'),
         Index('idx_user_signal_date', 'user_id', 'signal_date'),
-        Index('idx_signal_date_status', 'signal_date', 'status'),
     )
     
     def __repr__(self):
-        return f"<TradingSignal(id={self.id}, strategy={self.strategy_name}, symbol={self.symbol}, type={self.signal_type}, status={self.status})>"
+        return f"<TradingSignal(id={self.id}, strategy={self.strategy_name}, symbol={self.symbol_name}, side={self.order_side}, status={self.execution_status})>"
     
     def to_dict(self):
         """Convert signal to dictionary"""
         return {
             'id': self.id,
-            'signal_id': self.signal_id,
-            'strategy_name': self.strategy_name,
             'user_id': self.user_id,
+            'run_id': self.run_id,
             'user_code': self.user_code,
-            'instance_id': self.instance_id,
-            'signal_type': self.signal_type,
-            'symbol': self.symbol,
-            'quantity': self.quantity,
-            'price': self.price,
-            'score': self.score,
-            'strategy_metadata': self.strategy_metadata,
-            'client_info': self.client_info,
+            'strategy_name': self.strategy_name,
+            'strategy_type': self.strategy_type,
+            'order_side': self.order_side,
+            'symbol_name': self.symbol_name,
+            'client_json': self.client_json,
             'webhook_url': self.webhook_url,
             'signal_date': self.signal_date.isoformat() if self.signal_date else None,
-            'execution_date': self.execution_date.isoformat() if self.execution_date else None,
-            'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
-            'status': self.status,
-            'execution_result': self.execution_result,
+            'score': self.score,
+            'price': self.price,
+            'high_52': self.high_52,
+            'low_52': self.low_52,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'executed_at': self.executed_at.isoformat() if self.executed_at else None,
+            'execution_status': self.execution_status,
+            'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
+            'execution_result': self.execution_result
         }

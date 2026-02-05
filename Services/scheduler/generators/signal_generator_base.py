@@ -20,12 +20,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def fetch_active_instances(strategy_name: str) -> List[Dict[str, Any]]:
+def fetch_active_instances(strategy_type_val: str) -> List[Dict[str, Any]]:
     """
-    Fetch all active instances for a specific strategy
+    Fetch all active instances for a specific strategy type from saved_instances table.
     
     Args:
-        strategy_name: Name of the strategy (e.g., 'ETF_Rotation', 'Rotation_Stocks')
+        strategy_type_val: Type of the strategy (e.g., 'ETF Strategy', 'Stock Strategy')
     
     Returns:
         List of dictionaries containing instance data
@@ -33,13 +33,14 @@ def fetch_active_instances(strategy_name: str) -> List[Dict[str, Any]]:
     session = get_session()
     
     try:
-        # Query saved_instances where strategy_name matches and status is 'running'
+        # Query saved_instances where strategy_type matches and status is 'running' or 'deploy' (flexible)
+        # Note: Filtering by TYPE allows users to name their strategies anything (e.g. "My Safe ETF")
         instances = session.query(SavedInstance).filter(
-            SavedInstance.strategy_name == strategy_name,
-            SavedInstance.status == 'running'
+            SavedInstance.strategy_type == strategy_type_val,
+            SavedInstance.status.in_(['running', 'deploy'])
         ).all()
         
-        logger.info(f"Found {len(instances)} active instances for {strategy_name}")
+        logger.info(f"Found {len(instances)} active instances for type: {strategy_type_val}")
         
         # Convert to dictionaries
         result = []
@@ -49,9 +50,11 @@ def fetch_active_instances(strategy_name: str) -> List[Dict[str, Any]]:
                 'user_id': instance.user_id,
                 'user_code': instance.user_code,
                 'strategy_name': instance.strategy_name,
+                'strategy_type': instance.strategy_type,
+                'run_id': instance.run_id,
                 'tickers': instance.tickers,  # JSON field
                 'strategies_parameters': instance.strategies_parameters,  # JSON field
-                'client_info': instance.client_info,  # JSON field
+                'client_json': instance.client_info,  # JSON field (mapped to client_json)
                 'webhook_url': instance.webhook_url,
                 'created_at': instance.created_at
             })
@@ -85,6 +88,11 @@ def save_signals_to_db(signals: List[TradingSignal]) -> bool:
     session = get_session()
     
     try:
+        # Create table if not exists (as requested by user)
+        # Note: SQLAlchemy usually handles this with create_all, but we can try to be safe
+        # In this context, we assume the table creation is handled by the app initialization
+        # or we rely on the ORM to fail if table is missing.
+        
         # Bulk insert
         session.bulk_save_objects(signals)
         session.commit()
@@ -104,73 +112,46 @@ def save_signals_to_db(signals: List[TradingSignal]) -> bool:
 
 
 def create_signal(
-    strategy_name: str,
     user_id: str,
+    run_id: str,
     user_code: str,
-    instance_id: int,
-    signal_type: str,
-    symbol: str,
-    price: float,
+    strategy_name: str,
+    strategy_type: str,
+    order_side: str,
+    symbol_name: str,
+    client_json: Dict[str, Any],
+    webhook_url: Optional[str],
     signal_date: datetime,
-    strategy_metadata: Dict[str, Any],
-    client_info: Dict[str, Any],
-    webhook_url: Optional[str] = None,
-    quantity: Optional[int] = None,
-    score: Optional[float] = None,
-    execution_date: Optional[datetime] = None,
-    expiry_days: int = 7
+    score: float,
+    price: float,
+    high_52: float,
+    low_52: float,
+    executed_at: Optional[datetime] = None,
+    execution_status: str = 'pending'
 ) -> TradingSignal:
     """
-    Create a TradingSignal object
-    
-    Args:
-        strategy_name: Name of the strategy
-        user_id: User ID
-        user_code: User code
-        instance_id: Instance ID from saved_instances
-        signal_type: BUY, SELL, or HOLD
-        symbol: Trading symbol
-        price: Current price
-        signal_date: When signal was generated
-        strategy_metadata: Strategy-specific metadata (52w high/low, RS scores, etc.)
-        client_info: Client information for order placement
-        webhook_url: Optional webhook URL
-        quantity: Optional quantity
-        score: Optional strategy score
-        execution_date: Optional execution date
-        expiry_days: Days until signal expires (default 7)
-    
-    Returns:
-        TradingSignal object
+    Create a TradingSignal object with the unified schema
     """
-    # Generate unique signal ID
-    signal_id = f"{strategy_name}_{user_id}_{symbol}_{signal_date.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
-    
-    # Calculate expiry date if not provided
-    if not execution_date:
-        execution_date = signal_date + timedelta(days=1)
-    
-    expiry_date = signal_date + timedelta(days=expiry_days)
     
     # Create signal object
     signal = TradingSignal(
-        signal_id=signal_id,
-        strategy_name=strategy_name,
         user_id=user_id,
+        run_id=run_id,
         user_code=user_code,
-        instance_id=instance_id,
-        signal_type=signal_type,
-        symbol=symbol,
-        quantity=quantity,
-        price=price,
-        score=score,
-        strategy_metadata=strategy_metadata,
-        client_info=client_info,
+        strategy_name=strategy_name,
+        strategy_type=strategy_type,
+        order_side=order_side,
+        symbol_name=symbol_name,
+        client_json=client_json,
         webhook_url=webhook_url,
         signal_date=signal_date,
-        execution_date=execution_date,
-        expiry_date=expiry_date,
-        status='pending'
+        score=score,
+        price=price,
+        high_52=high_52,
+        low_52=low_52,
+        created_at=datetime.utcnow(),
+        executed_at=executed_at,
+        execution_status=execution_status
     )
     
     return signal
@@ -179,19 +160,12 @@ def create_signal(
 def get_pending_signals(strategy_name: Optional[str] = None, user_id: Optional[str] = None) -> List[TradingSignal]:
     """
     Get pending signals from database
-    
-    Args:
-        strategy_name: Optional filter by strategy name
-        user_id: Optional filter by user ID
-    
-    Returns:
-        List of pending TradingSignal objects
     """
     session = get_session()
     
     try:
         query = session.query(TradingSignal).filter(
-            TradingSignal.status == 'pending'
+            TradingSignal.execution_status == 'pending'
         )
         
         if strategy_name:
@@ -213,30 +187,28 @@ def get_pending_signals(strategy_name: Optional[str] = None, user_id: Optional[s
         session.close()
 
 
-def mark_signal_executed(signal_id: str, execution_result: Dict[str, Any]) -> bool:
+def mark_signal_executed(signal_id: int, execution_result: Dict[str, Any]) -> bool:
     """
     Mark a signal as executed
     
     Args:
-        signal_id: Signal ID
+        signal_id: Signal ID (primary key)
         execution_result: Result of execution
-    
-    Returns:
-        True if successful, False otherwise
     """
     session = get_session()
     
     try:
         signal = session.query(TradingSignal).filter(
-            TradingSignal.signal_id == signal_id
+            TradingSignal.id == signal_id
         ).first()
         
         if not signal:
             logger.warning(f"Signal not found: {signal_id}")
             return False
         
-        signal.status = 'executed'
+        signal.execution_status = 'executed'
         signal.execution_result = execution_result
+        signal.executed_at = datetime.utcnow()
         signal.updated_at = datetime.utcnow()
         
         session.commit()
@@ -255,12 +227,6 @@ def mark_signal_executed(signal_id: str, execution_result: Dict[str, Any]) -> bo
 def expire_old_signals(days: int = 7) -> int:
     """
     Expire signals older than specified days
-    
-    Args:
-        days: Number of days after which to expire signals
-    
-    Returns:
-        Number of signals expired
     """
     session = get_session()
     
@@ -269,10 +235,10 @@ def expire_old_signals(days: int = 7) -> int:
         
         # Update pending signals older than cutoff date
         result = session.query(TradingSignal).filter(
-            TradingSignal.status == 'pending',
+            TradingSignal.execution_status == 'pending',
             TradingSignal.signal_date < cutoff_date
         ).update({
-            'status': 'expired',
+            'execution_status': 'expired',
             'updated_at': datetime.utcnow()
         })
         

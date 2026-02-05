@@ -480,7 +480,8 @@ try:
             "/health", # ChatAI health
             "/api/run_backtest", # Exempt centralized backtest for verified access
             "/api/strategies", # Exempt centralized list strategies
-            "/api/strategy" # Exempt centralized strategy details
+            "/api/strategy", # Exempt centralized strategy details
+            "/api/broker/place_order" # Exempt broker place order
         ]
     )
     logger.info("✅ SingleSessionMiddleware added")

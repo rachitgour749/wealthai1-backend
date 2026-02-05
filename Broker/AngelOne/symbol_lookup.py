@@ -1,142 +1,63 @@
 """
-AngelOne Symbol Token Lookup
+# AngelOne Symbol Token Lookup
+#
+# Maps trading symbols to their exchange instrument IDs (tokens) for AngelOne API.
+# This allows automatic token resolution without requiring users to provide tokens manually.
+# """
+import json
+import os
+import logging
+from typing import Optional, Dict
 
-Maps trading symbols to their exchange instrument IDs (tokens) for AngelOne API.
-This allows automatic token resolution without requiring users to provide tokens manually.
-"""
+logger = logging.getLogger(__name__)
+
+# Cache for loaded scrip master
+ANGEL_SCRIP_MASTER: Dict[str, Dict] = {} 
+SCIP_MASTER_PATH = os.path.join(os.path.dirname(__file__), 'resources', 'OpenAPIScripMaster.json')
+
+def load_scrip_master() -> None:
+    """Load Scrip Master JSON into memory if not already loaded."""
+    global ANGEL_SCRIP_MASTER
+    if ANGEL_SCRIP_MASTER:
+        return
+
+    try:
+        if os.path.exists(SCIP_MASTER_PATH):
+            logger.info("Loading AngelOne Scrip Master...")
+            with open(SCIP_MASTER_PATH, 'r') as f:
+                data = json.load(f)
+                
+            # Build optimized dictionary: (symbol, exch_seg) -> token
+            for item in data:
+                symbol = item.get('symbol')
+                exch_seg = item.get('exch_seg')
+                token = item.get('token')
+                
+                if symbol and exch_seg and token:
+                    # Determine normalized exchange name
+                    # AngelOne uses 'NSE', 'BSE', 'NFO', 'MCX', 'CDS' as exch_seg
+                    # But keys should overlap with what we passed, or we normalize in lookup
+                    
+                    # Store with upper case symbol and exchange
+                    key = f"{symbol.upper()}:{exch_seg.upper()}"
+                    ANGEL_SCRIP_MASTER[key] = token
+            
+            logger.info(f"Loaded {len(ANGEL_SCRIP_MASTER)} instruments from Scrip Master.")
+        else:
+            logger.warning(f"AngelOne Scrip Master not found at {SCIP_MASTER_PATH}")
+            
+    except Exception as e:
+        logger.error(f"Failed to load AngelOne Scrip Master: {e}") 
+
 
 # NSE Cash Segment - Common Stocks
-NSE_CASH_TOKENS = {
-    # Banks
-    "YESBANK": "11915",
-    "SBIN": "3045",
-    "HDFCBANK": "1333",
-    "ICICIBANK": "4963",
-    "AXISBANK": "5900",
-    "KOTAKBANK": "1922",
-    "INDUSINDBK": "5258",
-    "BANDHANBNK": "579",
-    "FEDERALBNK": "1023",
-    "IDFCFIRSTB": "11184",
-    "PNB": "10666",
-    "BANKBARODA": "4668",
-    
-    # IT
-    "TCS": "11536",
-    "INFY": "1594",
-    "WIPRO": "3787",
-    "HCLTECH": "7229",
-    "TECHM": "13538",
-    "LTI": "17818",
-    "COFORGE": "3901",
-    "MPHASIS": "4503",
-    "PERSISTENT": "14413",
-    
-    # Auto
-    "TATAMOTORS": "3456",
-    "M&M": "10999",
-    "MARUTI": "10999",
-    "BAJAJ-AUTO": "16669",
-    "HEROMOTOCO": "1348",
-    "EICHERMOT": "910",
-    "TVSMOTOR": "8479",
-    "ASHOKLEY": "212",
-    
-    # Pharma
-    "SUNPHARMA": "3351",
-    "DRREDDY": "881",
-    "CIPLA": "694",
-    "DIVISLAB": "10940",
-    "BIOCON": "11373",
-    "AUROPHARMA": "275",
-    "LUPIN": "10440",
-    "TORNTPHARM": "3518",
-    
-    # Energy & Oil
-    "RELIANCE": "2885",
-    "ONGC": "2475",
-    "BPCL": "526",
-    "IOC": "1624",
-    "GAIL": "4717",
-    "COALINDIA": "20374",
-    "NTPC": "11630",
-    "POWERGRID": "14977",
-    
-    # FMCG
-    "HINDUNILVR": "1394",
-    "ITC": "1660",
-    "NESTLEIND": "17963",
-    "BRITANNIA": "547",
-    "DABUR": "772",
-    "MARICO": "4067",
-    "GODREJCP": "10099",
-    
-    # Metals
-    "TATASTEEL": "3499",
-    "HINDALCO": "1363",
-    "JSWSTEEL": "11723",
-    "VEDL": "3063",
-    "SAIL": "2963",
-    "NMDC": "15332",
-    "NATIONALUM": "6364",
-    
-    # Telecom
-    "BHARTIARTL": "10604",
-    "IDEA": "7929",
-    
-    # Cement
-    "ULTRACEMCO": "11532",
-    "GRASIM": "1232",
-    "SHREECEM": "3103",
-    "AMBUJACEM": "1270",
-    "ACC": "22",
-    
-    # Infra & Construction
-    "LT": "11483",
-    "ADANIPORTS": "15083",
-    "ADANIENT": "25",
-    
-    # Others
-    "ASIANPAINT": "236",
-    "TITAN": "3506",
-    "BAJFINANCE": "317",
-    "BAJAJFINSV": "16675",
-    "HDFC": "1330",
-    "HDFCLIFE": "467",
-    "SBILIFE": "21808",
-}
+# NSE Cash Segment - Common Stocks
+# Hardcoded list removed to rely on OpenAPIScripMaster.json for accuracy
+NSE_CASH_TOKENS = {}
 
 # NSE ETF Segment
-NSE_ETF_TOKENS = {
-    # Nifty Index ETFs
-    "NIFTYBEES": "15068",
-    "JUNIORBEES": "16669",
-    "BANKBEES": "15083",
-    "PSUBNKBEES": "26017",
-    "PVTBNKBEES": "26016",
-    
-    # Sector ETFs
-    "INFRABEES": "26013",
-    "PHARMABEES": "26014",
-    "ITBEES": "26011",
-    "AUTOBEES": "26009",
-    "FMCGBEES": "26010",
-    "CONSUMBEES": "26012",
-    "METALBEES": "26015",
-    "PSUBEES": "26018",
-    
-    # Other Index ETFs
-    "GOLDBEES": "1660",
-    "LIQUIDBEES": "4717",
-    "SILVER": "3045",
-    "CPSEETF": "26019",
-    "SETFNIF50": "14366",
-    "SETFNN50": "14367",
-    
-    # International ETFs (if traded on NSE)
-    "MON100": "26020",
-    "HNGSNGBEES": "26021",
-}
+# NSE ETF Segment
+NSE_ETF_TOKENS = {}
 
 # NSE F&O Segment
 NSE_FO_TOKENS = {
@@ -170,18 +91,48 @@ def get_symbol_token(symbol: str, exchange: str = "NSE") -> str:
     symbol = symbol.upper().replace('.NS', '').replace('.BO', '').strip()
     
     # Select appropriate token map based on exchange
+    # Select appropriate token map based on exchange
+    token = None
     if exchange.upper() == "NSE":
         # Check ETFs first (they often have 'BEES' or 'ETF' in name)
         token = NSE_ETF_TOKENS.get(symbol)
-        if token:
-            return token
-        # Then check stocks
-        return NSE_CASH_TOKENS.get(symbol)
+        if not token:
+            # Then check stocks
+            token = NSE_CASH_TOKENS.get(symbol)
     elif exchange.upper() == "BSE":
-        return BSE_CASH_TOKENS.get(symbol)
+        token = BSE_CASH_TOKENS.get(symbol)
     elif exchange.upper() in ["NFO", "MCX", "CDS"]:
-        return NSE_FO_TOKENS.get(symbol)
+        token = NSE_FO_TOKENS.get(symbol)
+
+    # Return if found in hardcoded lists
+    if token:
+        return token
+        
+    # Standardize Exchange Name for AngelOne lookup
+    # Input 'exchange' might be 'NSECM' or 'NSE', handle accordingly
+    # Ideally should use map_exchange from Mapping.py but avoiding circular import
+    normalized_exchange = exchange.upper()
+    if normalized_exchange in ['NSECM', 'NSE-EQ']:
+        normalized_exchange = 'NSE'
+    elif normalized_exchange in ['BSECM', 'BSE-EQ']:
+        normalized_exchange = 'BSE'
+    elif normalized_exchange in ['FO', 'NFO']:
+        normalized_exchange = 'NFO'
+        
+    # Fallback: Check cached Scrip Master
+    load_scrip_master()
     
+    # Try direct lookup first
+    key = f"{symbol}:{normalized_exchange}"
+    if key in ANGEL_SCRIP_MASTER:
+        return ANGEL_SCRIP_MASTER[key]
+        
+    # If not found and exchange is NSE/BSE, try adding -EQ
+    if normalized_exchange in ['NSE', 'BSE'] and not symbol.endswith('-EQ'):
+        key_eq = f"{symbol}-EQ:{normalized_exchange}"
+        if key_eq in ANGEL_SCRIP_MASTER:
+            return ANGEL_SCRIP_MASTER[key_eq]
+            
     return None
 
 
@@ -209,12 +160,9 @@ def get_all_supported_symbols(exchange: str = "NSE") -> list:
     Returns:
         List of supported symbol names (includes both stocks and ETFs for NSE)
     """
+    load_scrip_master()
     if exchange.upper() == "NSE":
-        # Combine ETFs and stocks
-        return list(NSE_ETF_TOKENS.keys()) + list(NSE_CASH_TOKENS.keys())
-    elif exchange.upper() == "BSE":
-        return list(BSE_CASH_TOKENS.keys())
-    elif exchange.upper() in ["NFO", "MCX", "CDS"]:
-        return list(NSE_FO_TOKENS.keys())
+        # Return all symbols for NSE
+        return [k.split(':')[0] for k in ANGEL_SCRIP_MASTER.keys() if ':NSE' in k]
     
     return []
