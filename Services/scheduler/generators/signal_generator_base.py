@@ -20,6 +20,32 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def _sanitize_client_json(client_json: Any) -> Any:
+    """
+    Sanitize client_json values (convert currency strings to float).
+    Example: {"ID": "₹50,000.00"} -> {"ID": 50000.0}
+    """
+    if not isinstance(client_json, dict):
+        return client_json
+        
+    sanitized = {}
+    for key, value in client_json.items():
+        if isinstance(value, str):
+            # Check if it looks like a number/currency
+            # Remove currency symbols and commas
+            clean_val = value.replace('₹', '').replace('$', '').replace(',', '').strip()
+            try:
+                # Try converting to float
+                sanitized[key] = float(clean_val)
+            except ValueError:
+                # If not a number, keep original
+                sanitized[key] = value
+        else:
+            sanitized[key] = value
+            
+    return sanitized
+
+
 def fetch_active_instances(strategy_type_val: str) -> List[Dict[str, Any]]:
     """
     Fetch all active instances for a specific strategy type from saved_instances table.
@@ -54,7 +80,7 @@ def fetch_active_instances(strategy_type_val: str) -> List[Dict[str, Any]]:
                 'run_id': instance.run_id,
                 'tickers': instance.tickers,  # JSON field
                 'strategies_parameters': instance.strategies_parameters,  # JSON field
-                'client_json': instance.client_info,  # JSON field (mapped to client_json)
+                'client_json': _sanitize_client_json(instance.client_info),  # JSON field (mapped to client_json)
                 'webhook_url': instance.webhook_url,
                 'created_at': instance.created_at
             })

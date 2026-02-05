@@ -26,5 +26,6 @@ class SavedInstance(Base):
     email_notification = Column(Boolean, default=False)
     telegram_notification = Column(Boolean, default=False)
     user_code = Column(String(100), nullable=True)
+    rem_exe_count = Column(Integer, default=0) # Added as per user request
     created_at = Column(DateTime(timezone=True), default=func.now())
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())

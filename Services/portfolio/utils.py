@@ -29,36 +29,29 @@ def get_strategy_by_run_id(run_id: str, db: Session) -> Optional[Dict]:
     - rs_stock_instance
     """
     
-    tables = [
-        ('etf_saved_strategy', 'ETF_Rotation'),
-        ('stock_saved_strategy', 'Stock_Rotation'),
-        ('rs_etf_instance', 'RS_ETF'),
-        ('rs_stock_instance', 'RS_Stocks')
-    ]
-    
-    for table_name, default_type in tables:
-        try:
-            query = text(f"""
-                SELECT id, user_id, strategy_name, strategy_type, status 
-                FROM {table_name} 
-                WHERE run_id = :run_id
-            """)
+    try:
+        query = text("""
+            SELECT id, user_id, strategy_name, strategy_type, status 
+            FROM saved_instances 
+            WHERE run_id = :run_id
+        """)
+        
+        result = db.execute(query, {"run_id": run_id}).fetchone()
+        
+        if result:
+            return {
+                'id': result[0],
+                'user_id': result[1],
+                'strategy_name': result[2],
+                'strategy_type': result[3],
+                'status': result[4] or 'deploy'
+            }
             
-            result = db.execute(query, {"run_id": run_id}).fetchone()
-            
-            if result:
-                return {
-                    'id': result[0],
-                    'user_id': result[1],
-                    'strategy_name': result[2],
-                    'strategy_type': result[3] or default_type,
-                    'status': result[4] or 'deploy'
-                }
-        except Exception as e:
-            logger.warning(f"Error querying {table_name}: {e}")
-            continue
-    
-    return None
+        return None
+        
+    except Exception as e:
+        logger.warning(f"Error querying saved_instances for run_id {run_id}: {e}")
+        return None
 
 
 def get_client_allocations(run_id: str, db: Session) -> Dict[str, float]:

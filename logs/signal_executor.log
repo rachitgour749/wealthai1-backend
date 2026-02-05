@@ -1,0 +1,223 @@
+2026-02-05 23:45:17,048 - Databases.app_data_db_connection - INFO - app_data_db_connection:193 - Successfully connected to PostgreSQL database
+2026-02-05 23:45:17,051 - Databases.app_data_db_connection - INFO - app_data_db_connection:194 - PostgreSQL version: PostgreSQL 17.7 (bdd1736) on aarch64-unknown-linux...
+2026-02-05 23:45:17,141 - SignalExecutor - INFO - signal_executor:209 - Starting Signal Execution...
+2026-02-05 23:45:17,430 - SignalExecutor - INFO - signal_executor:93 - Fetched 1 pending signals.
+2026-02-05 23:45:17,431 - SignalExecutor - INFO - signal_executor:216 - Processing signal 24 for INFRABEES
+2026-02-05 23:45:17,432 - SignalExecutor - WARNING - signal_executor:255 - Unknown webhook URL format for signal 24: marketai1
+2026-02-05 23:45:17,434 - SignalExecutor - INFO - signal_executor:285 - Signal Execution Completed.
+2026-02-05 23:52:37,172 - Databases.app_data_db_connection - INFO - app_data_db_connection:193 - Successfully connected to PostgreSQL database
+2026-02-05 23:52:37,173 - Databases.app_data_db_connection - INFO - app_data_db_connection:194 - PostgreSQL version: PostgreSQL 17.7 (bdd1736) on aarch64-unknown-linux...
+2026-02-05 23:52:38,017 - SignalExecutor - INFO - signal_executor:215 - ============================================================
+2026-02-05 23:52:38,019 - SignalExecutor - INFO - signal_executor:216 - STARTING SIGNAL EXECUTION
+2026-02-05 23:52:38,019 - SignalExecutor - INFO - signal_executor:217 - ============================================================
+2026-02-05 23:52:38,020 - SignalExecutor - INFO - signal_executor:220 - STEP 1: Fetching pending signals from database...
+2026-02-05 23:52:38,288 - SignalExecutor - INFO - signal_executor:93 - Fetched 1 pending signals.
+2026-02-05 23:52:38,288 - SignalExecutor - INFO - signal_executor:229 - ----------------------------------------
+2026-02-05 23:52:38,289 - SignalExecutor - INFO - signal_executor:230 - PROCESSING SIGNAL ID: 24
+2026-02-05 23:52:38,289 - SignalExecutor - INFO - signal_executor:231 - ----------------------------------------
+2026-02-05 23:52:38,290 - SignalExecutor - INFO - signal_executor:234 - FETCHED DATA:
+2026-02-05 23:52:38,291 - SignalExecutor - INFO - signal_executor:235 -   - Symbol: INFRABEES
+2026-02-05 23:52:38,292 - SignalExecutor - INFO - signal_executor:236 -   - User ID: rachit.gour749@gmail.com
+2026-02-05 23:52:38,293 - SignalExecutor - INFO - signal_executor:237 -   - Run ID: ETF_310126_34
+2026-02-05 23:52:38,294 - SignalExecutor - INFO - signal_executor:238 -   - Strategy: ETF_Rotation
+2026-02-05 23:52:38,295 - SignalExecutor - INFO - signal_executor:239 -   - Order Side: BUY
+2026-02-05 23:52:38,296 - SignalExecutor - INFO - signal_executor:240 -   - Price: 926.6099853515625
+2026-02-05 23:52:38,297 - SignalExecutor - INFO - signal_executor:241 -   - Client JSON: {'R61829242': 1923.0}
+2026-02-05 23:52:38,297 - SignalExecutor - INFO - signal_executor:242 -   - Webhook URL: marketai1
+2026-02-05 23:52:38,298 - SignalExecutor - INFO - signal_executor:251 - LOGIC DETECTION: Webhook URL is 'marketai1' -> MarketAI Mode: False
+2026-02-05 23:52:38,298 - SignalExecutor - WARNING - signal_executor:302 - ⚠️  Unknown or Invalid Webhook URL format: marketai1
+2026-02-05 23:52:38,301 - SignalExecutor - WARNING - signal_executor:303 - Skipping execution for this signal.
+2026-02-05 23:52:38,301 - SignalExecutor - INFO - signal_executor:335 - ============================================================
+2026-02-05 23:52:38,302 - SignalExecutor - INFO - signal_executor:336 - SIGNAL EXECUTION COMPLETED
+2026-02-05 23:52:38,303 - SignalExecutor - INFO - signal_executor:337 - ============================================================
+2026-02-05 23:54:58,810 - Databases.app_data_db_connection - INFO - app_data_db_connection:193 - Successfully connected to PostgreSQL database
+2026-02-05 23:54:58,811 - Databases.app_data_db_connection - INFO - app_data_db_connection:194 - PostgreSQL version: PostgreSQL 17.7 (bdd1736) on aarch64-unknown-linux...
+2026-02-05 23:54:58,900 - SignalExecutor - INFO - signal_executor:215 - ============================================================
+2026-02-05 23:54:58,901 - SignalExecutor - INFO - signal_executor:216 - STARTING SIGNAL EXECUTION
+2026-02-05 23:54:58,902 - SignalExecutor - INFO - signal_executor:217 - ============================================================
+2026-02-05 23:54:58,902 - SignalExecutor - INFO - signal_executor:220 - STEP 1: Fetching pending signals from database...
+2026-02-05 23:54:59,209 - SignalExecutor - INFO - signal_executor:93 - Fetched 1 pending signals.
+2026-02-05 23:54:59,210 - SignalExecutor - INFO - signal_executor:229 - ----------------------------------------
+2026-02-05 23:54:59,211 - SignalExecutor - INFO - signal_executor:230 - PROCESSING SIGNAL ID: 24
+2026-02-05 23:54:59,211 - SignalExecutor - INFO - signal_executor:231 - ----------------------------------------
+2026-02-05 23:54:59,212 - SignalExecutor - INFO - signal_executor:234 - FETCHED DATA:
+2026-02-05 23:54:59,213 - SignalExecutor - INFO - signal_executor:235 -   - Symbol: INFRABEES
+2026-02-05 23:54:59,214 - SignalExecutor - INFO - signal_executor:236 -   - User ID: rachit.gour749@gmail.com
+2026-02-05 23:54:59,214 - SignalExecutor - INFO - signal_executor:237 -   - Run ID: ETF_310126_34
+2026-02-05 23:54:59,215 - SignalExecutor - INFO - signal_executor:238 -   - Strategy: ETF_Rotation
+2026-02-05 23:54:59,216 - SignalExecutor - INFO - signal_executor:239 -   - Order Side: BUY
+2026-02-05 23:54:59,217 - SignalExecutor - INFO - signal_executor:240 -   - Price: 926.6099853515625
+2026-02-05 23:54:59,218 - SignalExecutor - INFO - signal_executor:241 -   - Client JSON: {'R61829242': 1923.0}
+2026-02-05 23:54:59,218 - SignalExecutor - INFO - signal_executor:242 -   - Webhook URL: marketai
+2026-02-05 23:54:59,219 - SignalExecutor - INFO - signal_executor:251 - LOGIC DETECTION: Webhook URL is 'marketai' -> MarketAI Mode: True
+2026-02-05 23:54:59,220 - SignalExecutor - INFO - signal_executor:255 - STEP 2: Preparing MarketAI Payload...
+2026-02-05 23:54:59,221 - SignalExecutor - INFO - signal_executor:259 - PREPARED PAYLOAD (MarketAI):
+{
+  "exchange": "NSE",
+  "symbol": "INFRABEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "2"
+  }
+}
+2026-02-05 23:54:59,223 - SignalExecutor - INFO - signal_executor:261 - STEP 3: Executing Order via Broker API (https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/broker/place_order)...
+2026-02-05 23:55:01,865 - SignalExecutor - INFO - signal_executor:264 - API RESPONSE: Status Code 200
+2026-02-05 23:55:01,866 - SignalExecutor - INFO - signal_executor:265 - API RESPONSE BODY: {"status":"success","message":"Orders processed for 1 clients","results":[{"symbol":"INFRABEES","client_id":"R61829242","quantity":"2","status":"success","message":"SUCCESS","order_id":null}],"summary":{"total":1,"success":1,"failed":0}}
+2026-02-05 23:55:01,867 - SignalExecutor - INFO - signal_executor:269 - ✅ MarketAI Order Placed Successfully.
+2026-02-05 23:55:01,868 - SignalExecutor - INFO - signal_executor:308 - STEP 4: Notifying Portfolio Service...
+2026-02-05 23:55:01,869 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "ETF_310126_34",
+  "exchange": "NSE",
+  "symbol": "INFRABEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "2"
+  },
+  "trade_date": "2026-02-05"
+}
+2026-02-05 23:55:01,870 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-05 23:55:03,917 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 404
+2026-02-05 23:55:03,918 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"detail":"Strategy not found for run_id: ETF_310126_34"}
+2026-02-05 23:55:03,918 - SignalExecutor - ERROR - signal_executor:183 - ❌ Portfolio notification failed.
+2026-02-05 23:55:03,921 - SignalExecutor - INFO - signal_executor:312 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-05 23:55:04,110 - SignalExecutor - INFO - signal_executor:316 - Signal updated.
+2026-02-05 23:55:04,382 - SignalExecutor - INFO - signal_executor:320 - STEP 6: Updating Instance for Run ID ETF_310126_34...
+2026-02-05 23:55:04,571 - SignalExecutor - ERROR - signal_executor:210 - Error updating instance 12: unsupported operand type(s) for -: 'str' and 'int'
+2026-02-05 23:55:04,660 - SignalExecutor - INFO - signal_executor:335 - ============================================================
+2026-02-05 23:55:04,660 - SignalExecutor - INFO - signal_executor:336 - SIGNAL EXECUTION COMPLETED
+2026-02-05 23:55:04,661 - SignalExecutor - INFO - signal_executor:337 - ============================================================
+2026-02-06 00:04:59,107 - Databases.app_data_db_connection - INFO - app_data_db_connection:193 - Successfully connected to PostgreSQL database
+2026-02-06 00:04:59,109 - Databases.app_data_db_connection - INFO - app_data_db_connection:194 - PostgreSQL version: PostgreSQL 17.7 (bdd1736) on aarch64-unknown-linux...
+2026-02-06 00:04:59,198 - SignalExecutor - INFO - signal_executor:220 - ============================================================
+2026-02-06 00:04:59,199 - SignalExecutor - INFO - signal_executor:221 - STARTING SIGNAL EXECUTION
+2026-02-06 00:04:59,200 - SignalExecutor - INFO - signal_executor:222 - ============================================================
+2026-02-06 00:04:59,201 - SignalExecutor - INFO - signal_executor:225 - STEP 1: Fetching pending signals from database...
+2026-02-06 00:04:59,496 - SignalExecutor - INFO - signal_executor:93 - Fetched 1 pending signals.
+2026-02-06 00:04:59,496 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-06 00:04:59,498 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 24
+2026-02-06 00:04:59,499 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-06 00:04:59,499 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-06 00:04:59,500 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: INFRABEES
+2026-02-06 00:04:59,500 - SignalExecutor - INFO - signal_executor:241 -   - User ID: rachit.gour749@gmail.com
+2026-02-06 00:04:59,501 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: ETF_310126_34
+2026-02-06 00:04:59,501 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-06 00:04:59,502 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-06 00:04:59,502 - SignalExecutor - INFO - signal_executor:245 -   - Price: 926.6099853515625
+2026-02-06 00:04:59,503 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'R61829242': 1923.0}
+2026-02-06 00:04:59,503 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: marketai
+2026-02-06 00:04:59,504 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'marketai' -> MarketAI Mode: True
+2026-02-06 00:04:59,505 - SignalExecutor - INFO - signal_executor:260 - STEP 2: Preparing MarketAI Payload...
+2026-02-06 00:04:59,506 - SignalExecutor - INFO - signal_executor:264 - PREPARED PAYLOAD (MarketAI):
+{
+  "exchange": "NSE",
+  "symbol": "INFRABEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "2"
+  }
+}
+2026-02-06 00:04:59,507 - SignalExecutor - INFO - signal_executor:266 - STEP 3: Executing Order via Broker API (https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/broker/place_order)...
+2026-02-06 00:05:01,825 - SignalExecutor - INFO - signal_executor:269 - API RESPONSE: Status Code 200
+2026-02-06 00:05:01,825 - SignalExecutor - INFO - signal_executor:270 - API RESPONSE BODY: {"status":"error","message":"Orders processed for 1 clients","results":[{"symbol":"INFRABEES","client_id":"R61829242","quantity":"2","status":"error","message":"Invalid Token"}],"summary":{"total":1,"success":0,"failed":1}}
+2026-02-06 00:05:01,826 - SignalExecutor - INFO - signal_executor:274 - ✅ MarketAI Order Placed Successfully.
+2026-02-06 00:05:01,826 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-06 00:05:01,827 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "ETF_310126_34",
+  "exchange": "NSE",
+  "symbol": "INFRABEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "2"
+  },
+  "trade_date": "2026-02-06"
+}
+2026-02-06 00:05:01,828 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-06 00:05:03,478 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 404
+2026-02-06 00:05:03,479 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"detail":"Strategy not found for run_id: ETF_310126_34"}
+2026-02-06 00:05:03,479 - SignalExecutor - ERROR - signal_executor:183 - ❌ Portfolio notification failed.
+2026-02-06 00:05:03,483 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-06 00:05:03,671 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-06 00:05:03,942 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID ETF_310126_34...
+2026-02-06 00:05:04,590 - SignalExecutor - INFO - signal_executor:212 - Updated instance 12: rem_exe_count=41, next_exec=2026-02-09 00:05:04.131474
+2026-02-06 00:05:04,591 - SignalExecutor - INFO - signal_executor:340 - ============================================================
+2026-02-06 00:05:04,591 - SignalExecutor - INFO - signal_executor:341 - SIGNAL EXECUTION COMPLETED
+2026-02-06 00:05:04,592 - SignalExecutor - INFO - signal_executor:342 - ============================================================
+2026-02-06 00:09:38,908 - Databases.app_data_db_connection - INFO - app_data_db_connection:193 - Successfully connected to PostgreSQL database
+2026-02-06 00:09:38,909 - Databases.app_data_db_connection - INFO - app_data_db_connection:194 - PostgreSQL version: PostgreSQL 17.7 (bdd1736) on aarch64-unknown-linux...
+2026-02-06 00:09:38,997 - SignalExecutor - INFO - signal_executor:220 - ============================================================
+2026-02-06 00:09:38,998 - SignalExecutor - INFO - signal_executor:221 - STARTING SIGNAL EXECUTION
+2026-02-06 00:09:38,999 - SignalExecutor - INFO - signal_executor:222 - ============================================================
+2026-02-06 00:09:38,999 - SignalExecutor - INFO - signal_executor:225 - STEP 1: Fetching pending signals from database...
+2026-02-06 00:09:39,337 - SignalExecutor - INFO - signal_executor:93 - Fetched 0 pending signals.
+2026-02-06 00:09:39,337 - SignalExecutor - INFO - signal_executor:229 - No pending signals found. Exiting.
+2026-02-06 00:11:30,286 - Databases.app_data_db_connection - INFO - app_data_db_connection:193 - Successfully connected to PostgreSQL database
+2026-02-06 00:11:30,287 - Databases.app_data_db_connection - INFO - app_data_db_connection:194 - PostgreSQL version: PostgreSQL 17.7 (bdd1736) on aarch64-unknown-linux...
+2026-02-06 00:11:30,377 - SignalExecutor - INFO - signal_executor:220 - ============================================================
+2026-02-06 00:11:30,377 - SignalExecutor - INFO - signal_executor:221 - STARTING SIGNAL EXECUTION
+2026-02-06 00:11:30,378 - SignalExecutor - INFO - signal_executor:222 - ============================================================
+2026-02-06 00:11:30,379 - SignalExecutor - INFO - signal_executor:225 - STEP 1: Fetching pending signals from database...
+2026-02-06 00:11:30,677 - SignalExecutor - INFO - signal_executor:93 - Fetched 1 pending signals.
+2026-02-06 00:11:30,678 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-06 00:11:30,679 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 24
+2026-02-06 00:11:30,679 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-06 00:11:30,680 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-06 00:11:30,680 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: INFRABEES
+2026-02-06 00:11:30,681 - SignalExecutor - INFO - signal_executor:241 -   - User ID: rachit.gour749@gmail.com
+2026-02-06 00:11:30,681 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: ETF_310126_34
+2026-02-06 00:11:30,681 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-06 00:11:30,682 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-06 00:11:30,682 - SignalExecutor - INFO - signal_executor:245 -   - Price: 926.6099853515625
+2026-02-06 00:11:30,683 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'R61829242': 1923.0}
+2026-02-06 00:11:30,684 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: marketai
+2026-02-06 00:11:30,685 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'marketai' -> MarketAI Mode: True
+2026-02-06 00:11:30,685 - SignalExecutor - INFO - signal_executor:260 - STEP 2: Preparing MarketAI Payload...
+2026-02-06 00:11:30,686 - SignalExecutor - INFO - signal_executor:264 - PREPARED PAYLOAD (MarketAI):
+{
+  "exchange": "NSE",
+  "symbol": "INFRABEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "2"
+  }
+}
+2026-02-06 00:11:30,687 - SignalExecutor - INFO - signal_executor:266 - STEP 3: Executing Order via Broker API (http://localhost:8000/api/broker/place_order)...
+2026-02-06 00:11:36,977 - SignalExecutor - INFO - signal_executor:269 - API RESPONSE: Status Code 200
+2026-02-06 00:11:36,978 - SignalExecutor - INFO - signal_executor:270 - API RESPONSE BODY: {"status":"error","message":"Orders processed for 1 clients","results":[{"symbol":"INFRABEES","client_id":"R61829242","quantity":"2","status":"error","message":"Invalid Token"}],"summary":{"total":1,"success":0,"failed":1}}
+2026-02-06 00:11:36,978 - SignalExecutor - INFO - signal_executor:274 - ✅ MarketAI Order Placed Successfully.
+2026-02-06 00:11:36,979 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-06 00:11:36,979 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "ETF_310126_34",
+  "exchange": "NSE",
+  "symbol": "INFRABEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "2"
+  },
+  "trade_date": "2026-02-06"
+}
+2026-02-06 00:11:36,980 - SignalExecutor - INFO - signal_executor:172 - Sending to http://localhost:8000/api/portfolio/webhook/trade-executed...
+2026-02-06 00:11:40,109 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 200
+2026-02-06 00:11:40,110 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"success":true,"message":"Created 1 trade records","trades":[{"client_code":"R61829242","symbol":"INFRABEES","side":"BUY","quantity":2,"price":978.6400146484375}]}
+2026-02-06 00:11:40,110 - SignalExecutor - INFO - signal_executor:180 - ✅ Portfolio notification success.
+2026-02-06 00:11:40,111 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-06 00:11:40,294 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-06 00:11:40,566 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID ETF_310126_34...
+2026-02-06 00:11:41,214 - SignalExecutor - INFO - signal_executor:212 - Updated instance 12: rem_exe_count=40, next_exec=2026-02-09 00:11:40.753664
+2026-02-06 00:11:41,215 - SignalExecutor - INFO - signal_executor:340 - ============================================================
+2026-02-06 00:11:41,216 - SignalExecutor - INFO - signal_executor:341 - SIGNAL EXECUTION COMPLETED
+2026-02-06 00:11:41,216 - SignalExecutor - INFO - signal_executor:342 - ============================================================
