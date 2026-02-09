@@ -22,11 +22,7 @@ def get_strategy_by_run_id(run_id: str, db: Session) -> Optional[Dict]:
     """
     Get strategy details from run_id
     
-    Searches across all strategy tables:
-    - etf_saved_strategy
-    - stock_saved_strategy
-    - rs_etf_instance
-    - rs_stock_instance
+    Queries the saved_instances table only.
     """
     
     try:
@@ -60,7 +56,7 @@ def get_client_allocations(run_id: str, db: Session) -> Dict[str, float]:
     Returns: Dict[client_code, capital_amount]
     """
     try:
-        # 1. Check saved_instances first (new standard)
+        # Query saved_instances table only
         query_client_info = text("""
             SELECT client_info
             FROM saved_instances
@@ -68,60 +64,37 @@ def get_client_allocations(run_id: str, db: Session) -> Dict[str, float]:
         """)
         
         client_info_result = db.execute(query_client_info, {"run_id": run_id}).fetchone()
-        client_info = None
         
-        if client_info_result and client_info_result[0]:
-            client_info = client_info_result[0]
-        else:
-            # 2. Fallback to legacy tables
-            legacy_tables = [
-                'etf_saved_strategy',
-                'stock_saved_strategy',
-                'rs_etf_instance',
-                'rs_stock_instance'
-            ]
-            
-            for table in legacy_tables:
-                try:
-                    query_legacy = text(f"""
-                        SELECT client_information_json
-                        FROM {table}
-                        WHERE run_id = :run_id
-                    """)
-                    legacy_result = db.execute(query_legacy, {"run_id": run_id}).fetchone()
-                    
-                    if legacy_result and legacy_result[0]:
-                        client_info = legacy_result[0]
-                        break
-                except Exception as e:
-                    logger.warning(f"Error checking {table} for client info: {e}")
-                    continue
+        if not client_info_result or not client_info_result[0]:
+            logger.warning(f"No client_info found in saved_instances for run_id={run_id}")
+            return {}
         
+        client_info = client_info_result[0]
         allocations = {}
         
-        if client_info:
-            # Parse if string
-            if isinstance(client_info, str):
-                try:
-                    client_info = json.loads(client_info)
-                except:
-                    logger.warning(f"Could not parse client_info JSON for run_id={run_id}")
-                    return {}
-            
-            # Process values
-            for client_code, capital_str in client_info.items():
-                try:
-                    # Clean currency string: remove ₹, $, commas, and spaces
-                    cleaned_capital = str(capital_str).replace('₹', '').replace('$', '').replace(',', '').strip()
-                    allocations[client_code] = float(cleaned_capital)
-                except (ValueError, TypeError) as e:
-                    logger.warning(f"Could not convert capital to float for client {client_code}: {e}")
-                    continue
-                    
+        # Parse if string
+        if isinstance(client_info, str):
+            try:
+                client_info = json.loads(client_info)
+            except Exception as e:
+                logger.warning(f"Could not parse client_info JSON for run_id={run_id}: {e}")
+                return {}
+        
+        # Process values
+        for client_code, capital_str in client_info.items():
+            try:
+                # Clean currency string: remove ₹, $, commas, and spaces
+                cleaned_capital = str(capital_str).replace('₹', '').replace('$', '').replace(',', '').strip()
+                allocations[client_code] = float(cleaned_capital)
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Could not convert capital to float for client {client_code}: {e}")
+                continue
+                
         return allocations
         
     except Exception as e:
         logger.error(f"Error fetching client allocations for {run_id}: {e}")
+        db.rollback()
         return {}
 
 

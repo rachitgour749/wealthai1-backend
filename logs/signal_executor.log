@@ -221,3 +221,336 @@
 2026-02-06 00:11:41,215 - SignalExecutor - INFO - signal_executor:340 - ============================================================
 2026-02-06 00:11:41,216 - SignalExecutor - INFO - signal_executor:341 - SIGNAL EXECUTION COMPLETED
 2026-02-06 00:11:41,216 - SignalExecutor - INFO - signal_executor:342 - ============================================================
+2026-02-07 21:49:42,790 - Databases.app_data_db_connection - INFO - app_data_db_connection:193 - Successfully connected to PostgreSQL database
+2026-02-07 21:49:42,793 - Databases.app_data_db_connection - INFO - app_data_db_connection:194 - PostgreSQL version: PostgreSQL 17.7 (bdd1736) on aarch64-unknown-linux...
+2026-02-07 21:49:42,881 - SignalExecutor - INFO - signal_executor:220 - ============================================================
+2026-02-07 21:49:42,882 - SignalExecutor - INFO - signal_executor:221 - STARTING SIGNAL EXECUTION
+2026-02-07 21:49:42,883 - SignalExecutor - INFO - signal_executor:222 - ============================================================
+2026-02-07 21:49:42,883 - SignalExecutor - INFO - signal_executor:225 - STEP 1: Fetching pending signals from database...
+2026-02-07 21:49:43,190 - SignalExecutor - INFO - signal_executor:93 - Fetched 1 pending signals.
+2026-02-07 21:49:43,192 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-07 21:49:43,192 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 36
+2026-02-07 21:49:43,194 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-07 21:49:43,195 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-07 21:49:43,196 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: INFRABEES
+2026-02-07 21:49:43,197 - SignalExecutor - INFO - signal_executor:241 -   - User ID: rachit.gour749@gmail.com
+2026-02-07 21:49:43,199 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: ETF_310126_34
+2026-02-07 21:49:43,201 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-07 21:49:43,202 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-07 21:49:43,203 - SignalExecutor - INFO - signal_executor:245 -   - Price: 926.6099853515625
+2026-02-07 21:49:43,205 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'R61829242': 1923.0}
+2026-02-07 21:49:43,207 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: marketai1
+2026-02-07 21:49:43,208 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'marketai1' -> MarketAI Mode: False
+2026-02-07 21:49:43,209 - SignalExecutor - WARNING - signal_executor:307 - ⚠️  Unknown or Invalid Webhook URL format: marketai1
+2026-02-07 21:49:43,210 - SignalExecutor - WARNING - signal_executor:308 - Skipping execution for this signal.
+2026-02-07 21:49:43,212 - SignalExecutor - INFO - signal_executor:340 - ============================================================
+2026-02-07 21:49:43,213 - SignalExecutor - INFO - signal_executor:341 - SIGNAL EXECUTION COMPLETED
+2026-02-07 21:49:43,215 - SignalExecutor - INFO - signal_executor:342 - ============================================================
+2026-02-07 21:50:34,128 - Databases.app_data_db_connection - INFO - app_data_db_connection:193 - Successfully connected to PostgreSQL database
+2026-02-07 21:50:34,129 - Databases.app_data_db_connection - INFO - app_data_db_connection:194 - PostgreSQL version: PostgreSQL 17.7 (bdd1736) on aarch64-unknown-linux...
+2026-02-07 21:50:34,219 - SignalExecutor - INFO - signal_executor:220 - ============================================================
+2026-02-07 21:50:34,219 - SignalExecutor - INFO - signal_executor:221 - STARTING SIGNAL EXECUTION
+2026-02-07 21:50:34,219 - SignalExecutor - INFO - signal_executor:222 - ============================================================
+2026-02-07 21:50:34,219 - SignalExecutor - INFO - signal_executor:225 - STEP 1: Fetching pending signals from database...
+2026-02-07 21:50:34,519 - SignalExecutor - INFO - signal_executor:93 - Fetched 1 pending signals.
+2026-02-07 21:50:34,520 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-07 21:50:34,521 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 36
+2026-02-07 21:50:34,523 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-07 21:50:34,525 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-07 21:50:34,525 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: INFRABEES
+2026-02-07 21:50:34,527 - SignalExecutor - INFO - signal_executor:241 -   - User ID: rachit.gour749@gmail.com
+2026-02-07 21:50:34,528 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: ETF_310126_34
+2026-02-07 21:50:34,530 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-07 21:50:34,531 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-07 21:50:34,532 - SignalExecutor - INFO - signal_executor:245 -   - Price: 926.6099853515625
+2026-02-07 21:50:34,533 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'R61829242': 1923.0}
+2026-02-07 21:50:34,535 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: marketai
+2026-02-07 21:50:34,537 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'marketai' -> MarketAI Mode: True
+2026-02-07 21:50:34,538 - SignalExecutor - INFO - signal_executor:260 - STEP 2: Preparing MarketAI Payload...
+2026-02-07 21:50:34,540 - SignalExecutor - INFO - signal_executor:264 - PREPARED PAYLOAD (MarketAI):
+{
+  "exchange": "NSE",
+  "symbol": "INFRABEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "2"
+  }
+}
+2026-02-07 21:50:34,542 - SignalExecutor - INFO - signal_executor:266 - STEP 3: Executing Order via Broker API (https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/broker/place_order)...
+2026-02-07 21:50:38,036 - SignalExecutor - INFO - signal_executor:269 - API RESPONSE: Status Code 200
+2026-02-07 21:50:38,037 - SignalExecutor - INFO - signal_executor:270 - API RESPONSE BODY: {"status":"success","message":"Orders processed for 1 clients","results":[{"symbol":"INFRABEES","client_id":"R61829242","quantity":"2","status":"success","message":"SUCCESS","order_id":null}],"summary":{"total":1,"success":1,"failed":0}}
+2026-02-07 21:50:38,038 - SignalExecutor - INFO - signal_executor:274 - ✅ MarketAI Order Placed Successfully.
+2026-02-07 21:50:38,039 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-07 21:50:38,041 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "ETF_310126_34",
+  "exchange": "NSE",
+  "symbol": "INFRABEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "2"
+  },
+  "trade_date": "2026-02-07"
+}
+2026-02-07 21:50:38,043 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-07 21:50:40,722 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 200
+2026-02-07 21:50:40,723 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"success":true,"message":"Created 1 trade records","trades":[{"client_code":"R61829242","symbol":"INFRABEES","side":"BUY","quantity":2,"price":983.9299926757812}]}
+2026-02-07 21:50:40,724 - SignalExecutor - INFO - signal_executor:180 - ✅ Portfolio notification success.
+2026-02-07 21:50:40,730 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-07 21:50:40,942 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-07 21:50:41,212 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID ETF_310126_34...
+2026-02-07 21:50:42,049 - SignalExecutor - INFO - signal_executor:212 - Updated instance 12: rem_exe_count=39, next_exec=2026-02-09 21:50:41.411764
+2026-02-07 21:50:42,050 - SignalExecutor - INFO - signal_executor:340 - ============================================================
+2026-02-07 21:50:42,051 - SignalExecutor - INFO - signal_executor:341 - SIGNAL EXECUTION COMPLETED
+2026-02-07 21:50:42,053 - SignalExecutor - INFO - signal_executor:342 - ============================================================
+2026-02-09 10:26:29,135 - Databases.app_data_db_connection - INFO - app_data_db_connection:193 - Successfully connected to PostgreSQL database
+2026-02-09 10:26:29,137 - Databases.app_data_db_connection - INFO - app_data_db_connection:194 - PostgreSQL version: PostgreSQL 17.7 (bdd1736) on aarch64-unknown-linux...
+2026-02-09 10:26:29,233 - SignalExecutor - INFO - signal_executor:220 - ============================================================
+2026-02-09 10:26:29,234 - SignalExecutor - INFO - signal_executor:221 - STARTING SIGNAL EXECUTION
+2026-02-09 10:26:29,234 - SignalExecutor - INFO - signal_executor:222 - ============================================================
+2026-02-09 10:26:29,235 - SignalExecutor - INFO - signal_executor:225 - STEP 1: Fetching pending signals from database...
+2026-02-09 10:26:29,551 - SignalExecutor - INFO - signal_executor:93 - Fetched 5 pending signals.
+2026-02-09 10:26:29,583 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-09 10:26:29,617 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 43
+2026-02-09 10:26:29,674 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-09 10:26:29,691 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-09 10:26:29,692 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: PHARMABEES
+2026-02-09 10:26:29,694 - SignalExecutor - INFO - signal_executor:241 -   - User ID: trade.moneycompound@gmail.com
+2026-02-09 10:26:29,696 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-09 10:26:29,697 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-09 10:26:29,698 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-09 10:26:29,699 - SignalExecutor - INFO - signal_executor:245 -   - Price: 22.489999771118164
+2026-02-09 10:26:29,701 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'SRKH5002': 10000.0, 'EAOPE1486': 5000.0}
+2026-02-09 10:26:29,702 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: http://tradeai1.wealthwisers.in/websoket/tradeView-data/0707454e5e36/
+2026-02-09 10:26:29,704 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'http://tradeai1.wealthwisers.in/websoket/tradeView-data/0707454e5e36/' -> MarketAI Mode: False
+2026-02-09 10:26:29,704 - SignalExecutor - INFO - signal_executor:285 - STEP 2: Preparing Standard Webhook Payload for http://tradeai1.wealthwisers.in/websoket/tradeView-data/0707454e5e36/...
+2026-02-09 10:26:29,705 - SignalExecutor - INFO - signal_executor:289 - PREPARED PAYLOAD (Standard):
+{
+  "exchange": "NSE",
+  "symbol": "PHARMABEES",
+  "user_id": "trade.moneycompound@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "SRKH5002": "444",
+    "EAOPE1486": "222"
+  }
+}
+2026-02-09 10:26:29,706 - SignalExecutor - INFO - signal_executor:291 - STEP 3: Sending Webhook to http://tradeai1.wealthwisers.in/websoket/tradeView-data/0707454e5e36/...
+2026-02-09 10:26:29,809 - SignalExecutor - INFO - signal_executor:294 - WEBHOOK RESPONSE: Status Code 201
+2026-02-09 10:26:29,810 - SignalExecutor - INFO - signal_executor:295 - WEBHOOK RESPONSE BODY: {"success": true, "unique_code": "0707454e5e36"}
+2026-02-09 10:26:29,810 - SignalExecutor - INFO - signal_executor:299 - ✅ Standard Webhook Success.
+2026-02-09 10:26:29,811 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-09 10:26:29,812 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023",
+  "exchange": "NSE",
+  "symbol": "PHARMABEES",
+  "user_id": "trade.moneycompound@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "SRKH5002": "444",
+    "EAOPE1486": "222"
+  },
+  "trade_date": "2026-02-09"
+}
+2026-02-09 10:26:29,813 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-09 10:26:32,061 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 200
+2026-02-09 10:26:32,063 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"success":true,"message":"Created 2 trade records","trades":[{"client_code":"SRKH5002","symbol":"PHARMABEES","side":"BUY","quantity":444,"price":22.75},{"client_code":"EAOPE1486","symbol":"PHARMABEES","side":"BUY","quantity":222,"price":22.75}]}
+2026-02-09 10:26:32,064 - SignalExecutor - INFO - signal_executor:180 - ✅ Portfolio notification success.
+2026-02-09 10:26:32,068 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-09 10:26:32,296 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-09 10:26:32,627 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023...
+2026-02-09 10:26:33,415 - SignalExecutor - INFO - signal_executor:212 - Updated instance 1: rem_exe_count=40, next_exec=2026-02-16 10:26:32.868376
+2026-02-09 10:26:33,431 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-09 10:26:33,557 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 45
+2026-02-09 10:26:33,558 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-09 10:26:33,559 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-09 10:26:33,559 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: NIFTYBEES
+2026-02-09 10:26:33,560 - SignalExecutor - INFO - signal_executor:241 -   - User ID: arindam.day@gmail.com
+2026-02-09 10:26:33,561 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: run_etfs_rotation_strategy_2000_investment_plan_1767434584
+2026-02-09 10:26:33,561 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-09 10:26:33,563 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-09 10:26:33,563 - SignalExecutor - INFO - signal_executor:245 -   - Price: 290.6499938964844
+2026-02-09 10:26:33,563 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'AAAL374353': 1923.08}
+2026-02-09 10:26:33,564 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: http://tradeai1.wealthwisers.in/websoket/tradeView-data/98fc2f857bfa/
+2026-02-09 10:26:33,565 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'http://tradeai1.wealthwisers.in/websoket/tradeView-data/98fc2f857bfa/' -> MarketAI Mode: False
+2026-02-09 10:26:33,566 - SignalExecutor - INFO - signal_executor:285 - STEP 2: Preparing Standard Webhook Payload for http://tradeai1.wealthwisers.in/websoket/tradeView-data/98fc2f857bfa/...
+2026-02-09 10:26:33,567 - SignalExecutor - INFO - signal_executor:289 - PREPARED PAYLOAD (Standard):
+{
+  "exchange": "NSE",
+  "symbol": "NIFTYBEES",
+  "user_id": "arindam.day@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "AAAL374353": "6"
+  }
+}
+2026-02-09 10:26:33,567 - SignalExecutor - INFO - signal_executor:291 - STEP 3: Sending Webhook to http://tradeai1.wealthwisers.in/websoket/tradeView-data/98fc2f857bfa/...
+2026-02-09 10:26:33,677 - SignalExecutor - INFO - signal_executor:294 - WEBHOOK RESPONSE: Status Code 201
+2026-02-09 10:26:33,678 - SignalExecutor - INFO - signal_executor:295 - WEBHOOK RESPONSE BODY: {"success": true, "unique_code": "98fc2f857bfa"}
+2026-02-09 10:26:33,679 - SignalExecutor - INFO - signal_executor:299 - ✅ Standard Webhook Success.
+2026-02-09 10:26:33,680 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-09 10:26:33,680 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "run_etfs_rotation_strategy_2000_investment_plan_1767434584",
+  "exchange": "NSE",
+  "symbol": "NIFTYBEES",
+  "user_id": "arindam.day@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "AAAL374353": "6"
+  },
+  "trade_date": "2026-02-09"
+}
+2026-02-09 10:26:33,681 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-09 10:26:35,495 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 200
+2026-02-09 10:26:35,495 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"success":true,"message":"Created 1 trade records","trades":[{"client_code":"AAAL374353","symbol":"NIFTYBEES","side":"BUY","quantity":6,"price":292.29998779296875}]}
+2026-02-09 10:26:35,496 - SignalExecutor - INFO - signal_executor:180 - ✅ Portfolio notification success.
+2026-02-09 10:26:35,499 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-09 10:26:35,724 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-09 10:26:36,057 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID run_etfs_rotation_strategy_2000_investment_plan_1767434584...
+2026-02-09 10:26:36,834 - SignalExecutor - INFO - signal_executor:212 - Updated instance 3: rem_exe_count=46, next_exec=2026-02-16 10:26:36.277688
+2026-02-09 10:26:36,835 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-09 10:26:36,944 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 46
+2026-02-09 10:26:36,945 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-09 10:26:36,946 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-09 10:26:36,946 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: NIFTYBEES
+2026-02-09 10:26:36,947 - SignalExecutor - INFO - signal_executor:241 -   - User ID: arooshipkl@gmail.com
+2026-02-09 10:26:36,947 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: run_etfs_rotation_strategy_nitin_1769586494
+2026-02-09 10:26:36,948 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-09 10:26:36,948 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-09 10:26:36,949 - SignalExecutor - INFO - signal_executor:245 -   - Price: 290.6499938964844
+2026-02-09 10:26:36,950 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'SAND1201': 1923.08}
+2026-02-09 10:26:36,951 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: http://tradeai1.wealthwisers.in/websoket/tradeView-data/aa3389e16660/
+2026-02-09 10:26:36,951 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'http://tradeai1.wealthwisers.in/websoket/tradeView-data/aa3389e16660/' -> MarketAI Mode: False
+2026-02-09 10:26:36,952 - SignalExecutor - INFO - signal_executor:285 - STEP 2: Preparing Standard Webhook Payload for http://tradeai1.wealthwisers.in/websoket/tradeView-data/aa3389e16660/...
+2026-02-09 10:26:36,953 - SignalExecutor - INFO - signal_executor:289 - PREPARED PAYLOAD (Standard):
+{
+  "exchange": "NSE",
+  "symbol": "NIFTYBEES",
+  "user_id": "arooshipkl@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "SAND1201": "6"
+  }
+}
+2026-02-09 10:26:36,954 - SignalExecutor - INFO - signal_executor:291 - STEP 3: Sending Webhook to http://tradeai1.wealthwisers.in/websoket/tradeView-data/aa3389e16660/...
+2026-02-09 10:26:37,048 - SignalExecutor - INFO - signal_executor:294 - WEBHOOK RESPONSE: Status Code 201
+2026-02-09 10:26:37,048 - SignalExecutor - INFO - signal_executor:295 - WEBHOOK RESPONSE BODY: {"success": true, "unique_code": "aa3389e16660"}
+2026-02-09 10:26:37,049 - SignalExecutor - INFO - signal_executor:299 - ✅ Standard Webhook Success.
+2026-02-09 10:26:37,050 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-09 10:26:37,050 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "run_etfs_rotation_strategy_nitin_1769586494",
+  "exchange": "NSE",
+  "symbol": "NIFTYBEES",
+  "user_id": "arooshipkl@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "SAND1201": "6"
+  },
+  "trade_date": "2026-02-09"
+}
+2026-02-09 10:26:37,052 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-09 10:26:38,784 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 200
+2026-02-09 10:26:38,784 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"success":true,"message":"Created 1 trade records","trades":[{"client_code":"SAND1201","symbol":"NIFTYBEES","side":"BUY","quantity":6,"price":292.29998779296875}]}
+2026-02-09 10:26:38,786 - SignalExecutor - INFO - signal_executor:180 - ✅ Portfolio notification success.
+2026-02-09 10:26:38,789 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-09 10:26:39,013 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-09 10:26:39,344 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID run_etfs_rotation_strategy_nitin_1769586494...
+2026-02-09 10:26:40,133 - SignalExecutor - INFO - signal_executor:212 - Updated instance 6: rem_exe_count=50, next_exec=2026-02-16 10:26:39.583478
+2026-02-09 10:26:40,134 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-09 10:26:40,246 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 47
+2026-02-09 10:26:40,247 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-09 10:26:40,247 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-09 10:26:40,248 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: NIFTYBEES
+2026-02-09 10:26:40,248 - SignalExecutor - INFO - signal_executor:241 -   - User ID: utsavagrawal39@gmail.com
+2026-02-09 10:26:40,249 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: run_etfs_rotation_strategy_etf_rotation_1769840479
+2026-02-09 10:26:40,250 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-09 10:26:40,250 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-09 10:26:40,251 - SignalExecutor - INFO - signal_executor:245 -   - Price: 290.6499938964844
+2026-02-09 10:26:40,252 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'SNLA1204': 1923.08, 'SNLA1236': 1923.08}
+2026-02-09 10:26:40,252 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: http://tradeai1.wealthwisers.in/websoket/tradeView-data/f5c6b7a28c9e/
+2026-02-09 10:26:40,253 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'http://tradeai1.wealthwisers.in/websoket/tradeView-data/f5c6b7a28c9e/' -> MarketAI Mode: False
+2026-02-09 10:26:40,254 - SignalExecutor - INFO - signal_executor:285 - STEP 2: Preparing Standard Webhook Payload for http://tradeai1.wealthwisers.in/websoket/tradeView-data/f5c6b7a28c9e/...
+2026-02-09 10:26:40,255 - SignalExecutor - INFO - signal_executor:289 - PREPARED PAYLOAD (Standard):
+{
+  "exchange": "NSE",
+  "symbol": "NIFTYBEES",
+  "user_id": "utsavagrawal39@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "SNLA1204": "6",
+    "SNLA1236": "6"
+  }
+}
+2026-02-09 10:26:40,256 - SignalExecutor - INFO - signal_executor:291 - STEP 3: Sending Webhook to http://tradeai1.wealthwisers.in/websoket/tradeView-data/f5c6b7a28c9e/...
+2026-02-09 10:26:40,373 - SignalExecutor - INFO - signal_executor:294 - WEBHOOK RESPONSE: Status Code 201
+2026-02-09 10:26:40,374 - SignalExecutor - INFO - signal_executor:295 - WEBHOOK RESPONSE BODY: {"success": true, "unique_code": "f5c6b7a28c9e"}
+2026-02-09 10:26:40,374 - SignalExecutor - INFO - signal_executor:299 - ✅ Standard Webhook Success.
+2026-02-09 10:26:40,375 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-09 10:26:40,375 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "run_etfs_rotation_strategy_etf_rotation_1769840479",
+  "exchange": "NSE",
+  "symbol": "NIFTYBEES",
+  "user_id": "utsavagrawal39@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "SNLA1204": "6",
+    "SNLA1236": "6"
+  },
+  "trade_date": "2026-02-09"
+}
+2026-02-09 10:26:40,376 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-09 10:26:42,143 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 200
+2026-02-09 10:26:42,144 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"success":true,"message":"Created 2 trade records","trades":[{"client_code":"SNLA1204","symbol":"NIFTYBEES","side":"BUY","quantity":6,"price":292.29998779296875},{"client_code":"SNLA1236","symbol":"NIFTYBEES","side":"BUY","quantity":6,"price":292.29998779296875}]}
+2026-02-09 10:26:42,145 - SignalExecutor - INFO - signal_executor:180 - ✅ Portfolio notification success.
+2026-02-09 10:26:42,148 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-09 10:26:42,373 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-09 10:26:42,666 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID run_etfs_rotation_strategy_etf_rotation_1769840479...
+2026-02-09 10:26:43,339 - SignalExecutor - INFO - signal_executor:212 - Updated instance 7: rem_exe_count=50, next_exec=2026-02-16 10:26:42.867032
+2026-02-09 10:26:43,340 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-09 10:26:43,437 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 48
+2026-02-09 10:26:43,437 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-09 10:26:43,438 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-09 10:26:43,438 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: JUNIORBEES
+2026-02-09 10:26:43,439 - SignalExecutor - INFO - signal_executor:241 -   - User ID: rachit.gour749@gmail.com
+2026-02-09 10:26:43,440 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: ETF_310126_34
+2026-02-09 10:26:43,441 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-09 10:26:43,441 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-09 10:26:43,442 - SignalExecutor - INFO - signal_executor:245 -   - Price: 742.1900024414062
+2026-02-09 10:26:43,442 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'R61829242': 1923.0}
+2026-02-09 10:26:43,442 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: marketai
+2026-02-09 10:26:43,444 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'marketai' -> MarketAI Mode: True
+2026-02-09 10:26:43,444 - SignalExecutor - INFO - signal_executor:260 - STEP 2: Preparing MarketAI Payload...
+2026-02-09 10:26:43,445 - SignalExecutor - INFO - signal_executor:264 - PREPARED PAYLOAD (MarketAI):
+{
+  "exchange": "NSE",
+  "symbol": "JUNIORBEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "2"
+  }
+}
+2026-02-09 10:26:43,446 - SignalExecutor - INFO - signal_executor:266 - STEP 3: Executing Order via Broker API (https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/broker/place_order)...
+2026-02-09 10:26:44,974 - SignalExecutor - INFO - signal_executor:269 - API RESPONSE: Status Code 401
+2026-02-09 10:26:44,974 - SignalExecutor - INFO - signal_executor:270 - API RESPONSE BODY: {"detail":"No valid session found. Please login first."}
+2026-02-09 10:26:44,975 - SignalExecutor - ERROR - signal_executor:276 - ❌ MarketAI Order Failed.
+2026-02-09 10:26:44,975 - SignalExecutor - INFO - signal_executor:340 - ============================================================
+2026-02-09 10:26:44,976 - SignalExecutor - INFO - signal_executor:341 - SIGNAL EXECUTION COMPLETED
+2026-02-09 10:26:44,977 - SignalExecutor - INFO - signal_executor:342 - ============================================================

@@ -21,32 +21,47 @@ class ZerodhaAuthenticator:
     }
     
     HEADERS = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
         'Accept': 'application/json, text/plain, */*',
-        'X-Kite-Version': '3'
+        'Accept-Language': 'en-US,en;q=0.9',
+        'X-Kite-Version': '3',
+        'Origin': 'https://kite.zerodha.com',
+        'Referer': 'https://kite.zerodha.com/'
     }
 
     def __init__(self, api_key, api_secret):
         self.api_key = api_key
         self.api_secret = api_secret
         self.session = requests.Session()
+        # Add a proper set of common headers to the session
         self.session.headers.update({
             'User-Agent': self.HEADERS['User-Agent'],
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1'
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Connection': 'keep-alive'
         })
         self.kite = KiteConnect(api_key=api_key)
 
     def login(self, username, password, totp_secret):
         try:
             logger.info(f"Starting login for user: {username}")
-            # 1. Session Warming
+            # 1. Session Warming - Visit login page first
             self.session.get(self.URLS['login'], timeout=15)
-            time.sleep(1)
+            time.sleep(1.5) # Increased delay slightly
 
             # 2. Authentication
-            h = {**self.HEADERS, 'X-Kite-Userid': username, 'Content-Type': 'application/x-www-form-urlencoded'}
-            resp = self.session.post(self.URLS['api_login'], data={'user_id': username, 'password': password}, headers=h)
+            h = {
+                **self.HEADERS, 
+                'X-Kite-Userid': username, 
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+            login_payload = {
+                'user_id': username, 
+                'password': password
+            }
+            
+            logger.debug(f"Sending login request to {self.URLS['api_login']}...")
+            resp = self.session.post(self.URLS['api_login'], data=login_payload, headers=h)
             
             if resp.status_code != 200 or resp.json().get('status') != 'success': 
                 logger.error(f"Login step 1 failed: {resp.text}")

@@ -52,6 +52,8 @@ class HierarchyService:
             
         except Exception as e:
             logger.error(f"Error getting descendants: {e}")
+            # Rollback the transaction to prevent "transaction is aborted" errors
+            db.rollback()
             return []
     
     @staticmethod
