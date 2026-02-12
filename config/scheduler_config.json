@@ -45,15 +45,15 @@
             "enabled": true,
             "signal_generation": {
                 "frequency": "weekly",
-                "day_of_week": "friday",
-                "time": "17:00",
+                "day_of_week": "monday",
+                "time": "01:26",
                 "skip_holidays": true,
                 "execution_rule": "last_trading_day_of_week"
             },
             "signal_execution": {
                 "frequency": "weekly",
                 "execution_rule": "first_trading_day_of_week",
-                "time": "09:30",
+                "time": "10:08",
                 "skip_holidays": true
             },
             "generator_module": "Services.scheduler.generators.etf_rotation_generator",

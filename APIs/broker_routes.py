@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Dict, Any, List
 from Services.broker_manager import login_broker, dispatch_place_order
 import logging
+import json
 from helpers.broker_session_manager import save_broker_session, get_broker_session
 from Databases.app_data_db_connection import get_session
 from Databases.broker_models import BrokerSession
@@ -65,8 +66,15 @@ async def broker_login(
             request_data = login_request.dict()
             
         credentials = {k: v for k, v in request_data.items() if k not in {'broker_name', 'user_email'}}
+        logger.info(f"DEBUG - Extracted credentials keys: {list(credentials.keys())}")
+        logger.info(f"DEBUG - Full Credentials Payload: {json.dumps(credentials, default=str)}")
         
-        result = login_broker(login_request.broker_name, credentials)
+        # Explicitly handle smc_ace as requested by user
+        if login_request.broker_name.lower() == "smc_ace":
+            logger.info("Handling explicit SMC ACE login route")
+            result = login_broker("smc_ace", credentials)
+        else:
+            result = login_broker(login_request.broker_name, credentials)
         if result.get("status") == "error":
              logger.error(f"Login failed for {login_request.broker_name}: {result.get('message')}")
              raise HTTPException(status_code=400, detail=result.get("message"))
@@ -87,7 +95,7 @@ async def broker_login(
             user_email = login_request.user_email
             api_key = credentials.get('api_key')  # Extract api_key from credentials
             
-            saved, message = save_broker_session(user_email, login_request.broker_name, client_id, result, api_key)
+            saved, message = save_broker_session(user_email, login_request.broker_name, client_id, result, api_key, credentials=credentials)
             
             if not saved:
                 logger.error(f"Session not saved: {message}")
@@ -135,7 +143,7 @@ async def place_order(request: OrderRequest):
     logger.info(f"Received place order request for user {request.user_id}")
     try:
         # Retrieve broker session from database
-        broker_name, client_id, access_token, api_key = get_broker_session(request.user_id)
+        broker_name, client_id, access_token, api_key, broker_credentials = get_broker_session(request.user_id)
         
         if not broker_name or not access_token:
             logger.error(f"No valid session found for user: {request.user_id}")
@@ -230,8 +238,20 @@ async def place_order(request: OrderRequest):
                 
                 credentials = {
                     'api_key': api_key,
-                    'access_token': access_token
+                    'access_token': access_token,
+                    'client_id': client_id
                 }
+                
+                # Add SID and other details for Kotak if available
+                if broker_credentials:
+                    try:
+                        creds_dict = json.loads(broker_credentials)
+                        if creds_dict.get('sid'):
+                            credentials['sid'] = creds_dict.get('sid')
+                        if creds_dict.get('base_url'):
+                            credentials['base_url'] = creds_dict.get('base_url')
+                    except:
+                        pass
                 
                 # Place order
                 result = dispatch_place_order(broker_name, credentials, order_data)
@@ -273,3 +293,39 @@ async def place_order(request: OrderRequest):
     except Exception as e:
         logger.error(f"Internal error during order placement: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/account_details")
+async def account_details(user_email: str):
+    """Fetch complete account details for a user."""
+    from helpers.broker_session_manager import get_full_broker_session
+    details = get_full_broker_session(user_email)
+    if not details:
+        raise HTTPException(status_code=404, detail="No broker account found for this user")
+    return {"status": "success", "data": details}
+
+@router.delete("/delete_account")
+async def delete_account(user_email: str, client_id: str):
+    """Remove complete data of a particular user and client ID."""
+    from helpers.broker_session_manager import delete_broker_session_record
+    success, message = delete_broker_session_record(user_email, client_id)
+    if not success:
+        raise HTTPException(status_code=404, detail=message)
+    return {"status": "success", "message": message}
+
+@router.post("/update_credentials")
+async def update_credentials(payload: Dict[str, Any] = Body(...)):
+    """Update broker credentials for an existing account."""
+    user_email = payload.get("user_email")
+    broker_name = payload.get("broker_name")
+    username = payload.get("username")
+    
+    if not user_email or not broker_name or not username:
+        raise HTTPException(status_code=400, detail="user_email, broker_name, and username are mandatory")
+    
+    from helpers.broker_session_manager import update_broker_credentials_only
+    success, message = update_broker_credentials_only(user_email, broker_name, username, payload)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail=message)
+    
+    return {"status": "success", "message": message}

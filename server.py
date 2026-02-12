@@ -481,7 +481,8 @@ try:
             "/api/run_backtest", # Exempt centralized backtest for verified access
             "/api/strategies", # Exempt centralized list strategies
             "/api/strategy", # Exempt centralized strategy details
-            "/api/broker/place_order" # Exempt broker place order
+            "/api/broker/place_order", # Exempt broker place order
+            "/api/broker/broker_login" # Exempt broker login
         ]
     )
     logger.info("✅ SingleSessionMiddleware added")
