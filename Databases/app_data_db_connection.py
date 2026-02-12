@@ -220,6 +220,7 @@ def get_session():
 def get_db():
     """
     FastAPI dependency that provides a database session and ensures it's closed.
+    Automatically rolls back failed transactions to prevent "transaction is aborted" errors.
     Usage:
         @app.get("/")
         def index(db: Session = Depends(get_db)):
@@ -230,6 +231,11 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
+    except Exception as e:
+        # Rollback the transaction if any error occurs
+        logger.error(f"Database transaction error, rolling back: {e}")
+        db.rollback()
+        raise
     finally:
         db.close()
 

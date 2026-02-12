@@ -42,7 +42,7 @@
     },
     "strategies": {
         "rotation_etf": {
-            "enabled": true,
+            "enabled": false,
             "signal_generation": {
                 "frequency": "weekly",
                 "day_of_week": "monday",

@@ -67,7 +67,7 @@ class DhanAuthenticator:
             error_msg = f"Failed to generate TOTP: {str(e)}"
             logger.error(error_msg)
             return None, error_msg
-
+        
         # 2. Prepare Request
         url = f"{self.BASE_URL}/app/generateAccessToken"
         
@@ -208,7 +208,7 @@ def place_order(credentials: Dict[str, Any], order_data: Dict[str, Any]) -> Dict
         exchange_id = map_exchange(order_data.get('exchange'))
         transaction_type = map_order_side(order_data.get('order_side'))
         product_type = map_product_type(order_data.get('product_type'))
-        order_type = map_order_type(order_data.get('order_type'))
+        dhan_order_type = map_order_type(order_type=order_data.get('order_type'))
         validity = map_validity(order_data.get('validity', 'DAY'))
         
         # Prepare DHAN API payload
@@ -230,7 +230,7 @@ def place_order(credentials: Dict[str, Any], order_data: Dict[str, Any]) -> Dict
             "transactionType": transaction_type,
             "exchangeSegment": exchange_id,
             "productType": product_type,
-            "orderType": order_type,
+            "orderType": dhan_order_type,
             "validity": validity,
             "securityId": security_id,
             "quantity": int(order_data.get('quantity', 0)),

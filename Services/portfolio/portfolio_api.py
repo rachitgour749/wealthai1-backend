@@ -643,6 +643,7 @@ async def get_equity_curve(
         logger.error(f"Error generating automated equity curve: {e}")
         import traceback
         logger.error(traceback.format_exc())
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Error generating equity curve: {str(e)}")
 
 
@@ -672,6 +673,7 @@ async def get_clients_for_run(run_id: str, db: Session = Depends(get_db)):
         
     except Exception as e:
         logger.error(f"Error fetching clients: {e}")
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Error fetching clients: {str(e)}")
 
 
@@ -730,6 +732,7 @@ async def get_trades(
         
     except Exception as e:
         logger.error(f"Error fetching trades: {e}")
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Error fetching trades: {str(e)}")
 
 
@@ -1110,6 +1113,8 @@ async def get_user_portfolio_summary(
         logger.error(f"Error fetching user portfolio summary: {e}")
         import traceback
         logger.error(traceback.format_exc())
+        # Rollback the transaction to prevent "transaction is aborted" errors
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Error fetching user summary: {str(e)}")
 
 
@@ -1416,6 +1421,7 @@ async def get_strategy_summary(
         logger.error(f"Error fetching strategy summary: {e}")
         import traceback
         logger.error(traceback.format_exc())
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Error fetching strategy summary: {str(e)}")
 
 
