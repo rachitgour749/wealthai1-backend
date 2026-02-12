@@ -5,7 +5,7 @@ import hashlib
 import urllib.parse
 from kiteconnect import KiteConnect
 import logging
-from Broker.Zerodha.Mapping import map_exchange, map_validity, map_order_side, map_product_type, map_order_type
+from Broker.Zerodha.mapping import map_exchange, map_validity, map_order_side, map_product_type, map_order_type
 
 logger = logging.getLogger(__name__)
 

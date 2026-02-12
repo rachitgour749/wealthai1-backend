@@ -10,7 +10,7 @@ import json
 import logging
 import pyotp
 from typing import Tuple, Optional, Dict, Any
-from Broker.AngelOne.Mapping import (
+from Broker.AngelOne.mapping import (
     map_exchange, 
     map_product_type, 
     map_order_type, 
