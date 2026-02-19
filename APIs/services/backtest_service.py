@@ -18,6 +18,7 @@ from Handlers.rotation_stocks_handler import RotationStocksHandler
 from Handlers.etf_payout_handler import ETFPayoutHandler
 from Handlers.supertrend_handler import SuperTrendHandler
 from Handlers.etf_buy_on_dip_handler import ETFBuyOnDipHandler
+from Handlers.etf_swing_handler import ETFSwingHandler
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,9 @@ async def execute_backtest(request: UnifiedBacktestRequest) -> UnifiedBacktestRe
         elif request.strategy_type == "ETF_Buy_on_Dip":
             handler = ETFBuyOnDipHandler(None)
             
+        elif request.strategy_type == "ETF_Swing_Strategy":
+            handler = ETFSwingHandler(None)
+            
         else:
             raise HTTPException(
                 status_code=400,
@@ -75,10 +79,13 @@ async def execute_backtest(request: UnifiedBacktestRequest) -> UnifiedBacktestRe
         
         if response.success:
             logger.info(f"Backtest completed successfully for {request.strategy_type}")
+            return response
         else:
             logger.error(f"Backtest failed for {request.strategy_type}: {response.error}")
-        
-        return response
+            raise HTTPException(
+                status_code=400,
+                detail=response.error or "Backtest failed"
+            )
         
     except HTTPException:
         raise

@@ -368,7 +368,7 @@ async def lifespan(app: FastAPI):
 # FASTAPI APP CREATION (Fast - no blocking operations)
 # =========================
 # Define global security dependency to force header input in Swagger
-def security_header(Authorization: str = Header(None, description="Enter 'Bearer <token>'")):
+def security_header(Authorization: Optional[str] = Header(None, description="Enter 'Bearer <token>'")):
     pass
 
 app = FastAPI(
@@ -482,7 +482,9 @@ try:
             "/api/strategies", # Exempt centralized list strategies
             "/api/strategy", # Exempt centralized strategy details
             "/api/broker/place_order", # Exempt broker place order
-            "/api/broker/broker_login" # Exempt broker login
+            "/api/broker/place_order", # Exempt broker place order
+            "/api/broker/broker_login", # Exempt broker login
+            "/api/webhook/wealthai1.in/trade_execute" # Exempt trade execution webhook
         ]
     )
     logger.info("✅ SingleSessionMiddleware added")
@@ -552,6 +554,12 @@ rotation_etf_payout_router = None
 initialize_rotation_etf_payout_backtester = None
 
 webhook_router = None
+
+try:
+    from APIs.webhook_routes import router as webhook_router
+    logger.info("✅ Webhook router loaded successfully")
+except Exception as e:
+    logger.error(f"Failed to import webhook_router: {e}")
 
 # Critical: Subscription routers - provide detailed error info
 try:
@@ -732,6 +740,10 @@ if broker_router:
     app.include_router(broker_router, prefix="/api/broker", tags=["Broker Integration"])
 
 # Rotation ETF Payout router
+
+if webhook_router:
+    app.include_router(webhook_router, prefix="/api/webhook", tags=["Webhook Integration"])
+
 
 
 # ChatAI router (Legacy)

@@ -205,6 +205,33 @@ async def get_assets(strategy_type: str) -> Dict[str, Any]:
             
             return {"etfs": etfs}
             
+        elif strategy_type == "ETF_Swing_Strategy":
+             # ETF_Swing_Strategy uses same ETF list as ETF_Rotation
+            from Strategies.Rotation_ETF.api.etf_routes import etf_backtester, initialize_etf_backtester
+            
+            if etf_backtester is None:
+                logger.info("Lazily initializing ETF backtester for ETF Swing")
+                initialize_etf_backtester()
+                from Strategies.Rotation_ETF.api.etf_routes import etf_backtester
+            
+            if etf_backtester is None:
+                raise HTTPException(status_code=500, detail="ETF backtester not initialized")
+            
+            # Load ETF metadata
+            metadata = etf_backtester.load_metadata()
+            etfs = []
+            
+            for ticker, data in metadata.items():
+                etfs.append({
+                    "ticker": ticker,
+                    "name": data.get('name', ticker),
+                    "category": data.get('category', 'Unknown'),
+                    "expense_ratio": data.get('expense_ratio', 0.0),
+                    "aum": data.get('aum', 0.0)
+                })
+            
+            return {"etfs": etfs}
+            
         else:
             raise HTTPException(status_code=400, detail=f"Invalid strategy_type: {strategy_type}")
             
@@ -458,7 +485,34 @@ async def calculate_date_range(request: DateRangeRequest) -> Dict[str, Any]:
                 }
             else:
                 raise HTTPException(status_code=400, detail="Could not calculate date range for provided tickers")
+
+        elif request.strategy_type == "ETF_Swing_Strategy":
+             # ETF_Swing_Strategy uses same date range logic as ETF_Rotation
+            from Strategies.Rotation_ETF.api.etf_routes import etf_backtester, initialize_etf_backtester
             
+            if etf_backtester is None:
+                logger.info("Lazily initializing ETF backtester for ETF Swing")
+                initialize_etf_backtester()
+                from Strategies.Rotation_ETF.api.etf_routes import etf_backtester
+            
+            if etf_backtester is None:
+                raise HTTPException(status_code=500, detail="ETF backtester not initialized")
+            
+            tickers = request.tickers or []
+            if not tickers:
+                raise HTTPException(status_code=400, detail="No tickers provided")
+            
+            start_date, end_date, years = etf_backtester.calculate_common_date_range(tickers)
+            
+            if start_date and end_date:
+                return {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "years": years
+                }
+            else:
+                raise HTTPException(status_code=400, detail="Could not calculate date range for provided tickers")
+                
         else:
             raise HTTPException(status_code=400, detail=f"Invalid strategy_type: {request.strategy_type}")
             
@@ -680,6 +734,29 @@ async def get_asset_overview(strategy_type: str) -> Dict[str, Any]:
             from Strategies.Rotation_ETF.api.etf_routes import etf_backtester, initialize_etf_backtester
             if etf_backtester is None:
                 logger.info("Lazily initializing ETF backtester for Buy-on-Dip")
+                initialize_etf_backtester()
+                from Strategies.Rotation_ETF.api.etf_routes import etf_backtester
+            
+            if etf_backtester is None:
+                raise HTTPException(status_code=500, detail="ETF backtester not initialized")
+            
+            metadata = etf_backtester.load_metadata()
+            for symbol, meta in metadata.items():
+                asset_overview.append({
+                    'symbol': symbol,
+                    'description': etf_backtester.generate_asset_description(symbol),
+                    'sector': etf_backtester.get_asset_sector_classification(symbol),
+                    'start_date': meta.get('start_date'),
+                    'end_date': meta.get('end_date'),
+                    'years_available': round(meta.get('years_available', 0), 1),
+                    'total_records': meta.get('total_records', 0)
+                })
+            asset_overview.sort(key=lambda x: str(x['start_date']) if x['start_date'] else '9999-99-99')
+
+        elif strategy_type == "ETF_Swing_Strategy":
+            from Strategies.Rotation_ETF.api.etf_routes import etf_backtester, initialize_etf_backtester
+            if etf_backtester is None:
+                logger.info("Lazily initializing ETF backtester for ETF Swing")
                 initialize_etf_backtester()
                 from Strategies.Rotation_ETF.api.etf_routes import etf_backtester
             

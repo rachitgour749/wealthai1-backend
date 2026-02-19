@@ -554,3 +554,1189 @@
 2026-02-09 10:26:44,975 - SignalExecutor - INFO - signal_executor:340 - ============================================================
 2026-02-09 10:26:44,976 - SignalExecutor - INFO - signal_executor:341 - SIGNAL EXECUTION COMPLETED
 2026-02-09 10:26:44,977 - SignalExecutor - INFO - signal_executor:342 - ============================================================
+2026-02-16 10:00:06,653 - Databases.app_data_db_connection - INFO - app_data_db_connection:193 - Successfully connected to PostgreSQL database
+2026-02-16 10:00:06,655 - Databases.app_data_db_connection - INFO - app_data_db_connection:194 - PostgreSQL version: PostgreSQL 17.7 (bdd1736) on aarch64-unknown-linux...
+2026-02-16 10:00:06,765 - SignalExecutor - INFO - signal_executor:220 - ============================================================
+2026-02-16 10:00:06,765 - SignalExecutor - INFO - signal_executor:221 - STARTING SIGNAL EXECUTION
+2026-02-16 10:00:06,768 - SignalExecutor - INFO - signal_executor:222 - ============================================================
+2026-02-16 10:00:06,769 - SignalExecutor - INFO - signal_executor:225 - STEP 1: Fetching pending signals from database...
+2026-02-16 10:00:07,130 - SignalExecutor - INFO - signal_executor:93 - Fetched 6 pending signals.
+2026-02-16 10:00:07,130 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-16 10:00:07,130 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 49
+2026-02-16 10:00:07,135 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-16 10:00:07,135 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-16 10:00:07,135 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: MID150BEES
+2026-02-16 10:00:07,135 - SignalExecutor - INFO - signal_executor:241 -   - User ID: msupasani@gmail.com
+2026-02-16 10:00:07,135 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___6_ETFs___2026_01_02_11_22_31_1767353106
+2026-02-16 10:00:07,138 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-16 10:00:07,138 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-16 10:00:07,138 - SignalExecutor - INFO - signal_executor:245 -   - Price: 226.30999755859375
+2026-02-16 10:00:07,138 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'AAAH544835': 50000.0}
+2026-02-16 10:00:07,138 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: marketai
+2026-02-16 10:00:07,138 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'marketai' -> MarketAI Mode: True
+2026-02-16 10:00:07,138 - SignalExecutor - INFO - signal_executor:260 - STEP 2: Preparing MarketAI Payload...
+2026-02-16 10:00:07,143 - SignalExecutor - INFO - signal_executor:264 - PREPARED PAYLOAD (MarketAI):
+{
+  "exchange": "NSE",
+  "symbol": "MID150BEES",
+  "user_id": "msupasani@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "AAAH544835": "220"
+  }
+}
+2026-02-16 10:00:07,144 - SignalExecutor - INFO - signal_executor:266 - STEP 3: Executing Order via Broker API (https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/broker/place_order)...
+2026-02-16 10:00:10,103 - SignalExecutor - INFO - signal_executor:269 - API RESPONSE: Status Code 200
+2026-02-16 10:00:10,103 - SignalExecutor - INFO - signal_executor:270 - API RESPONSE BODY: {"status":"error","message":"Orders processed for 1 clients","results":[{"symbol":"MID150BEES","client_id":"AAAH544835","quantity":"220","status":"error","message":"Invalid Session or Session is Expired Please Re-login"}],"summary":{"total":1,"success":0,"failed":1}}
+2026-02-16 10:00:10,109 - SignalExecutor - INFO - signal_executor:274 - ✅ MarketAI Order Placed Successfully.
+2026-02-16 10:00:10,109 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-16 10:00:10,109 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "run_etfs_rotation_strategy_ETFs_Rotation_Strategy___6_ETFs___2026_01_02_11_22_31_1767353106",
+  "exchange": "NSE",
+  "symbol": "MID150BEES",
+  "user_id": "msupasani@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "AAAH544835": "220"
+  },
+  "trade_date": "2026-02-16"
+}
+2026-02-16 10:00:10,112 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-16 10:00:12,667 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 200
+2026-02-16 10:00:12,669 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"success":true,"message":"Created 1 trade records","trades":[{"client_code":"AAAH544835","symbol":"MID150BEES","side":"BUY","quantity":220,"price":225.58999633789062}]}
+2026-02-16 10:00:12,669 - SignalExecutor - INFO - signal_executor:180 - ✅ Portfolio notification success.
+2026-02-16 10:00:12,673 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-16 10:00:12,905 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-16 10:00:13,239 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID run_etfs_rotation_strategy_ETFs_Rotation_Strategy___6_ETFs___2026_01_02_11_22_31_1767353106...
+2026-02-16 10:00:14,030 - SignalExecutor - INFO - signal_executor:212 - Updated instance 2: rem_exe_count=46, next_exec=2026-02-23 10:00:13.478441
+2026-02-16 10:00:14,039 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-16 10:00:14,148 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 50
+2026-02-16 10:00:14,148 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-16 10:00:14,150 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-16 10:00:14,150 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: ITBEES
+2026-02-16 10:00:14,150 - SignalExecutor - INFO - signal_executor:241 -   - User ID: trade.moneycompound@gmail.com
+2026-02-16 10:00:14,152 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-16 10:00:14,153 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-16 10:00:14,153 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-16 10:00:14,155 - SignalExecutor - INFO - signal_executor:245 -   - Price: 36.11000061035156
+2026-02-16 10:00:14,155 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'SRKH5002': 10000.0, 'EAOPE1486': 5000.0}
+2026-02-16 10:00:14,157 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: http://tradeai1.wealthwisers.in/websoket/tradeView-data/0707454e5e36/
+2026-02-16 10:00:14,157 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'http://tradeai1.wealthwisers.in/websoket/tradeView-data/0707454e5e36/' -> MarketAI Mode: False
+2026-02-16 10:00:14,159 - SignalExecutor - INFO - signal_executor:285 - STEP 2: Preparing Standard Webhook Payload for http://tradeai1.wealthwisers.in/websoket/tradeView-data/0707454e5e36/...
+2026-02-16 10:00:14,159 - SignalExecutor - INFO - signal_executor:289 - PREPARED PAYLOAD (Standard):
+{
+  "exchange": "NSE",
+  "symbol": "ITBEES",
+  "user_id": "trade.moneycompound@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "SRKH5002": "276",
+    "EAOPE1486": "138"
+  }
+}
+2026-02-16 10:00:14,161 - SignalExecutor - INFO - signal_executor:291 - STEP 3: Sending Webhook to http://tradeai1.wealthwisers.in/websoket/tradeView-data/0707454e5e36/...
+2026-02-16 10:00:14,299 - SignalExecutor - INFO - signal_executor:294 - WEBHOOK RESPONSE: Status Code 201
+2026-02-16 10:00:14,299 - SignalExecutor - INFO - signal_executor:295 - WEBHOOK RESPONSE BODY: {"success": true, "unique_code": "0707454e5e36"}
+2026-02-16 10:00:14,299 - SignalExecutor - INFO - signal_executor:299 - ✅ Standard Webhook Success.
+2026-02-16 10:00:14,299 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-16 10:00:14,299 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023",
+  "exchange": "NSE",
+  "symbol": "ITBEES",
+  "user_id": "trade.moneycompound@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "SRKH5002": "276",
+    "EAOPE1486": "138"
+  },
+  "trade_date": "2026-02-16"
+}
+2026-02-16 10:00:14,299 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-16 10:00:16,252 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 200
+2026-02-16 10:00:16,252 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"success":true,"message":"Created 2 trade records","trades":[{"client_code":"SRKH5002","symbol":"ITBEES","side":"BUY","quantity":276,"price":35.970001220703125},{"client_code":"EAOPE1486","symbol":"ITBEES","side":"BUY","quantity":138,"price":35.970001220703125}]}
+2026-02-16 10:00:16,252 - SignalExecutor - INFO - signal_executor:180 - ✅ Portfolio notification success.
+2026-02-16 10:00:16,259 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-16 10:00:16,476 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-16 10:00:16,804 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023...
+2026-02-16 10:00:17,587 - SignalExecutor - INFO - signal_executor:212 - Updated instance 1: rem_exe_count=39, next_exec=2026-02-23 10:00:17.029293
+2026-02-16 10:00:17,589 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-16 10:00:17,704 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 51
+2026-02-16 10:00:17,706 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-16 10:00:17,706 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-16 10:00:17,708 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: NIFTYBEES
+2026-02-16 10:00:17,708 - SignalExecutor - INFO - signal_executor:241 -   - User ID: arindam.day@gmail.com
+2026-02-16 10:00:17,708 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: run_etfs_rotation_strategy_2000_investment_plan_1767434584
+2026-02-16 10:00:17,712 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-16 10:00:17,712 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-16 10:00:17,712 - SignalExecutor - INFO - signal_executor:245 -   - Price: 288.8699951171875
+2026-02-16 10:00:17,712 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'AAAL374353': 1923.08}
+2026-02-16 10:00:17,716 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: http://tradeai1.wealthwisers.in/websoket/tradeView-data/98fc2f857bfa/
+2026-02-16 10:00:17,716 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'http://tradeai1.wealthwisers.in/websoket/tradeView-data/98fc2f857bfa/' -> MarketAI Mode: False
+2026-02-16 10:00:17,716 - SignalExecutor - INFO - signal_executor:285 - STEP 2: Preparing Standard Webhook Payload for http://tradeai1.wealthwisers.in/websoket/tradeView-data/98fc2f857bfa/...
+2026-02-16 10:00:17,720 - SignalExecutor - INFO - signal_executor:289 - PREPARED PAYLOAD (Standard):
+{
+  "exchange": "NSE",
+  "symbol": "NIFTYBEES",
+  "user_id": "arindam.day@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "AAAL374353": "6"
+  }
+}
+2026-02-16 10:00:17,722 - SignalExecutor - INFO - signal_executor:291 - STEP 3: Sending Webhook to http://tradeai1.wealthwisers.in/websoket/tradeView-data/98fc2f857bfa/...
+2026-02-16 10:00:17,825 - SignalExecutor - INFO - signal_executor:294 - WEBHOOK RESPONSE: Status Code 201
+2026-02-16 10:00:17,825 - SignalExecutor - INFO - signal_executor:295 - WEBHOOK RESPONSE BODY: {"success": true, "unique_code": "98fc2f857bfa"}
+2026-02-16 10:00:17,828 - SignalExecutor - INFO - signal_executor:299 - ✅ Standard Webhook Success.
+2026-02-16 10:00:17,829 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-16 10:00:17,829 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "run_etfs_rotation_strategy_2000_investment_plan_1767434584",
+  "exchange": "NSE",
+  "symbol": "NIFTYBEES",
+  "user_id": "arindam.day@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "AAAL374353": "6"
+  },
+  "trade_date": "2026-02-16"
+}
+2026-02-16 10:00:17,829 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-16 10:00:19,842 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 200
+2026-02-16 10:00:19,851 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"success":true,"message":"Created 1 trade records","trades":[{"client_code":"AAAL374353","symbol":"NIFTYBEES","side":"BUY","quantity":6,"price":288.6099853515625}]}
+2026-02-16 10:00:19,852 - SignalExecutor - INFO - signal_executor:180 - ✅ Portfolio notification success.
+2026-02-16 10:00:19,860 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-16 10:00:20,085 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-16 10:00:20,408 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID run_etfs_rotation_strategy_2000_investment_plan_1767434584...
+2026-02-16 10:00:21,184 - SignalExecutor - INFO - signal_executor:212 - Updated instance 3: rem_exe_count=45, next_exec=2026-02-23 10:00:20.635360
+2026-02-16 10:00:21,184 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-16 10:00:21,294 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 52
+2026-02-16 10:00:21,294 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-16 10:00:21,294 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-16 10:00:21,294 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: NIFTYBEES
+2026-02-16 10:00:21,297 - SignalExecutor - INFO - signal_executor:241 -   - User ID: arooshipkl@gmail.com
+2026-02-16 10:00:21,297 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: run_etfs_rotation_strategy_nitin_1769586494
+2026-02-16 10:00:21,297 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-16 10:00:21,299 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-16 10:00:21,299 - SignalExecutor - INFO - signal_executor:245 -   - Price: 288.8699951171875
+2026-02-16 10:00:21,301 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'SAND1201': 1923.08}
+2026-02-16 10:00:21,301 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: http://tradeai1.wealthwisers.in/websoket/tradeView-data/aa3389e16660/
+2026-02-16 10:00:21,304 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'http://tradeai1.wealthwisers.in/websoket/tradeView-data/aa3389e16660/' -> MarketAI Mode: False
+2026-02-16 10:00:21,305 - SignalExecutor - INFO - signal_executor:285 - STEP 2: Preparing Standard Webhook Payload for http://tradeai1.wealthwisers.in/websoket/tradeView-data/aa3389e16660/...
+2026-02-16 10:00:21,307 - SignalExecutor - INFO - signal_executor:289 - PREPARED PAYLOAD (Standard):
+{
+  "exchange": "NSE",
+  "symbol": "NIFTYBEES",
+  "user_id": "arooshipkl@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "SAND1201": "6"
+  }
+}
+2026-02-16 10:00:21,307 - SignalExecutor - INFO - signal_executor:291 - STEP 3: Sending Webhook to http://tradeai1.wealthwisers.in/websoket/tradeView-data/aa3389e16660/...
+2026-02-16 10:00:21,417 - SignalExecutor - INFO - signal_executor:294 - WEBHOOK RESPONSE: Status Code 201
+2026-02-16 10:00:21,419 - SignalExecutor - INFO - signal_executor:295 - WEBHOOK RESPONSE BODY: {"success": true, "unique_code": "aa3389e16660"}
+2026-02-16 10:00:21,421 - SignalExecutor - INFO - signal_executor:299 - ✅ Standard Webhook Success.
+2026-02-16 10:00:21,421 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-16 10:00:21,424 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "run_etfs_rotation_strategy_nitin_1769586494",
+  "exchange": "NSE",
+  "symbol": "NIFTYBEES",
+  "user_id": "arooshipkl@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "SAND1201": "6"
+  },
+  "trade_date": "2026-02-16"
+}
+2026-02-16 10:00:21,426 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-16 10:00:23,516 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 200
+2026-02-16 10:00:23,516 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"success":true,"message":"Created 1 trade records","trades":[{"client_code":"SAND1201","symbol":"NIFTYBEES","side":"BUY","quantity":6,"price":288.6099853515625}]}
+2026-02-16 10:00:23,516 - SignalExecutor - INFO - signal_executor:180 - ✅ Portfolio notification success.
+2026-02-16 10:00:23,524 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-16 10:00:23,760 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-16 10:00:24,099 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID run_etfs_rotation_strategy_nitin_1769586494...
+2026-02-16 10:00:24,881 - SignalExecutor - INFO - signal_executor:212 - Updated instance 6: rem_exe_count=49, next_exec=2026-02-23 10:00:24.330447
+2026-02-16 10:00:24,881 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-16 10:00:24,990 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 54
+2026-02-16 10:00:24,990 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-16 10:00:24,994 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-16 10:00:24,994 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: ITBEES
+2026-02-16 10:00:24,994 - SignalExecutor - INFO - signal_executor:241 -   - User ID: rachitgour567@gmail.com
+2026-02-16 10:00:24,997 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: ETF_090226_85
+2026-02-16 10:00:24,997 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-16 10:00:24,997 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-16 10:00:24,997 - SignalExecutor - INFO - signal_executor:245 -   - Price: 36.11000061035156
+2026-02-16 10:00:24,997 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'CTU900': 1923.08}
+2026-02-16 10:00:24,997 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: marketai
+2026-02-16 10:00:25,002 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'marketai' -> MarketAI Mode: True
+2026-02-16 10:00:25,002 - SignalExecutor - INFO - signal_executor:260 - STEP 2: Preparing MarketAI Payload...
+2026-02-16 10:00:25,002 - SignalExecutor - INFO - signal_executor:264 - PREPARED PAYLOAD (MarketAI):
+{
+  "exchange": "NSE",
+  "symbol": "ITBEES",
+  "user_id": "rachitgour567@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "CTU900": "53"
+  }
+}
+2026-02-16 10:00:25,002 - SignalExecutor - INFO - signal_executor:266 - STEP 3: Executing Order via Broker API (https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/broker/place_order)...
+2026-02-16 10:00:26,671 - SignalExecutor - INFO - signal_executor:269 - API RESPONSE: Status Code 500
+2026-02-16 10:00:26,673 - SignalExecutor - INFO - signal_executor:270 - API RESPONSE BODY: {"detail":"not enough values to unpack (expected 5, got 4)"}
+2026-02-16 10:00:26,673 - SignalExecutor - ERROR - signal_executor:276 - ❌ MarketAI Order Failed.
+2026-02-16 10:00:26,673 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-16 10:00:26,780 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 55
+2026-02-16 10:00:26,780 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-16 10:00:26,780 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-16 10:00:26,784 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: JUNIORBEES
+2026-02-16 10:00:26,784 - SignalExecutor - INFO - signal_executor:241 -   - User ID: rachit.gour749@gmail.com
+2026-02-16 10:00:26,784 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: ETF_310126_34
+2026-02-16 10:00:26,786 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-16 10:00:26,786 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-16 10:00:26,786 - SignalExecutor - INFO - signal_executor:245 -   - Price: 740.8900146484375
+2026-02-16 10:00:26,786 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'R61829242': 1923.0}
+2026-02-16 10:00:26,788 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: marketai
+2026-02-16 10:00:26,788 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'marketai' -> MarketAI Mode: True
+2026-02-16 10:00:26,788 - SignalExecutor - INFO - signal_executor:260 - STEP 2: Preparing MarketAI Payload...
+2026-02-16 10:00:26,788 - SignalExecutor - INFO - signal_executor:264 - PREPARED PAYLOAD (MarketAI):
+{
+  "exchange": "NSE",
+  "symbol": "JUNIORBEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "2"
+  }
+}
+2026-02-16 10:00:26,791 - SignalExecutor - INFO - signal_executor:266 - STEP 3: Executing Order via Broker API (https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/broker/place_order)...
+2026-02-16 10:00:28,347 - SignalExecutor - INFO - signal_executor:269 - API RESPONSE: Status Code 500
+2026-02-16 10:00:28,347 - SignalExecutor - INFO - signal_executor:270 - API RESPONSE BODY: {"detail":"not enough values to unpack (expected 5, got 4)"}
+2026-02-16 10:00:28,349 - SignalExecutor - ERROR - signal_executor:276 - ❌ MarketAI Order Failed.
+2026-02-16 10:00:28,349 - SignalExecutor - INFO - signal_executor:340 - ============================================================
+2026-02-16 10:00:28,351 - SignalExecutor - INFO - signal_executor:341 - SIGNAL EXECUTION COMPLETED
+2026-02-16 10:00:28,351 - SignalExecutor - INFO - signal_executor:342 - ============================================================
+2026-02-16 18:31:44,074 - apscheduler.scheduler - INFO - base:507 - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-16 18:31:44,075 - Services.scheduler.scheduler_service - INFO - scheduler_service:193 - ✓ Registered execution job: etf_swing_strategy
+2026-02-16 18:31:44,078 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Generation: etf_swing_strategy" to job store "default"
+2026-02-16 18:31:44,079 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Execution: etf_swing_strategy" to job store "default"
+2026-02-16 18:31:44,080 - apscheduler.scheduler - INFO - base:214 - Scheduler started
+2026-02-16 18:31:44,081 - Services.scheduler.scheduler_service - INFO - scheduler_service:62 - ✓ Scheduler started successfully
+2026-02-16 18:31:44,082 - Services.scheduler.scheduler_service - INFO - scheduler_service:290 - 
+============================================================
+2026-02-16 18:31:44,082 - Services.scheduler.scheduler_service - INFO - scheduler_service:291 - SCHEDULED JOBS
+2026-02-16 18:31:44,083 - Services.scheduler.scheduler_service - INFO - scheduler_service:292 - ============================================================
+2026-02-16 18:31:44,083 - Services.scheduler.scheduler_service - INFO - scheduler_service:301 -   Signal Execution: etf_swing_strategy
+2026-02-16 18:31:44,084 - Services.scheduler.scheduler_service - INFO - scheduler_service:302 -     ID: execution_etf_swing_strategy
+2026-02-16 18:31:44,084 - Services.scheduler.scheduler_service - INFO - scheduler_service:303 -     Next run: 2026-02-16 18:32:00 IST
+2026-02-16 18:31:44,085 - Services.scheduler.scheduler_service - INFO - scheduler_service:304 - 
+2026-02-16 18:31:44,085 - Services.scheduler.scheduler_service - INFO - scheduler_service:301 -   Signal Generation: etf_swing_strategy
+2026-02-16 18:31:44,086 - Services.scheduler.scheduler_service - INFO - scheduler_service:302 -     ID: signal_etf_swing_strategy
+2026-02-16 18:31:44,087 - Services.scheduler.scheduler_service - INFO - scheduler_service:303 -     Next run: 2026-02-17 18:26:00 IST
+2026-02-16 18:31:44,087 - Services.scheduler.scheduler_service - INFO - scheduler_service:304 - 
+2026-02-16 18:31:44,089 - Services.scheduler.scheduler_service - INFO - scheduler_service:306 - ============================================================
+
+2026-02-16 18:31:44,089 - __main__ - INFO - server:333 - ✅ Scheduler service started successfully
+2026-02-16 18:31:47,542 - Services.ChatAI.api.main - INFO - main:75 - Gemini client initialized
+2026-02-16 18:32:00,014 - apscheduler.executors.default - INFO - base:129 - Running job "Signal Execution: etf_swing_strategy (trigger: cron[hour='18', minute='32'], next run at: 2026-02-17 18:32:00 IST)" (scheduled at 2026-02-16 18:32:00+05:30)
+2026-02-16 18:32:00,459 - SignalExecutor - INFO - signal_executor:220 - ============================================================
+2026-02-16 18:32:00,460 - SignalExecutor - INFO - signal_executor:221 - STARTING SIGNAL EXECUTION
+2026-02-16 18:32:00,462 - SignalExecutor - INFO - signal_executor:222 - ============================================================
+2026-02-16 18:32:00,463 - SignalExecutor - INFO - signal_executor:225 - STEP 1: Fetching pending signals from database...
+2026-02-16 18:32:01,021 - SignalExecutor - INFO - signal_executor:93 - Fetched 4 pending signals.
+2026-02-16 18:32:01,023 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-16 18:32:01,024 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 54
+2026-02-16 18:32:01,026 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-16 18:32:01,027 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-16 18:32:01,028 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: ITBEES
+2026-02-16 18:32:01,029 - SignalExecutor - INFO - signal_executor:241 -   - User ID: rachitgour567@gmail.com
+2026-02-16 18:32:01,030 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: ETF_090226_85
+2026-02-16 18:32:01,031 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-16 18:32:01,032 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-16 18:32:01,034 - SignalExecutor - INFO - signal_executor:245 -   - Price: 36.11000061035156
+2026-02-16 18:32:01,035 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'CTU900': 1923.08}
+2026-02-16 18:32:01,036 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: marketai
+2026-02-16 18:32:01,037 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'marketai' -> MarketAI Mode: True
+2026-02-16 18:32:01,039 - SignalExecutor - INFO - signal_executor:260 - STEP 2: Preparing MarketAI Payload...
+2026-02-16 18:32:01,040 - SignalExecutor - INFO - signal_executor:264 - PREPARED PAYLOAD (MarketAI):
+{
+  "exchange": "NSE",
+  "symbol": "ITBEES",
+  "user_id": "rachitgour567@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "CTU900": "53"
+  }
+}
+2026-02-16 18:32:01,042 - SignalExecutor - INFO - signal_executor:266 - STEP 3: Executing Order via Broker API (https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/broker/place_order)...
+2026-02-16 18:32:02,968 - SignalExecutor - INFO - signal_executor:269 - API RESPONSE: Status Code 500
+2026-02-16 18:32:02,969 - SignalExecutor - INFO - signal_executor:270 - API RESPONSE BODY: {"detail":"not enough values to unpack (expected 5, got 4)"}
+2026-02-16 18:32:02,970 - SignalExecutor - ERROR - signal_executor:276 - ❌ MarketAI Order Failed.
+2026-02-16 18:32:02,970 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-16 18:32:02,971 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 55
+2026-02-16 18:32:02,972 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-16 18:32:02,972 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-16 18:32:02,973 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: JUNIORBEES
+2026-02-16 18:32:02,974 - SignalExecutor - INFO - signal_executor:241 -   - User ID: rachit.gour749@gmail.com
+2026-02-16 18:32:02,975 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: ETF_310126_34
+2026-02-16 18:32:02,976 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: ETF_Rotation
+2026-02-16 18:32:02,976 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-16 18:32:02,977 - SignalExecutor - INFO - signal_executor:245 -   - Price: 740.8900146484375
+2026-02-16 18:32:02,978 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'R61829242': 1923.0}
+2026-02-16 18:32:02,979 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: marketai
+2026-02-16 18:32:02,980 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'marketai' -> MarketAI Mode: True
+2026-02-16 18:32:02,980 - SignalExecutor - INFO - signal_executor:260 - STEP 2: Preparing MarketAI Payload...
+2026-02-16 18:32:02,981 - SignalExecutor - INFO - signal_executor:264 - PREPARED PAYLOAD (MarketAI):
+{
+  "exchange": "NSE",
+  "symbol": "JUNIORBEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "2"
+  }
+}
+2026-02-16 18:32:02,981 - SignalExecutor - INFO - signal_executor:266 - STEP 3: Executing Order via Broker API (https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/broker/place_order)...
+2026-02-16 18:32:06,289 - SignalExecutor - INFO - signal_executor:269 - API RESPONSE: Status Code 200
+2026-02-16 18:32:06,290 - SignalExecutor - INFO - signal_executor:270 - API RESPONSE BODY: {"status":"success","message":"Orders processed for 1 clients","results":[{"symbol":"JUNIORBEES","client_id":"R61829242","quantity":"2","status":"success","message":"SUCCESS","order_id":null}],"summary":{"total":1,"success":1,"failed":0}}
+2026-02-16 18:32:06,291 - SignalExecutor - INFO - signal_executor:274 - ✅ MarketAI Order Placed Successfully.
+2026-02-16 18:32:06,291 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-16 18:32:06,293 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "ETF_310126_34",
+  "exchange": "NSE",
+  "symbol": "JUNIORBEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "2"
+  },
+  "trade_date": "2026-02-16"
+}
+2026-02-16 18:32:06,293 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-16 18:32:08,395 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 200
+2026-02-16 18:32:08,396 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"success":true,"message":"Created 1 trade records","trades":[{"client_code":"R61829242","symbol":"JUNIORBEES","side":"BUY","quantity":2,"price":747.260009765625}]}
+2026-02-16 18:32:08,397 - SignalExecutor - INFO - signal_executor:180 - ✅ Portfolio notification success.
+2026-02-16 18:32:08,399 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-16 18:32:08,625 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-16 18:32:08,955 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID ETF_310126_34...
+2026-02-16 18:32:09,744 - SignalExecutor - INFO - signal_executor:212 - Updated instance 12: rem_exe_count=38, next_exec=2026-02-23 18:32:09.186738
+2026-02-16 18:32:09,745 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-16 18:32:09,854 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 56
+2026-02-16 18:32:09,855 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-16 18:32:09,855 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-16 18:32:09,856 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: JUNIORBEES
+2026-02-16 18:32:09,856 - SignalExecutor - INFO - signal_executor:241 -   - User ID: rachit.gour749@gmail.com
+2026-02-16 18:32:09,857 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: STRAT_160226_06
+2026-02-16 18:32:09,857 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: NEW Strategy
+2026-02-16 18:32:09,858 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-16 18:32:09,859 - SignalExecutor - INFO - signal_executor:245 -   - Price: 747.260009765625
+2026-02-16 18:32:09,860 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'R61829242': 100000.0, 'qty': 33}
+2026-02-16 18:32:09,860 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: marketai
+2026-02-16 18:32:09,860 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'marketai' -> MarketAI Mode: True
+2026-02-16 18:32:09,861 - SignalExecutor - INFO - signal_executor:260 - STEP 2: Preparing MarketAI Payload...
+2026-02-16 18:32:09,861 - SignalExecutor - INFO - signal_executor:264 - PREPARED PAYLOAD (MarketAI):
+{
+  "exchange": "NSE",
+  "symbol": "JUNIORBEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "133"
+  }
+}
+2026-02-16 18:32:09,862 - SignalExecutor - INFO - signal_executor:266 - STEP 3: Executing Order via Broker API (https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/broker/place_order)...
+2026-02-16 18:32:11,645 - SignalExecutor - INFO - signal_executor:269 - API RESPONSE: Status Code 200
+2026-02-16 18:32:11,647 - SignalExecutor - INFO - signal_executor:270 - API RESPONSE BODY: {"status":"success","message":"Orders processed for 1 clients","results":[{"symbol":"JUNIORBEES","client_id":"R61829242","quantity":"133","status":"success","message":"SUCCESS","order_id":null}],"summary":{"total":1,"success":1,"failed":0}}
+2026-02-16 18:32:11,647 - SignalExecutor - INFO - signal_executor:274 - ✅ MarketAI Order Placed Successfully.
+2026-02-16 18:32:11,648 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-16 18:32:11,648 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "STRAT_160226_06",
+  "exchange": "NSE",
+  "symbol": "JUNIORBEES",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "133"
+  },
+  "trade_date": "2026-02-16"
+}
+2026-02-16 18:32:11,650 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-16 18:32:13,193 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 200
+2026-02-16 18:32:13,193 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"success":true,"message":"Created 1 trade records","trades":[{"client_code":"R61829242","symbol":"JUNIORBEES","side":"BUY","quantity":133,"price":747.260009765625}]}
+2026-02-16 18:32:13,194 - SignalExecutor - INFO - signal_executor:180 - ✅ Portfolio notification success.
+2026-02-16 18:32:13,197 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-16 18:32:13,423 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-16 18:32:13,772 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID STRAT_160226_06...
+2026-02-16 18:32:14,542 - SignalExecutor - INFO - signal_executor:212 - Updated instance 33: rem_exe_count=0, next_exec=2026-02-23 18:32:13.991829
+2026-02-16 18:32:14,544 - SignalExecutor - INFO - signal_executor:234 - ----------------------------------------
+2026-02-16 18:32:14,652 - SignalExecutor - INFO - signal_executor:235 - PROCESSING SIGNAL ID: 57
+2026-02-16 18:32:14,653 - SignalExecutor - INFO - signal_executor:236 - ----------------------------------------
+2026-02-16 18:32:14,655 - SignalExecutor - INFO - signal_executor:239 - FETCHED DATA:
+2026-02-16 18:32:14,655 - SignalExecutor - INFO - signal_executor:240 -   - Symbol: CPSEETF
+2026-02-16 18:32:14,657 - SignalExecutor - INFO - signal_executor:241 -   - User ID: rachit.gour749@gmail.com
+2026-02-16 18:32:14,659 - SignalExecutor - INFO - signal_executor:242 -   - Run ID: STRAT_160226_06
+2026-02-16 18:32:14,660 - SignalExecutor - INFO - signal_executor:243 -   - Strategy: NEW Strategy
+2026-02-16 18:32:14,662 - SignalExecutor - INFO - signal_executor:244 -   - Order Side: BUY
+2026-02-16 18:32:14,663 - SignalExecutor - INFO - signal_executor:245 -   - Price: 100.44999694824219
+2026-02-16 18:32:14,665 - SignalExecutor - INFO - signal_executor:246 -   - Client JSON: {'R61829242': 100000.0, 'qty': 248}
+2026-02-16 18:32:14,666 - SignalExecutor - INFO - signal_executor:247 -   - Webhook URL: marketai
+2026-02-16 18:32:14,667 - SignalExecutor - INFO - signal_executor:256 - LOGIC DETECTION: Webhook URL is 'marketai' -> MarketAI Mode: True
+2026-02-16 18:32:14,668 - SignalExecutor - INFO - signal_executor:260 - STEP 2: Preparing MarketAI Payload...
+2026-02-16 18:32:14,670 - SignalExecutor - INFO - signal_executor:264 - PREPARED PAYLOAD (MarketAI):
+{
+  "exchange": "NSE",
+  "symbol": "CPSEETF",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "995",
+    "qty": "2"
+  }
+}
+2026-02-16 18:32:14,671 - SignalExecutor - INFO - signal_executor:266 - STEP 3: Executing Order via Broker API (https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/broker/place_order)...
+2026-02-16 18:32:16,843 - SignalExecutor - INFO - signal_executor:269 - API RESPONSE: Status Code 200
+2026-02-16 18:32:16,843 - SignalExecutor - INFO - signal_executor:270 - API RESPONSE BODY: {"status":"success","message":"Orders processed for 2 clients","results":[{"symbol":"CPSEETF","client_id":"R61829242","quantity":"995","status":"success","message":"SUCCESS","order_id":null},{"symbol":"CPSEETF","client_id":"qty","quantity":"2","status":"success","message":"SUCCESS","order_id":null}],"summary":{"total":2,"success":2,"failed":0}}
+2026-02-16 18:32:16,844 - SignalExecutor - INFO - signal_executor:274 - ✅ MarketAI Order Placed Successfully.
+2026-02-16 18:32:16,844 - SignalExecutor - INFO - signal_executor:313 - STEP 4: Notifying Portfolio Service...
+2026-02-16 18:32:16,845 - SignalExecutor - INFO - signal_executor:171 - PORTFOLIO NOTIFICATION PAYLOAD:
+{
+  "run_id": "STRAT_160226_06",
+  "exchange": "NSE",
+  "symbol": "CPSEETF",
+  "user_id": "rachit.gour749@gmail.com",
+  "order_side": "BUY",
+  "product_type": "DELIVERY",
+  "clients": {
+    "R61829242": "995",
+    "qty": "2"
+  },
+  "trade_date": "2026-02-16"
+}
+2026-02-16 18:32:16,846 - SignalExecutor - INFO - signal_executor:172 - Sending to https://8sx9uc9pfy.ap-south-1.awsapprunner.com/api/portfolio/webhook/trade-executed...
+2026-02-16 18:32:18,519 - SignalExecutor - INFO - signal_executor:176 - PORTFOLIO RESPONSE: Status 200
+2026-02-16 18:32:18,520 - SignalExecutor - INFO - signal_executor:177 - PORTFOLIO RESPONSE BODY: {"success":true,"message":"Created 2 trade records","trades":[{"client_code":"R61829242","symbol":"CPSEETF","side":"BUY","quantity":995,"price":100.44999694824219},{"client_code":"qty","symbol":"CPSEETF","side":"BUY","quantity":2,"price":100.44999694824219}]}
+2026-02-16 18:32:18,521 - SignalExecutor - INFO - signal_executor:180 - ✅ Portfolio notification success.
+2026-02-16 18:32:18,524 - SignalExecutor - INFO - signal_executor:317 - STEP 5: Updating Signal Status to 'executed'...
+2026-02-16 18:32:18,739 - SignalExecutor - INFO - signal_executor:321 - Signal updated.
+2026-02-16 18:32:19,069 - SignalExecutor - INFO - signal_executor:325 - STEP 6: Updating Instance for Run ID STRAT_160226_06...
+2026-02-16 18:32:19,838 - SignalExecutor - INFO - signal_executor:212 - Updated instance 33: rem_exe_count=0, next_exec=2026-02-23 18:32:19.289431
+2026-02-16 18:32:19,838 - SignalExecutor - INFO - signal_executor:340 - ============================================================
+2026-02-16 18:32:19,840 - SignalExecutor - INFO - signal_executor:341 - SIGNAL EXECUTION COMPLETED
+2026-02-16 18:32:19,840 - SignalExecutor - INFO - signal_executor:342 - ============================================================
+2026-02-16 18:32:19,845 - apscheduler.executors.default - INFO - base:156 - Job "Signal Execution: etf_swing_strategy (trigger: cron[hour='18', minute='32'], next run at: 2026-02-17 18:32:00 IST)" executed successfully
+2026-02-16 18:33:45,623 - Services.portfolio.portfolio_api - INFO - portfolio_api:749 - Fetching hierarchical portfolio summary for: rachit.gour749@gmail.com
+2026-02-16 18:33:45,980 - Services.subscription.hierarchy_service - INFO - hierarchy_service:50 - Found 0 descendants for rachit.gour749@gmail.com
+2026-02-16 18:33:45,981 - Services.portfolio.portfolio_api - INFO - portfolio_api:753 - Found 1 accessible users for hierarchy summary
+2026-02-16 18:33:47,585 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: ETF_310126_34
+2026-02-16 18:33:47,593 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (227317186705135.41%), capping at 10,000%
+2026-02-16 18:33:47,596 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-16 18:33:47,601 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 1000.0%
+2026-02-16 18:33:48,431 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: -0.0
+2026-02-16 18:33:48,435 - Services.portfolio.utils - WARNING - utils:173 -   Invalid time period - Days: 0
+2026-02-16 18:33:48,437 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: STRAT_160226_06
+2026-02-16 18:33:48,444 - Services.portfolio.utils - WARNING - utils:173 -   Invalid time period - Days: 0
+2026-02-16 18:33:48,446 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-16 18:33:48,450 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-16 18:33:48,581 - Services.portfolio.portfolio_api - INFO - portfolio_api:749 - Fetching hierarchical portfolio summary for: rachit.gour749@gmail.com
+2026-02-16 18:33:48,898 - Services.subscription.hierarchy_service - INFO - hierarchy_service:50 - Found 0 descendants for rachit.gour749@gmail.com
+2026-02-16 18:33:48,900 - Services.portfolio.portfolio_api - INFO - portfolio_api:753 - Found 1 accessible users for hierarchy summary
+2026-02-16 18:33:49,724 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: ETF_310126_34
+2026-02-16 18:33:49,732 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (227317186705135.41%), capping at 10,000%
+2026-02-16 18:33:49,734 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-16 18:33:49,737 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 1000.0%
+2026-02-16 18:33:50,440 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: -0.0
+2026-02-16 18:33:50,444 - Services.portfolio.utils - WARNING - utils:173 -   Invalid time period - Days: 0
+2026-02-16 18:33:50,447 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: STRAT_160226_06
+2026-02-16 18:33:50,454 - Services.portfolio.utils - WARNING - utils:173 -   Invalid time period - Days: 0
+2026-02-16 18:33:50,456 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-16 18:33:50,458 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-16 18:33:57,801 - Services.portfolio.portfolio_api - INFO - portfolio_api:1131 - Fetching strategy summary for run_id: STRAT_160226_06
+2026-02-16 18:33:58,333 - Services.portfolio.portfolio_api - INFO - portfolio_api:1154 - [STRATEGY EXECUTION COUNT] run_id: STRAT_160226_06
+2026-02-16 18:33:58,335 - Services.portfolio.portfolio_api - INFO - portfolio_api:1163 - [STRATEGY EXECUTION COUNT] Final count: 1
+2026-02-16 18:33:58,925 - Services.portfolio.portfolio_api - INFO - portfolio_api:1289 - [CLIENT CAGR] Calculating for client: qty
+2026-02-16 18:33:58,931 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 0.0
+2026-02-16 18:33:58,933 - Services.portfolio.portfolio_api - INFO - portfolio_api:1307 - [CLIENT CAGR] Final CAGR for qty: 0.0%
+2026-02-16 18:33:58,935 - Services.portfolio.portfolio_api - INFO - portfolio_api:1336 - [CLIENT XIRR] Final XIRR for qty: 0.0%
+2026-02-16 18:33:58,937 - Services.portfolio.portfolio_api - INFO - portfolio_api:1289 - [CLIENT CAGR] Calculating for client: R61829242
+2026-02-16 18:33:58,942 - Services.portfolio.utils - WARNING - utils:173 -   Invalid time period - Days: 0
+2026-02-16 18:33:58,944 - Services.portfolio.portfolio_api - INFO - portfolio_api:1307 - [CLIENT CAGR] Final CAGR for R61829242: 0.0%
+2026-02-16 18:33:58,947 - Services.portfolio.portfolio_api - INFO - portfolio_api:1336 - [CLIENT XIRR] Final XIRR for R61829242: 0.0%
+2026-02-16 18:33:58,950 - Services.portfolio.utils - WARNING - utils:173 -   Invalid time period - Days: 0
+2026-02-16 18:33:59,073 - Services.portfolio.portfolio_api - INFO - portfolio_api:313 - Generating automated strategy equity curve for run_id=STRAT_160226_06
+2026-02-16 18:33:59,402 - Services.portfolio.portfolio_api - INFO - portfolio_api:322 - DIAGNOSTIC: Total trades in public.portfolio_trades table: 50
+2026-02-16 18:33:59,523 - Services.portfolio.portfolio_api - INFO - portfolio_api:344 - Found 3 trades for strategy equity curve
+2026-02-16 18:33:59,524 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for JUNIORBEES.NS on 2026-02-16
+2026-02-16 18:33:59,657 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for CPSEETF.NS on 2026-02-16
+2026-02-16 18:33:59,856 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-16
+2026-02-16 18:34:00,050 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-16
+2026-02-16 18:34:00,149 - Services.portfolio.portfolio_api - INFO - portfolio_api:691 - Fetching trades for run_id=STRAT_160226_06, client_code=None
+2026-02-16 18:34:00,484 - Services.portfolio.portfolio_api - INFO - portfolio_api:709 - Found 3 trades for run_id=STRAT_160226_06
+2026-02-16 18:34:00,487 - Services.portfolio.portfolio_api - INFO - portfolio_api:313 - Generating automated strategy equity curve for run_id=STRAT_160226_06
+2026-02-16 18:34:00,821 - Services.portfolio.portfolio_api - INFO - portfolio_api:322 - DIAGNOSTIC: Total trades in public.portfolio_trades table: 50
+2026-02-16 18:34:00,933 - Services.portfolio.portfolio_api - INFO - portfolio_api:344 - Found 3 trades for strategy equity curve
+2026-02-16 18:34:00,934 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for JUNIORBEES.NS on 2026-02-16
+2026-02-16 18:34:01,018 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for CPSEETF.NS on 2026-02-16
+2026-02-16 18:34:01,095 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-16
+2026-02-16 18:34:01,179 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-16
+2026-02-16 18:34:01,260 - Services.portfolio.portfolio_api - INFO - portfolio_api:656 - Fetching clients for run_id=STRAT_160226_06
+2026-02-16 18:34:01,591 - Services.portfolio.portfolio_api - INFO - portfolio_api:667 - Found 2 clients for run_id=STRAT_160226_06
+2026-02-16 18:34:01,593 - Services.portfolio.portfolio_api - INFO - portfolio_api:1131 - Fetching strategy summary for run_id: STRAT_160226_06
+2026-02-16 18:34:02,711 - Services.portfolio.portfolio_api - INFO - portfolio_api:1154 - [STRATEGY EXECUTION COUNT] run_id: STRAT_160226_06
+2026-02-16 18:34:02,712 - Services.portfolio.portfolio_api - INFO - portfolio_api:1163 - [STRATEGY EXECUTION COUNT] Final count: 1
+2026-02-16 18:34:03,192 - Services.portfolio.portfolio_api - INFO - portfolio_api:1289 - [CLIENT CAGR] Calculating for client: qty
+2026-02-16 18:34:03,198 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 0.0
+2026-02-16 18:34:03,200 - Services.portfolio.portfolio_api - INFO - portfolio_api:1307 - [CLIENT CAGR] Final CAGR for qty: 0.0%
+2026-02-16 18:34:03,202 - Services.portfolio.portfolio_api - INFO - portfolio_api:1336 - [CLIENT XIRR] Final XIRR for qty: 0.0%
+2026-02-16 18:34:03,204 - Services.portfolio.portfolio_api - INFO - portfolio_api:1289 - [CLIENT CAGR] Calculating for client: R61829242
+2026-02-16 18:34:03,211 - Services.portfolio.utils - WARNING - utils:173 -   Invalid time period - Days: 0
+2026-02-16 18:34:03,212 - Services.portfolio.portfolio_api - INFO - portfolio_api:1307 - [CLIENT CAGR] Final CAGR for R61829242: 0.0%
+2026-02-16 18:34:03,215 - Services.portfolio.portfolio_api - INFO - portfolio_api:1336 - [CLIENT XIRR] Final XIRR for R61829242: 0.0%
+2026-02-16 18:34:03,218 - Services.portfolio.utils - WARNING - utils:173 -   Invalid time period - Days: 0
+2026-02-16 18:34:03,344 - Services.portfolio.portfolio_api - INFO - portfolio_api:691 - Fetching trades for run_id=STRAT_160226_06, client_code=None
+2026-02-16 18:34:04,270 - Services.portfolio.portfolio_api - INFO - portfolio_api:709 - Found 3 trades for run_id=STRAT_160226_06
+2026-02-16 18:34:04,277 - Services.portfolio.portfolio_api - INFO - portfolio_api:656 - Fetching clients for run_id=STRAT_160226_06
+2026-02-16 18:34:04,609 - Services.portfolio.portfolio_api - INFO - portfolio_api:667 - Found 2 clients for run_id=STRAT_160226_06
+2026-02-16 22:29:50,305 - apscheduler.scheduler - INFO - base:507 - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-16 22:29:50,307 - Services.scheduler.scheduler_service - INFO - scheduler_service:193 - ✓ Registered execution job: etf_swing_strategy
+2026-02-16 22:29:50,314 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Generation: etf_swing_strategy" to job store "default"
+2026-02-16 22:29:50,315 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Execution: etf_swing_strategy" to job store "default"
+2026-02-16 22:29:50,315 - apscheduler.scheduler - INFO - base:214 - Scheduler started
+2026-02-16 22:29:50,316 - Services.scheduler.scheduler_service - INFO - scheduler_service:62 - ✓ Scheduler started successfully
+2026-02-16 22:29:50,319 - Services.scheduler.scheduler_service - INFO - scheduler_service:290 - 
+============================================================
+2026-02-16 22:29:50,319 - Services.scheduler.scheduler_service - INFO - scheduler_service:291 - SCHEDULED JOBS
+2026-02-16 22:29:50,320 - Services.scheduler.scheduler_service - INFO - scheduler_service:292 - ============================================================
+2026-02-16 22:29:50,321 - Services.scheduler.scheduler_service - INFO - scheduler_service:301 -   Signal Generation: etf_swing_strategy
+2026-02-16 22:29:50,322 - Services.scheduler.scheduler_service - INFO - scheduler_service:302 -     ID: signal_etf_swing_strategy
+2026-02-16 22:29:50,323 - Services.scheduler.scheduler_service - INFO - scheduler_service:303 -     Next run: 2026-02-17 18:26:00 IST
+2026-02-16 22:29:50,326 - Services.scheduler.scheduler_service - INFO - scheduler_service:304 - 
+2026-02-16 22:29:50,329 - Services.scheduler.scheduler_service - INFO - scheduler_service:301 -   Signal Execution: etf_swing_strategy
+2026-02-16 22:29:50,329 - Services.scheduler.scheduler_service - INFO - scheduler_service:302 -     ID: execution_etf_swing_strategy
+2026-02-16 22:29:50,329 - Services.scheduler.scheduler_service - INFO - scheduler_service:303 -     Next run: 2026-02-17 18:32:00 IST
+2026-02-16 22:29:50,334 - Services.scheduler.scheduler_service - INFO - scheduler_service:304 - 
+2026-02-16 22:29:50,334 - Services.scheduler.scheduler_service - INFO - scheduler_service:306 - ============================================================
+
+2026-02-16 22:29:50,335 - __main__ - INFO - server:333 - ✅ Scheduler service started successfully
+2026-02-16 22:29:55,660 - Services.ChatAI.api.main - INFO - main:75 - Gemini client initialized
+2026-02-16 22:30:06,237 - Services.subscription.api.google_oauth_api - WARNING - google_oauth_api:110 - Google token verification failed, trying JWT decode: Token has wrong audience 503421457549-215abjb62mkqh341rvi04de2b2arqld6.apps.googleusercontent.com, expected one of ['your-google-client-id']
+2026-02-16 22:30:06,243 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:122 - Successfully decoded JWT token for: rachit.gour749@gmail.com
+2026-02-16 22:30:06,243 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:160 - Processing Google login for user: rachit.gour749@gmail.com
+2026-02-16 22:30:06,724 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:168 - Existing user rachit.gour749@gmail.com logged in
+2026-02-16 22:30:07,189 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:173 - ✅ Updated token for existing user rachit.gour749@gmail.com
+2026-02-16 22:30:13,332 - APIs.services.strategy_service - INFO - strategy_service:20 - Getting assets for strategy: ETF_Rotation
+2026-02-16 22:30:13,333 - APIs.services.strategy_service - INFO - strategy_service:27 - Lazily initializing ETF backtester
+2026-02-16 22:30:17,065 - Databases.app_data_db_connection - INFO - app_data_db_connection:267 - Database tables initialized successfully
+2026-02-16 22:30:17,066 - Databases.app_data_db_connection - INFO - app_data_db_connection:268 - Strategy and signal tables are now using PostgreSQL
+2026-02-16 22:30:19,877 - APIs.services.strategy_service - INFO - strategy_service:593 - Getting asset overview for strategy: ETF_Rotation
+2026-02-16 22:30:20,909 - APIs.services.strategy_service - INFO - strategy_service:20 - Getting assets for strategy: ETF_Rotation
+2026-02-16 22:30:21,895 - APIs.services.strategy_service - INFO - strategy_service:593 - Getting asset overview for strategy: ETF_Rotation
+2026-02-16 22:30:31,591 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-16 22:30:33,578 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-16 22:30:35,010 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-16 22:30:36,365 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-16 22:30:38,236 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-16 22:31:48,086 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-16 22:31:55,041 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-16 22:32:37,591 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-16 22:32:37,591 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-16 22:32:43,543 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-16 22:50:04,842 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-16 22:50:04,842 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-16 22:50:11,150 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-16 22:50:35,813 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-16 22:50:35,813 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-16 22:50:41,824 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-16 22:59:37,531 - Services.ChatAI.api.main - INFO - main:81 - Application shutdown complete
+2026-02-16 22:59:37,534 - Services.scheduler.scheduler_service - INFO - scheduler_service:310 - Shutting down scheduler...
+2026-02-16 22:59:37,537 - Services.scheduler.scheduler_service - INFO - scheduler_service:312 - Scheduler shut down successfully
+2026-02-16 22:59:37,538 - __main__ - INFO - server:356 - ✅ Scheduler shut down successfully
+2026-02-16 22:59:37,541 - apscheduler.scheduler - INFO - base:245 - Scheduler has been shut down
+2026-02-16 23:00:45,758 - apscheduler.scheduler - INFO - base:507 - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-16 23:00:45,758 - Services.scheduler.scheduler_service - INFO - scheduler_service:193 - ✓ Registered execution job: etf_swing_strategy
+2026-02-16 23:00:45,760 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Generation: etf_swing_strategy" to job store "default"
+2026-02-16 23:00:45,762 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Execution: etf_swing_strategy" to job store "default"
+2026-02-16 23:00:45,763 - apscheduler.scheduler - INFO - base:214 - Scheduler started
+2026-02-16 23:00:45,763 - Services.scheduler.scheduler_service - INFO - scheduler_service:62 - ✓ Scheduler started successfully
+2026-02-16 23:00:45,764 - Services.scheduler.scheduler_service - INFO - scheduler_service:290 - 
+============================================================
+2026-02-16 23:00:45,765 - Services.scheduler.scheduler_service - INFO - scheduler_service:291 - SCHEDULED JOBS
+2026-02-16 23:00:45,765 - Services.scheduler.scheduler_service - INFO - scheduler_service:292 - ============================================================
+2026-02-16 23:00:45,765 - Services.scheduler.scheduler_service - INFO - scheduler_service:301 -   Signal Generation: etf_swing_strategy
+2026-02-16 23:00:45,766 - Services.scheduler.scheduler_service - INFO - scheduler_service:302 -     ID: signal_etf_swing_strategy
+2026-02-16 23:00:45,766 - Services.scheduler.scheduler_service - INFO - scheduler_service:303 -     Next run: 2026-02-17 18:26:00 IST
+2026-02-16 23:00:45,767 - Services.scheduler.scheduler_service - INFO - scheduler_service:304 - 
+2026-02-16 23:00:45,767 - Services.scheduler.scheduler_service - INFO - scheduler_service:301 -   Signal Execution: etf_swing_strategy
+2026-02-16 23:00:45,768 - Services.scheduler.scheduler_service - INFO - scheduler_service:302 -     ID: execution_etf_swing_strategy
+2026-02-16 23:00:45,769 - Services.scheduler.scheduler_service - INFO - scheduler_service:303 -     Next run: 2026-02-17 18:32:00 IST
+2026-02-16 23:00:45,770 - Services.scheduler.scheduler_service - INFO - scheduler_service:304 - 
+2026-02-16 23:00:45,770 - Services.scheduler.scheduler_service - INFO - scheduler_service:306 - ============================================================
+
+2026-02-16 23:00:45,772 - __main__ - INFO - server:333 - ✅ Scheduler service started successfully
+2026-02-16 23:00:49,113 - Services.ChatAI.api.main - INFO - main:75 - Gemini client initialized
+2026-02-16 23:01:38,593 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-16 23:01:38,593 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-16 23:01:44,445 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-16 23:10:16,578 - Services.ChatAI.api.main - INFO - main:81 - Application shutdown complete
+2026-02-16 23:10:16,579 - Services.scheduler.scheduler_service - INFO - scheduler_service:310 - Shutting down scheduler...
+2026-02-16 23:10:16,580 - Services.scheduler.scheduler_service - INFO - scheduler_service:312 - Scheduler shut down successfully
+2026-02-16 23:10:16,580 - __main__ - INFO - server:356 - ✅ Scheduler shut down successfully
+2026-02-16 23:10:16,581 - apscheduler.scheduler - INFO - base:245 - Scheduler has been shut down
+2026-02-16 23:10:50,770 - apscheduler.scheduler - INFO - base:507 - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-16 23:10:50,771 - Services.scheduler.scheduler_service - INFO - scheduler_service:193 - ✓ Registered execution job: etf_swing_strategy
+2026-02-16 23:10:50,773 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Generation: etf_swing_strategy" to job store "default"
+2026-02-16 23:10:50,774 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Execution: etf_swing_strategy" to job store "default"
+2026-02-16 23:10:50,775 - apscheduler.scheduler - INFO - base:214 - Scheduler started
+2026-02-16 23:10:50,776 - Services.scheduler.scheduler_service - INFO - scheduler_service:62 - ✓ Scheduler started successfully
+2026-02-16 23:10:50,776 - Services.scheduler.scheduler_service - INFO - scheduler_service:290 - 
+============================================================
+2026-02-16 23:10:50,777 - Services.scheduler.scheduler_service - INFO - scheduler_service:291 - SCHEDULED JOBS
+2026-02-16 23:10:50,777 - Services.scheduler.scheduler_service - INFO - scheduler_service:292 - ============================================================
+2026-02-16 23:10:50,778 - Services.scheduler.scheduler_service - INFO - scheduler_service:301 -   Signal Generation: etf_swing_strategy
+2026-02-16 23:10:50,778 - Services.scheduler.scheduler_service - INFO - scheduler_service:302 -     ID: signal_etf_swing_strategy
+2026-02-16 23:10:50,779 - Services.scheduler.scheduler_service - INFO - scheduler_service:303 -     Next run: 2026-02-17 18:26:00 IST
+2026-02-16 23:10:50,779 - Services.scheduler.scheduler_service - INFO - scheduler_service:304 - 
+2026-02-16 23:10:50,780 - Services.scheduler.scheduler_service - INFO - scheduler_service:301 -   Signal Execution: etf_swing_strategy
+2026-02-16 23:10:50,780 - Services.scheduler.scheduler_service - INFO - scheduler_service:302 -     ID: execution_etf_swing_strategy
+2026-02-16 23:10:50,781 - Services.scheduler.scheduler_service - INFO - scheduler_service:303 -     Next run: 2026-02-17 18:32:00 IST
+2026-02-16 23:10:50,781 - Services.scheduler.scheduler_service - INFO - scheduler_service:304 - 
+2026-02-16 23:10:50,781 - Services.scheduler.scheduler_service - INFO - scheduler_service:306 - ============================================================
+
+2026-02-16 23:10:50,782 - __main__ - INFO - server:333 - ✅ Scheduler service started successfully
+2026-02-16 23:10:53,954 - Services.ChatAI.api.main - INFO - main:75 - Gemini client initialized
+2026-02-16 23:11:25,117 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-16 23:11:25,119 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-16 23:11:31,252 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-16 23:13:24,109 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-16 23:13:24,109 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-16 23:13:30,841 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-17 23:45:15,530 - apscheduler.executors.default - WARNING - base:126 - Run time of job "Signal Generation: etf_swing_strategy (trigger: cron[hour='18', minute='26'], next run at: 2026-02-18 18:26:00 IST)" was missed by 5:19:15.530734
+2026-02-17 23:45:15,539 - apscheduler.executors.default - WARNING - base:126 - Run time of job "Signal Execution: etf_swing_strategy (trigger: cron[hour='18', minute='32'], next run at: 2026-02-18 18:32:00 IST)" was missed by 5:13:15.539211
+2026-02-17 23:45:49,494 - APIs.services.strategy_service - INFO - strategy_service:20 - Getting assets for strategy: ETF_Rotation
+2026-02-17 23:45:49,495 - APIs.services.strategy_service - INFO - strategy_service:27 - Lazily initializing ETF backtester
+2026-02-17 23:45:52,582 - Databases.app_data_db_connection - INFO - app_data_db_connection:267 - Database tables initialized successfully
+2026-02-17 23:45:52,582 - Databases.app_data_db_connection - INFO - app_data_db_connection:268 - Strategy and signal tables are now using PostgreSQL
+2026-02-17 23:45:55,308 - APIs.services.strategy_service - INFO - strategy_service:593 - Getting asset overview for strategy: ETF_Rotation
+2026-02-17 23:45:56,130 - APIs.services.strategy_service - INFO - strategy_service:20 - Getting assets for strategy: ETF_Rotation
+2026-02-17 23:45:57,193 - APIs.services.strategy_service - INFO - strategy_service:593 - Getting asset overview for strategy: ETF_Rotation
+2026-02-17 23:46:44,289 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-17 23:46:46,498 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-17 23:46:48,167 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-17 23:46:50,498 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-17 23:46:52,055 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-17 23:46:55,123 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-17 23:47:05,536 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-17 23:47:07,458 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-17 23:48:08,295 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-17 23:48:08,295 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-17 23:48:14,788 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-17 23:51:42,659 - APIs.services.strategy_service - INFO - strategy_service:20 - Getting assets for strategy: International_ETF_Rotation
+2026-02-17 23:51:42,919 - APIs.services.strategy_service - INFO - strategy_service:58 - Lazily initializing International ETF backtester
+2026-02-17 23:51:46,652 - Databases.app_data_db_connection - INFO - app_data_db_connection:267 - Database tables initialized successfully
+2026-02-17 23:51:46,653 - Databases.app_data_db_connection - INFO - app_data_db_connection:268 - Strategy and signal tables are now using PostgreSQL
+2026-02-17 23:51:48,893 - APIs.services.strategy_service - INFO - strategy_service:593 - Getting asset overview for strategy: International_ETF_Rotation
+2026-02-17 23:51:49,916 - APIs.services.strategy_service - INFO - strategy_service:20 - Getting assets for strategy: International_ETF_Rotation
+2026-02-17 23:51:50,597 - APIs.services.strategy_service - INFO - strategy_service:593 - Getting asset overview for strategy: International_ETF_Rotation
+2026-02-17 23:51:53,916 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: International_ETF_Rotation
+2026-02-17 23:52:13,461 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: International_ETF_Rotation
+2026-02-17 23:52:20,152 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: International_ETF_Rotation
+2026-02-18 10:45:33,489 - Services.subscription.api.google_oauth_api - WARNING - google_oauth_api:110 - Google token verification failed, trying JWT decode: Token has wrong audience 503421457549-215abjb62mkqh341rvi04de2b2arqld6.apps.googleusercontent.com, expected one of ['your-google-client-id']
+2026-02-18 10:45:33,494 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:122 - Successfully decoded JWT token for: rachit.gour749@gmail.com
+2026-02-18 10:45:33,495 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:160 - Processing Google login for user: rachit.gour749@gmail.com
+2026-02-18 10:45:33,940 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:168 - Existing user rachit.gour749@gmail.com logged in
+2026-02-18 10:45:34,580 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:173 - ✅ Updated token for existing user rachit.gour749@gmail.com
+2026-02-18 10:45:38,256 - APIs.services.strategy_service - INFO - strategy_service:20 - Getting assets for strategy: ETF_Rotation
+2026-02-18 10:45:39,902 - APIs.services.strategy_service - INFO - strategy_service:593 - Getting asset overview for strategy: ETF_Rotation
+2026-02-18 10:45:41,048 - APIs.services.strategy_service - INFO - strategy_service:20 - Getting assets for strategy: ETF_Rotation
+2026-02-18 10:45:41,804 - APIs.services.strategy_service - INFO - strategy_service:593 - Getting asset overview for strategy: ETF_Rotation
+2026-02-18 10:46:58,709 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 10:47:00,108 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 10:47:01,439 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 10:47:03,105 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 10:47:06,040 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 10:47:23,555 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-18 10:47:23,555 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-18 10:47:35,367 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-18 11:26:16,344 - Services.portfolio.portfolio_api - INFO - portfolio_api:749 - Fetching hierarchical portfolio summary for: rachit.gour749@gmail.com
+2026-02-18 11:26:17,728 - Services.subscription.hierarchy_service - INFO - hierarchy_service:50 - Found 0 descendants for rachit.gour749@gmail.com
+2026-02-18 11:26:17,729 - Services.portfolio.portfolio_api - INFO - portfolio_api:753 - Found 1 accessible users for hierarchy summary
+2026-02-18 11:26:19,765 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: ETF_310126_34
+2026-02-18 11:26:19,773 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1443970857572.34%), capping at 10,000%
+2026-02-18 11:26:19,775 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:26:19,777 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 1000.0%
+2026-02-18 11:26:20,610 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 1.06
+2026-02-18 11:26:20,613 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:26:20,615 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: STRAT_160226_06
+2026-02-18 11:26:20,621 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:26:20,624 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:26:20,627 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:26:20,752 - Services.portfolio.portfolio_api - INFO - portfolio_api:749 - Fetching hierarchical portfolio summary for: rachit.gour749@gmail.com
+2026-02-18 11:26:21,667 - Services.subscription.hierarchy_service - INFO - hierarchy_service:50 - Found 0 descendants for rachit.gour749@gmail.com
+2026-02-18 11:26:21,668 - Services.portfolio.portfolio_api - INFO - portfolio_api:753 - Found 1 accessible users for hierarchy summary
+2026-02-18 11:26:22,611 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: ETF_310126_34
+2026-02-18 11:26:22,618 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1443970857572.34%), capping at 10,000%
+2026-02-18 11:26:22,620 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:26:22,622 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 1000.0%
+2026-02-18 11:26:23,458 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 1.06
+2026-02-18 11:26:23,461 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:26:23,463 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: STRAT_160226_06
+2026-02-18 11:26:23,469 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:26:23,470 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:26:23,472 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:27:35,003 - apscheduler.scheduler - INFO - base:507 - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-18 11:27:35,005 - Services.scheduler.scheduler_service - INFO - scheduler_service:193 - ✓ Registered execution job: etf_swing_strategy
+2026-02-18 11:27:35,010 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Generation: etf_swing_strategy" to job store "default"
+2026-02-18 11:27:35,011 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Execution: etf_swing_strategy" to job store "default"
+2026-02-18 11:27:35,011 - apscheduler.scheduler - INFO - base:214 - Scheduler started
+2026-02-18 11:27:35,012 - Services.scheduler.scheduler_service - INFO - scheduler_service:62 - ✓ Scheduler started successfully
+2026-02-18 11:27:35,012 - Services.scheduler.scheduler_service - INFO - scheduler_service:290 - 
+============================================================
+2026-02-18 11:27:35,013 - Services.scheduler.scheduler_service - INFO - scheduler_service:291 - SCHEDULED JOBS
+2026-02-18 11:27:35,013 - Services.scheduler.scheduler_service - INFO - scheduler_service:292 - ============================================================
+2026-02-18 11:27:35,014 - Services.scheduler.scheduler_service - INFO - scheduler_service:301 -   Signal Generation: etf_swing_strategy
+2026-02-18 11:27:35,014 - Services.scheduler.scheduler_service - INFO - scheduler_service:302 -     ID: signal_etf_swing_strategy
+2026-02-18 11:27:35,015 - Services.scheduler.scheduler_service - INFO - scheduler_service:303 -     Next run: 2026-02-18 18:26:00 IST
+2026-02-18 11:27:35,015 - Services.scheduler.scheduler_service - INFO - scheduler_service:304 - 
+2026-02-18 11:27:35,016 - Services.scheduler.scheduler_service - INFO - scheduler_service:301 -   Signal Execution: etf_swing_strategy
+2026-02-18 11:27:35,017 - Services.scheduler.scheduler_service - INFO - scheduler_service:302 -     ID: execution_etf_swing_strategy
+2026-02-18 11:27:35,017 - Services.scheduler.scheduler_service - INFO - scheduler_service:303 -     Next run: 2026-02-18 18:32:00 IST
+2026-02-18 11:27:35,017 - Services.scheduler.scheduler_service - INFO - scheduler_service:304 - 
+2026-02-18 11:27:35,017 - Services.scheduler.scheduler_service - INFO - scheduler_service:306 - ============================================================
+
+2026-02-18 11:27:35,018 - __main__ - INFO - server:333 - ✅ Scheduler service started successfully
+2026-02-18 11:27:38,321 - Services.ChatAI.api.main - INFO - main:75 - Gemini client initialized
+2026-02-18 11:27:59,268 - Services.portfolio.portfolio_api - INFO - portfolio_api:749 - Fetching hierarchical portfolio summary for: rachit.gour749@gmail.com
+2026-02-18 11:27:59,612 - Services.subscription.hierarchy_service - INFO - hierarchy_service:50 - Found 0 descendants for rachit.gour749@gmail.com
+2026-02-18 11:27:59,613 - Services.portfolio.portfolio_api - INFO - portfolio_api:753 - Found 1 accessible users for hierarchy summary
+2026-02-18 11:28:02,189 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: ETF_310126_34
+2026-02-18 11:28:02,197 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1415772480357.52%), capping at 10,000%
+2026-02-18 11:28:02,199 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:28:02,202 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 1000.0%
+2026-02-18 11:28:03,404 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:28:03,409 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 1.12
+2026-02-18 11:28:03,411 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: STRAT_160226_06
+2026-02-18 11:28:03,419 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:28:03,420 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:28:03,422 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:28:03,549 - Services.portfolio.portfolio_api - INFO - portfolio_api:749 - Fetching hierarchical portfolio summary for: rachit.gour749@gmail.com
+2026-02-18 11:28:03,881 - Services.subscription.hierarchy_service - INFO - hierarchy_service:50 - Found 0 descendants for rachit.gour749@gmail.com
+2026-02-18 11:28:03,881 - Services.portfolio.portfolio_api - INFO - portfolio_api:753 - Found 1 accessible users for hierarchy summary
+2026-02-18 11:28:05,185 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: ETF_310126_34
+2026-02-18 11:28:05,198 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1415772480357.52%), capping at 10,000%
+2026-02-18 11:28:05,201 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:28:05,204 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 1000.0%
+2026-02-18 11:28:06,392 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:28:06,397 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 1.12
+2026-02-18 11:28:06,399 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: STRAT_160226_06
+2026-02-18 11:28:06,404 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:28:06,405 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:28:06,408 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:28:13,509 - Services.portfolio.portfolio_api - INFO - portfolio_api:1131 - Fetching strategy summary for run_id: ETF_310126_34
+2026-02-18 11:28:14,067 - Services.portfolio.portfolio_api - INFO - portfolio_api:1154 - [STRATEGY EXECUTION COUNT] run_id: ETF_310126_34
+2026-02-18 11:28:14,069 - Services.portfolio.portfolio_api - INFO - portfolio_api:1163 - [STRATEGY EXECUTION COUNT] Final count: 2
+2026-02-18 11:28:15,089 - Services.portfolio.portfolio_api - INFO - portfolio_api:1289 - [CLIENT CAGR] Calculating for client: R61829242
+2026-02-18 11:28:15,099 - Services.portfolio.portfolio_api - INFO - portfolio_api:1307 - [CLIENT CAGR] Final CAGR for R61829242: 41.95%
+2026-02-18 11:28:15,102 - Services.portfolio.portfolio_api - INFO - portfolio_api:1336 - [CLIENT XIRR] Final XIRR for R61829242: 1000.0%
+2026-02-18 11:28:15,107 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1420434830491.76%), capping at 10,000%
+2026-02-18 11:28:15,232 - Services.portfolio.portfolio_api - INFO - portfolio_api:313 - Generating automated strategy equity curve for run_id=ETF_310126_34
+2026-02-18 11:28:15,566 - Services.portfolio.portfolio_api - INFO - portfolio_api:322 - DIAGNOSTIC: Total trades in public.portfolio_trades table: 50
+2026-02-18 11:28:15,686 - Services.portfolio.portfolio_api - INFO - portfolio_api:344 - Found 2 trades for strategy equity curve
+2026-02-18 11:28:15,687 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for INFRABEES.NS on 2026-02-07
+2026-02-18 11:28:16,039 - Services.portfolio.price_service - INFO - price_service:81 - Using price from 2026-02-06 (requested 2026-02-07)
+2026-02-18 11:28:16,039 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-07
+2026-02-18 11:28:16,384 - Services.portfolio.price_service - INFO - price_service:81 - Using price from 2026-02-06 (requested 2026-02-07)
+2026-02-18 11:28:16,386 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-07
+2026-02-18 11:28:16,420 - Services.portfolio.price_service - INFO - price_service:81 - Using price from 2026-02-06 (requested 2026-02-07)
+2026-02-18 11:28:16,422 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for INFRABEES.NS on 2026-02-16
+2026-02-18 11:28:16,764 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for JUNIORBEES.NS on 2026-02-16
+2026-02-18 11:28:17,118 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-07
+2026-02-18 11:28:17,150 - Services.portfolio.price_service - INFO - price_service:81 - Using price from 2026-02-06 (requested 2026-02-07)
+2026-02-18 11:28:17,150 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-16
+2026-02-18 11:28:17,520 - Services.portfolio.portfolio_api - INFO - portfolio_api:691 - Fetching trades for run_id=ETF_310126_34, client_code=None
+2026-02-18 11:28:17,846 - Services.portfolio.portfolio_api - INFO - portfolio_api:709 - Found 2 trades for run_id=ETF_310126_34
+2026-02-18 11:28:17,848 - Services.portfolio.portfolio_api - INFO - portfolio_api:656 - Fetching clients for run_id=ETF_310126_34
+2026-02-18 11:28:18,175 - Services.portfolio.portfolio_api - INFO - portfolio_api:667 - Found 1 clients for run_id=ETF_310126_34
+2026-02-18 11:28:18,177 - Services.portfolio.portfolio_api - INFO - portfolio_api:1131 - Fetching strategy summary for run_id: ETF_310126_34
+2026-02-18 11:28:18,726 - Services.portfolio.portfolio_api - INFO - portfolio_api:1154 - [STRATEGY EXECUTION COUNT] run_id: ETF_310126_34
+2026-02-18 11:28:18,728 - Services.portfolio.portfolio_api - INFO - portfolio_api:1163 - [STRATEGY EXECUTION COUNT] Final count: 2
+2026-02-18 11:28:19,727 - Services.portfolio.portfolio_api - INFO - portfolio_api:1289 - [CLIENT CAGR] Calculating for client: R61829242
+2026-02-18 11:28:19,736 - Services.portfolio.portfolio_api - INFO - portfolio_api:1307 - [CLIENT CAGR] Final CAGR for R61829242: 41.95%
+2026-02-18 11:28:19,740 - Services.portfolio.portfolio_api - INFO - portfolio_api:1336 - [CLIENT XIRR] Final XIRR for R61829242: 1000.0%
+2026-02-18 11:28:19,745 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1420434830491.76%), capping at 10,000%
+2026-02-18 11:28:19,869 - Services.portfolio.portfolio_api - INFO - portfolio_api:313 - Generating automated strategy equity curve for run_id=ETF_310126_34
+2026-02-18 11:28:20,195 - Services.portfolio.portfolio_api - INFO - portfolio_api:322 - DIAGNOSTIC: Total trades in public.portfolio_trades table: 50
+2026-02-18 11:28:20,306 - Services.portfolio.portfolio_api - INFO - portfolio_api:344 - Found 2 trades for strategy equity curve
+2026-02-18 11:28:20,307 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for INFRABEES.NS on 2026-02-07
+2026-02-18 11:28:20,348 - Services.portfolio.price_service - INFO - price_service:81 - Using price from 2026-02-06 (requested 2026-02-07)
+2026-02-18 11:28:20,349 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-07
+2026-02-18 11:28:20,385 - Services.portfolio.price_service - INFO - price_service:81 - Using price from 2026-02-06 (requested 2026-02-07)
+2026-02-18 11:28:20,386 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-07
+2026-02-18 11:28:20,423 - Services.portfolio.price_service - INFO - price_service:81 - Using price from 2026-02-06 (requested 2026-02-07)
+2026-02-18 11:28:20,424 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for INFRABEES.NS on 2026-02-16
+2026-02-18 11:28:20,468 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for JUNIORBEES.NS on 2026-02-16
+2026-02-18 11:28:20,502 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-07
+2026-02-18 11:28:20,537 - Services.portfolio.price_service - INFO - price_service:81 - Using price from 2026-02-06 (requested 2026-02-07)
+2026-02-18 11:28:20,537 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-16
+2026-02-18 11:28:20,586 - Services.portfolio.portfolio_api - INFO - portfolio_api:656 - Fetching clients for run_id=ETF_310126_34
+2026-02-18 11:28:21,534 - Services.portfolio.portfolio_api - INFO - portfolio_api:667 - Found 1 clients for run_id=ETF_310126_34
+2026-02-18 11:28:21,536 - Services.portfolio.portfolio_api - INFO - portfolio_api:691 - Fetching trades for run_id=ETF_310126_34, client_code=None
+2026-02-18 11:28:21,864 - Services.portfolio.portfolio_api - INFO - portfolio_api:709 - Found 2 trades for run_id=ETF_310126_34
+2026-02-18 11:28:38,875 - Services.portfolio.portfolio_api - INFO - portfolio_api:749 - Fetching hierarchical portfolio summary for: rachit.gour749@gmail.com
+2026-02-18 11:28:39,208 - Services.subscription.hierarchy_service - INFO - hierarchy_service:50 - Found 0 descendants for rachit.gour749@gmail.com
+2026-02-18 11:28:39,210 - Services.portfolio.portfolio_api - INFO - portfolio_api:753 - Found 1 accessible users for hierarchy summary
+2026-02-18 11:28:40,554 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: ETF_310126_34
+2026-02-18 11:28:40,566 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1418101797025.19%), capping at 10,000%
+2026-02-18 11:28:40,567 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:28:40,570 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 1000.0%
+2026-02-18 11:28:41,821 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:28:41,825 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 1.16
+2026-02-18 11:28:41,826 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: STRAT_160226_06
+2026-02-18 11:28:41,833 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:28:41,834 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:28:41,837 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:28:41,965 - Services.portfolio.portfolio_api - INFO - portfolio_api:749 - Fetching hierarchical portfolio summary for: rachit.gour749@gmail.com
+2026-02-18 11:28:42,286 - Services.subscription.hierarchy_service - INFO - hierarchy_service:50 - Found 0 descendants for rachit.gour749@gmail.com
+2026-02-18 11:28:42,286 - Services.portfolio.portfolio_api - INFO - portfolio_api:753 - Found 1 accessible users for hierarchy summary
+2026-02-18 11:28:43,642 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: ETF_310126_34
+2026-02-18 11:28:43,650 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1418101797025.19%), capping at 10,000%
+2026-02-18 11:28:43,651 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:28:43,654 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 1000.0%
+2026-02-18 11:28:44,909 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:28:44,913 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 1.16
+2026-02-18 11:28:44,915 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: STRAT_160226_06
+2026-02-18 11:28:44,925 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:28:44,926 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:28:44,929 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:28:54,807 - Services.subscription.api.google_oauth_api - WARNING - google_oauth_api:110 - Google token verification failed, trying JWT decode: Token has wrong audience 503421457549-215abjb62mkqh341rvi04de2b2arqld6.apps.googleusercontent.com, expected one of ['your-google-client-id']
+2026-02-18 11:28:54,810 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:122 - Successfully decoded JWT token for: wealthwisersfinancialservices@gmail.com
+2026-02-18 11:28:54,810 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:160 - Processing Google login for user: wealthwisersfinancialservices@gmail.com
+2026-02-18 11:28:55,312 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:168 - Existing user wealthwisersfinancialservices@gmail.com logged in
+2026-02-18 11:28:55,872 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:173 - ✅ Updated token for existing user wealthwisersfinancialservices@gmail.com
+2026-02-18 11:29:00,865 - Services.portfolio.portfolio_api - INFO - portfolio_api:749 - Fetching hierarchical portfolio summary for: wealthwisersfinancialservices@gmail.com
+2026-02-18 11:29:01,190 - Services.subscription.hierarchy_service - INFO - hierarchy_service:50 - Found 3 descendants for wealthwisersfinancialservices@gmail.com
+2026-02-18 11:29:01,191 - Services.portfolio.portfolio_api - INFO - portfolio_api:753 - Found 4 accessible users for hierarchy summary
+2026-02-18 11:29:02,566 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: ETF_310126_34
+2026-02-18 11:29:02,575 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1420434830491.76%), capping at 10,000%
+2026-02-18 11:29:02,577 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:02,579 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 1000.0%
+2026-02-18 11:29:03,910 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:03,919 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (103855530.28%), capping at 10,000%
+2026-02-18 11:29:03,921 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:03,924 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 2.63%
+2026-02-18 11:29:05,162 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:29:05,166 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 1.04
+2026-02-18 11:29:05,168 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: STRAT_160226_06
+2026-02-18 11:29:05,176 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:29:05,179 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:29:05,181 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:29:06,391 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:06,398 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (103855530.28%), capping at 10,000%
+2026-02-18 11:29:06,400 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:06,404 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 2.63%
+2026-02-18 11:29:06,518 - Services.portfolio.utils - WARNING - utils:69 - No client_info found in saved_instances for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Payout___4_ETFs___2026_01_05_03_56_59_1768240968
+2026-02-18 11:29:07,643 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 24740.19
+2026-02-18 11:29:07,651 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 41268.07
+2026-02-18 11:29:07,654 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Payout___4_ETFs___2026_01_05_03_56_59_1768240968
+2026-02-18 11:29:07,665 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 66008.26
+2026-02-18 11:29:07,669 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:29:07,674 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:29:08,605 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___6_ETFs___2026_01_02_11_22_31_1767353106
+2026-02-18 11:29:08,613 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1135993148.33%), capping at 10,000%
+2026-02-18 11:29:08,615 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:08,617 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 24.66%
+2026-02-18 11:29:08,828 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (178658.92%), capping at 10,000%
+2026-02-18 11:29:08,852 - Services.portfolio.portfolio_api - INFO - portfolio_api:749 - Fetching hierarchical portfolio summary for: wealthwisersfinancialservices@gmail.com
+2026-02-18 11:29:09,188 - Services.subscription.hierarchy_service - INFO - hierarchy_service:50 - Found 3 descendants for wealthwisersfinancialservices@gmail.com
+2026-02-18 11:29:09,189 - Services.portfolio.portfolio_api - INFO - portfolio_api:753 - Found 4 accessible users for hierarchy summary
+2026-02-18 11:29:10,522 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: ETF_310126_34
+2026-02-18 11:29:10,530 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1420434830491.76%), capping at 10,000%
+2026-02-18 11:29:10,532 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:10,534 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 1000.0%
+2026-02-18 11:29:11,848 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:11,855 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (103855530.28%), capping at 10,000%
+2026-02-18 11:29:11,857 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:11,859 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 2.63%
+2026-02-18 11:29:13,120 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:29:13,125 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 1.04
+2026-02-18 11:29:13,128 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: STRAT_160226_06
+2026-02-18 11:29:13,136 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:29:13,137 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:29:13,139 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:29:14,506 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:14,515 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (104109439.34%), capping at 10,000%
+2026-02-18 11:29:14,516 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:14,519 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 3.12%
+2026-02-18 11:29:14,626 - Services.portfolio.utils - WARNING - utils:69 - No client_info found in saved_instances for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Payout___4_ETFs___2026_01_05_03_56_59_1768240968
+2026-02-18 11:29:15,807 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 24740.19
+2026-02-18 11:29:15,811 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 41268.07
+2026-02-18 11:29:15,813 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Payout___4_ETFs___2026_01_05_03_56_59_1768240968
+2026-02-18 11:29:15,818 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 66008.26
+2026-02-18 11:29:15,820 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:29:15,822 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:29:16,700 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___6_ETFs___2026_01_02_11_22_31_1767353106
+2026-02-18 11:29:16,709 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1135993148.33%), capping at 10,000%
+2026-02-18 11:29:16,709 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:16,712 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 24.66%
+2026-02-18 11:29:16,921 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (178700.38%), capping at 10,000%
+2026-02-18 11:29:25,546 - Services.portfolio.portfolio_api - INFO - portfolio_api:1131 - Fetching strategy summary for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:26,181 - Services.portfolio.portfolio_api - INFO - portfolio_api:1154 - [STRATEGY EXECUTION COUNT] run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:26,183 - Services.portfolio.portfolio_api - INFO - portfolio_api:1163 - [STRATEGY EXECUTION COUNT] Final count: 9
+2026-02-18 11:29:27,226 - Services.portfolio.portfolio_api - INFO - portfolio_api:1289 - [CLIENT CAGR] Calculating for client: SRKH5002
+2026-02-18 11:29:27,236 - Services.portfolio.portfolio_api - INFO - portfolio_api:1307 - [CLIENT CAGR] Final CAGR for SRKH5002: 1.97%
+2026-02-18 11:29:27,241 - Services.portfolio.portfolio_api - INFO - portfolio_api:1336 - [CLIENT XIRR] Final XIRR for SRKH5002: 3.12%
+2026-02-18 11:29:27,244 - Services.portfolio.portfolio_api - INFO - portfolio_api:1289 - [CLIENT CAGR] Calculating for client: EAOPE1486
+2026-02-18 11:29:27,252 - Services.portfolio.portfolio_api - INFO - portfolio_api:1307 - [CLIENT CAGR] Final CAGR for EAOPE1486: 1.97%
+2026-02-18 11:29:27,257 - Services.portfolio.portfolio_api - INFO - portfolio_api:1336 - [CLIENT XIRR] Final XIRR for EAOPE1486: 3.12%
+2026-02-18 11:29:27,262 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (104109439.34%), capping at 10,000%
+2026-02-18 11:29:27,372 - Services.portfolio.portfolio_api - INFO - portfolio_api:313 - Generating automated strategy equity curve for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:27,715 - Services.portfolio.portfolio_api - INFO - portfolio_api:322 - DIAGNOSTIC: Total trades in public.portfolio_trades table: 50
+2026-02-18 11:29:27,834 - Services.portfolio.portfolio_api - INFO - portfolio_api:344 - Found 18 trades for strategy equity curve
+2026-02-18 11:29:27,835 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2025-12-22
+2026-02-18 11:29:28,190 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:28,541 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:28,575 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2025-12-29
+2026-02-18 11:29:28,932 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:28,962 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-29
+2026-02-18 11:29:29,310 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-01-05
+2026-02-18 11:29:29,664 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:29,693 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-01-05
+2026-02-18 11:29:30,039 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-01-12
+2026-02-18 11:29:30,386 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:30,420 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-01-12
+2026-02-18 11:29:30,767 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-01-19
+2026-02-18 11:29:31,117 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:31,153 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-01-19
+2026-02-18 11:29:31,510 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-01-27
+2026-02-18 11:29:31,895 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:31,929 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-01-27
+2026-02-18 11:29:32,283 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-02-02
+2026-02-18 11:29:32,637 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:32,673 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-02
+2026-02-18 11:29:33,019 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-02-09
+2026-02-18 11:29:33,371 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:33,401 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-09
+2026-02-18 11:29:33,750 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-02-16
+2026-02-18 11:29:34,095 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ITBEES.NS on 2026-02-16
+2026-02-18 11:29:34,447 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:34,481 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-16
+2026-02-18 11:29:34,513 - Services.portfolio.portfolio_api - INFO - portfolio_api:691 - Fetching trades for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023, client_code=None
+2026-02-18 11:29:34,950 - Services.portfolio.portfolio_api - INFO - portfolio_api:709 - Found 18 trades for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:34,956 - Services.portfolio.portfolio_api - INFO - portfolio_api:656 - Fetching clients for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:35,289 - Services.portfolio.portfolio_api - INFO - portfolio_api:667 - Found 2 clients for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:35,309 - Services.portfolio.portfolio_api - INFO - portfolio_api:1131 - Fetching strategy summary for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:35,859 - Services.portfolio.portfolio_api - INFO - portfolio_api:1154 - [STRATEGY EXECUTION COUNT] run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:35,860 - Services.portfolio.portfolio_api - INFO - portfolio_api:1163 - [STRATEGY EXECUTION COUNT] Final count: 9
+2026-02-18 11:29:36,860 - Services.portfolio.portfolio_api - INFO - portfolio_api:1289 - [CLIENT CAGR] Calculating for client: SRKH5002
+2026-02-18 11:29:36,869 - Services.portfolio.portfolio_api - INFO - portfolio_api:1307 - [CLIENT CAGR] Final CAGR for SRKH5002: 1.97%
+2026-02-18 11:29:36,878 - Services.portfolio.portfolio_api - INFO - portfolio_api:1336 - [CLIENT XIRR] Final XIRR for SRKH5002: 3.12%
+2026-02-18 11:29:36,879 - Services.portfolio.portfolio_api - INFO - portfolio_api:1289 - [CLIENT CAGR] Calculating for client: EAOPE1486
+2026-02-18 11:29:36,887 - Services.portfolio.portfolio_api - INFO - portfolio_api:1307 - [CLIENT CAGR] Final CAGR for EAOPE1486: 1.97%
+2026-02-18 11:29:36,894 - Services.portfolio.portfolio_api - INFO - portfolio_api:1336 - [CLIENT XIRR] Final XIRR for EAOPE1486: 3.12%
+2026-02-18 11:29:36,898 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (104109439.34%), capping at 10,000%
+2026-02-18 11:29:37,016 - Services.portfolio.portfolio_api - INFO - portfolio_api:313 - Generating automated strategy equity curve for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:37,337 - Services.portfolio.portfolio_api - INFO - portfolio_api:322 - DIAGNOSTIC: Total trades in public.portfolio_trades table: 50
+2026-02-18 11:29:37,450 - Services.portfolio.portfolio_api - INFO - portfolio_api:344 - Found 18 trades for strategy equity curve
+2026-02-18 11:29:37,452 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2025-12-22
+2026-02-18 11:29:37,509 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:37,553 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:37,583 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2025-12-29
+2026-02-18 11:29:37,623 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:37,652 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-29
+2026-02-18 11:29:37,682 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-01-05
+2026-02-18 11:29:37,710 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:37,747 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-01-05
+2026-02-18 11:29:37,775 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-01-12
+2026-02-18 11:29:37,799 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:37,824 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-01-12
+2026-02-18 11:29:37,850 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-01-19
+2026-02-18 11:29:37,876 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:37,900 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-01-19
+2026-02-18 11:29:37,926 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-01-27
+2026-02-18 11:29:37,958 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:37,983 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-01-27
+2026-02-18 11:29:38,012 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-02-02
+2026-02-18 11:29:38,039 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:38,064 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-02
+2026-02-18 11:29:38,092 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-02-09
+2026-02-18 11:29:38,116 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:38,144 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-09
+2026-02-18 11:29:38,174 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for PHARMABEES.NS on 2026-02-16
+2026-02-18 11:29:38,200 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ITBEES.NS on 2026-02-16
+2026-02-18 11:29:38,224 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2025-12-22
+2026-02-18 11:29:38,255 - Services.portfolio.price_service - INFO - price_service:62 - Fetching open price for ^NSEI on 2026-02-16
+2026-02-18 11:29:38,282 - Services.portfolio.portfolio_api - INFO - portfolio_api:691 - Fetching trades for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023, client_code=None
+2026-02-18 11:29:38,697 - Services.portfolio.portfolio_api - INFO - portfolio_api:709 - Found 18 trades for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:38,704 - Services.portfolio.portfolio_api - INFO - portfolio_api:656 - Fetching clients for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:39,037 - Services.portfolio.portfolio_api - INFO - portfolio_api:667 - Found 2 clients for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:47,514 - Services.portfolio.portfolio_api - INFO - portfolio_api:749 - Fetching hierarchical portfolio summary for: wealthwisersfinancialservices@gmail.com
+2026-02-18 11:29:47,864 - Services.subscription.hierarchy_service - INFO - hierarchy_service:50 - Found 3 descendants for wealthwisersfinancialservices@gmail.com
+2026-02-18 11:29:47,865 - Services.portfolio.portfolio_api - INFO - portfolio_api:753 - Found 4 accessible users for hierarchy summary
+2026-02-18 11:29:49,389 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: ETF_310126_34
+2026-02-18 11:29:49,397 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1420434830491.76%), capping at 10,000%
+2026-02-18 11:29:49,399 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:49,402 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 1000.0%
+2026-02-18 11:29:50,647 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:50,655 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (104145754.65%), capping at 10,000%
+2026-02-18 11:29:50,656 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:50,659 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 3.19%
+2026-02-18 11:29:51,886 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:29:51,890 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 0.94
+2026-02-18 11:29:51,893 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: STRAT_160226_06
+2026-02-18 11:29:51,899 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:29:51,901 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:29:51,903 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:29:53,134 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:53,142 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (104145754.65%), capping at 10,000%
+2026-02-18 11:29:53,144 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:53,146 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 3.19%
+2026-02-18 11:29:53,262 - Services.portfolio.utils - WARNING - utils:69 - No client_info found in saved_instances for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Payout___4_ETFs___2026_01_05_03_56_59_1768240968
+2026-02-18 11:29:54,394 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 24646.49
+2026-02-18 11:29:54,398 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 41111.76
+2026-02-18 11:29:54,400 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Payout___4_ETFs___2026_01_05_03_56_59_1768240968
+2026-02-18 11:29:54,407 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 65758.24
+2026-02-18 11:29:54,408 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:29:54,411 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:29:55,339 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___6_ETFs___2026_01_02_11_22_31_1767353106
+2026-02-18 11:29:55,346 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1140526952.52%), capping at 10,000%
+2026-02-18 11:29:55,349 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:55,351 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 25.62%
+2026-02-18 11:29:55,567 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (178658.92%), capping at 10,000%
+2026-02-18 11:29:55,581 - Services.portfolio.portfolio_api - INFO - portfolio_api:749 - Fetching hierarchical portfolio summary for: wealthwisersfinancialservices@gmail.com
+2026-02-18 11:29:55,912 - Services.subscription.hierarchy_service - INFO - hierarchy_service:50 - Found 3 descendants for wealthwisersfinancialservices@gmail.com
+2026-02-18 11:29:55,913 - Services.portfolio.portfolio_api - INFO - portfolio_api:753 - Found 4 accessible users for hierarchy summary
+2026-02-18 11:29:57,236 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: ETF_310126_34
+2026-02-18 11:29:57,243 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1420434830491.76%), capping at 10,000%
+2026-02-18 11:29:57,245 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:57,247 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 1000.0%
+2026-02-18 11:29:58,451 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:29:58,459 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (104145754.65%), capping at 10,000%
+2026-02-18 11:29:58,460 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:29:58,463 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 3.19%
+2026-02-18 11:29:59,662 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:29:59,667 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 0.94
+2026-02-18 11:29:59,669 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: STRAT_160226_06
+2026-02-18 11:29:59,676 - Services.portfolio.utils - WARNING - utils:183 -   Time period too short - Days: 2 (minimum 7 required)
+2026-02-18 11:29:59,678 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:29:59,680 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:30:00,941 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___13_ETFs___2025_12_05_11_00_13_1764945023
+2026-02-18 11:30:00,948 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (104109439.34%), capping at 10,000%
+2026-02-18 11:30:00,950 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:30:00,953 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 3.12%
+2026-02-18 11:30:01,059 - Services.portfolio.utils - WARNING - utils:69 - No client_info found in saved_instances for run_id=run_etfs_rotation_strategy_ETFs_Rotation_Payout___4_ETFs___2026_01_05_03_56_59_1768240968
+2026-02-18 11:30:02,161 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 24646.49
+2026-02-18 11:30:02,166 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 41111.76
+2026-02-18 11:30:02,167 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Payout___4_ETFs___2026_01_05_03_56_59_1768240968
+2026-02-18 11:30:02,172 - Services.portfolio.utils - WARNING - utils:163 -   Invalid values - Initial: 0.0, Current: 65758.24
+2026-02-18 11:30:02,175 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 0.0%
+2026-02-18 11:30:02,177 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 0.0%
+2026-02-18 11:30:03,074 - Services.portfolio.portfolio_api - INFO - portfolio_api:980 - [STRATEGY CAGR] Calculating for run_id: run_etfs_rotation_strategy_ETFs_Rotation_Strategy___6_ETFs___2026_01_02_11_22_31_1767353106
+2026-02-18 11:30:03,081 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (1140526952.52%), capping at 10,000%
+2026-02-18 11:30:03,084 - Services.portfolio.portfolio_api - INFO - portfolio_api:998 - [STRATEGY CAGR] Final CAGR: 10000.0%
+2026-02-18 11:30:03,086 - Services.portfolio.portfolio_api - INFO - portfolio_api:1011 - [STRATEGY XIRR] Final XIRR: 25.62%
+2026-02-18 11:30:03,292 - Services.portfolio.utils - WARNING - utils:206 -   CAGR exceeds 10,000% (178638.19%), capping at 10,000%
+2026-02-18 12:14:51,802 - Services.ChatAI.api.main - INFO - main:81 - Application shutdown complete
+2026-02-18 12:14:51,806 - Services.scheduler.scheduler_service - INFO - scheduler_service:310 - Shutting down scheduler...
+2026-02-18 12:14:51,808 - Services.scheduler.scheduler_service - INFO - scheduler_service:312 - Scheduler shut down successfully
+2026-02-18 12:14:51,809 - __main__ - INFO - server:356 - ✅ Scheduler shut down successfully
+2026-02-18 12:14:51,814 - apscheduler.scheduler - INFO - base:245 - Scheduler has been shut down
+2026-02-18 12:16:00,190 - apscheduler.scheduler - INFO - base:507 - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-18 12:16:00,191 - Services.scheduler.scheduler_service - INFO - scheduler_service:193 - ✓ Registered execution job: etf_swing_strategy
+2026-02-18 12:16:00,195 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Generation: etf_swing_strategy" to job store "default"
+2026-02-18 12:16:00,197 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Execution: etf_swing_strategy" to job store "default"
+2026-02-18 12:16:00,197 - apscheduler.scheduler - INFO - base:214 - Scheduler started
+2026-02-18 12:16:00,199 - Services.scheduler.scheduler_service - INFO - scheduler_service:62 - ✓ Scheduler started successfully
+2026-02-18 12:16:00,199 - Services.scheduler.scheduler_service - INFO - scheduler_service:290 - 
+============================================================
+2026-02-18 12:16:00,200 - Services.scheduler.scheduler_service - INFO - scheduler_service:291 - SCHEDULED JOBS
+2026-02-18 12:16:00,200 - Services.scheduler.scheduler_service - INFO - scheduler_service:292 - ============================================================
+2026-02-18 12:16:00,200 - Services.scheduler.scheduler_service - INFO - scheduler_service:301 -   Signal Generation: etf_swing_strategy
+2026-02-18 12:16:00,202 - Services.scheduler.scheduler_service - INFO - scheduler_service:302 -     ID: signal_etf_swing_strategy
+2026-02-18 12:16:00,202 - Services.scheduler.scheduler_service - INFO - scheduler_service:303 -     Next run: 2026-02-18 18:26:00 IST
+2026-02-18 12:16:00,203 - Services.scheduler.scheduler_service - INFO - scheduler_service:304 - 
+2026-02-18 12:16:00,203 - Services.scheduler.scheduler_service - INFO - scheduler_service:301 -   Signal Execution: etf_swing_strategy
+2026-02-18 12:16:00,204 - Services.scheduler.scheduler_service - INFO - scheduler_service:302 -     ID: execution_etf_swing_strategy
+2026-02-18 12:16:00,204 - Services.scheduler.scheduler_service - INFO - scheduler_service:303 -     Next run: 2026-02-18 18:32:00 IST
+2026-02-18 12:16:00,205 - Services.scheduler.scheduler_service - INFO - scheduler_service:304 - 
+2026-02-18 12:16:00,205 - Services.scheduler.scheduler_service - INFO - scheduler_service:306 - ============================================================
+
+2026-02-18 12:16:00,206 - __main__ - INFO - server:333 - ✅ Scheduler service started successfully
+2026-02-18 12:16:03,482 - Services.ChatAI.api.main - INFO - main:75 - Gemini client initialized
+2026-02-18 12:16:14,985 - Services.subscription.api.google_oauth_api - WARNING - google_oauth_api:110 - Google token verification failed, trying JWT decode: Token has wrong audience 503421457549-215abjb62mkqh341rvi04de2b2arqld6.apps.googleusercontent.com, expected one of ['your-google-client-id']
+2026-02-18 12:16:14,987 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:122 - Successfully decoded JWT token for: rachit.gour749@gmail.com
+2026-02-18 12:16:14,988 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:160 - Processing Google login for user: rachit.gour749@gmail.com
+2026-02-18 12:16:15,533 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:168 - Existing user rachit.gour749@gmail.com logged in
+2026-02-18 12:16:16,091 - Services.subscription.api.google_oauth_api - INFO - google_oauth_api:173 - ✅ Updated token for existing user rachit.gour749@gmail.com
+2026-02-18 12:16:20,049 - APIs.services.strategy_service - INFO - strategy_service:20 - Getting assets for strategy: ETF_Rotation
+2026-02-18 12:16:20,050 - APIs.services.strategy_service - INFO - strategy_service:27 - Lazily initializing ETF backtester
+2026-02-18 12:16:24,158 - Databases.app_data_db_connection - INFO - app_data_db_connection:267 - Database tables initialized successfully
+2026-02-18 12:16:24,159 - Databases.app_data_db_connection - INFO - app_data_db_connection:268 - Strategy and signal tables are now using PostgreSQL
+2026-02-18 12:16:26,146 - APIs.services.strategy_service - INFO - strategy_service:593 - Getting asset overview for strategy: ETF_Rotation
+2026-02-18 12:16:27,839 - APIs.services.strategy_service - INFO - strategy_service:20 - Getting assets for strategy: ETF_Rotation
+2026-02-18 12:16:28,573 - APIs.services.strategy_service - INFO - strategy_service:593 - Getting asset overview for strategy: ETF_Rotation
+2026-02-18 12:17:31,777 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:17:33,008 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:17:34,389 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:17:37,871 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:17:39,554 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:17:58,827 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-18 12:17:58,828 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-18 12:18:08,702 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-18 12:21:03,630 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-18 12:21:03,631 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-18 12:21:14,854 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-18 12:21:44,451 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:21:44,975 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:21:45,437 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:21:45,884 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:21:48,074 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:21:52,833 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:21:56,396 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:22:00,546 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:22:04,639 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:22:10,887 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:22:24,835 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-18 12:22:24,836 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-18 12:22:36,539 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-18 12:22:56,774 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-18 12:22:56,776 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-18 12:23:04,633 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-18 12:23:18,834 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-18 12:23:18,835 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-18 12:23:26,715 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-18 12:24:38,921 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-18 12:24:38,922 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-18 12:24:47,270 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-18 12:28:43,910 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:28:47,872 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:28:52,848 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:28:54,359 - APIs.services.strategy_service - INFO - strategy_service:250 - Calculating date range for strategy: ETF_Swing_Strategy
+2026-02-18 12:28:57,840 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-18 12:28:57,841 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-18 12:29:14,549 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-18 12:29:45,063 - APIs.services.backtest_service - INFO - backtest_service:30 - Received backtest request for strategy: ETF_Swing_Strategy
+2026-02-18 12:29:45,064 - APIs.services.backtest_service - INFO - backtest_service:77 - Executing backtest for ETF_Swing_Strategy
+2026-02-18 12:29:57,568 - APIs.services.backtest_service - INFO - backtest_service:81 - Backtest completed successfully for ETF_Swing_Strategy
+2026-02-18 16:30:37,390 - Services.ChatAI.api.main - INFO - main:81 - Application shutdown complete
+2026-02-18 16:30:37,396 - Services.scheduler.scheduler_service - INFO - scheduler_service:310 - Shutting down scheduler...
+2026-02-18 16:30:37,398 - Services.scheduler.scheduler_service - INFO - scheduler_service:312 - Scheduler shut down successfully
+2026-02-18 16:30:37,399 - __main__ - INFO - server:356 - ✅ Scheduler shut down successfully
+2026-02-18 16:30:37,403 - apscheduler.scheduler - INFO - base:245 - Scheduler has been shut down

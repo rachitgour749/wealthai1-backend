@@ -253,5 +253,13 @@ router.include_router(store_router)
 from Services.ChatAI.api.admin_routes import router as admin_router
 router.include_router(admin_router)
 
+# Include broker routes
+from APIs.broker_routes import router as broker_router
+router.include_router(broker_router)
+
+# Include webhook routes
+from APIs.webhook_routes import router as webhook_router
+router.include_router(webhook_router)
+
 # Include router in standalone app
 app.include_router(router)

@@ -16,7 +16,10 @@ def generate_run_id(strategy_type: str) -> str:
         "ETF_Rotation": "ETF",
         "RS_ETF_Rotation": "RS_ETF",
         "ETF_Payout": "ETF_Payout",
-        "International_ETF_Rotation": "ETF_US"
+        "RS_ETF_Rotation": "RS_ETF",
+        "ETF_Payout": "ETF_Payout",
+        "International_ETF_Rotation": "ETF_US",
+        "External_Strategy": "EXT"
     }
     
     suffix = suffix_map.get(strategy_type, "STRAT")

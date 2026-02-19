@@ -46,14 +46,14 @@
             "signal_generation": {
                 "frequency": "weekly",
                 "day_of_week": "monday",
-                "time": "01:26",
+                "time": "00:12",
                 "skip_holidays": true,
                 "execution_rule": "last_trading_day_of_week"
             },
             "signal_execution": {
                 "frequency": "weekly",
                 "execution_rule": "first_trading_day_of_week",
-                "time": "10:08",
+                "time": "11:08",
                 "skip_holidays": true
             },
             "generator_module": "Services.scheduler.generators.etf_rotation_generator",
@@ -163,6 +163,31 @@
             "fetch_module": "Market_Data.us_etf_data",
             "fetch_function": "main",
             "description": "Daily US ETF EOD data fetch"
+        },
+        "etf_swing_strategy": {
+            "enabled": false,
+            "signal_generation": {
+                "frequency": "daily",
+                "time": "18:26",
+                "skip_holidays": true,
+                "execution_rule": "trading_day"
+            },
+            "signal_execution": {
+                "frequency": "daily",
+                "time": "18:32",
+                "skip_holidays": true,
+                "execution_rule": "trading_day"
+            },
+            "generator_module": "Services.scheduler.generators.etf_swing_generator",
+            "generator_function": "generate_etf_swing_signals",
+            "executor_module": "Services.scheduler.executors.signal_executor",
+            "executor_function": "SignalExecutor().execute_signals",
+            "signal_table": "trading_signals",
+            "strategy_table": "saved_instances",
+            "strategy_filter": {
+                "strategy_name": "ETF_Swing_Strategy",
+                "status": "running"
+            }
         }
     },
     "execution_settings": {
