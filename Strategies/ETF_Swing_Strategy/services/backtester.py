@@ -47,20 +47,31 @@ class ETFSwingBacktester:
                         self.strategy._log(2, "data_fetch", f"Fetched {len(ticker_df)} records for {ticker}.")
 
             # 2. Load Benchmark Data
-            benchmark = "NIFTY_50" if self.market == "INDIA" else "S&P_500"
+            benchmark_candidates = ["NIFTY_50", "NIFTYBEES", "NIFTY50"] if self.market == "INDIA" else ["^GSPC", "S&P_500", "SPY", "SPX"]
+            
             bench_df = MarketDataService.fetch_close_prices(
-                tickers=[benchmark], market=self.market, asset_type="INDEX",
+                tickers=benchmark_candidates, market=self.market, asset_type="INDEX",
                 start_date=adj_start, end_date=adj_end
             )
             
             if not bench_df.empty:
-                bench_data = bench_df[[benchmark]].rename(columns={benchmark: 'close'})
-                for col in ['open', 'high', 'low']: bench_data[col] = bench_data['close']
-                bench_data['volume'] = 0
-                data_dict["BENCHMARK"] = bench_data
-                self.strategy._log(2, "data_fetch", f"Fetched benchmark {benchmark}.")
+                # Find which candidate actually returned data
+                benchmark_symbol = None
+                for candidate in benchmark_candidates:
+                    if candidate in bench_df.columns and not bench_df[candidate].dropna().empty:
+                        benchmark_symbol = candidate
+                        break
+                
+                if benchmark_symbol:
+                    bench_data = bench_df[[benchmark_symbol]].rename(columns={benchmark_symbol: 'close'})
+                    for col in ['open', 'high', 'low']: bench_data[col] = bench_data['close']
+                    bench_data['volume'] = 0
+                    data_dict["BENCHMARK"] = bench_data
+                    self.strategy._log(2, "data_fetch", f"Fetched benchmark {benchmark_symbol}.")
+                else:
+                    self.strategy._log(1, "data_fetch", f"WARNING: None of the benchmark candidates {benchmark_candidates} found in data!")
             else:
-                self.strategy._log(1, "data_fetch", f"WARNING: Benchmark {benchmark} not found!")
+                self.strategy._log(1, "data_fetch", f"WARNING: Benchmark candidates {benchmark_candidates} not found!")
                     
             return data_dict
         finally:
@@ -72,8 +83,12 @@ class ETFSwingBacktester:
         
         # Load Data
         all_data = self.load_data(tickers, start_date, end_date)
-        if not all_data or "BENCHMARK" not in all_data:
-            return {"error": "Missing data for assets or Benchmark"}
+        if not all_data:
+            return {"error": f"No data found for any of the requested tickers: {tickers}"}
+            
+        if "BENCHMARK" not in all_data:
+            market_bench = "NIFTY 50" if self.market == "INDIA" else "S&P 500"
+            return {"error": f"Missing benchmark data for {market_bench}. Check index market tables."}
 
         benchmark_df = all_data.pop("BENCHMARK")
 
