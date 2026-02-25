@@ -17,7 +17,7 @@ def test_us_etf_swing_strategy():
 
     # Initialize Database Connection
     if not create_connection():
-        print("❌ Failed to connect to database. Check DATABASE_STRING in .env")
+        print("X Failed to connect to database. Check DATABASE_STRING in .env")
         return
 
     # Initialize backtester for US market
@@ -32,7 +32,7 @@ def test_us_etf_swing_strategy():
     print(f"\nMarket      : US")
     print(f"Asset Type  : ETF")
     print(f"Tickers     : {tickers}")
-    print(f"Date Range  : {start_date} → {end_date}")
+    print(f"Date Range  : {start_date} -> {end_date}")
     print(f"Capital     : ${initial_capital:,.0f}")
     print()
 
@@ -40,13 +40,13 @@ def test_us_etf_swing_strategy():
         results = backtester.run_backtest(tickers, start_date, end_date, initial_capital, risk_free_rate=4.5)
 
         if "error" in results:
-            print(f"❌ Backtest failed: {results['error']}")
+            print(f"X Backtest failed: {results['error']}")
             return
 
         metrics = results.get("metrics", {})
         bench_metrics = metrics.get("benchmark_metrics", {})
 
-        print("✅ Backtest completed successfully!\n")
+        print("OK Backtest completed successfully!\n")
         print(f"{'Metric':<30} {'Strategy':>15} {'S&P 500 B&H':>15}")
         print("-" * 62)
 
@@ -84,7 +84,7 @@ def test_us_etf_swing_strategy():
             print("\nNo trades executed during the period.")
 
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        print(f"X Unexpected error: {e}")
         import traceback
         traceback.print_exc()
 

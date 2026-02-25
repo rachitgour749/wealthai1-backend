@@ -82,7 +82,7 @@ class MarketDataService:
             pivot_df.sort_index(inplace=True)
             
             # Professional handling: forward fill missing values (common in multi-ticker datasets)
-            pivot_df.fillna(method='ffill', inplace=True)
+            pivot_df.ffill(inplace=True)
             
             return pivot_df
             
