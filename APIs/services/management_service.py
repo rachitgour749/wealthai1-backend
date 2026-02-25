@@ -99,8 +99,8 @@ def deploy_strategy_logic(request: DeployStrategyRequest, db: Session) -> Strate
         strategy.telegram_notification = request.telegram_notification
         strategy.user_code = request.user_code
         
-        # Set next execution date
-        strategy.next_execution_date = get_next_trading_day()
+        # Set next execution date using the correct market calendar for this strategy
+        strategy.next_execution_date = get_next_trading_day(strategy_type=strategy.strategy_type)
         
         # Change status to running
         strategy.status = "running"

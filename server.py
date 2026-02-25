@@ -17,18 +17,10 @@ from pydantic import BaseModel
 import json
 import concurrent.futures
 
-# Configure concise structured logging
-logging.basicConfig(
-    level=logging.INFO,  # Changed from ERROR for debugging
-    format='[%(levelname)s] %(name)s: %(message)s',
-    datefmt='%H:%M:%S'
-)
+# Logging is bootstrapped AFTER sys.path setup — see below.
+# (moving it here would cause ModuleNotFoundError before BASE_DIR is on sys.path)
 logger = logging.getLogger(__name__)
 
-# Suppress all verbose logs from third-party libraries
-for lib in ["uvicorn", "uvicorn.access", "sqlalchemy", "sqlalchemy.engine", 
-            "sqlalchemy.pool", "sqlalchemy.dialects", "fastapi", "httpx"]:
-    logging.getLogger(lib).setLevel(logging.ERROR)
 
 # =========================
 # PATH SETUP (Critical - must run before any imports)
@@ -39,6 +31,29 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 # Ensure BASE_DIR is in sys.path first (for package imports like Services.Subscription)
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
+
+# ── Centralized logging (MUST be after sys.path setup) ───────────
+try:
+    from core.loggingSetup import setupLogging
+    setupLogging()
+except Exception as _log_err:
+    # Fallback: basic logging so the server still starts
+    logging.basicConfig(
+        level=logging.INFO,
+        format='[%(levelname)s] %(name)s: %(message)s'
+    )
+    logging.getLogger(__name__).warning(
+        f"centralized logging setup failed ({_log_err}), using basicConfig fallback"
+    )
+
+# Re-assign logger now that logging is configured
+logger = logging.getLogger(__name__)
+
+# Suppress verbose third-party library logs
+for lib in ["uvicorn", "uvicorn.access", "sqlalchemy", "sqlalchemy.engine",
+            "sqlalchemy.pool", "sqlalchemy.dialects", "fastapi", "httpx"]:
+    logging.getLogger(lib).setLevel(logging.ERROR)
+
 
 # Verify critical directories exist
 SERVICES_DIR = os.path.join(BASE_DIR, 'Services')
@@ -90,9 +105,9 @@ def get_subscription_dir_name():
 # Store subscription directory name globally for use in async functions
 SUBSCRIPTION_DIR_NAME = get_subscription_dir_name()
 if SUBSCRIPTION_DIR_NAME:
-    logger.info(f"📦 Detected subscription directory: {SUBSCRIPTION_DIR_NAME}")
+    logger.info(f"Detected subscription directory: {SUBSCRIPTION_DIR_NAME}")
 else:
-    logger.warning("⚠️  Subscription directory not found - subscription features will be unavailable")
+    logger.warning("Subscription directory not found - subscription features will be unavailable")
 
 # Add subdirectories for direct imports (legacy support)
 sys.path.extend([
@@ -180,7 +195,7 @@ async def _init_database_services() -> Dict[str, bool]:
                 await loop.run_in_executor(executor, subscription_manager.init_database)
             results['subscription'] = True
             logger.info("=" * 60)
-            logger.info("✅ SUCCESS: Subscription database service initialized!")
+            logger.info("SUCCESS: Subscription database service initialized!")
             logger.info("=" * 60)
         except Exception as e:
             logger.error(f"Subscription init failed: {e}")
@@ -236,7 +251,7 @@ async def _init_database_services() -> Dict[str, bool]:
                 broker_init = await loop.run_in_executor(executor, init_broker_db)
             results['broker'] = bool(broker_init)
             if broker_init:
-                logger.info("✅ Broker database initialized (broker_sessions table created)")
+                logger.info("Broker database initialized (broker_sessions table created)")
         except Exception as e:
             logger.error(f"Broker database init failed: {e}")
             results['broker'] = False
@@ -276,19 +291,13 @@ try:
         rate_limit_handler
     )
     # Using print to ensure visibility despite logging level
-    print("=" * 60)
-    print("✅ ChatAI INITIALIZATION SUCCESSFUL")
-    print("   - Router: LOADED")
-    print("   - Lifespan: LOADED")
-    print("   - Rate Limiter: LOADED")
-    print("=" * 60)
+    logger.info("ChatAI INITIALIZATION SUCCESSFUL")
+    logger.info("   - Router: LOADED")
+    logger.info("   - Lifespan: LOADED")
+    logger.info("   - Rate Limiter: LOADED")
     chatai_availabe = True
 except Exception as e:
-    print("=" * 60)
-    print("❌ ChatAI INITIALIZATION FAILED")
-    print(f"   Error: {e}")
-    print("   ChatAI routes will NOT be available.")
-    print("=" * 60)
+    logger.error(f"ChatAI INITIALIZATION FAILED: {e}")
     chatai_router = None
     chatai_lifespan = None
     chatai_availabe = False
@@ -330,7 +339,7 @@ async def lifespan(app: FastAPI):
         logger.info("STARTING SCHEDULER SERVICE")
         logger.info("="*60)
         scheduler = start_scheduler()
-        logger.info("✅ Scheduler service started successfully")
+        logger.info("Scheduler service started successfully")
     except Exception as e:
         logger.error(f"Failed to start scheduler service: {e}")
         import traceback
@@ -353,7 +362,7 @@ async def lifespan(app: FastAPI):
         from Services.scheduler.scheduler_service import get_scheduler
         scheduler = get_scheduler()
         scheduler.shutdown()
-        logger.info("✅ Scheduler shut down successfully")
+        logger.info("Scheduler shut down successfully")
     except Exception as e:
         logger.error(f"Failed to shutdown scheduler: {e}")
     
@@ -478,16 +487,24 @@ try:
             "/",
             "/api/chat/health", # Exempt ChatAI health
             "/health", # ChatAI health
-            "/api/run_backtest", # Exempt centralized backtest for verified access
-            "/api/strategies", # Exempt centralized list strategies
-            "/api/strategy", # Exempt centralized strategy details
+            "/api/v2/run_backtest",       # Backtest engine
+            "/api/v2/strategies",         # List all strategies
+            "/api/v2/strategy",           # /api/v2/strategy/* (assets, defaults, date-range, metrics, log)
+            "/api/v2/health",             # Health check
+            "/api/v2/save_strategies",    # Strategy management
+            "/api/v2/deploy_strategy",
+            "/api/v2/stop_strategy",
+            "/api/v2/restart_strategy",
+            "/api/v2/delete_strategy",
+            "/api/v2/delete_strategy_client",
+            "/api/v2/get_instances",
             "/api/broker/place_order", # Exempt broker place order
             "/api/broker/place_order", # Exempt broker place order
             "/api/broker/broker_login", # Exempt broker login
             "/api/webhook/wealthai1.in/trade_execute" # Exempt trade execution webhook
         ]
     )
-    logger.info("✅ SingleSessionMiddleware added")
+    logger.info("SingleSessionMiddleware added")
 except Exception as e:
     logger.error(f"Failed to add SingleSessionMiddleware: {e}")
 
@@ -546,7 +563,7 @@ supertrend_router = None
 
 try:
     from APIs.broker_routes import router as broker_router
-    logger.info("✅ Broker router loaded successfully")
+    logger.info("Broker router loaded successfully")
 except Exception as e:
     logger.error(f"Failed to import broker_router: {e}")
 
@@ -557,7 +574,7 @@ webhook_router = None
 
 try:
     from APIs.webhook_routes import router as webhook_router
-    logger.info("✅ Webhook router loaded successfully")
+    logger.info("Webhook router loaded successfully")
 except Exception as e:
     logger.error(f"Failed to import webhook_router: {e}")
 
@@ -576,7 +593,7 @@ try:
         import importlib
         logger.info(f"Attempting to import Services.{SUBSCRIPTION_DIR_NAME}...")
         subscription_module = importlib.import_module(f'Services.{SUBSCRIPTION_DIR_NAME}')
-        logger.info(f"✅ Successfully imported Services.{SUBSCRIPTION_DIR_NAME} module")
+        logger.info(f"Successfully imported Services.{SUBSCRIPTION_DIR_NAME} module")
         
         # Now import the routers using the actual module
         logger.info(f"Loading routers from Services.{SUBSCRIPTION_DIR_NAME}...")
@@ -590,11 +607,11 @@ try:
         hierarchy_router = hierarchy_api.hierarchy_router
         
         logger.info("=" * 60)
-        logger.info("✅ SUCCESS: Subscription routers loaded successfully!")
-        logger.info("✅ subscription_router: LOADED")
-        logger.info("✅ google_oauth_router: LOADED")
-        logger.info("✅ hierarchy_router: LOADED")
-        logger.info("✅ Subscription endpoints available:")
+        logger.info("SUCCESS: Subscription routers loaded successfully!")
+        logger.info("subscription_router: LOADED")
+        logger.info("google_oauth_router: LOADED")
+        logger.info("hierarchy_router: LOADED")
+        logger.info("Subscription endpoints available:")
         logger.info("   - /api/subscription/*")
         logger.info("   - /paymentSuccess")
         logger.info("   - /api/auth/google-login")
@@ -626,7 +643,7 @@ deployment_router = None
 portfolio_router = None
 try:
     from Services.portfolio.portfolio_api import portfolio_router
-    logger.info("✅ Portfolio API router loaded successfully")
+    logger.info("Portfolio API router loaded successfully")
 except Exception as e:
     logger.error(f"Failed to import portfolio_router: {e}")
 
@@ -648,7 +665,7 @@ except Exception as e:
 
 try:
     from APIs.routes import api_router as unified_api_router
-    logger.info("✅ Unified API router loaded successfully from APIs.routes")
+    logger.info("Unified API router loaded successfully from APIs.routes")
 except Exception as e:
     logger.error(f"Failed to import unified_api_router: {e}")
     import traceback
@@ -662,7 +679,7 @@ except Exception as e:
 async def root():
     """Root endpoint - fast response"""
     return {
-        "message": "WealthAI1 API Running ✅",
+        "message": "WealthAI1 API Running",
         "version": "1.0.1 (API Verif)",
         "strategies": ["rs-strategy", "custom-strategy", "chat"],
         "services": ["subscription", "webhook", "single-sign-on", "deployments"],
@@ -707,7 +724,7 @@ if custom_strategy_router:
 if subscription_router:
     app.include_router(subscription_router)
 else:
-    logger.error("⚠️  Subscription router not loaded - subscription endpoints will not be available")
+    logger.error("Subscription router not loaded - subscription endpoints will not be available")
 
 if payment_router:
     app.include_router(payment_router)
@@ -727,9 +744,9 @@ else:
 # Hierarchy router
 if hierarchy_router:
     app.include_router(hierarchy_router)
-    logger.info("✅ Hierarchy router mounted successfully")
+    logger.info("Hierarchy router mounted successfully")
 else:
-    logger.error("⚠️  Hierarchy router not loaded - hierarchy endpoints will not be available")
+    logger.error("Hierarchy router not loaded - hierarchy endpoints will not be available")
 
 
 if single_sign_on_router:
@@ -753,7 +770,7 @@ if chatai1_new and hasattr(chatai1_new, 'router'):
 # ChatAI router (New)
 if chatai_availabe and chatai_router:
     app.include_router(chatai_router)
-    logger.info("✅ ChatAI (New) router mounted successfully")
+    logger.info("ChatAI (New) router mounted successfully")
 
 # SuperTrend router (handle duplicate root route)
 
@@ -762,7 +779,7 @@ if chatai_availabe and chatai_router:
 # Unified API Router (Consolidated)
 if unified_api_router:
     app.include_router(unified_api_router)
-    logger.info("✅ Unified API router mounted at /api")
+    logger.info("Unified API router mounted at /api")
 
 # =========================
 # CHATAI ENDPOINTS (Fallback if router not available)

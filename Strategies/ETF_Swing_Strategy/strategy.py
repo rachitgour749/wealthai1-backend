@@ -9,19 +9,24 @@ from Strategies.utilities.logging_config import StrategyLogger
 
 class ETFSwingStrategy(EquitySegment):
     """
-    ETF-Based Equity Swing Trading Strategy
+    Generalized Swing Trading Strategy
     
-    Rules:
-    - Entry: Close > SMA(50)
-    - Ranking: (Close - SMA) / SMA (Lower positive distance preferred)
-    - Exit (Profit): Close < SMA AND Profit >= Threshold
-    - Stop Loss: Fixed % from Entry
-    - Portfolio: Slot-based with dynamic capital reallocation
+    Now supports both Indian and US markets (Stocks & ETFs).
     """
     
-    def __init__(self, config_path: str = None):
-        super().__init__()
-        self.strategy_name = "ETF_Swing_Strategy"
+    def __init__(self, market: str = "INDIA", asset_type: str = "ETF", config_path: str = None):
+        # Initialize properly with injected policy
+        if market.upper() == "US":
+            from Exchange.USExchangePolicy import USExchangePolicy
+            policy = USExchangePolicy()
+        else:
+            from Exchange.IndianExchangePolicy import IndianExchangePolicy
+            policy = IndianExchangePolicy()
+            
+        super().__init__(policy=policy)
+        self.market = market.upper()
+        self.asset_type = asset_type.upper()
+        self.strategy_name = f"{self.market}_{self.asset_type}_Swing_Strategy"
         self.logger = StrategyLogger(self.strategy_name)
         
         # Default Config
@@ -45,75 +50,48 @@ class ETFSwingStrategy(EquitySegment):
         self.stop_loss_pct = params.get("stop_loss_pct", 5.0)
         self.profit_threshold_pct = params.get("profit_threshold_pct", 10.0)
         self.num_slots = params.get("number_of_slots", 5)
+        self.brokerage_percent = float(params.get("brokerage_percent", 0.0))
         
         # Logging Setup
         self.log_level = self.config.get("logging", {}).get("level", 3)
         self.log_categories = self.config.get("logging", {}).get("categories", {})
         
         # Portfolio State
-        self.slots: List[Dict[str, Any]] = [{"id": i, "status": "FREE", "data": {}} for i in range(self.num_slots)]
         self.total_capital = 0.0
+        self._initialize_slots()
+
+    def _initialize_slots(self):
+        """Initialize slot structures based on num_slots"""
+        self.slots: List[Dict[str, Any]] = [{"id": i, "status": "FREE", "data": {}} for i in range(self.num_slots)]
+
+    def update_config(self, params: Dict[str, Any]):
+        """Update strategy parameters dynamically from API request"""
+        if "sma_lookback" in params: self.sma_lookback = int(params["sma_lookback"])
+        if "stop_loss_pct" in params: self.stop_loss_pct = float(params["stop_loss_pct"])
+        if "profit_threshold_pct" in params: self.profit_threshold_pct = float(params["profit_threshold_pct"])
+        
+        if "number_of_slots" in params or "num_slots" in params:
+            new_slots = params.get("number_of_slots") or params.get("num_slots")
+            self.num_slots = int(new_slots)
+            self._initialize_slots()
+            
+        if "brokerage_percent" in params:
+            self.brokerage_percent = float(params["brokerage_percent"])
+            self._log(2, "system", f"Brokerage updated to {self.brokerage_percent}%")
+
+        self._log(2, "system", f"Parameters updated: SMA={self.sma_lookback}, SL={self.stop_loss_pct}%, Profit={self.profit_threshold_pct}%, Slots={self.num_slots}, Brokerage={self.brokerage_percent}%")
         self.available_cash = 0.0
         self.slot_capital = 0.0
         
-        self._log(1, "system", f"Strategy Initialized: {self.strategy_name}")
-        self._log(1, "system", f"Strategy Initialized: {self.strategy_name}")
-        self.brokerage_percent = 0.0
-        self._log(2, "system", f"Parameters: SMA={self.sma_lookback}, SL={self.stop_loss_pct}%, ProfitThr={self.profit_threshold_pct}%, Slots={self.num_slots}, Brokerage={self.brokerage_percent}%")
-
-    def update_config(self, params: Dict[str, Any]):
-        """Update strategy configuration dynamically and log changes"""
-        updated = []
-        
-        if 'sma_lookback' in params:
-            self.sma_lookback = int(params['sma_lookback'])
-            updated.append(f"SMA={self.sma_lookback}")
-            
-        if 'stop_loss_pct' in params:
-            self.stop_loss_pct = float(params['stop_loss_pct'])
-            updated.append(f"SL={self.stop_loss_pct}%")
-            
-        if 'profit_threshold_pct' in params:
-            self.profit_threshold_pct = float(params['profit_threshold_pct'])
-            updated.append(f"ProfitThr={self.profit_threshold_pct}%")
-            
-        if 'number_of_slots' in params:
-            new_slots = int(params['number_of_slots'])
-            if new_slots != self.num_slots:
-                self.num_slots = new_slots
-                # Re-initialize slots
-                self.slots = [{"id": i, "status": "FREE", "data": {}} for i in range(self.num_slots)]
-                self._recalculate_slot_capital() # Update slot capital based on new count
-                updated.append(f"Slots={self.num_slots} (Re-initialized)")
-        
-        if updated:
-                self._recalculate_slot_capital() # Update slot capital based on new count
-                updated.append(f"Slots={self.num_slots} (Re-initialized)")
-        
-        if 'brokerage_percent' in params:
-            self.brokerage_percent = float(params['brokerage_percent'])
-            updated.append(f"Brokerage={self.brokerage_percent}%")
-        
-        if updated:
-            self._log(1, "system", f"Strategy Parameters Updated: {', '.join(updated)}")
+        self._log(1, "system", f"Strategy Initialized: {self.strategy_name} for {self.market} {self.asset_type}")
+        # Removed hardcoded self.brokerage_percent = 0.0
+        self._log(2, "system", f"Parameters: SMA={self.sma_lookback}, SL={self.stop_loss_pct}%, ProfitThr={self.profit_threshold_pct}%, Slots={self.num_slots}")
 
     def _log(self, level: int, category: str, message: str):
-        """Custom logging with levels 1-5 and categories"""
+        """Standardized logger integration"""
         if level <= self.log_level:
-            if self.log_categories.get(category, True):
-                # Map to StrategyLogger methods
-                log_msg = f"[L{level}][{category}] {message}"
-                if level >= 4: # Detailed/Debug
-                    self.logger.debug(log_msg)
-                elif level == 1: # Essential info (Not an error)
-                    # Using info with a star for visibility instead of error
-                    self.logger.info(f"[*] {log_msg}")
-                elif category == "execution":
-                    self.logger.trade(log_msg)
-                elif category == "performance":
-                    self.logger.performance(log_msg)
-                else:
-                    self.logger.info(log_msg)
+            log_msg = f"[L{level}][{category}] {message}"
+            self.logger.info(log_msg)
 
     def load_data(self, start_date: datetime, end_date: datetime) -> Any:
         """Required abstract method implementation. Data loading is handled by the backtester."""
@@ -167,12 +145,12 @@ class ETFSwingStrategy(EquitySegment):
         # LOGGING: SMA Calculation Breakdown
         self._log(5, "calculation", f"[{date_str}] STEP 2: SMA {self.sma_lookback} CALCULATION FOR {symbol}")
         self._log(5, "calculation", f"Formula: SMA = (Sum of last {self.sma_lookback} Close Prices) / {self.sma_lookback}")
-        self._log(5, "calculation", f"Calculation: Sum({lookback_df['close'].sum():.2f}) / {self.sma_lookback} = ₹{sma:.2f}")
+        self._log(5, "calculation", f"Calculation: Sum({lookback_df['close'].sum():.2f}) / {self.sma_lookback} = {self.policy.format_currency(sma)}")
         
         # LOGGING: Distance / Ranking Calculation Breakdown
         self._log(5, "calculation", f"[{date_str}] STEP 3: RANKING METRIC (DISTANCE %) FOR {symbol}")
         self._log(5, "calculation", f"Formula: Distance % = ((Current Close - SMA) / SMA) * 100")
-        self._log(5, "calculation", f"Calculation: ((₹{close:.2f} - ₹{sma:.2f}) / ₹{sma:.2f}) * 100 = {distance:.4f}%")
+        self._log(5, "calculation", f"Calculation: (({self.policy.format_currency(close)} - {self.policy.format_currency(sma)}) / {self.policy.format_currency(sma)}) * 100 = {distance:.4f}%")
         
         eligible = close > sma
         
@@ -279,17 +257,17 @@ class ETFSwingStrategy(EquitySegment):
         pnl_label = "PROFIT" if pnl >= 0 else "LOSS"
         
         self._log(1, "execution", f"[{date.strftime('%Y-%m-%d')}] [EXIT - SELL] Sold {symbol}. "
-                                  f"Qty: {qty}, Price: {price:.2f}, "
-                                  f"Buy Price: {buy_price:.2f}, PnL: {pnl:,.2f} ({pnl_pct:.2f}%)")
+                                  f"Qty: {qty}, Price: {self.policy.format_currency(price)}, "
+                                  f"Buy Price: {self.policy.format_currency(buy_price)}, PnL: {self.policy.format_currency(pnl)} ({pnl_pct:.2f}%)")
                                   
         # Calculate taxes (Total - Brokerage) since 'taxes' key doesn't exist in costs dict
         taxes = costs['total_costs'] - costs['brokerage']
         
         self._log(1, "execution", f"Transaction Costs for {symbol} (SELL): "
-                                  f"Brokerage={costs['brokerage']:.2f}, "
-                                  f"Taxes={taxes:.2f}, "
-                                  f"Total Costs={costs['total_costs']:.2f}. "
-                                  f"Net Proceeds: {net_proceeds:,.2f}")
+                                  f"Brokerage={self.policy.format_currency(costs['brokerage'])}, "
+                                  f"Taxes={self.policy.format_currency(taxes)}, "
+                                  f"Total Costs={self.policy.format_currency(costs['total_costs'])}. "
+                                  f"Net Proceeds: {self.policy.format_currency(net_proceeds)}")
         
         
         slot["status"] = "PENDING_FREE" # Mark as pending free to prevent same-day re-entry
@@ -302,7 +280,7 @@ class ETFSwingStrategy(EquitySegment):
         free_slots_count = sum(1 for s in self.slots if s["status"] == "FREE")
         if free_slots_count > 0:
             self.slot_capital = self.available_cash / free_slots_count
-            self._log(2, "execution", f"RECALCULATING: Available Cash: {self.available_cash:,.2f}. New Slot Capital: {self.slot_capital:,.2f}")
+            self._log(2, "execution", f"RECALCULATING: Available Cash: {self.policy.format_currency(self.available_cash)}. New Slot Capital: {self.policy.format_currency(self.slot_capital)}")
 
     def process_entries(self, eligible_etfs: List[Dict], current_date: datetime) -> List[Dict]:
         """Rank and allocate free slots to eligible ETFs"""
@@ -331,24 +309,22 @@ class ETFSwingStrategy(EquitySegment):
             symbol = etf["symbol"]
             price = etf["close"] # Execution at Day T+1 Open would be handled by backtester
             
-            # Cost-Aware Quantity Calculation (Iterative)
-            # 1. Start with max possible quantity based on price
-            qty = int(self.slot_capital // price)
-            
-            # 2. Iteratively reduce quantity until Total Cost <= Slot Capital AND available cash
-            # This loop typically runs 0-2 times.
-            while qty > 0:
-                amount = qty * price
-                costs = self.calculate_etf_delivery_costs('buy', amount, self.brokerage_percent)
-                total_outflow = costs['net_amount']
-                
-                # Check if we can afford it (both within slot allocation AND actual cash)
-                # Note: self.slot_capital is a theoretical limit per slot. 
-                # self.available_cash is the hard limit.
-                if total_outflow <= self.slot_capital and total_outflow <= self.available_cash:
-                    break # Affordability confirmed
-                
-                qty -= 1 # Reduce by 1 unit and re-check costs
+            # Cost-Aware Quantity Calculation
+            # US market supports fractional shares; India uses whole units only.
+            if self.market == "US":
+                # Fractional: allocate full slot capital, account for costs
+                # For US (zero costs), qty = slot_capital / price
+                qty = round(min(self.slot_capital, self.available_cash) / price, 4)
+            else:
+                # India: whole units only — iterative floor approach
+                qty = int(self.slot_capital // price)
+                while qty > 0:
+                    amount = qty * price
+                    costs = self.calculate_etf_delivery_costs('buy', amount, self.brokerage_percent)
+                    total_outflow = costs['net_amount']
+                    if total_outflow <= self.slot_capital and total_outflow <= self.available_cash:
+                        break
+                    qty -= 1
             
             if qty > 0:
                 # Recalculate final costs for the confirmed quantity
@@ -383,12 +359,12 @@ class ETFSwingStrategy(EquitySegment):
                 taxes = costs['total_costs'] - costs['brokerage']
 
                 self._log(1, "execution", f"[{current_date.strftime('%Y-%m-%d')}] [ENTRY - BUY] Bought {symbol}. "
-                                          f"Qty: {qty}, Price: {price:.2f}, Amount: {amount:,.2f}")
+                                          f"Qty: {qty}, Price: {self.policy.format_currency(price)}, Amount: {self.policy.format_currency(amount)}")
                 self._log(1, "execution", f"Transaction Costs for {symbol} (BUY): "
-                                          f"Brokerage={costs['brokerage']:.2f}, "
-                                          f"Taxes={taxes:.2f}, "
-                                          f"Total Costs={costs['total_costs']:.2f}. "
-                                          f"Net Outflow: {costs['net_amount']:,.2f}")
+                                          f"Brokerage={self.policy.format_currency(costs['brokerage'])}, "
+                                          f"Taxes={self.policy.format_currency(taxes)}, "
+                                          f"Total Costs={self.policy.format_currency(costs['total_costs'])}. "
+                                          f"Net Outflow: {self.policy.format_currency(costs['net_amount'])}")
 
         return entries
 

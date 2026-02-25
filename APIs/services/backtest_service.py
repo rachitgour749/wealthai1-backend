@@ -64,7 +64,7 @@ async def execute_backtest(request: UnifiedBacktestRequest) -> UnifiedBacktestRe
         elif request.strategy_type == "ETF_Buy_on_Dip":
             handler = ETFBuyOnDipHandler(None)
             
-        elif request.strategy_type == "ETF_Swing_Strategy":
+        elif request.strategy_type in ("ETF_Swing_Strategy", "US_ETF_Swing_Strategy"):
             handler = ETFSwingHandler(None)
             
         else:

@@ -48,15 +48,17 @@ except ImportError:
 
 
 class StockRotationBacktester(RotationStrategy):
-    def __init__(self, db_path: str = None):
+    def __init__(self, market: str = "INDIA", db_path: str = None):
         """
         Initialize Stock Rotation Backtester
         
         Args:
+            market: Market name (INDIA, US)
             db_path: Deprecated - kept for compatibility. Now uses PostgreSQL MarketData database.
         """
         # Call base class constructor (initializes common attributes)
         super().__init__()
+        self.market = market.upper()
         
         # Initialize centralized logger AFTER parent init to prevent override
         self.logger = StrategyLogger('Rotation_Stocks')
@@ -75,8 +77,7 @@ class StockRotationBacktester(RotationStrategy):
         self.purchase_history = {}
         
         # Strategy-specific table configuration (must be set before method calls)
-        # Strategy-specific table configuration (must be set before method calls)
-        self.data_table = "stock_market"  # Stocks are stored in stock_market table
+        self.data_table = "us_stock_market" if self.market == 'US' else "stock_market"
         
         self.available_databases = []  # Not needed for PostgreSQL
         self.stock_metadata = self.load_metadata()
@@ -402,19 +403,19 @@ class StockRotationBacktester(RotationStrategy):
             session = self._get_session()
             from sqlalchemy import text
             
-            self.logger.debug(f"Querying stock_data table for date ranges of: {selected_stocks}")
+            self.logger.debug(f"Querying {self.data_table} table for date ranges of: {selected_stocks}")
             
             # Build placeholders for IN clause
             placeholders = ','.join([f':ticker_{i}' for i in range(len(selected_stocks))])
             
-            # Query to get MIN and MAX dates for each stock directly from stock_data table
+            # Query to get MIN and MAX dates for each stock directly from the dynamic data table
             query = text(f"""
                 SELECT 
                     symbol,
                     MIN(date) as start_date,
                     MAX(date) as end_date,
                     COUNT(*) as total_records
-                FROM stock_market
+                FROM {self.data_table}
                 WHERE symbol IN ({placeholders})
                 GROUP BY symbol
                 ORDER BY symbol
@@ -427,7 +428,7 @@ class StockRotationBacktester(RotationStrategy):
             rows = result.fetchall()
             
             if not rows:
-                self.logger.error(f"No data found in stock_data table for: {selected_stocks}")
+                self.logger.error(f"No data found in {self.data_table} table for: {selected_stocks}")
                 return None, None, 0.0
             
             # Parse results
@@ -470,7 +471,7 @@ class StockRotationBacktester(RotationStrategy):
             latest_start = max(start_dates)
             common_end = min(end_dates)
             
-            self.logger.info(f"📅 Stock Data Ranges (from stock_data table):")
+            self.logger.info(f"📅 Stock Data Ranges (from {self.data_table} table):")
             for symbol, data in stock_date_ranges.items():
                 years = data['years_available']
                 self.logger.info(f"   {symbol:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years:.1f} years, {data['total_records']} records)")
@@ -526,7 +527,7 @@ class StockRotationBacktester(RotationStrategy):
             return strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
             
         except Exception as e:
-            self.logger.error(f"Error calculating date range from stock_data table: {e}")
+            self.logger.error(f"Error calculating date range from {self.data_table} table: {e}")
             import traceback
             self.logger.error(f"Traceback: {traceback.format_exc()}")
             return None, None, 0.0
@@ -557,18 +558,19 @@ class StockRotationBacktester(RotationStrategy):
                 self.logger.progress(f"   Data loading period: {buffer_start_date} to {end_date}")
                 self.logger.info(f"   Buffer: 400 calendar days (~252 trading days) for momentum calculations")
 
-            # Use stock_data table - column names match directly
+            # Use dynamic data table - column names match directly
             # Get available symbols using proper parameterization
-            from sqlalchemy import bindparam
+            # Build placeholders for IN clause
             placeholders = ','.join([f':ticker_{i}' for i in range(len(tickers))])
             
             query = text(f"""
                 SELECT DISTINCT symbol 
-                FROM stock_market 
+                FROM {self.data_table} 
                 WHERE symbol IN ({placeholders})
                 AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
             """)
             
+            # Build parameters dict with all tickers and dates
             params = {f'ticker_{i}': t for i, t in enumerate(tickers)}
             params.update({
                 "start_date": buffer_start_date,
@@ -578,13 +580,13 @@ class StockRotationBacktester(RotationStrategy):
             result = session.execute(query, params)
             available_tickers = [row[0] for row in result.fetchall()]
             missing_tickers = [t for t in tickers if t not in available_tickers]
-
+            
             if missing_tickers and self._verbose:
                 self.logger.info(f"⚠️ Missing data for: {', '.join(missing_tickers)}")
-
+            
             if not available_tickers:
-                raise ValueError("No data available for any of the selected stocks")
-
+                raise ValueError(f"No data available in {self.data_table} for any of the selected stocks")
+            
             # Load data - column names match directly
             placeholders = ','.join([f':ticker_{i}' for i in range(len(available_tickers))])
             query = text(f"""
@@ -597,7 +599,7 @@ class StockRotationBacktester(RotationStrategy):
                     close,
                     volume,
                     adj_close AS adjusted_close
-                FROM stock_market
+                FROM {self.data_table}
                 WHERE symbol IN ({placeholders})
                 AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
                 ORDER BY date, symbol
@@ -1717,40 +1719,56 @@ class StockRotationBacktester(RotationStrategy):
         """
         Calculate benchmark performance using SIP (Systematic Investment Plan) approach
         to match the strategy's weekly capital injection during accumulation phase.
-        Uses NIFTY50 from index_data.
         """
         session = None
         try:
             session = self._get_session()
             from sqlalchemy import text
             
-            benchmark_symbol = "NIFTY_50"
+            market = getattr(self, 'market', 'INDIA').upper()
+            
+            if market == 'US':
+                # Use S&P 500 Index as benchmark for US market
+                benchmark_symbols = ['S&P_500', '^GSPC', 'SPY']
+                table_name = "s_p_500_index_market"
+                benchmark_name = "S&P 500"
+            else:
+                # Default to INDIA / Nifty 50
+                benchmark_symbols = ['NIFTY_50', 'NIFTYBEES', 'NIFTY50']
+                table_name = "nifty_50_index_market"
+                benchmark_name = "Nifty 50"
 
-            # Load benchmark data for the entire period
-            query = text("""
-                SELECT date, COALESCE(adj_close, close) AS close
-                FROM nifty_50_index_market
-                WHERE symbol = :symbol
-                AND date >= CAST(:start_date AS DATE)
-                AND date <= CAST(:end_date AS DATE)
-                ORDER BY date
-            """)
+            # Check for primary benchmark in index market table first
+            benchmark_symbol = None
+            for symbol in benchmark_symbols:
+                index_query = text(f"""
+                    SELECT date, COALESCE(adj_close, close) AS close
+                    FROM {table_name}
+                    WHERE symbol = :symbol
+                    AND date >= CAST(:start_date AS DATE)
+                    AND date <= CAST(:end_date AS DATE)
+                    ORDER BY date
+                """)
 
-            result = session.execute(query, {
-                "symbol": benchmark_symbol,
-                "start_date": start_date,
-                "end_date": end_date
-            })
-            rows = result.fetchall()
-            columns = result.keys()
-            nifty_df = pd.DataFrame(rows, columns=columns)
+                result = session.execute(index_query, {
+                    "symbol": symbol,
+                    "start_date": start_date,
+                    "end_date": end_date
+                })
+                rows = result.fetchall()
+                if rows:
+                    benchmark_symbol = symbol
+                    self.logger.progress(f"Using {benchmark_symbol} as {benchmark_name} benchmark (Index Data)")
+                    columns = result.keys()
+                    benchmark_df = pd.DataFrame(rows, columns=columns)
+                    break
 
-            if nifty_df.empty:
-                self.logger.info("⚠️ No Nifty50 benchmark data found in index_data")
+            if not benchmark_symbol or benchmark_df.empty:
+                self.logger.info(f"⚠️ No suitable {benchmark_name} benchmark data found in database")
                 return pd.DataFrame()
 
-            nifty_df['date'] = pd.to_datetime(nifty_df['date'])
-            nifty_df = nifty_df.set_index('date')
+            benchmark_df['date'] = pd.to_datetime(benchmark_df['date'])
+            benchmark_df = benchmark_df.set_index('date')
 
             # Get strategy execution dates and capital flows from weekly_nav_df
             if hasattr(self, 'weekly_nav_df') and not self.weekly_nav_df.empty:
@@ -1765,7 +1783,7 @@ class StockRotationBacktester(RotationStrategy):
                 cash_balance = 0
                 total_invested_so_far = 0
                 
-                self.logger.progress(f"📊 Calculating Nift50 SIP Benchmark Performance...")
+                self.logger.progress(f"📊 Calculating {benchmark_name} SIP Benchmark Performance...")
                 
                 for _, row in weekly_data.iterrows():
                     date = row['date']
@@ -1790,13 +1808,13 @@ class StockRotationBacktester(RotationStrategy):
                     
                     # 3. Find benchmark price for this date (or nearest prior)
                     price = 0
-                    if date in nifty_df.index:
-                        price = nifty_df.loc[date]['close']
+                    if date in benchmark_df.index:
+                        price = benchmark_df.loc[date]['close']
                     else:
                         # Find nearest prior date
-                        prior_dates = nifty_df.index[nifty_df.index <= date]
+                        prior_dates = benchmark_df.index[benchmark_df.index <= date]
                         if not prior_dates.empty:
-                            price = nifty_df.loc[prior_dates[-1]]['close']
+                            price = benchmark_df.loc[prior_dates[-1]]['close']
 
                     if price is not None:
                         try:

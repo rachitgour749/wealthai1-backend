@@ -36,9 +36,22 @@ class ETFSwingHandler(BaseStrategyHandler):
             # Clean tickers
             tickers = self._clean_tickers(request.tickers)
             
-            # Initialize backtester
-            # config_path can be used to pass customization if needed
-            backtester = ETFSwingBacktester()
+            # Derive market from strategy_type as the primary source of truth.
+            # We CANNOT rely on request.market because the Pydantic schema defines it with
+            # default="INDIA", so getattr always returns "INDIA" even for US_ETF_Swing_Strategy.
+            if request.strategy_type == 'US_ETF_Swing_Strategy':
+                market = 'US'
+            else:
+                market = 'INDIA'
+            asset_type = 'ETF'
+
+            # Allow explicit override only from the parameters dict (deliberate frontend field)
+            if hasattr(request, 'parameters') and isinstance(request.parameters, dict):
+                market = request.parameters.get('market', market).upper()
+                asset_type = request.parameters.get('asset_type', asset_type).upper()
+
+            # Initialize backtester with context
+            backtester = ETFSwingBacktester(market=market, asset_type=asset_type)
             
             # Update strategy parameters from request if provided
             # Update strategy parameters from request if provided

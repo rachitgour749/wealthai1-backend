@@ -49,7 +49,9 @@ async def health_check():
             "International_ETF_Rotation",
             "Stock_Rotation",
             "ETF_Payout",
-            "SuperTrend"
+            "SuperTrend",
+            "ETF_Swing_Strategy",
+            "US_ETF_Swing_Strategy"
         ]
     }
 
@@ -109,7 +111,13 @@ async def list_strategies():
             },
             {
                 "type": "ETF_Swing_Strategy",
-                "description": "Slot-based ETF swing strategy with SMA trend filter",
+                "description": "Slot-based Indian ETF swing strategy with SMA trend filter",
+                "required_params": ["tickers", "start_date", "end_date", "initial_capital"],
+                "optional_params": ["sma_lookback", "stop_loss_pct", "profit_threshold_pct", "number_of_slots", "risk_free_rate"]
+            },
+            {
+                "type": "US_ETF_Swing_Strategy",
+                "description": "Slot-based US ETF swing strategy with SMA trend filter (USD)",
                 "required_params": ["tickers", "start_date", "end_date", "initial_capital"],
                 "optional_params": ["sma_lookback", "stop_loss_pct", "profit_threshold_pct", "number_of_slots", "risk_free_rate"]
             }
@@ -169,6 +177,28 @@ async def get_strategy_defaults(strategy_type: str = Query(..., description="Str
             "tickers": ["NIFTYBEES", "JUNIORBEES", "GOLDBEES", "LIQUIDBEES"],
             "capital_per_month": 5000,
             "brokerage_percent": 0.0
+        },
+        "ETF_Swing_Strategy": {
+            "tickers": ["NIFTYBEES.NS", "JUNIORBEES.NS", "GOLDBEES.NS", "ICICIB22.NS", "MOM100.NS"],
+            "initial_capital": 500000,
+            "number_of_slots": 5,
+            "sma_lookback": 50,
+            "stop_loss_pct": 5.0,
+            "profit_threshold_pct": 10.0,
+            "brokerage_percent": 0.1,
+            "market": "INDIA",
+            "asset_type": "ETF"
+        },
+        "US_ETF_Swing_Strategy": {
+            "tickers": ["SPY", "QQQ", "GLD", "TLT", "IWM"],
+            "initial_capital": 50000,
+            "number_of_slots": 5,
+            "sma_lookback": 50,
+            "stop_loss_pct": 5.0,
+            "profit_threshold_pct": 10.0,
+            "brokerage_percent": 0.0,
+            "market": "US",
+            "asset_type": "ETF"
         }
     }
     return defaults.get(strategy_type, {})

@@ -32,11 +32,16 @@ class ETFPayoutHandler(BaseStrategyHandler):
         try:
             self.validate_request(request)
             
+            # Extract market
+            market = getattr(request, 'market', 'INDIA') or 'INDIA'
+            if hasattr(request, 'parameters') and isinstance(request.parameters, dict):
+                market = request.parameters.get('market', market)
+            
             # Clean tickers (remove .NS)
             request.tickers = self._clean_tickers(request.tickers)
             
             # Initialize backtester
-            backtester = RotationETFPayoutBacktester(db_path="unified_etf_data.sqlite")
+            backtester = RotationETFPayoutBacktester(market=market, db_path="unified_etf_data.sqlite")
             backtester._verbose = True # Enable for debugging
             
             # Set payout specific parameters from request

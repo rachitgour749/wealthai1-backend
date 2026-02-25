@@ -17,8 +17,8 @@ class RotationStrategy(EquitySegment):
     - Dynamic churning
     """
     
-    def __init__(self, db_session=None):
-        super().__init__(db_session)
+    def __init__(self, db_session=None, policy=None):
+        super().__init__(db_session, policy=policy)
         # Strategy specific state
         self.current_holdings: Dict[str, int] = {} # Symbol -> Quantity
         self.current_cash: float = 0.0

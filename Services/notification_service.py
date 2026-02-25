@@ -1,0 +1,147 @@
+import smtplib
+import logging
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+import os
+from typing import List, Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
+
+class WebhookNotifier:
+    def __init__(self):
+        # SMTP Configuration (Provided by user)
+        self.smtp_server = "smtp.gmail.com"
+        self.smtp_port = 587
+        self.email_user = "wealthwisersfinancialservices@gmail.com"
+        self.email_password = "gudhrdtpdtjobtdg"
+        
+    def send_email(self, recipient: str, subject: str, html_body: str):
+        """Internal helper to send HTML email."""
+        logger.info(f"Preparing to send email to {recipient} with subject: {subject}")
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = self.email_user
+            msg['To'] = recipient
+            msg['Subject'] = subject
+            
+            msg.attach(MIMEText(html_body, 'html'))
+            
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()
+                server.login(self.email_user, self.email_password)
+                server.send_message(msg)
+                
+            logger.info(f"Email sent successfully to {recipient}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send email to {recipient}: {e}")
+            return False
+
+    def send_email_with_attachment(self, recipient: str, subject: str, html_body: str, attachment_path: str, filename: str):
+        """Internal helper to send HTML email with an attachment."""
+        logger.info(f"Preparing to send email to {recipient} with subject: {subject} and attachment: {filename}")
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = self.email_user
+            msg['To'] = recipient
+            msg['Subject'] = subject
+            
+            msg.attach(MIMEText(html_body, 'html'))
+            
+            # Add attachment
+            if os.path.exists(attachment_path):
+                with open(attachment_path, "rb") as attachment:
+                    part = MIMEBase("application", "octet-stream")
+                    part.set_payload(attachment.read())
+                
+                encoders.encode_base64(part)
+                part.add_header(
+                    "Content-Disposition",
+                    f"attachment; filename= {filename}",
+                )
+                msg.attach(part)
+            else:
+                logger.warning(f"Attachment file not found: {attachment_path}")
+
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()
+                server.login(self.email_user, self.email_password)
+                server.send_message(msg)
+                
+            logger.info(f"Email with attachment sent successfully to {recipient}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send email with attachment to {recipient}: {e}")
+            return False
+
+    def send_ra_summary(self, ra_email: str, strategy_name: str, symbol: str, side: str, details: List[Dict[str, Any]]):
+        """Sends a summary table to the RA for all client executions."""
+        subject = f"RA Summary: {strategy_name} Signal - {symbol} {side}"
+        
+        # Build HTML table for rows
+        rows_html = ""
+        for d in details:
+            status_color = "#28a745" if d['status'] == 'executed' else "#dc3545"
+            rows_html += f"""
+            <tr>
+                <td style='border: 1px solid #ddd; padding: 8px;'>{d['email']}</td>
+                <td style='border: 1px solid #ddd; padding: 8px; color: {status_color}; font-weight: bold;'>{d['status'].upper()}</td>
+                <td style='border: 1px solid #ddd; padding: 8px;'>{d.get('message', 'N/A')}</td>
+            </tr>
+            """
+
+        html_body = f"""
+        <html>
+        <body style='font-family: Arial, sans-serif;'>
+            <h2 style='color: #007bff;'>RA Trade Execution Summary</h2>
+            <p><strong>Strategy:</strong> {strategy_name}</p>
+            <p><strong>Signal:</strong> {symbol} ({side})</p>
+            <hr/>
+            <table style='width: 100%; border-collapse: collapse;'>
+                <thead>
+                    <tr style='background-color: #f8f9fa;'>
+                        <th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Client Email</th>
+                        <th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Status</th>
+                        <th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows_html}
+                </tbody>
+            </table>
+            <p style='color: #6c757d; font-size: 12px; margin-top: 20px;'>Generated by WealthAI Webhook System</p>
+        </body>
+        </html>
+        """
+        return self.send_email(ra_email, subject, html_body)
+
+    def send_client_notification(self, client_email: str, strategy_name: str, symbol: str, side: str, status: str, message: str):
+        """Sends an individual success/error email to a client."""
+        status_text = "Success" if status == "executed" else "Failed / Skipped"
+        subject = f"Trade Notification: {strategy_name} - {status_text}"
+        
+        color = "#28a745" if status == "executed" else "#dc3545"
+        
+        html_body = f"""
+        <html>
+        <body style='font-family: Arial, sans-serif;'>
+            <div style='padding: 20px; border: 1px solid #eee; border-radius: 5px;'>
+                <h2 style='color: {color};'>Trade {status_text}</h2>
+                <p>Hello,</p>
+                <p>An automated trade signal was processed for your account:</p>
+                <ul>
+                    <li><strong>Strategy:</strong> {strategy_name}</li>
+                    <li><strong>Symbol:</strong> {symbol}</li>
+                    <li><strong>Side:</strong> {side}</li>
+                    <li><strong>Status:</strong> <span style='color: {color}; font-weight: bold;'>{status.upper()}</span></li>
+                </ul>
+                <p><strong>Message:</strong> {message or "Order processed successfully."}</p>
+                <hr/>
+                <p style='color: #6c757d; font-size: 12px;'>Generated by WealthAI Webhook System. Please check your dashboard for details.</p>
+            </div>
+        </body>
+        </html>
+        """
+        return self.send_email(client_email, subject, html_body)

@@ -6,74 +6,65 @@ import os
 import json
 from sqlalchemy import text
 from Databases.app_data_db_connection import get_session
+from Services.market_data_service import MarketDataService
 from Strategies.ETF_Swing_Strategy.strategy import ETFSwingStrategy
 
 class ETFSwingBacktester:
-    def __init__(self, config_path: str = None):
-        self.strategy = ETFSwingStrategy(config_path)
+    def __init__(self, market: str = "INDIA", asset_type: str = "ETF", config_path: str = None):
+        self.market = market.upper()
+        self.asset_type = asset_type.upper()
+        self.strategy = ETFSwingStrategy(market=self.market, asset_type=self.asset_type, config_path=config_path)
         self._data_cache = {}
         self.portfolio_history = []
         self.transaction_log = []
         self.daily_nav = pd.DataFrame()
 
     def load_data(self, tickers: List[str], start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
-        """Load data from etf_market and nifty_50_index_market tables"""
-        session = get_session()
+        """Load data using MarketDataService"""
         data_dict = {}
         
         # Add buffer for SMA
         buffer_days = self.strategy.sma_lookback * 2
-        adj_start = (pd.to_datetime(start_date) - timedelta(days=buffer_days)).strftime('%Y-%m-%d')
+        adj_start = pd.to_datetime(start_date) - timedelta(days=buffer_days)
+        adj_end = pd.to_datetime(end_date)
         
-        self.strategy._log(2, "data_fetch", f"Loading data for {len(tickers)} ETFs and Benchmark from {adj_start} to {end_date}")
+        self.strategy._log(2, "data_fetch", f"Loading {self.market} {self.asset_type} data for {len(tickers)} assets and Benchmark from {adj_start.date()} to {adj_end.date()}")
         
         try:
-            # 1. Load ETF Data
-            for ticker in tickers:
-                query = text(f"""
-                    SELECT date, open, high, low, close, volume 
-                    FROM etf_market 
-                    WHERE symbol = :symbol 
-                    AND date >= :start AND date <= :end
-                    ORDER BY date ASC
-                """)
-                result = session.execute(query, {"symbol": ticker, "start": adj_start, "end": end_date})
-                rows = result.fetchall()
-                
-                if rows:
-                    df = pd.DataFrame(rows, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
-                    df['date'] = pd.to_datetime(df['date'])
-                    df.set_index('date', inplace=True)
-                    data_dict[ticker] = df
-                    
-                    # Detailed data fetch breakdown
-                    self.strategy._log(2, "data_fetch", f"Fetched {len(df)} records for {ticker}. Date range: {df.index.min()} to {df.index.max()}")
-                    self.strategy._log(5, "data_fetch", f"{ticker} Sample Data (Last 3 rows):\n{df.tail(3).to_string()}")
-                else:
-                    self.strategy._log(3, "data_fetch", f"No data found for {ticker}")
-
-            # 2. Load Nifty 50 Benchmark Data
-            nifty_query = text(f"""
-                SELECT date, open, high, low, close, volume 
-                FROM nifty_50_index_market 
-                WHERE date >= :start AND date <= :end
-                ORDER BY date ASC
-            """)
-            nifty_result = session.execute(nifty_query, {"start": adj_start, "end": end_date})
-            nifty_rows = nifty_result.fetchall()
+            # 1. Load Asset Data
+            assets_df = MarketDataService.fetch_close_prices(
+                tickers=tickers, market=self.market, asset_type=self.asset_type,
+                start_date=adj_start, end_date=adj_end
+            )
             
-            if nifty_rows:
-                nifty_df = pd.DataFrame(nifty_rows, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
-                nifty_df['date'] = pd.to_datetime(nifty_df['date'])
-                nifty_df.set_index('date', inplace=True)
-                data_dict["BENCHMARK_NIFTY50"] = nifty_df
-                self.strategy._log(2, "data_fetch", f"Fetched {len(nifty_df)} records for Nifty 50 Benchmark.")
+            if not assets_df.empty:
+                for ticker in tickers:
+                    if ticker in assets_df.columns:
+                        ticker_df = assets_df[[ticker]].rename(columns={ticker: 'close'})
+                        for col in ['open', 'high', 'low']: ticker_df[col] = ticker_df['close']
+                        ticker_df['volume'] = 0
+                        data_dict[ticker] = ticker_df
+                        self.strategy._log(2, "data_fetch", f"Fetched {len(ticker_df)} records for {ticker}.")
+
+            # 2. Load Benchmark Data
+            benchmark = "NIFTY_50" if self.market == "INDIA" else "S&P_500"
+            bench_df = MarketDataService.fetch_close_prices(
+                tickers=[benchmark], market=self.market, asset_type="INDEX",
+                start_date=adj_start, end_date=adj_end
+            )
+            
+            if not bench_df.empty:
+                bench_data = bench_df[[benchmark]].rename(columns={benchmark: 'close'})
+                for col in ['open', 'high', 'low']: bench_data[col] = bench_data['close']
+                bench_data['volume'] = 0
+                data_dict["BENCHMARK"] = bench_data
+                self.strategy._log(2, "data_fetch", f"Fetched benchmark {benchmark}.")
             else:
-                self.strategy._log(1, "data_fetch", "WARNING: Nifty 50 Benchmark data not found!")
+                self.strategy._log(1, "data_fetch", f"WARNING: Benchmark {benchmark} not found!")
                     
             return data_dict
         finally:
-            session.close()
+            pass
 
     def run_backtest(self, tickers: List[str], start_date: str, end_date: str, initial_capital: float, risk_free_rate: float = 8.0):
         """Run the backtest loop with benchmark comparison"""
@@ -81,10 +72,10 @@ class ETFSwingBacktester:
         
         # Load Data
         all_data = self.load_data(tickers, start_date, end_date)
-        if not all_data or "BENCHMARK_NIFTY50" not in all_data:
-            return {"error": "Missing data for ETFs or Nifty 50 Benchmark"}
+        if not all_data or "BENCHMARK" not in all_data:
+            return {"error": "Missing data for assets or Benchmark"}
 
-        benchmark_df = all_data.pop("BENCHMARK_NIFTY50")
+        benchmark_df = all_data.pop("BENCHMARK")
 
         # Calculate Indicators for all ETFs
         processed_data = {}

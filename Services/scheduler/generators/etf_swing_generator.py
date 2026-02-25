@@ -19,8 +19,9 @@ from Services.scheduler.generators.signal_generator_base import (
 )
 from Services.scheduler.config_utils import scheduler_config
 from Strategies.ETF_Swing_Strategy.strategy import ETFSwingStrategy
-from Databases.app_data_db_connection import get_session, ETFMarket
+from Databases.app_data_db_connection import get_session
 from Databases.signal_models import TradingSignal
+from Services.market_data_service import MarketDataService
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,32 +38,40 @@ def generate_etf_swing_signals(signal_date: Optional[datetime] = None):
     4. Saves new signals to DB
     """
     logger.info("\n" + "="*60)
-    logger.info("ETF SWING STRATEGY SIGNAL GENERATION")
+    logger.info("GENERALIZED SWING STRATEGY SIGNAL GENERATION")
     logger.info("="*60)
     
     if signal_date is None:
         signal_date = datetime.now()
         
-    # Check if it's a trading day (skip check if forced, but good practice)
-    # Note: For Swing strategy, we might want to run even on holidays if we have data, 
-    # but strictly speaking only trading days matter.
-    if not scheduler_config.is_trading_day(signal_date.date(), 'NSE'):
-        logger.warning(f"{signal_date.date()} is not a trading day (NSE). Skipping.")
-        return
-
     logger.info(f"Signal Date: {signal_date.strftime('%Y-%m-%d %H:%M:%S')}")
     
     try:
-        # 1. Fetch active instances
-        instances = fetch_active_instances('ETF_Swing_Strategy')
+        # 1. Fetch active instances — covers both Indian and US variants
+        india_instances = fetch_active_instances('ETF_Swing_Strategy')
+        us_instances    = fetch_active_instances('US_ETF_Swing_Strategy')
+        instances = india_instances + us_instances
         if not instances:
-            logger.info("No active ETF Swing Strategy instances found.")
+            logger.info("No active ETF Swing Strategy instances found (India or US).")
             return
 
         all_signals = []
         
         for instance in instances:
             try:
+                # Market-aware trading day check
+                params = instance.get('strategies_parameters', {})
+                if isinstance(params, str):
+                    try: params = json.loads(params)
+                    except: params = {}
+                
+                market = params.get('market', 'INDIA').upper()
+                exchange_code = 'NSE' if market == 'INDIA' else 'US'
+                
+                if not scheduler_config.is_trading_day(signal_date.date(), exchange_code):
+                    logger.info(f"Skipping instance {instance.get('id')} - {market} market is closed on {signal_date.date()}.")
+                    continue
+
                 signals = _process_instance(instance, signal_date)
                 all_signals.extend(signals)
             except Exception as e:
@@ -89,11 +98,22 @@ def _process_instance(instance: Dict, signal_date: datetime) -> List[TradingSign
     
     logger.info(f"Processing {strategy_name} for User {user_id}")
     
-    # Initialize Strategy
-    strategy = ETFSwingStrategy()
-    
-    # Configure Strategy from Instance
+    # Initialize Strategy with Market/Asset context
     params = instance.get('strategies_parameters', {})
+    if not isinstance(params, dict):
+        try:
+             params = json.loads(params) if params else {}
+        except:
+             params = {}
+             
+    # Derive market from strategy_type first (same logic as etf_swing_handler.py)
+    # so US_ETF_Swing_Strategy instances default to 'US' even without explicit param.
+    strategy_type_inst = instance.get('strategy_type', 'ETF_Swing_Strategy')
+    default_market = 'US' if strategy_type_inst == 'US_ETF_Swing_Strategy' else 'INDIA'
+    market = params.get('market', default_market).upper()
+    asset_type = params.get('asset_type', 'ETF').upper()
+    
+    strategy = ETFSwingStrategy(market=market, asset_type=asset_type)
     if not isinstance(params, dict):
         # Handle case where it might be a JSON string
         try:
@@ -128,7 +148,13 @@ def _process_instance(instance: Dict, signal_date: datetime) -> List[TradingSign
         logger.warning("No tickers defined for instance.")
         return []
 
-    market_data_df = _fetch_market_data(all_tickers, signal_date)
+    market_data_df = MarketDataService.fetch_close_prices(
+        tickers=all_tickers,
+        market=market,
+        asset_type=asset_type,
+        start_date=signal_date - timedelta(days=150),
+        end_date=signal_date
+    )
     
     if market_data_df.empty:
         logger.warning("No market data available.")
@@ -333,36 +359,4 @@ def _reconstruct_portfolio_state(strategy: ETFSwingStrategy, user_id: str, strat
         session.close()
 
 
-def _fetch_market_data(tickers: List[str], signal_date: datetime) -> pd.DataFrame:
-    """Fetch close prices for tickers"""
-    session = get_session()
-    try:
-        # Need enough lookback for SMA 50 + buffer
-        start_date = signal_date - timedelta(days=150)
-        
-        data = session.query(ETFMarket.date, ETFMarket.symbol, ETFMarket.close).filter(
-            ETFMarket.symbol.in_(tickers),
-            ETFMarket.date >= start_date,
-            ETFMarket.date <= signal_date
-        ).all()
-        
-        if not data:
-            return pd.DataFrame()
-            
-        df = pd.DataFrame(data, columns=['date', 'symbol', 'close'])
-        df['date'] = pd.to_datetime(df['date'])
-        
-        # Pivot
-        pivot_df = df.pivot(index='date', columns='symbol', values='close')
-        pivot_df.sort_index(inplace=True)
-        
-        # Forward fill missing data?
-        pivot_df.fillna(method='ffill', inplace=True)
-        
-        return pivot_df
-        
-    except Exception as e:
-        logger.error(f"Error fetching market data: {e}")
-        return pd.DataFrame()
-    finally:
-        session.close()
+# Removed _fetch_market_data since it's replaced by MarketDataService

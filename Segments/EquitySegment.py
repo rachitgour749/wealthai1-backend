@@ -1,115 +1,37 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 from Exchange.IndianExchange import IndianExchange
+from Exchange.ExchangePolicy import ExchangePolicy
 
 class EquitySegment(IndianExchange):
     """
     Level 3: Segment Layer (Equity)
     
     Handles Delivery-based Equity trading (Stocks & ETFs).
-    Implements:
-    - Transaction Costs (Brokerage, STT, Stamp Duty, GST)
-    - Capital Gains Tax (FIFO Method, 12.5% LTCG)
-    - Inventory Management
+    Injected with ExchangePolicy to handle market-specific costs.
     """
     
-    def __init__(self, db_session=None):
+    def __init__(self, db_session=None, policy: Optional[ExchangePolicy] = None):
         super().__init__(db_session)
+        # Default to Indian policy if none provided for backward compatibility
+        if policy is None:
+            from Exchange.IndianExchangePolicy import IndianExchangePolicy
+            self.policy = IndianExchangePolicy()
+        else:
+            self.policy = policy
+            
         # FIFO Inventory: {ticker: [{'date': date, 'units': qty, 'price': price, 'remaining_units': qty}]}
         self.purchase_history: Dict[str, List[Dict]] = {}
         
     def calculate_stock_delivery_costs(self, action: str, amount: float, 
                                        brokerage_percent: float = 0.1) -> Dict[str, float]:
-        """
-        Calculates transaction costs for Stock Delivery trades.
-        STT: 0.1% on BOTH buy and sell
-        Stamp Duty: 0.015% on buy only
-        """
-        costs = {}
-        
-        # Brokerage
-        brokerage = amount * (brokerage_percent / 100)
-        costs['brokerage'] = brokerage
-        
-        # STT (Securities Transaction Tax) - 0.1% on BOTH Buy & Sell for Stocks
-        costs['stt'] = amount * 0.1 / 100
-        
-        # Stamp duty - 0.015% (Buy Only)
-        if action == 'buy':
-            costs['stamp_duty'] = amount * 0.015 / 100
-        else:
-            costs['stamp_duty'] = 0
-        
-        # Exchange charges - 0.00297%
-        exchange_charges = amount * 0.00297 / 100
-        costs['exchange_charges'] = exchange_charges
-        
-        # SEBI charges - 0.0001%
-        sebi_charges = amount * 0.0001 / 100
-        costs['sebi_charges'] = sebi_charges
-        
-        # GST - 18% on Brokerage + Exchange + SEBI
-        costs['gst'] = (brokerage + exchange_charges + sebi_charges) * 0.18
-        
-        # Total costs
-        total_costs = sum(costs.values())
-        costs['total_costs'] = total_costs
-        
-        # Net amount
-        if action == 'buy':
-            costs['net_amount'] = amount + total_costs
-        else:
-            costs['net_amount'] = amount - total_costs
-            
-        return costs
+        """Legacy wrapper - now uses policy logic"""
+        return self.policy.calculate_transaction_costs(action, 'STOCK', amount, brokerage_percent)
     
     def calculate_etf_delivery_costs(self, action: str, amount: float, 
                                      brokerage_percent: float = 0.1) -> Dict[str, float]:
-        """
-        Calculates transaction costs for ETF Delivery trades.
-        STT: 0.001% on SELL only
-        Stamp Duty: 0.015% on buy only
-        """
-        costs = {}
-        
-        # Brokerage
-        brokerage = amount * (brokerage_percent / 100)
-        costs['brokerage'] = brokerage
-        
-        # STT (Securities Transaction Tax) - 0.001% on Sell only for ETFs
-        if action == 'sell':
-            costs['stt'] = amount * 0.001 / 100
-        else:
-            costs['stt'] = 0
-        
-        # Stamp duty - 0.015% (Buy Only)
-        if action == 'buy':
-            costs['stamp_duty'] = amount * 0.015 / 100
-        else:
-            costs['stamp_duty'] = 0
-        
-        # Exchange charges - 0.00297%
-        exchange_charges = amount * 0.00297 / 100
-        costs['exchange_charges'] = exchange_charges
-        
-        # SEBI charges - 0.0001%
-        sebi_charges = amount * 0.0001 / 100
-        costs['sebi_charges'] = sebi_charges
-        
-        # GST - 18% on Brokerage + Exchange + SEBI
-        costs['gst'] = (brokerage + exchange_charges + sebi_charges) * 0.18
-        
-        # Total costs
-        total_costs = sum(costs.values())
-        costs['total_costs'] = total_costs
-        
-        # Net amount
-        if action == 'buy':
-            costs['net_amount'] = amount + total_costs
-        else:
-            costs['net_amount'] = amount - total_costs
-            
-        return costs
+        """Legacy wrapper - now uses policy logic"""
+        return self.policy.calculate_transaction_costs(action, 'ETF', amount, brokerage_percent)
 
     def calculate_delivery_costs(self, action: str, amount: float, 
                                brokerage_percent: float = 0.1) -> Dict[str, float]:

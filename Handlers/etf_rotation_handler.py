@@ -48,8 +48,13 @@ class ETFRotationHandler(BaseStrategyHandler):
             # Clean tickers (remove .NS)
             request.tickers = self._clean_tickers(request.tickers)
             
-            # Initialize backtester
-            backtester = ETFRotationBacktester(db_path="unified_etf_data.sqlite")
+            # Extract market and asset type
+            market = getattr(request, 'market', 'INDIA') or 'INDIA'
+            if hasattr(request, 'parameters') and isinstance(request.parameters, dict):
+                market = request.parameters.get('market', market)
+            
+            # Initialize backtester with correct market context
+            backtester = ETFRotationBacktester(market=market, db_path="unified_etf_data.sqlite")
             
             # Run backtest
             result = backtester.run_backtest(

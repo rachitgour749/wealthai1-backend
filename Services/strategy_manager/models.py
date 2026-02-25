@@ -19,6 +19,7 @@ class SavedInstance(Base):
     run_id = Column(String(100), unique=True, index=True)
     client_info = Column(JSON, nullable=True)
     webhook_url = Column(Text, nullable=True)
+    webhook_key = Column(String(100), nullable=True)
     status = Column(String(50), default='not deploy', index=True)
     reference_capital = Column(Float, nullable=True)
     last_execution_date = Column(DateTime(timezone=True), nullable=True)

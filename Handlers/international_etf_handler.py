@@ -35,8 +35,13 @@ class InternationalETFHandler(BaseStrategyHandler):
             # Clean tickers (remove .NS)
             request.tickers = self._clean_tickers(request.tickers)
             
+            # Extract market
+            market = getattr(request, 'market', 'US') or 'US'
+            if hasattr(request, 'parameters') and isinstance(request.parameters, dict):
+                market = request.parameters.get('market', market)
+            
             # Initialize backtester
-            backtester = InternationalETFRotationBacktester(db_path="unified_etf_data.sqlite")
+            backtester = InternationalETFRotationBacktester(market=market, db_path="international_etf_data.sqlite")
             
             # Run backtest
             result = backtester.run_backtest(
