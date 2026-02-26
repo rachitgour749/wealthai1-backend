@@ -269,18 +269,34 @@ class ETFSwingStrategy(EquitySegment):
                                   f"Total Costs={self.policy.format_currency(costs['total_costs'])}. "
                                   f"Net Proceeds: {self.policy.format_currency(net_proceeds)}")
         
+        prev_cash = self.available_cash - net_proceeds
+        self._log(1, "execution", f"--- CASH BREAKDOWN (SELL) ---")
+        self._log(1, "execution", f"  Previous Cash: {self.policy.format_currency(prev_cash)}")
+        self._log(1, "execution", f"  Net Proceeds: +{self.policy.format_currency(net_proceeds)}")
+        self._log(1, "execution", f"  Calculation: {self.policy.format_currency(prev_cash)} + {self.policy.format_currency(net_proceeds)}")
+        self._log(1, "execution", f"  Remaining Cash: {self.policy.format_currency(self.available_cash)}")
+        self._log(1, "execution", f"-----------------------------")
+        
         
         slot["status"] = "PENDING_FREE" # Mark as pending free to prevent same-day re-entry
+        slot["last_symbol_info"] = {"symbol": symbol} # Track symbol for same-day re-entry prevention
         slot["data"] = {}
         
         return log_entry
 
     def _recalculate_slot_capital(self):
-        """Update slot capital based on current available cash and free slots"""
-        free_slots_count = sum(1 for s in self.slots if s["status"] == "FREE")
+        """Update slot capital based on current available cash and free slots (including pending)"""
+        # Include PENDING_FREE in the count because they represent capital that will be available
+        free_slots_count = sum(1 for s in self.slots if s["status"] in ["FREE", "PENDING_FREE"])
+        
         if free_slots_count > 0:
             self.slot_capital = self.available_cash / free_slots_count
-            self._log(2, "execution", f"RECALCULATING: Available Cash: {self.policy.format_currency(self.available_cash)}. New Slot Capital: {self.policy.format_currency(self.slot_capital)}")
+            self._log(2, "execution", f"--- CAPITAL RECALCULATION ---")
+            self._log(2, "execution", f"Available Cash: {self.policy.format_currency(self.available_cash)}")
+            self._log(2, "execution", f"Free/Pending Slots: {free_slots_count}")
+            self._log(2, "execution", f"Calculation: {self.policy.format_currency(self.available_cash)} / {free_slots_count} slots")
+            self._log(2, "execution", f"New Slot Capital: {self.policy.format_currency(self.slot_capital)}")
+            self._log(2, "execution", f"-----------------------------")
 
     def process_entries(self, eligible_etfs: List[Dict], current_date: datetime) -> List[Dict]:
         """Rank and allocate free slots to eligible ETFs"""
@@ -290,8 +306,16 @@ class ETFSwingStrategy(EquitySegment):
         if not free_slots or not eligible_etfs:
             return entries
             
-        # Filter out ETFs already held
-        held_symbols = [s["data"]["symbol"] for s in self.slots if s["status"] == "OCCUPIED"]
+        # Filter out ETFs already held or just sold today (PENDING_FREE)
+        # This prevents same-day re-entry after a Stop Loss exit
+        held_symbols = []
+        for s in self.slots:
+            if s["status"] == "OCCUPIED":
+                held_symbols.append(s["data"]["symbol"])
+            elif s["status"] == "PENDING_FREE" and "symbol" in s.get("last_symbol_info", {}):
+                # We need to track what was in the slot before it was marked PENDING_FREE
+                held_symbols.append(s["last_symbol_info"]["symbol"])
+        
         eligible_new = [e for e in eligible_etfs if e["symbol"] not in held_symbols]
         
         if not eligible_new:
@@ -304,26 +328,41 @@ class ETFSwingStrategy(EquitySegment):
         num_to_buy = min(len(free_slots), len(eligible_new))
         to_buy = eligible_new[:num_to_buy]
         
+        self._log(2, "execution", f"--- ENTRY PROCESSING ---")
+        self._log(2, "execution", f"Available Cash: {self.policy.format_currency(self.available_cash)}")
+        self._log(2, "execution", f"Total Free Slots: {len(free_slots)}")
+        self._log(2, "execution", f"Slot Capital: {self.policy.format_currency(self.slot_capital)}")
+
         for i, etf in enumerate(to_buy):
             slot = free_slots[i]
             symbol = etf["symbol"]
             price = etf["close"] # Execution at Day T+1 Open would be handled by backtester
             
+            self._log(2, "execution", f"Calculating Qty for {symbol}:")
+            self._log(2, "execution", f"  Target Purchase Price: {self.policy.format_currency(price)}")
+            self._log(2, "execution", f"  Budget (Min of Slot Cap or Avail Cash): {self.policy.format_currency(min(self.slot_capital, self.available_cash))}")
+
             # Cost-Aware Quantity Calculation
             # US market supports fractional shares; India uses whole units only.
             if self.market == "US":
                 # Fractional: allocate full slot capital, account for costs
                 # For US (zero costs), qty = slot_capital / price
                 qty = round(min(self.slot_capital, self.available_cash) / price, 4)
+                self._log(2, "execution", f"  US Market (Fractional): {min(self.slot_capital, self.available_cash):.2f} / {price:.2f} = {qty}")
             else:
                 # India: whole units only — iterative floor approach
-                qty = int(self.slot_capital // price)
+                qty_estimate = int(min(self.slot_capital, self.available_cash) // price)
+                self._log(2, "execution", f"  India Market (Whole Units): Initial Estimate = {qty_estimate} units")
+                
+                qty = qty_estimate
                 while qty > 0:
                     amount = qty * price
                     costs = self.calculate_etf_delivery_costs('buy', amount, self.brokerage_percent)
                     total_outflow = costs['net_amount']
                     if total_outflow <= self.slot_capital and total_outflow <= self.available_cash:
+                        self._log(2, "execution", f"  Final Qty: {qty} (Total Outflow: {self.policy.format_currency(total_outflow)} fits budget)")
                         break
+                    self._log(3, "execution", f"  Reducing Qty: {qty} too expensive (Outflow {self.policy.format_currency(total_outflow)} > Budget)")
                     qty -= 1
             
             if qty > 0:
@@ -365,7 +404,18 @@ class ETFSwingStrategy(EquitySegment):
                                           f"Taxes={self.policy.format_currency(taxes)}, "
                                           f"Total Costs={self.policy.format_currency(costs['total_costs'])}. "
                                           f"Net Outflow: {self.policy.format_currency(costs['net_amount'])}")
+                
+                prev_cash = self.available_cash + costs['net_amount']
+                self._log(1, "execution", f"--- CASH BREAKDOWN (BUY) ---")
+                self._log(1, "execution", f"  Previous Cash: {self.policy.format_currency(prev_cash)}")
+                self._log(1, "execution", f"  Net Outflow: -{self.policy.format_currency(costs['net_amount'])}")
+                self._log(1, "execution", f"  Calculation: {self.policy.format_currency(prev_cash)} - {self.policy.format_currency(costs['net_amount'])}")
+                self._log(1, "execution", f"  Remaining Cash: {self.policy.format_currency(self.available_cash)}")
+                self._log(1, "execution", f"----------------------------")
+            else:
+                 self._log(1, "execution", f"[{current_date.strftime('%Y-%m-%d')}] [SKIPPED] Could not afford even 1 unit of {symbol}")
 
+        self._log(2, "execution", f"-------------------------")
         return entries
 
     def update_holding_sma(self, symbol: str, current_sma: float):
@@ -380,4 +430,6 @@ class ETFSwingStrategy(EquitySegment):
         for slot in self.slots:
             if slot["status"] == "PENDING_FREE":
                 slot["status"] = "FREE"
+                if "last_symbol_info" in slot:
+                    del slot["last_symbol_info"]
                 self._recalculate_slot_capital()

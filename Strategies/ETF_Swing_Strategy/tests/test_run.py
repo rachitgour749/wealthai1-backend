@@ -16,7 +16,7 @@ def test_strategy_logic():
     
     # Initialize Database Connection
     if not create_connection():
-        print("❌ Failed to connect to database. Check DATABASE_STRING in .env")
+        print("X Failed to connect to database. Check DATABASE_STRING in .env")
         return
     
     # Initialize backtester
@@ -34,11 +34,11 @@ def test_strategy_logic():
         results = backtester.run_backtest(tickers, start_date, end_date, initial_capital)
         
         if "error" in results:
-            print(f"❌ Backtest failed with error: {results['error']}")
+            print(f"X Backtest failed with error: {results['error']}")
             return
 
         metrics = results.get("metrics", {})
-        print("\n✅ Backtest completed successfully!")
+        print("\nOK Backtest completed successfully!")
         
         output_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results.txt")
         with open(output_file, "w", encoding="utf-8") as f:
@@ -66,7 +66,7 @@ def test_strategy_logic():
         print(f"Results written to: {output_file}")
             
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        print(f"X Unexpected error: {e}")
         import traceback
         traceback.print_exc()
 
