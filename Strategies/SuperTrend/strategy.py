@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import pandas_ta as ta
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 import os
@@ -105,6 +104,69 @@ class SuperTrendStrategy(EquitySegment):
         """Required abstract method implementation. Data loading is handled by the backtester."""
         pass
 
+    def _calculate_supertrend(self, df: pd.DataFrame, period: int, multiplier: float) -> pd.DataFrame:
+        """
+        Calculate SuperTrend using pure pandas to avoid heavy pandas_ta/numba dependencies
+        """
+        high = df['high']
+        low = df['low']
+        close = df['close']
+        
+        # Calculate ATR
+        tr1 = pd.DataFrame(high - low)
+        tr2 = pd.DataFrame(abs(high - close.shift(1)))
+        tr3 = pd.DataFrame(abs(low - close.shift(1)))
+        frames = [tr1, tr2, tr3]
+        tr = pd.concat(frames, axis=1, join='inner').max(axis=1)
+        atr = tr.ewm(alpha=1/period, adjust=False).mean()
+        
+        # Calculate basic bands
+        hl2 = (high + low) / 2
+        final_upperband = hl2 + (multiplier * atr)
+        final_lowerband = hl2 - (multiplier * atr)
+        
+        # Initialize Supertrend and Direction
+        supertrend = [0.0] * len(df)
+        direction = [1] * len(df)
+        
+        for i in range(1, len(df)):
+            curr_close = close.iloc[i]
+            prev_close = close.iloc[i-1]
+            
+            # Final Lowerband
+            if final_lowerband.iloc[i] < final_lowerband.iloc[i-1] and prev_close > final_lowerband.iloc[i-1]:
+                final_lowerband.iloc[i] = final_lowerband.iloc[i-1]
+                
+            # Final Upperband
+            if final_upperband.iloc[i] > final_upperband.iloc[i-1] and prev_close < final_upperband.iloc[i-1]:
+                final_upperband.iloc[i] = final_upperband.iloc[i-1]
+                
+            # Direction
+            if curr_close <= final_lowerband.iloc[i]:
+                direction[i] = -1
+            elif curr_close >= final_upperband.iloc[i]:
+                direction[i] = 1
+            else:
+                direction[i] = direction[i-1]
+                
+            # Supertrend
+            if direction[i] == 1:
+                supertrend[i] = final_lowerband.iloc[i]
+            else:
+                supertrend[i] = final_upperband.iloc[i]
+                
+        # Fill first value
+        if len(df) > 0:
+            supertrend[0] = final_upperband.iloc[0]
+            
+        result = pd.DataFrame(index=df.index)
+        result['supertrend'] = supertrend
+        result['st_direction'] = direction
+        
+        # Set first `period` rows to NaN to simulate window
+        result.iloc[:period, :] = np.nan
+        return result
+
     def calculate_indicators(self, data: pd.DataFrame) -> pd.DataFrame:
         """Calculate Weekly SuperTrend."""
         if data.empty:
@@ -132,14 +194,11 @@ class SuperTrendStrategy(EquitySegment):
         # Calculate Supertrend
         # pandas_ta supertrend returns DataFrame with columns like:
         # SUPERT_10_3.0, SUPERTd_10_3.0, SUPERTl_10_3.0, SUPERTs_10_3.0
-        st_res = ta.supertrend(high=weekly_df['high'], low=weekly_df['low'], close=weekly_df['close'], period=self.atr_period, multiplier=self.atr_multiplier)
+        st_res = self._calculate_supertrend(weekly_df, self.atr_period, self.atr_multiplier)
         
         if st_res is not None and not st_res.empty:
-            # Get the exact column names. Format is usually SUPERT_period_multiplier
-            st_col = next(col for col in st_res.columns if col.startswith('SUPERT_'))
-            dir_col = next(col for col in st_res.columns if col.startswith('SUPERTd_'))
-            weekly_df['supertrend'] = st_res[st_col]
-            weekly_df['st_direction'] = st_res[dir_col] # 1 is uptrend, -1 is downtrend
+            weekly_df['supertrend'] = st_res['supertrend']
+            weekly_df['st_direction'] = st_res['st_direction'] # 1 is uptrend, -1 is downtrend
         else:
             weekly_df['supertrend'] = np.nan
             weekly_df['st_direction'] = np.nan
@@ -170,13 +229,11 @@ class SuperTrendStrategy(EquitySegment):
             'close': 'last'
         })
         
-        st_precise = ta.supertrend(high=weekly_precise['high'], low=weekly_precise['low'], close=weekly_precise['close'], period=self.atr_period, multiplier=self.atr_multiplier)
+        st_precise = self._calculate_supertrend(weekly_precise, self.atr_period, self.atr_multiplier)
         
         if st_precise is not None and not st_precise.empty:
-            st_col = next(col for col in st_precise.columns if col.startswith('SUPERT_'))
-            dir_col = next(col for col in st_precise.columns if col.startswith('SUPERTd_'))
-            weekly_precise['supertrend'] = st_precise[st_col]
-            weekly_precise['st_direction'] = st_precise[dir_col]
+            weekly_precise['supertrend'] = st_precise['supertrend']
+            weekly_precise['st_direction'] = st_precise['st_direction']
         else:
             weekly_precise['supertrend'] = np.nan
             weekly_precise['st_direction'] = np.nan
