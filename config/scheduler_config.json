@@ -46,7 +46,7 @@
             "signal_generation": {
                 "frequency": "weekly",
                 "day_of_week": "monday",
-                "time": "01:27",
+                "time": "08:32",
                 "skip_holidays": true,
                 "execution_rule": "last_trading_day_of_week"
             },

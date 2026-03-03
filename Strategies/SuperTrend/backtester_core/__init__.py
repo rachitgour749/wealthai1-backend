@@ -1,2 +1,0 @@
-# Backtester core package initialization
-

@@ -137,8 +137,8 @@ class ETFSwingBacktester:
                         self.strategy.update_holding_sma(symbol, current_row['sma'])
                         prices_at_close[symbol] = current_row['close']
 
-            # 2. Process Exits (Signal T -> Execution T+1 Open)
-            # Simplified for backtest: We look at today's signals, executed later
+            # 2. Process Exits (Signal T -> Execution T+1 Close)
+            # We look at today's signals, executed at next day's close
             next_date_idx = benchmark_df.index.get_loc(current_date) + 1
             execution_date = current_date
             execution_prices = {}
@@ -148,14 +148,19 @@ class ETFSwingBacktester:
                 execution_date = next_date # Use Next Day for Execution Date
                 for ticker, df in processed_data.items():
                     if next_date in df.index:
-                        execution_prices[ticker] = df.loc[next_date]['open']
+                        execution_prices[ticker] = df.loc[next_date]['close']
             else:
                 # Last day fallback
                 for ticker, df in processed_data.items():
                     if current_date in df.index:
                         execution_prices[ticker] = df.loc[current_date]['close']
 
-            exits = self.strategy.process_exits(execution_prices, execution_date)
+            exits = self.strategy.process_exits(
+                eval_prices=prices_at_close,
+                exec_prices=execution_prices,
+                eval_date=current_date,
+                exec_date=execution_date
+            )
             self.transaction_log.extend(exits)
 
             # 3. Evaluate Entry Signals (Close of Day T)
@@ -164,7 +169,7 @@ class ETFSwingBacktester:
                 if current_date in df.index:
                     signal = self.strategy.evaluate_signals(ticker, df.loc[:current_date], current_date)
                     if signal.get("eligible"):
-                        # If signal today, execution price is T+1 open (already calculated if possible)
+                        # If signal today, execution price is T+1 close (already calculated if possible)
                         if ticker in execution_prices:
                             signal["close"] = execution_prices[ticker]
                         eligible_etfs.append(signal)

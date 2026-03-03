@@ -191,11 +191,18 @@ def _process_instance(instance: Dict, signal_date: datetime) -> List[TradingSign
 
     # Note on Date: Strategy uses `current_date` for logs. 
     # Logic: usage of `process_exits`.
-    # `process_exits` normally checks against T+1 Open in backtest.
-    # In Live: We are at T (Evening). We check against T Close (approx). 
-    # If SL hit based on T Close, we signal SELL for T+1 Open.
+    # `process_exits` normally checks against T+1 Close in backtest now.
+    # In Live: We are at T (Evening). We check against T Close (eval_prices). 
+    # If SL hit based on T Close, we signal SELL for T+1 Close.
+    # We pass current_prices as both eval and exec prices for signal generation,
+    # because the actual execution price will be determined at T+1 Close by the broker.
     
-    exits = strategy.process_exits(current_prices, signal_date)
+    exits = strategy.process_exits(
+        eval_prices=current_prices, 
+        exec_prices=current_prices, 
+        eval_date=signal_date, 
+        exec_date=signal_date
+    )
     
     for exit_tx in exits:
         # Create SELL Signal

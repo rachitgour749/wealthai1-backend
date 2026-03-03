@@ -170,7 +170,7 @@ class ETFSwingStrategy(EquitySegment):
             "date": current_date
         }
 
-    def process_exits(self, prices: Dict[str, float], current_date: datetime) -> List[Dict]:
+    def process_exits(self, eval_prices: Dict[str, float], exec_prices: Dict[str, float], eval_date: datetime, exec_date: datetime) -> List[Dict]:
         """Process stop loss and profit-based exits"""
         exits = []
         realized_something = False
@@ -180,35 +180,32 @@ class ETFSwingStrategy(EquitySegment):
                 data = slot["data"]
                 symbol = data["symbol"]
                 entry_price = data["entry_price"]
-                current_price = prices.get(symbol)
+                eval_price = eval_prices.get(symbol)
+                exec_price = exec_prices.get(symbol)
                 
-                if current_price is None:
+                if eval_price is None or exec_price is None:
                     continue
                 
-                # Check Stop Loss
+                # Check Stop Loss on eval_price (Today's Close)
                 sl_price = entry_price * (1 - self.stop_loss_pct / 100)
-                if current_price <= sl_price:
-                    loss_pct = (current_price - entry_price) / entry_price * 100
+                if eval_price <= sl_price:
+                    # Loss pct calculated on execution price for actual result
+                    loss_pct = (exec_price - entry_price) / entry_price * 100
                     reason_with_pct = f"STOP_LOSS ({loss_pct:.2f}%)"
-                    self._log(1, "execution", f"STOP LOSS TRIGGERED: {symbol} at {current_price:.2f} (Entry: {entry_price:.2f}, SL: {sl_price:.2f})")
-                    exits.append(self._execute_exit(slot, current_price, current_date, reason_with_pct))
+                    self._log(1, "execution", f"STOP LOSS TRIGGERED: {symbol} at {eval_price:.2f} (Entry: {entry_price:.2f}, SL: {sl_price:.2f}). Executing at {exec_price:.2f} on {exec_date.strftime('%Y-%m-%d')}")
+                    exits.append(self._execute_exit(slot, exec_price, exec_date, reason_with_pct))
                     realized_something = True
                     continue
                 
-                # Check Trend-Based Profit Exit
-                sma_val = data.get("sma") # This might need updating with current SMA
-                profit_pct = (current_price - entry_price) / entry_price * 100
+                # Check Trend-Based Profit Exit on eval_price
+                profit_pct = (eval_price - entry_price) / entry_price * 100
                 
-                # Note: SMA should be recalculated for exit evaluation. 
-                # For simplicity in this method, we assume SMA is passed or available.
-                # In a real backtest, we'd have the latest SMA for each holding.
-                
-                # If we have current SMA for this symbol
-                if "current_sma" in data and current_price < data["current_sma"]:
+                if "current_sma" in data and eval_price < data["current_sma"]:
                     if profit_pct >= self.profit_threshold_pct:
-                        reason_with_pct = f"PROFIT_EXIT ({profit_pct:.2f}%)"
-                        self._log(1, "execution", f"PROFIT EXIT TRIGGERED: {symbol} at {current_price:.2f} (Profit: {profit_pct:.2f}%)")
-                        exits.append(self._execute_exit(slot, current_price, current_date, reason_with_pct))
+                        real_profit_pct = (exec_price - entry_price) / entry_price * 100
+                        reason_with_pct = f"PROFIT_EXIT ({real_profit_pct:.2f}%)"
+                        self._log(1, "execution", f"PROFIT EXIT TRIGGERED: {symbol} at {eval_price:.2f} (Profit: {profit_pct:.2f}%). Executing at {exec_price:.2f} on {exec_date.strftime('%Y-%m-%d')}")
+                        exits.append(self._execute_exit(slot, exec_price, exec_date, reason_with_pct))
                         realized_something = True
                     else:
                         self._log(3, "signal", f"{symbol}: Trend violated (Price < SMA) but Profit ({profit_pct:.2f}%) below threshold. Holding.")
