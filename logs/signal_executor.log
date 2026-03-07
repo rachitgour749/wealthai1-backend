@@ -72823,3 +72823,31 @@ LINE 7:                 WHERE symbol IN ()
 2026-03-06 20:28:20,313 - Services.scheduler.scheduler_service - INFO - scheduler_service:329 - Scheduler shut down successfully
 2026-03-06 20:28:20,315 - __main__ - INFO - server:365 - Scheduler shut down successfully
 2026-03-06 20:28:20,317 - apscheduler.scheduler - INFO - base:245 - Scheduler has been shut down
+2026-03-06 20:29:11,011 - apscheduler.scheduler - INFO - base:507 - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-06 20:29:11,012 - Services.scheduler.scheduler_service - INFO - scheduler_service:210 - ✓ Registered execution job: rotation_etf
+2026-03-06 20:29:11,015 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Generation: rotation_etf" to job store "default"
+2026-03-06 20:29:11,017 - apscheduler.scheduler - INFO - base:1090 - Added job "Signal Execution: rotation_etf" to job store "default"
+2026-03-06 20:29:11,017 - apscheduler.scheduler - INFO - base:214 - Scheduler started
+2026-03-06 20:29:11,018 - Services.scheduler.scheduler_service - INFO - scheduler_service:62 - ✓ Scheduler started successfully
+2026-03-06 20:29:11,024 - apscheduler.scheduler - INFO - base:1090 - Added job "System: Daily Trade Report (Excel)" to job store "default"
+2026-03-06 20:29:11,024 - Services.scheduler.scheduler_service - INFO - scheduler_service:77 - ✓ Registered system job: Daily Trade Report (15:35 IST)
+2026-03-06 20:29:11,026 - Services.scheduler.scheduler_service - INFO - scheduler_service:307 - 
+============================================================
+2026-03-06 20:29:11,026 - Services.scheduler.scheduler_service - INFO - scheduler_service:308 - SCHEDULED JOBS
+2026-03-06 20:29:11,026 - Services.scheduler.scheduler_service - INFO - scheduler_service:309 - ============================================================
+2026-03-06 20:29:11,027 - Services.scheduler.scheduler_service - INFO - scheduler_service:318 -   Signal Generation: rotation_etf
+2026-03-06 20:29:11,028 - Services.scheduler.scheduler_service - INFO - scheduler_service:319 -     ID: signal_rotation_etf
+2026-03-06 20:29:11,030 - Services.scheduler.scheduler_service - INFO - scheduler_service:320 -     Next run: 2026-03-09 08:32:00 IST
+2026-03-06 20:29:11,030 - Services.scheduler.scheduler_service - INFO - scheduler_service:321 - 
+2026-03-06 20:29:11,030 - Services.scheduler.scheduler_service - INFO - scheduler_service:318 -   Signal Execution: rotation_etf
+2026-03-06 20:29:11,031 - Services.scheduler.scheduler_service - INFO - scheduler_service:319 -     ID: execution_rotation_etf
+2026-03-06 20:29:11,032 - Services.scheduler.scheduler_service - INFO - scheduler_service:320 -     Next run: 2026-03-09 11:08:00 IST
+2026-03-06 20:29:11,032 - Services.scheduler.scheduler_service - INFO - scheduler_service:321 - 
+2026-03-06 20:29:11,033 - Services.scheduler.scheduler_service - INFO - scheduler_service:318 -   System: Daily Trade Report (Excel)
+2026-03-06 20:29:11,033 - Services.scheduler.scheduler_service - INFO - scheduler_service:319 -     ID: system_daily_trade_report
+2026-03-06 20:29:11,034 - Services.scheduler.scheduler_service - INFO - scheduler_service:320 -     Next run: 2026-03-09 15:35:00 IST
+2026-03-06 20:29:11,034 - Services.scheduler.scheduler_service - INFO - scheduler_service:321 - 
+2026-03-06 20:29:11,035 - Services.scheduler.scheduler_service - INFO - scheduler_service:323 - ============================================================
+
+2026-03-06 20:29:11,036 - __main__ - INFO - server:342 - Scheduler service started successfully
+2026-03-06 20:29:16,512 - Services.ChatAI.api.main - INFO - main:75 - Gemini client initialized
