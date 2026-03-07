@@ -200,7 +200,7 @@ class UnifiedBacktestResponse(BaseModel):
 
 class DateRangeRequest(BaseModel):
     """Request for calculating available date range"""
-    strategy_type: Literal[
+    strategy_type: Optional[Literal[
         "ETF_Rotation", 
         "RS_ETF_Rotation", 
         "RS_Stocks",
@@ -211,10 +211,11 @@ class DateRangeRequest(BaseModel):
         "ETF_Buy_on_Dip",
         "ETF_Swing_Strategy",
         "US_ETF_Swing_Strategy"
-    ] = Field(..., description="Type of strategy to calculate date range for")
+    ]] = Field(None, description="Optional type of strategy to calculate date range for")
     
-    # For Rotation strategies
-    tickers: Optional[List[str]] = Field(None, description="Optional list of ticrategies")
+    market: Optional[str] = Field(None, description="Market name (INDIA, US)")
+    asset_type: Optional[str] = Field(None, description="Asset type (ETF, STOCK)")
+    tickers: Optional[List[str]] = Field(None, description="List of symbols/tickers")
     
     # For RS strategies
     etf_universe: Optional[str] = None

@@ -14,9 +14,37 @@ from APIs.common.cache import get_cached_backtest_results
 
 logger = logging.getLogger(__name__)
 
-async def get_assets(strategy_type: str) -> Dict[str, Any]:
-    """Get available assets for the specified strategy type"""
+async def get_assets(strategy_type: str = None, market: str = None, asset_type: str = None) -> Dict[str, Any]:
+    """Get available assets for the specified strategy type or market+asset_type"""
     try:
+        # ── NEW: market + asset_type path ────────────────────────────────────
+        if market and asset_type:
+            market = market.upper()
+            asset_type = asset_type.upper()
+            logger.info(f"Getting assets for market={market}, asset_type={asset_type}")
+            from Services.market_data_service import MarketDataService
+            from Databases.app_data_db_connection import get_session
+            db = get_session()
+            try:
+                model = MarketDataService.get_model(market, asset_type)
+                rows = db.query(model.symbol).distinct().order_by(model.symbol).all()
+                symbols = [r[0] for r in rows]
+                assets = [{"ticker": s, "symbol": s} for s in symbols]
+                asset_key = "stocks" if asset_type == "STOCK" else "etfs"
+                return {
+                    "success": True,
+                    "market": market,
+                    "asset_type": asset_type,
+                    asset_key: assets,
+                    "total": len(assets)
+                }
+            finally:
+                db.close()
+
+        # ── LEGACY: strategy_type path ───────────────────────────────────────
+        if not strategy_type:
+            raise HTTPException(status_code=400, detail="Provide either 'market'+'asset_type' or 'strategy_type'")
+
         logger.info(f"Getting assets for strategy: {strategy_type}")
         
         if strategy_type == "ETF_Rotation":
@@ -258,6 +286,26 @@ async def get_assets(strategy_type: str) -> Dict[str, Any]:
 
             return {"etfs": etfs}
 
+        elif strategy_type == "SuperTrend":
+            from Strategies.SuperTrend.services.backtester import SuperTrendBacktester
+            # Create a defaults/metadata backtester
+            backtester = SuperTrendBacktester(market=market or "INDIA", asset_type=asset_type or "STOCK")
+            metadata = backtester.load_metadata()
+            assets = []
+            for ticker, data in metadata.items():
+                assets.append({
+                    "ticker": ticker,
+                    "name": data.get('name', ticker),
+                    "category": data.get('category', 'Unknown'),
+                    "start_date": data.get('start_date'),
+                    "end_date": data.get('end_date'),
+                    "years_available": data.get('years_available', 0),
+                    "total_records": data.get('total_records', 0)
+                })
+            # Return as stocks or etfs based on asset_type
+            key = "etfs" if backtester.asset_type == "ETF" else "stocks"
+            return {key: assets}
+
         else:
             raise HTTPException(status_code=400, detail=f"Invalid strategy_type: {strategy_type}")
             
@@ -271,8 +319,39 @@ async def get_assets(strategy_type: str) -> Dict[str, Any]:
 
 
 async def calculate_date_range(request: DateRangeRequest) -> Dict[str, Any]:
-    """Calculate date range for the specified strategy parameters"""
+    """Calculate date range for the specified strategy parameters or market+asset_type"""
     try:
+        # 1. NEW: Prioritize market + asset_type + tickers path
+        market = request.market
+        asset_type = request.asset_type
+        tickers = request.tickers
+
+        if market and asset_type and tickers:
+            logger.info(f"Calculating date range for market={market}, asset_type={asset_type}, tickers={len(tickers)}")
+            from Services.market_data_service import MarketDataService
+            
+            start_date, end_date, years = MarketDataService.calculate_date_range(
+                tickers=tickers,
+                market=market,
+                asset_type=asset_type
+            )
+            
+            if start_date and end_date:
+                return {
+                    "success": True,
+                    "market": market,
+                    "asset_type": asset_type,
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "years": years
+                }
+            else:
+                raise HTTPException(status_code=400, detail="Could not calculate date range for provided symbols")
+
+        # 2. LEGACY: strategy_type path (Fallback)
+        if not request.strategy_type:
+            raise HTTPException(status_code=400, detail="Provide either 'market'+'assets_type'+'symbols' or 'strategy_type'")
+
         logger.info(f"Calculating date range for strategy: {request.strategy_type}")
         
         if request.strategy_type == "ETF_Rotation":
@@ -566,9 +645,32 @@ async def calculate_date_range(request: DateRangeRequest) -> Dict[str, Any]:
             else:
                 raise HTTPException(status_code=400, detail="Could not calculate date range for provided tickers")
 
+        elif request.strategy_type == "SuperTrend":
+            from Strategies.SuperTrend.services.backtester import SuperTrendBacktester
+            backtester = SuperTrendBacktester(
+                market=request.market or "INDIA",
+                asset_type=request.asset_type or "STOCK"
+            )
+            tickers = request.tickers or []
+            if not tickers:
+                raise HTTPException(status_code=400, detail="No tickers provided")
+            
+            start_date, end_date, years = backtester.calculate_common_date_range(tickers)
+            if start_date and end_date:
+                return {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "years": years
+                }
+            else:
+                raise HTTPException(status_code=400, detail="Could not calculate date range for provided symbols")
+
         else:
             raise HTTPException(status_code=400, detail=f"Invalid strategy_type: {request.strategy_type}")
             
+    except HTTPException:
+        # Re-raise HTTP exceptions to maintain proper status codes (e.g., 400)
+        raise
     except Exception as e:
         logger.error(f"Error calculating date range for {request.strategy_type}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to calculate date range: {str(e)}")
@@ -640,9 +742,48 @@ async def get_cached_transaction_log(strategy_type: str) -> Dict[str, Any]:
             "trading_summary": {}
         }
 
-async def get_asset_overview(strategy_type: str) -> Dict[str, Any]:
-    """Get detailed asset overview for the specified strategy type"""
+async def get_asset_overview(strategy_type: str = None, market: str = None, asset_type: str = None) -> Dict[str, Any]:
+    """Get detailed asset overview for the specified strategy type or market+asset_type"""
     try:
+        # ── NEW: market + asset_type path ────────────────────────────────────
+        if market and asset_type:
+            market = market.upper()
+            asset_type = asset_type.upper()
+            logger.info(f"Getting asset overview for market={market}, asset_type={asset_type}")
+            from Services.market_data_service import MarketDataService
+            from Databases.app_data_db_connection import get_session
+            from sqlalchemy import func
+            db = get_session()
+            try:
+                model = MarketDataService.get_model(market, asset_type)
+                rows = db.query(
+                    model.symbol,
+                    func.min(model.date).label('start_date'),
+                    func.max(model.date).label('end_date'),
+                    func.count(model.date).label('total_records')
+                ).group_by(model.symbol).order_by(model.symbol).all()
+                overview = []
+                for row in rows:
+                    try:
+                        years = round((row.end_date - row.start_date).days / 365.25, 1)
+                    except Exception:
+                        years = 0.0
+                    overview.append({
+                        'symbol': row.symbol,
+                        'start_date': str(row.start_date),
+                        'end_date': str(row.end_date),
+                        'years_available': years,
+                        'total_records': row.total_records
+                    })
+                overview_key = "stock_overview" if asset_type == "STOCK" else "etf_overview"
+                return {"success": True, "market": market, "asset_type": asset_type, overview_key: overview, "total": len(overview)}
+            finally:
+                db.close()
+
+        # ── LEGACY: strategy_type path ───────────────────────────────────────
+        if not strategy_type:
+            raise HTTPException(status_code=400, detail="Provide either 'market'+'asset_type' or 'strategy_type'")
+
         logger.info(f"Getting asset overview for strategy: {strategy_type}")
         asset_overview = []
 
@@ -845,6 +986,22 @@ async def get_asset_overview(strategy_type: str) -> Dict[str, Any]:
                     'symbol': symbol,
                     'description': international_etf_backtester.generate_asset_description(symbol),
                     'sector': international_etf_backtester.get_asset_sector_classification(symbol),
+                    'start_date': meta.get('start_date'),
+                    'end_date': meta.get('end_date'),
+                    'years_available': round(meta.get('years_available', 0), 1),
+                    'total_records': meta.get('total_records', 0)
+                })
+            asset_overview.sort(key=lambda x: str(x['start_date']) if x['start_date'] else '9999-99-99')
+
+        elif strategy_type == "SuperTrend":
+            from Strategies.SuperTrend.services.backtester import SuperTrendBacktester
+            backtester = SuperTrendBacktester(market=market or "INDIA", asset_type=asset_type or "STOCK")
+            metadata = backtester.load_metadata()
+            for symbol, meta in metadata.items():
+                asset_overview.append({
+                    'symbol': symbol,
+                    'description': backtester.generate_asset_description(symbol),
+                    'sector': backtester.get_asset_sector_classification(symbol),
                     'start_date': meta.get('start_date'),
                     'end_date': meta.get('end_date'),
                     'years_available': round(meta.get('years_available', 0), 1),

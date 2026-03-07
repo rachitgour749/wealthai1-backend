@@ -182,6 +182,8 @@ class GoogleOAuthHandler:
                     "status": existing_user.status,
                     "role": existing_user.role,
                     "phone_no": existing_user.phone_no,
+                    "total_credits": existing_user.total_credits,
+                    "used_credits": existing_user.used_credits,
                     "is_new_user": False,
                     "token": token, # Return token to frontend
                     "message": "Welcome back!"
@@ -215,6 +217,8 @@ class GoogleOAuthHandler:
                     "status": new_user.status,
                     "role": new_user.role,
                     "phone_no": new_user.phone_no,
+                    "total_credits": new_user.total_credits,
+                    "used_credits": new_user.used_credits,
                     "is_new_user": True,
                     "token": token, # Return token to frontend
                     "message": "Welcome to WealthAI! Your account has been created."
@@ -282,7 +286,9 @@ async def get_user_info(authorization: Optional[str] = Header(None)):
                 "updated_at": user_details.updated_at.isoformat() if user_details.updated_at else None,
                 "status": user_details.status,
                 "role": user_details.role,
-                "phone_no": user_details.phone_no
+                "phone_no": user_details.phone_no,
+                "total_credits": user_details.total_credits,
+                "used_credits": user_details.used_credits
             }
         })
         

@@ -363,3 +363,1680 @@
 2026-03-02 11:31:08 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
 2026-03-02 11:31:08 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
 2026-03-02 11:31:08 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 12:09:10 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 12:09:10 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 12:09:19 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 12:09:19 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 12:09:22 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:09:22 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:09:24 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 12:09:24 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 12:09:24 - __main__ - INFO -    - Router: LOADED
+2026-03-03 12:09:24 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 12:09:24 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 12:09:24 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 12:09:41 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:09:41 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:09:41 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 12:09:41 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 12:09:41 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 12:09:41 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 12:09:41 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 12:09:41 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 12:09:41 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 12:09:41 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 12:09:41 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 12:09:41 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 12:09:41 - __main__ - INFO - ============================================================
+2026-03-03 12:09:41 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 12:09:41 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 12:09:41 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 12:09:41 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 12:09:41 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 12:09:41 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 12:09:41 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 12:09:41 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 12:09:41 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 12:09:41 - __main__ - INFO - ============================================================
+2026-03-03 12:09:41 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 12:09:44 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 12:09:44 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 12:09:44 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 12:09:44 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 12:09:44 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 12:09:44 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 12:09:44 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 12:09:47 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:09:47 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:09:48 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:09:48 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:09:48 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 12:09:48 - __main__ - INFO - ============================================================
+2026-03-03 12:09:48 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 12:09:48 - __main__ - INFO - ============================================================
+2026-03-03 12:09:51 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:09:51 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:09:51 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 12:09:51 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:09:51 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:09:51 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 12:09:51 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:09:51 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:09:51 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 12:09:52 - __main__ - INFO - ============================================================
+2026-03-03 12:09:52 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 12:09:52 - __main__ - INFO - ============================================================
+2026-03-03 12:10:00 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 12:10:00 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 12:10:00 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 12:10:00 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 12:10:00 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 12:10:00 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 12:45:03 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 12:45:03 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 12:45:12 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 12:45:12 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 12:45:15 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:45:15 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:45:16 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 12:45:16 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 12:45:16 - __main__ - INFO -    - Router: LOADED
+2026-03-03 12:45:16 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 12:45:16 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 12:45:16 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 12:45:23 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:45:23 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:45:23 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 12:45:23 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 12:45:23 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 12:45:23 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 12:45:23 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 12:45:23 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 12:45:23 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 12:45:23 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 12:45:23 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 12:45:23 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 12:45:23 - __main__ - INFO - ============================================================
+2026-03-03 12:45:23 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 12:45:23 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 12:45:23 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 12:45:23 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 12:45:23 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 12:45:23 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 12:45:23 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 12:45:23 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 12:45:23 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 12:45:23 - __main__ - INFO - ============================================================
+2026-03-03 12:45:23 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 12:45:26 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 12:45:26 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 12:45:26 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 12:45:26 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 12:45:26 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 12:45:26 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 12:45:26 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 12:45:29 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:45:29 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:45:30 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:45:30 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:45:30 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 12:45:30 - __main__ - INFO - ============================================================
+2026-03-03 12:45:30 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 12:45:30 - __main__ - INFO - ============================================================
+2026-03-03 12:45:33 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:45:33 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:45:33 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 12:45:33 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:45:33 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:45:33 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 12:45:33 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 12:45:33 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 12:45:33 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 12:45:33 - __main__ - INFO - ============================================================
+2026-03-03 12:45:33 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 12:45:33 - __main__ - INFO - ============================================================
+2026-03-03 12:45:34 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 12:45:34 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 12:45:34 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 12:45:34 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 12:45:34 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 12:45:34 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 13:13:48 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 13:13:48 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 13:13:56 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 13:13:56 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 13:13:59 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:13:59 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:14:00 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 13:14:00 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 13:14:00 - __main__ - INFO -    - Router: LOADED
+2026-03-03 13:14:00 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 13:14:00 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 13:14:00 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 13:14:07 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:14:07 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:14:07 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 13:14:07 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 13:14:07 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 13:14:07 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 13:14:07 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 13:14:07 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 13:14:07 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 13:14:07 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 13:14:07 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 13:14:07 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 13:14:07 - __main__ - INFO - ============================================================
+2026-03-03 13:14:07 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 13:14:07 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 13:14:07 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 13:14:07 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 13:14:07 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 13:14:07 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 13:14:07 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 13:14:07 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 13:14:07 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 13:14:07 - __main__ - INFO - ============================================================
+2026-03-03 13:14:07 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 13:14:09 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 13:14:09 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 13:14:10 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 13:14:10 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 13:14:10 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 13:14:10 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 13:14:10 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 13:14:13 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:14:13 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:14:14 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:14:14 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:14:14 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 13:14:14 - __main__ - INFO - ============================================================
+2026-03-03 13:14:14 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 13:14:14 - __main__ - INFO - ============================================================
+2026-03-03 13:14:17 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:14:17 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:14:17 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 13:14:17 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:14:17 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:14:17 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 13:14:17 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:14:17 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:14:17 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 13:14:18 - __main__ - INFO - ============================================================
+2026-03-03 13:14:18 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 13:14:18 - __main__ - INFO - ============================================================
+2026-03-03 13:14:18 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 13:14:18 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 13:14:18 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 13:14:18 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 13:14:18 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 13:14:18 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 13:30:53 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 13:30:53 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 13:31:02 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 13:31:02 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 13:31:05 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:31:05 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:31:06 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 13:31:06 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 13:31:06 - __main__ - INFO -    - Router: LOADED
+2026-03-03 13:31:06 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 13:31:06 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 13:31:06 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 13:31:13 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:31:13 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:31:13 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 13:31:13 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 13:31:13 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 13:31:13 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 13:31:13 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 13:31:13 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 13:31:13 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 13:31:13 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 13:31:13 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 13:31:13 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 13:31:13 - __main__ - INFO - ============================================================
+2026-03-03 13:31:13 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 13:31:13 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 13:31:13 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 13:31:13 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 13:31:13 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 13:31:13 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 13:31:13 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 13:31:13 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 13:31:13 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 13:31:13 - __main__ - INFO - ============================================================
+2026-03-03 13:31:13 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 13:31:15 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 13:31:15 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 13:31:15 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 13:31:15 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 13:31:15 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 13:31:15 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 13:31:15 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 13:31:19 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:31:19 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:31:19 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:31:19 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:31:19 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 13:31:19 - __main__ - INFO - ============================================================
+2026-03-03 13:31:19 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 13:31:19 - __main__ - INFO - ============================================================
+2026-03-03 13:31:23 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:31:23 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:31:23 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 13:31:23 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:31:23 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:31:23 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 13:31:23 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:31:23 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:31:23 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 13:31:24 - __main__ - INFO - ============================================================
+2026-03-03 13:31:24 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 13:31:24 - __main__ - INFO - ============================================================
+2026-03-03 13:31:24 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 13:31:24 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 13:31:24 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 13:31:24 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 13:31:24 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 13:31:24 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 13:33:56 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 13:33:56 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 13:34:05 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 13:34:05 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 13:34:08 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:34:08 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:34:09 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 13:34:09 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 13:34:09 - __main__ - INFO -    - Router: LOADED
+2026-03-03 13:34:09 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 13:34:09 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 13:34:09 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 13:34:16 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:34:16 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:34:16 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 13:34:16 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 13:34:16 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 13:34:16 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 13:34:16 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 13:34:16 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 13:34:16 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 13:34:16 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 13:34:16 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 13:34:16 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 13:34:16 - __main__ - INFO - ============================================================
+2026-03-03 13:34:16 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 13:34:16 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 13:34:16 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 13:34:16 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 13:34:16 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 13:34:16 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 13:34:16 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 13:34:16 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 13:34:16 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 13:34:16 - __main__ - INFO - ============================================================
+2026-03-03 13:34:16 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 13:34:20 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 13:34:20 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 13:34:20 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 13:34:20 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 13:34:20 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 13:34:20 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 13:34:20 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 13:34:23 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:34:23 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:34:24 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:34:24 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:34:24 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 13:34:25 - __main__ - INFO - ============================================================
+2026-03-03 13:34:25 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 13:34:25 - __main__ - INFO - ============================================================
+2026-03-03 13:34:28 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:34:28 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:34:28 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 13:34:28 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:34:28 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:34:28 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 13:34:28 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 13:34:28 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 13:34:28 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 13:34:28 - __main__ - INFO - ============================================================
+2026-03-03 13:34:28 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 13:34:28 - __main__ - INFO - ============================================================
+2026-03-03 13:34:28 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 13:34:28 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 13:34:28 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 13:34:28 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 13:34:28 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 13:34:28 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 14:05:17 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 14:05:17 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 14:05:27 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 14:05:27 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 14:05:30 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 14:05:30 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 14:05:31 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 14:05:31 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 14:05:31 - __main__ - INFO -    - Router: LOADED
+2026-03-03 14:05:31 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 14:05:31 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 14:05:31 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 14:05:38 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 14:05:38 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 14:05:38 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 14:05:38 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 14:05:38 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 14:05:38 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 14:05:38 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 14:05:38 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 14:05:38 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 14:05:38 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 14:05:38 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 14:05:38 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 14:05:38 - __main__ - INFO - ============================================================
+2026-03-03 14:05:38 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 14:05:38 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 14:05:38 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 14:05:38 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 14:05:38 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 14:05:38 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 14:05:38 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 14:05:38 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 14:05:38 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 14:05:38 - __main__ - INFO - ============================================================
+2026-03-03 14:05:38 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 14:05:40 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 14:05:40 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 14:05:41 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 14:05:41 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 14:05:41 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 14:05:41 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 14:05:41 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 14:05:44 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 14:05:44 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 14:05:45 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 14:05:45 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 14:05:45 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 14:05:45 - __main__ - INFO - ============================================================
+2026-03-03 14:05:45 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 14:05:45 - __main__ - INFO - ============================================================
+2026-03-03 14:05:48 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 14:05:48 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 14:05:48 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 14:05:48 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 14:05:48 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 14:05:48 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 14:05:48 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 14:05:48 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 14:05:48 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 14:05:49 - __main__ - INFO - ============================================================
+2026-03-03 14:05:49 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 14:05:49 - __main__ - INFO - ============================================================
+2026-03-03 14:05:49 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 14:05:49 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 14:05:49 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 14:05:49 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 14:05:49 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 14:05:49 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 16:33:11 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 16:33:11 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 16:33:35 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 16:33:35 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 16:33:38 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:33:38 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:33:39 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 16:33:39 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 16:33:39 - __main__ - INFO -    - Router: LOADED
+2026-03-03 16:33:39 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 16:33:39 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 16:33:39 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 16:33:48 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:33:48 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:33:48 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 16:33:48 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 16:33:48 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 16:33:48 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 16:33:48 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 16:33:48 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 16:33:48 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 16:33:48 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 16:33:48 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 16:33:48 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 16:33:48 - __main__ - INFO - ============================================================
+2026-03-03 16:33:48 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 16:33:48 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 16:33:48 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 16:33:48 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 16:33:48 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 16:33:48 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 16:33:48 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 16:33:48 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 16:33:48 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 16:33:48 - __main__ - INFO - ============================================================
+2026-03-03 16:33:48 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 16:33:50 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 16:33:50 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 16:33:50 - __main__ - ERROR - Failed to import unified_api_router: name 'Tuple' is not defined
+2026-03-03 16:33:50 - __main__ - ERROR - Traceback: Traceback (most recent call last):
+  File "D:\WEALTHAI_V2\wealthai-backend-v2\server.py", line 667, in <module>
+    from APIs.routes import api_router as unified_api_router
+  File "D:\WEALTHAI_V2\wealthai-backend-v2\APIs\routes.py", line 20, in <module>
+    from APIs.services import backtest_service
+  File "D:\WEALTHAI_V2\wealthai-backend-v2\APIs\services\backtest_service.py", line 19, in <module>
+    from Handlers.supertrend_handler import SuperTrendHandler
+  File "D:\WEALTHAI_V2\wealthai-backend-v2\Handlers\supertrend_handler.py", line 16, in <module>
+    from Strategies.SuperTrend.services.backtester import SuperTrendBacktester
+  File "D:\WEALTHAI_V2\wealthai-backend-v2\Strategies\SuperTrend\services\backtester.py", line 6, in <module>
+    from Services.market_data_service import MarketDataService
+  File "D:\WEALTHAI_V2\wealthai-backend-v2\Services\market_data_service.py", line 20, in <module>
+    class MarketDataService:
+  File "D:\WEALTHAI_V2\wealthai-backend-v2\Services\market_data_service.py", line 183, in MarketDataService
+    ) -> Tuple[Optional[str], Optional[str], float]:
+         ^^^^^
+NameError: name 'Tuple' is not defined. Did you mean: 'tuple'?
+
+2026-03-03 16:33:50 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 16:33:50 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 16:33:50 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 16:33:53 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:33:53 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:33:54 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:33:54 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:33:54 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 16:33:54 - __main__ - INFO - ============================================================
+2026-03-03 16:33:54 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 16:33:54 - __main__ - INFO - ============================================================
+2026-03-03 16:33:57 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:33:57 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:33:57 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 16:33:57 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:33:57 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:33:57 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 16:33:58 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:33:58 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:33:58 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 16:33:58 - __main__ - INFO - ============================================================
+2026-03-03 16:33:58 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 16:33:58 - __main__ - INFO - ============================================================
+2026-03-03 16:33:58 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 16:33:58 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 16:33:58 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 16:33:58 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 16:33:58 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 16:33:58 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 16:35:03 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 16:35:03 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 16:35:15 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 16:35:15 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 16:35:20 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:35:20 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:35:22 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 16:35:22 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 16:35:22 - __main__ - INFO -    - Router: LOADED
+2026-03-03 16:35:22 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 16:35:22 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 16:35:22 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 16:35:37 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:35:37 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:35:37 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 16:35:37 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 16:35:37 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 16:35:37 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 16:35:37 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 16:35:37 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 16:35:37 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 16:35:37 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 16:35:37 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 16:35:37 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 16:35:37 - __main__ - INFO - ============================================================
+2026-03-03 16:35:37 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 16:35:37 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 16:35:37 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 16:35:38 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 16:35:38 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 16:35:38 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 16:35:38 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 16:35:38 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 16:35:38 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 16:35:38 - __main__ - INFO - ============================================================
+2026-03-03 16:35:38 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 16:35:41 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 16:35:41 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 16:35:41 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 16:35:41 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 16:35:42 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 16:35:42 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 16:35:42 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 16:35:45 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:35:45 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:35:46 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:35:46 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:35:46 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 16:35:46 - __main__ - INFO - ============================================================
+2026-03-03 16:35:46 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 16:35:46 - __main__ - INFO - ============================================================
+2026-03-03 16:35:49 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:35:49 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:35:49 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:35:49 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 16:35:49 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:35:49 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 16:35:50 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:35:50 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:35:50 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 16:35:51 - __main__ - INFO - ============================================================
+2026-03-03 16:35:51 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 16:35:51 - __main__ - INFO - ============================================================
+2026-03-03 16:35:52 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 16:35:52 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 16:35:52 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 16:35:52 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 16:35:52 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 16:35:52 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 16:41:22 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 16:41:22 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 16:41:35 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 16:41:35 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 16:41:38 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:41:38 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:41:39 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 16:41:39 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 16:41:39 - __main__ - INFO -    - Router: LOADED
+2026-03-03 16:41:39 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 16:41:39 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 16:41:39 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 16:41:47 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:41:47 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:41:47 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 16:41:47 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 16:41:47 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 16:41:47 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 16:41:47 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 16:41:47 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 16:41:47 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 16:41:47 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 16:41:47 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 16:41:47 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 16:41:47 - __main__ - INFO - ============================================================
+2026-03-03 16:41:47 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 16:41:47 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 16:41:47 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 16:41:47 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 16:41:47 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 16:41:47 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 16:41:47 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 16:41:47 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 16:41:47 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 16:41:47 - __main__ - INFO - ============================================================
+2026-03-03 16:41:47 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 16:41:50 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 16:41:50 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 16:41:50 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 16:41:50 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 16:41:50 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 16:41:50 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 16:41:50 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 16:41:53 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:41:53 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:41:54 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:41:54 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:41:54 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 16:41:54 - __main__ - INFO - ============================================================
+2026-03-03 16:41:54 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 16:41:54 - __main__ - INFO - ============================================================
+2026-03-03 16:41:57 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:41:57 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:41:57 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 16:41:57 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:41:57 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:41:57 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 16:41:57 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:41:57 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:41:57 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 16:41:58 - __main__ - INFO - ============================================================
+2026-03-03 16:41:58 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 16:41:58 - __main__ - INFO - ============================================================
+2026-03-03 16:41:58 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 16:41:58 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 16:41:58 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 16:41:58 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 16:41:58 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 16:41:58 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 16:46:44 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 16:46:44 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 16:46:53 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 16:46:53 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 16:46:57 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:46:57 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:46:57 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 16:46:57 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 16:46:57 - __main__ - INFO -    - Router: LOADED
+2026-03-03 16:46:57 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 16:46:57 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 16:46:57 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 16:47:06 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:47:06 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:47:06 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 16:47:06 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 16:47:06 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 16:47:06 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 16:47:06 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 16:47:06 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 16:47:06 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 16:47:06 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 16:47:06 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 16:47:06 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 16:47:06 - __main__ - INFO - ============================================================
+2026-03-03 16:47:06 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 16:47:06 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 16:47:06 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 16:47:06 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 16:47:06 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 16:47:06 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 16:47:06 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 16:47:06 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 16:47:06 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 16:47:06 - __main__ - INFO - ============================================================
+2026-03-03 16:47:06 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 16:47:08 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 16:47:08 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 16:47:08 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 16:47:08 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 16:47:08 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 16:47:08 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 16:47:09 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 16:47:12 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:47:12 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:47:12 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:47:12 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:47:12 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 16:47:13 - __main__ - INFO - ============================================================
+2026-03-03 16:47:13 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 16:47:13 - __main__ - INFO - ============================================================
+2026-03-03 16:47:16 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:47:16 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:47:16 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 16:47:16 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:47:16 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:47:16 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 16:47:16 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:47:16 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:47:16 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 16:47:16 - __main__ - INFO - ============================================================
+2026-03-03 16:47:16 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 16:47:16 - __main__ - INFO - ============================================================
+2026-03-03 16:47:16 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 16:47:16 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 16:47:16 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 16:47:16 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 16:47:16 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 16:47:16 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 16:58:28 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 16:58:28 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 16:58:38 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 16:58:38 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 16:58:41 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:58:41 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:58:41 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 16:58:42 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 16:58:42 - __main__ - INFO -    - Router: LOADED
+2026-03-03 16:58:42 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 16:58:42 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 16:58:42 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 16:58:49 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:58:49 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:58:49 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 16:58:49 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 16:58:49 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 16:58:49 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 16:58:49 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 16:58:49 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 16:58:49 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 16:58:49 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 16:58:49 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 16:58:49 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 16:58:49 - __main__ - INFO - ============================================================
+2026-03-03 16:58:49 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 16:58:49 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 16:58:49 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 16:58:49 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 16:58:49 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 16:58:49 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 16:58:49 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 16:58:49 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 16:58:49 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 16:58:49 - __main__ - INFO - ============================================================
+2026-03-03 16:58:49 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 16:58:51 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 16:58:51 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 16:58:51 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 16:58:51 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 16:58:51 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 16:58:51 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 16:58:51 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 16:58:56 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:58:56 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:58:56 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:58:56 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:58:56 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 16:58:56 - __main__ - INFO - ============================================================
+2026-03-03 16:58:56 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 16:58:56 - __main__ - INFO - ============================================================
+2026-03-03 16:58:59 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:58:59 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:58:59 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 16:58:59 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:58:59 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:58:59 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 16:58:59 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 16:58:59 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 16:58:59 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 16:59:00 - __main__ - INFO - ============================================================
+2026-03-03 16:59:00 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 16:59:00 - __main__ - INFO - ============================================================
+2026-03-03 16:59:00 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 16:59:00 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 16:59:00 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 16:59:00 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 16:59:00 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 16:59:00 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 17:05:02 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 17:05:02 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 17:05:11 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 17:05:11 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 17:05:14 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:05:14 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:05:14 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 17:05:14 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 17:05:14 - __main__ - INFO -    - Router: LOADED
+2026-03-03 17:05:14 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 17:05:14 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 17:05:14 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 17:05:22 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:05:22 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:05:22 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 17:05:22 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 17:05:22 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 17:05:22 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 17:05:22 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 17:05:22 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 17:05:22 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 17:05:22 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 17:05:22 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 17:05:22 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 17:05:22 - __main__ - INFO - ============================================================
+2026-03-03 17:05:22 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 17:05:22 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 17:05:22 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 17:05:22 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 17:05:22 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 17:05:22 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 17:05:22 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 17:05:22 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 17:05:22 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 17:05:22 - __main__ - INFO - ============================================================
+2026-03-03 17:05:22 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 17:05:24 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 17:05:24 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 17:05:24 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 17:05:24 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 17:05:24 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 17:05:24 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 17:05:24 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 17:05:27 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:05:27 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:05:28 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:05:28 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:05:28 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 17:05:28 - __main__ - INFO - ============================================================
+2026-03-03 17:05:28 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 17:05:28 - __main__ - INFO - ============================================================
+2026-03-03 17:05:32 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:05:32 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:05:32 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 17:05:32 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:05:32 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:05:32 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 17:05:32 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:05:32 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:05:32 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 17:05:32 - __main__ - INFO - ============================================================
+2026-03-03 17:05:32 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 17:05:32 - __main__ - INFO - ============================================================
+2026-03-03 17:05:32 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 17:05:32 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 17:05:32 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 17:05:32 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 17:05:32 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 17:05:32 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 17:11:17 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 17:11:17 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 17:11:26 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 17:11:26 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 17:11:29 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:11:29 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:11:31 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 17:11:31 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 17:11:31 - __main__ - INFO -    - Router: LOADED
+2026-03-03 17:11:31 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 17:11:31 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 17:11:31 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 17:11:51 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:11:51 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:11:51 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 17:11:51 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 17:11:51 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 17:11:51 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 17:11:51 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 17:11:51 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 17:11:51 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 17:11:51 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 17:11:51 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 17:11:51 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 17:11:51 - __main__ - INFO - ============================================================
+2026-03-03 17:11:51 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 17:11:51 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 17:11:51 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 17:11:51 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 17:11:51 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 17:11:51 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 17:11:51 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 17:11:51 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 17:11:51 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 17:11:51 - __main__ - INFO - ============================================================
+2026-03-03 17:11:51 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 17:11:56 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 17:11:56 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 17:11:57 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 17:11:57 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 17:11:57 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 17:11:57 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 17:11:57 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 17:12:01 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:12:01 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:12:02 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:12:02 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:12:02 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 17:12:02 - __main__ - INFO - ============================================================
+2026-03-03 17:12:02 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 17:12:02 - __main__ - INFO - ============================================================
+2026-03-03 17:12:05 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:12:05 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:12:05 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 17:12:05 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:12:05 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:12:05 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 17:12:05 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:12:05 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:12:05 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 17:12:07 - __main__ - INFO - ============================================================
+2026-03-03 17:12:07 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 17:12:07 - __main__ - INFO - ============================================================
+2026-03-03 17:12:07 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 17:12:07 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 17:12:07 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 17:12:07 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 17:12:07 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 17:12:07 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 17:13:52 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 17:13:52 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 17:14:11 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 17:14:11 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 17:14:14 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:14:14 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:14:16 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 17:14:17 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 17:14:17 - __main__ - INFO -    - Router: LOADED
+2026-03-03 17:14:17 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 17:14:17 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 17:14:17 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 17:14:29 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:14:29 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:14:29 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 17:14:29 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 17:14:29 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 17:14:29 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 17:14:29 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 17:14:29 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 17:14:29 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 17:14:29 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 17:14:29 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 17:14:29 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 17:14:29 - __main__ - INFO - ============================================================
+2026-03-03 17:14:29 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 17:14:29 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 17:14:29 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 17:14:29 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 17:14:29 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 17:14:29 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 17:14:29 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 17:14:29 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 17:14:29 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 17:14:29 - __main__ - INFO - ============================================================
+2026-03-03 17:14:29 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 17:14:32 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 17:14:32 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 17:14:32 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 17:14:32 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 17:14:32 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 17:14:32 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 17:14:32 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 17:14:36 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:14:36 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:14:37 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:14:37 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:14:37 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 17:14:37 - __main__ - INFO - ============================================================
+2026-03-03 17:14:37 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 17:14:37 - __main__ - INFO - ============================================================
+2026-03-03 17:14:41 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:14:41 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:14:41 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 17:14:41 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:14:41 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:14:41 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 17:14:41 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 17:14:41 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 17:14:41 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 17:14:42 - __main__ - INFO - ============================================================
+2026-03-03 17:14:42 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 17:14:42 - __main__ - INFO - ============================================================
+2026-03-03 17:14:42 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 17:14:42 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 17:14:42 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 17:14:42 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 17:14:42 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 17:14:42 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 19:41:24 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 19:41:24 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 19:41:37 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 19:41:37 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 19:41:41 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 19:41:41 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 19:41:42 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 19:41:42 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 19:41:42 - __main__ - INFO -    - Router: LOADED
+2026-03-03 19:41:42 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 19:41:42 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 19:41:42 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 19:41:49 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 19:41:49 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 19:41:49 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 19:41:49 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 19:41:49 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 19:41:49 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 19:41:49 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 19:41:49 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 19:41:49 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 19:41:49 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 19:41:49 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 19:41:49 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 19:41:49 - __main__ - INFO - ============================================================
+2026-03-03 19:41:49 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 19:41:49 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 19:41:49 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 19:41:49 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 19:41:49 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 19:41:49 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 19:41:49 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 19:41:49 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 19:41:49 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 19:41:49 - __main__ - INFO - ============================================================
+2026-03-03 19:41:49 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 19:41:52 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 19:41:52 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 19:41:52 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 19:41:52 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 19:41:52 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 19:41:52 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 19:41:52 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 19:41:55 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 19:41:55 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 19:41:56 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 19:41:56 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 19:41:56 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 19:41:56 - __main__ - INFO - ============================================================
+2026-03-03 19:41:56 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 19:41:56 - __main__ - INFO - ============================================================
+2026-03-03 19:41:59 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 19:41:59 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 19:41:59 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 19:42:00 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 19:42:00 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 19:42:00 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 19:42:00 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 19:42:00 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 19:42:00 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 19:42:00 - __main__ - INFO - ============================================================
+2026-03-03 19:42:00 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 19:42:00 - __main__ - INFO - ============================================================
+2026-03-03 19:42:00 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 19:42:00 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 19:42:00 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 19:42:00 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 19:42:00 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 19:42:00 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 20:08:06 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 20:08:06 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 20:08:29 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 20:08:29 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 20:08:32 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:08:32 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:08:33 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 20:08:33 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 20:08:33 - __main__ - INFO -    - Router: LOADED
+2026-03-03 20:08:33 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 20:08:33 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 20:08:33 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 20:08:44 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:08:44 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:08:44 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 20:08:44 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 20:08:44 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 20:08:44 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 20:08:44 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 20:08:44 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 20:08:44 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 20:08:44 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 20:08:44 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 20:08:44 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 20:08:44 - __main__ - INFO - ============================================================
+2026-03-03 20:08:44 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 20:08:44 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 20:08:44 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 20:08:44 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 20:08:44 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 20:08:44 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 20:08:44 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 20:08:44 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 20:08:44 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 20:08:44 - __main__ - INFO - ============================================================
+2026-03-03 20:08:44 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 20:08:46 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 20:08:46 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 20:08:47 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 20:08:47 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 20:08:47 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 20:08:47 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 20:08:47 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 20:08:50 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:08:50 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:08:51 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:08:51 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:08:51 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 20:08:51 - __main__ - INFO - ============================================================
+2026-03-03 20:08:51 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 20:08:51 - __main__ - INFO - ============================================================
+2026-03-03 20:08:55 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:08:55 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:08:55 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 20:08:55 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:08:55 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:08:55 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 20:08:55 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:08:55 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:08:55 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 20:08:56 - __main__ - INFO - ============================================================
+2026-03-03 20:08:56 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 20:08:56 - __main__ - INFO - ============================================================
+2026-03-03 20:08:56 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 20:08:56 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 20:08:56 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 20:08:56 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 20:08:56 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 20:08:56 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 20:13:23 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 20:13:23 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 20:13:44 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 20:13:44 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 20:13:48 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:13:48 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:13:49 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 20:13:49 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 20:13:49 - __main__ - INFO -    - Router: LOADED
+2026-03-03 20:13:49 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 20:13:49 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 20:13:49 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 20:13:59 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:13:59 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:13:59 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 20:13:59 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 20:13:59 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 20:13:59 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 20:13:59 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 20:13:59 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 20:13:59 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 20:13:59 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 20:13:59 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 20:13:59 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 20:13:59 - __main__ - INFO - ============================================================
+2026-03-03 20:13:59 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 20:13:59 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 20:13:59 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 20:13:59 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 20:13:59 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 20:13:59 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 20:13:59 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 20:13:59 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 20:13:59 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 20:13:59 - __main__ - INFO - ============================================================
+2026-03-03 20:13:59 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 20:14:01 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 20:14:01 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 20:14:02 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 20:14:02 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 20:14:02 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 20:14:02 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 20:14:02 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 20:14:05 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:14:05 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:14:06 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:14:06 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:14:06 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 20:14:06 - __main__ - INFO - ============================================================
+2026-03-03 20:14:06 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 20:14:06 - __main__ - INFO - ============================================================
+2026-03-03 20:14:10 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:14:10 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:14:10 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 20:14:10 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:14:10 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:14:10 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 20:14:10 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:14:10 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:14:10 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 20:14:10 - __main__ - INFO - ============================================================
+2026-03-03 20:14:10 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 20:14:10 - __main__ - INFO - ============================================================
+2026-03-03 20:14:11 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 20:14:11 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 20:14:11 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 20:14:11 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 20:14:11 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 20:14:11 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 20:16:13 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 20:16:13 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 20:16:25 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 20:16:25 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 20:16:28 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:16:28 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:16:29 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 20:16:30 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 20:16:30 - __main__ - INFO -    - Router: LOADED
+2026-03-03 20:16:30 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 20:16:30 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 20:16:30 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 20:16:39 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:16:39 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:16:39 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 20:16:39 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 20:16:39 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 20:16:39 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 20:16:39 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 20:16:39 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 20:16:39 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 20:16:39 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 20:16:39 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 20:16:39 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 20:16:39 - __main__ - INFO - ============================================================
+2026-03-03 20:16:39 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 20:16:39 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 20:16:39 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 20:16:39 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 20:16:39 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 20:16:39 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 20:16:39 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 20:16:39 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 20:16:39 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 20:16:39 - __main__ - INFO - ============================================================
+2026-03-03 20:16:39 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 20:16:42 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 20:16:42 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 20:16:42 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 20:16:42 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 20:16:42 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 20:16:42 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 20:16:42 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 20:16:45 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:16:45 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:16:46 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:16:46 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:16:46 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 20:16:46 - __main__ - INFO - ============================================================
+2026-03-03 20:16:46 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 20:16:46 - __main__ - INFO - ============================================================
+2026-03-03 20:16:50 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:16:50 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:16:50 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 20:16:50 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:16:50 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:16:50 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 20:16:51 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 20:16:51 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 20:16:51 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 20:16:51 - __main__ - INFO - ============================================================
+2026-03-03 20:16:51 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 20:16:51 - __main__ - INFO - ============================================================
+2026-03-03 20:16:52 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 20:16:52 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 20:16:52 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 20:16:52 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 20:16:52 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 20:16:52 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-03 22:00:31 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 22:00:31 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-03 22:00:42 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 22:00:42 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 22:00:45 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 22:00:45 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 22:00:47 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-03 22:00:47 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-03 22:00:47 - __main__ - INFO -    - Router: LOADED
+2026-03-03 22:00:47 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-03 22:00:47 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-03 22:00:47 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-03 22:01:05 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 22:01:05 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 22:01:05 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 22:01:05 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-03 22:01:05 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-03 22:01:05 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-03 22:01:05 - __main__ - INFO - Broker router loaded successfully
+2026-03-03 22:01:05 - __main__ - INFO - Webhook router loaded successfully
+2026-03-03 22:01:05 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-03 22:01:05 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-03 22:01:05 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-03 22:01:05 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-03 22:01:05 - __main__ - INFO - ============================================================
+2026-03-03 22:01:05 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-03 22:01:05 - __main__ - INFO - subscription_router: LOADED
+2026-03-03 22:01:05 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-03 22:01:05 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-03 22:01:05 - __main__ - INFO - Subscription endpoints available:
+2026-03-03 22:01:05 - __main__ - INFO -    - /api/subscription/*
+2026-03-03 22:01:05 - __main__ - INFO -    - /paymentSuccess
+2026-03-03 22:01:05 - __main__ - INFO -    - /api/auth/google-login
+2026-03-03 22:01:05 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-03 22:01:05 - __main__ - INFO - ============================================================
+2026-03-03 22:01:05 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-03 22:01:08 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-03 22:01:08 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-03 22:01:08 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-03 22:01:08 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-03 22:01:08 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-03 22:01:08 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-03 22:01:08 - __main__ - INFO - Unified API router mounted at /api
+2026-03-03 22:01:11 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 22:01:11 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 22:01:12 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 22:01:12 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 22:01:12 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 22:01:12 - __main__ - INFO - ============================================================
+2026-03-03 22:01:12 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-03 22:01:12 - __main__ - INFO - ============================================================
+2026-03-03 22:01:15 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 22:01:15 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 22:01:15 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-03 22:01:15 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 22:01:15 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 22:01:15 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-03 22:01:15 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-03 22:01:15 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-03 22:01:15 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-03 22:01:16 - __main__ - INFO - ============================================================
+2026-03-03 22:01:16 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-03 22:01:16 - __main__ - INFO - ============================================================
+2026-03-03 22:01:21 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-03 22:01:21 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-03 22:01:21 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-03 22:01:21 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-03 22:01:21 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-03 22:01:21 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-05 22:52:40 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-05 22:52:40 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-05 22:52:51 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-05 22:52:51 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-05 22:52:54 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 22:52:54 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 22:52:55 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-05 22:52:55 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-05 22:52:55 - __main__ - INFO -    - Router: LOADED
+2026-03-05 22:52:55 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-05 22:52:55 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-05 22:52:55 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-05 22:53:11 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 22:53:11 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 22:53:11 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-05 22:53:11 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-05 22:53:11 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-05 22:53:11 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-05 22:53:11 - __main__ - INFO - Broker router loaded successfully
+2026-03-05 22:53:11 - __main__ - INFO - Webhook router loaded successfully
+2026-03-05 22:53:11 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-05 22:53:11 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-05 22:53:11 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-05 22:53:11 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-05 22:53:11 - __main__ - INFO - ============================================================
+2026-03-05 22:53:11 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-05 22:53:11 - __main__ - INFO - subscription_router: LOADED
+2026-03-05 22:53:11 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-05 22:53:11 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-05 22:53:11 - __main__ - INFO - Subscription endpoints available:
+2026-03-05 22:53:11 - __main__ - INFO -    - /api/subscription/*
+2026-03-05 22:53:11 - __main__ - INFO -    - /paymentSuccess
+2026-03-05 22:53:11 - __main__ - INFO -    - /api/auth/google-login
+2026-03-05 22:53:11 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-05 22:53:11 - __main__ - INFO - ============================================================
+2026-03-05 22:53:11 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-05 22:53:14 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-05 22:53:14 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-05 22:53:14 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-05 22:53:14 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-05 22:53:15 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-05 22:53:15 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-05 22:53:15 - __main__ - INFO - Unified API router mounted at /api
+2026-03-05 22:53:18 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 22:53:18 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 22:53:19 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 22:53:19 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 22:53:19 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-05 22:53:19 - __main__ - INFO - ============================================================
+2026-03-05 22:53:19 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-05 22:53:19 - __main__ - INFO - ============================================================
+2026-03-05 22:53:22 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 22:53:22 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 22:53:22 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-05 22:53:22 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 22:53:22 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 22:53:22 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-05 22:53:23 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 22:53:23 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 22:53:23 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-05 22:53:24 - __main__ - INFO - ============================================================
+2026-03-05 22:53:24 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-05 22:53:24 - __main__ - INFO - ============================================================
+2026-03-05 22:53:29 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-05 22:53:29 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-05 22:53:29 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-05 22:53:29 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-05 22:53:29 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-05 22:53:29 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-05 22:59:35 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-05 22:59:35 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-05 22:59:55 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-05 22:59:55 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-05 22:59:59 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 22:59:59 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:00:01 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-05 23:00:01 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-05 23:00:01 - __main__ - INFO -    - Router: LOADED
+2026-03-05 23:00:01 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-05 23:00:01 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-05 23:00:01 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-05 23:00:37 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 23:00:37 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:00:37 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-05 23:00:37 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-05 23:00:37 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-05 23:00:37 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-05 23:00:37 - __main__ - INFO - Broker router loaded successfully
+2026-03-05 23:00:37 - __main__ - INFO - Webhook router loaded successfully
+2026-03-05 23:00:37 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-05 23:00:37 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-05 23:00:37 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-05 23:00:37 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-05 23:00:37 - __main__ - INFO - ============================================================
+2026-03-05 23:00:37 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-05 23:00:37 - __main__ - INFO - subscription_router: LOADED
+2026-03-05 23:00:37 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-05 23:00:37 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-05 23:00:37 - __main__ - INFO - Subscription endpoints available:
+2026-03-05 23:00:37 - __main__ - INFO -    - /api/subscription/*
+2026-03-05 23:00:37 - __main__ - INFO -    - /paymentSuccess
+2026-03-05 23:00:37 - __main__ - INFO -    - /api/auth/google-login
+2026-03-05 23:00:37 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-05 23:00:37 - __main__ - INFO - ============================================================
+2026-03-05 23:00:37 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-05 23:00:40 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-05 23:00:40 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-05 23:00:40 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-05 23:00:40 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-05 23:00:40 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-05 23:00:41 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-05 23:00:41 - __main__ - INFO - Unified API router mounted at /api
+2026-03-05 23:00:44 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 23:00:44 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:00:45 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 23:00:45 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:00:45 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-05 23:00:45 - __main__ - INFO - ============================================================
+2026-03-05 23:00:45 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-05 23:00:45 - __main__ - INFO - ============================================================
+2026-03-05 23:00:48 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 23:00:48 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:00:48 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-05 23:00:48 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 23:00:48 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:00:48 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-05 23:00:48 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 23:00:48 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:00:48 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-05 23:00:49 - __main__ - INFO - ============================================================
+2026-03-05 23:00:49 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-05 23:00:49 - __main__ - INFO - ============================================================
+2026-03-05 23:00:49 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-05 23:00:49 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-05 23:00:49 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-05 23:00:49 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-05 23:00:49 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-05 23:00:49 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-05 23:13:54 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-05 23:13:54 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-05 23:14:05 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-05 23:14:05 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-05 23:14:09 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 23:14:09 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:14:10 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-05 23:14:10 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-05 23:14:10 - __main__ - INFO -    - Router: LOADED
+2026-03-05 23:14:10 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-05 23:14:10 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-05 23:14:10 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-05 23:14:18 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 23:14:18 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:14:18 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-05 23:14:18 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-05 23:14:18 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-05 23:14:18 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-05 23:14:18 - __main__ - INFO - Broker router loaded successfully
+2026-03-05 23:14:18 - __main__ - INFO - Webhook router loaded successfully
+2026-03-05 23:14:18 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-05 23:14:18 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-05 23:14:18 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-05 23:14:18 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-05 23:14:18 - __main__ - INFO - ============================================================
+2026-03-05 23:14:18 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-05 23:14:18 - __main__ - INFO - subscription_router: LOADED
+2026-03-05 23:14:18 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-05 23:14:18 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-05 23:14:18 - __main__ - INFO - Subscription endpoints available:
+2026-03-05 23:14:18 - __main__ - INFO -    - /api/subscription/*
+2026-03-05 23:14:18 - __main__ - INFO -    - /paymentSuccess
+2026-03-05 23:14:18 - __main__ - INFO -    - /api/auth/google-login
+2026-03-05 23:14:18 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-05 23:14:18 - __main__ - INFO - ============================================================
+2026-03-05 23:14:18 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-05 23:14:21 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-05 23:14:21 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-05 23:14:21 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-05 23:14:21 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-05 23:14:21 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-05 23:14:21 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-05 23:14:21 - __main__ - INFO - Unified API router mounted at /api
+2026-03-05 23:14:24 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 23:14:24 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:14:25 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 23:14:25 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:14:25 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-05 23:14:25 - __main__ - INFO - ============================================================
+2026-03-05 23:14:25 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-05 23:14:25 - __main__ - INFO - ============================================================
+2026-03-05 23:14:29 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 23:14:29 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:14:29 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-05 23:14:29 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 23:14:29 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:14:29 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-05 23:14:29 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-05 23:14:29 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-05 23:14:29 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-05 23:14:29 - __main__ - INFO - ============================================================
+2026-03-05 23:14:29 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-05 23:14:29 - __main__ - INFO - ============================================================
+2026-03-05 23:14:29 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-05 23:14:29 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-05 23:14:29 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-05 23:14:29 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-05 23:14:29 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-05 23:14:29 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-06 17:33:24 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-06 17:33:24 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-06 17:33:43 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-06 17:33:43 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-06 17:33:47 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 17:33:47 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 17:33:48 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-06 17:33:48 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-06 17:33:48 - __main__ - INFO -    - Router: LOADED
+2026-03-06 17:33:48 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-06 17:33:48 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-06 17:33:48 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-06 17:34:13 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 17:34:13 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 17:34:13 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-06 17:34:13 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-06 17:34:13 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-06 17:34:13 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-06 17:34:13 - __main__ - INFO - Broker router loaded successfully
+2026-03-06 17:34:13 - __main__ - INFO - Webhook router loaded successfully
+2026-03-06 17:34:13 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-06 17:34:13 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-06 17:34:13 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-06 17:34:13 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-06 17:34:13 - __main__ - INFO - ============================================================
+2026-03-06 17:34:13 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-06 17:34:13 - __main__ - INFO - subscription_router: LOADED
+2026-03-06 17:34:13 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-06 17:34:13 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-06 17:34:13 - __main__ - INFO - Subscription endpoints available:
+2026-03-06 17:34:13 - __main__ - INFO -    - /api/subscription/*
+2026-03-06 17:34:13 - __main__ - INFO -    - /paymentSuccess
+2026-03-06 17:34:13 - __main__ - INFO -    - /api/auth/google-login
+2026-03-06 17:34:13 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-06 17:34:13 - __main__ - INFO - ============================================================
+2026-03-06 17:34:13 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-06 17:34:13 - __main__ - INFO - Admin router loaded successfully
+2026-03-06 17:34:15 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-06 17:34:15 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-06 17:34:16 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-06 17:34:16 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-06 17:34:16 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-06 17:34:16 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-06 17:34:16 - __main__ - INFO - Unified API router mounted at /api
+2026-03-06 17:34:16 - __main__ - INFO - Admin router mounted successfully
+2026-03-06 17:34:19 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 17:34:19 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 17:34:20 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 17:34:20 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 17:34:20 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-06 17:34:20 - __main__ - INFO - ============================================================
+2026-03-06 17:34:20 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-06 17:34:20 - __main__ - INFO - ============================================================
+2026-03-06 17:34:23 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 17:34:23 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 17:34:23 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-06 17:34:23 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 17:34:23 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 17:34:23 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-06 17:34:23 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 17:34:23 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 17:34:23 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-06 17:34:23 - __main__ - INFO - ============================================================
+2026-03-06 17:34:23 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-06 17:34:23 - __main__ - INFO - ============================================================
+2026-03-06 17:34:29 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-06 17:34:29 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-06 17:34:29 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-06 17:34:29 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-06 17:34:29 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-06 17:34:29 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-06 20:28:26 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-06 20:28:26 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-06 20:28:38 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-06 20:28:38 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-06 20:28:41 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 20:28:41 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 20:28:43 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-06 20:28:43 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-06 20:28:43 - __main__ - INFO -    - Router: LOADED
+2026-03-06 20:28:43 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-06 20:28:43 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-06 20:28:43 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-06 20:28:58 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 20:28:58 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 20:28:58 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-06 20:28:58 - Strategies.customStrategy.ai_service - INFO - Gemini API Key loaded: AIzaSyDAjc...
+2026-03-06 20:28:58 - Strategies.customStrategy.ai_service - INFO - Google Generative AI library initialized
+2026-03-06 20:28:58 - Strategies.customStrategy.email_service - INFO - ✅ Email credentials configured successfully
+2026-03-06 20:28:58 - __main__ - INFO - Broker router loaded successfully
+2026-03-06 20:28:58 - __main__ - INFO - Webhook router loaded successfully
+2026-03-06 20:28:58 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-06 20:28:58 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-06 20:28:58 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-06 20:28:58 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-06 20:28:58 - __main__ - INFO - ============================================================
+2026-03-06 20:28:58 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-06 20:28:58 - __main__ - INFO - subscription_router: LOADED
+2026-03-06 20:28:58 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-06 20:28:58 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-06 20:28:58 - __main__ - INFO - Subscription endpoints available:
+2026-03-06 20:28:58 - __main__ - INFO -    - /api/subscription/*
+2026-03-06 20:28:58 - __main__ - INFO -    - /paymentSuccess
+2026-03-06 20:28:58 - __main__ - INFO -    - /api/auth/google-login
+2026-03-06 20:28:58 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-06 20:28:58 - __main__ - INFO - ============================================================
+2026-03-06 20:28:58 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-06 20:28:58 - __main__ - INFO - Admin router loaded successfully
+2026-03-06 20:29:01 - app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-06 20:29:01 - app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (6108b59) on aarch64-unknown-linux...
+2026-03-06 20:29:02 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-06 20:29:02 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-06 20:29:02 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-06 20:29:02 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-06 20:29:02 - __main__ - INFO - Unified API router mounted at /api
+2026-03-06 20:29:02 - __main__ - INFO - Admin router mounted successfully
+2026-03-06 20:29:05 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 20:29:05 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 20:29:06 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 20:29:06 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 20:29:06 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-06 20:29:06 - __main__ - INFO - ============================================================
+2026-03-06 20:29:06 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-06 20:29:06 - __main__ - INFO - ============================================================
+2026-03-06 20:29:10 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 20:29:10 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 20:29:10 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-06 20:29:10 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 20:29:10 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 20:29:10 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-06 20:29:10 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-06 20:29:10 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-06 20:29:10 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-06 20:29:10 - __main__ - INFO - ============================================================
+2026-03-06 20:29:10 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-06 20:29:10 - __main__ - INFO - ============================================================
+2026-03-06 20:29:10 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-06 20:29:10 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-06 20:29:10 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-06 20:29:11 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-06 20:29:11 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-06 20:29:11 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals

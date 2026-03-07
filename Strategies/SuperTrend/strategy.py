@@ -168,81 +168,61 @@ class SuperTrendStrategy(EquitySegment):
         return result
 
     def calculate_indicators(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Calculate Weekly SuperTrend."""
+        """Calculate Weekly SuperTrend and merge back to daily dataframe."""
         if data.empty:
             return data
-            
+
         df = data.copy()
-        
-        # We need a week column to group by. Resample to weekly ('W-FRI')
         df.index = pd.to_datetime(df.index)
-        
-        # Need weekly high, low, close.
-        # Ensure we sort by index
         df = df.sort_index()
-        weekly_df = df.resample('W-FRI').agg({
-            'open': 'first',
-            'high': 'max',
-            'low': 'min',
-            'close': 'last',
-            'volume': 'sum'
-        }).dropna()
-        
-        if len(weekly_df) < self.atr_period:
+
+        # ── Step 1: identify each day's ISO year+week ────────────────────────
+        iso = df.index.isocalendar()
+        df['year_week'] = iso.year.astype(str) + '_' + iso.week.astype(str).str.zfill(2)
+
+        # ── Step 2: build a weekly OHLCV using the real last trading day ─────
+        # Map each year_week → last trading date in that week
+        week_last_date = df.groupby('year_week').apply(lambda x: x.index[-1])
+
+        weekly = df.groupby('year_week').agg(
+            open=('open', 'first'),
+            high=('high', 'max'),
+            low=('low', 'min'),
+            close=('close', 'last'),
+            volume=('volume', 'sum')
+        )
+
+        if len(weekly) < self.atr_period:
+            self._log(2, "calculation", "Not enough weekly bars for SuperTrend — skipping indicator.")
+            df['supertrend'] = np.nan
+            df['st_direction'] = np.nan
+            df['is_last_day_of_week'] = False
+            df.loc[df.index.isin(week_last_date.values), 'is_last_day_of_week'] = True
             return df
-            
-        # Calculate Supertrend
-        # pandas_ta supertrend returns DataFrame with columns like:
-        # SUPERT_10_3.0, SUPERTd_10_3.0, SUPERTl_10_3.0, SUPERTs_10_3.0
-        st_res = self._calculate_supertrend(weekly_df, self.atr_period, self.atr_multiplier)
-        
-        if st_res is not None and not st_res.empty:
-            weekly_df['supertrend'] = st_res['supertrend']
-            weekly_df['st_direction'] = st_res['st_direction'] # 1 is uptrend, -1 is downtrend
-        else:
-            weekly_df['supertrend'] = np.nan
-            weekly_df['st_direction'] = np.nan
-        
-        # Merge back to daily using forward fill, so we can use daily prices with weekly ST
-        # But signals are ONLY based on Last Trading Day of Week. We will mark them.
-        weekly_df['is_last_day_of_week'] = True
-        
-        # Create mapping of weekly ST to daily DataFrame index
-        # We'll reindex or merge
-        merged_df = df.join(weekly_df[['supertrend', 'st_direction', 'is_last_day_of_week']], how='left')
-        
-        # Since not every week ends exactly on Friday (holidays), let's find the actual last trading day per week
-        df['year_week'] = df.index.isocalendar().year.astype(str) + '_' + df.index.isocalendar().week.astype(str)
-        # Group by week, get the last date
-        last_days = df.groupby('year_week').apply(lambda x: x.index[-1]).values
-        
+
+        # ── Step 3: compute SuperTrend on weekly bars ─────────────────────────
+        st_res = self._calculate_supertrend(weekly, self.atr_period, self.atr_multiplier)
+        weekly['supertrend'] = st_res['supertrend']
+        weekly['st_direction'] = st_res['st_direction']
+
+        # ── Step 4: attach last-trading-date and merge back to daily ─────────
+        weekly['last_date'] = week_last_date
+
+        # Build lookup: last_date → (supertrend, st_direction)
+        st_by_date = weekly.set_index('last_date')[['supertrend', 'st_direction']]
+
+        # Mark last trading day of each week on daily df
         df['is_last_day_of_week'] = False
-        df.loc[df.index.isin(last_days), 'is_last_day_of_week'] = True
-        
-        # Re-calc Weekly Data strictly based on exact trading days available to be precise
-        # This approach ensures holiday logic works
-        
-        weekly_precise = df.groupby('year_week').agg({
-            'open': 'first',
-            'high': 'max',
-            'low': 'min',
-            'close': 'last'
-        })
-        
-        st_precise = self._calculate_supertrend(weekly_precise, self.atr_period, self.atr_multiplier)
-        
-        if st_precise is not None and not st_precise.empty:
-            weekly_precise['supertrend'] = st_precise['supertrend']
-            weekly_precise['st_direction'] = st_precise['st_direction']
-        else:
-            weekly_precise['supertrend'] = np.nan
-            weekly_precise['st_direction'] = np.nan
-            
-        # Map back to daily dataframe based on year_week
-        df = df.join(weekly_precise[['supertrend', 'st_direction']], on='year_week')
-        
+        df.loc[df.index.isin(week_last_date.values), 'is_last_day_of_week'] = True
+
+        # Merge supertrend onto daily df using the last-trading-date index
+        df = df.join(st_by_date, how='left')
+
+        # Forward-fill so every daily row has the week's supertrend value
+        df['supertrend'] = df['supertrend'].ffill()
+        df['st_direction'] = df['st_direction'].ffill()
+
         self._log(4, "calculation", f"SuperTrend calculated. ATR Period: {self.atr_period}, Multiplier: {self.atr_multiplier}")
-        
         return df
 
     def evaluate_signals(self, symbol: str, df: pd.DataFrame, current_date: datetime) -> Dict[str, Any]:
@@ -285,7 +265,6 @@ class SuperTrendStrategy(EquitySegment):
         exits = []
         realized_something = False
         
-        # First check if we have data for today
         if not dfs: return exits
         
         date_str = current_date.strftime('%Y-%m-%d')
@@ -298,17 +277,21 @@ class SuperTrendStrategy(EquitySegment):
                 if symbol not in dfs or current_date not in dfs[symbol].index:
                     continue
                     
-                row = dfs[symbol].loc[current_date]
+                df = dfs[symbol]
+                row = df.loc[current_date]
                 entry_price = data["entry_price"]
-                
-                # Check for Weekly Stop Loss based on OPEN Price
-                # "stoploss also check on weekly basic on open price" -> If it's Monday Open
-                # Let's see if this is the first day of the week
-                year_week = dfs[symbol].loc[current_date, 'year_week']
-                first_day_of_week = dfs[symbol][dfs[symbol]['year_week'] == year_week].index[0]
-                
                 exec_price = exec_prices.get(symbol, row['close'])
                 
+                # Determine first trading day of the current week (to check weekly open stoploss)
+                current_iso_week = current_date.isocalendar()[:2]  # (year, week)
+                # Find first date in df with same iso year+week
+                same_week_mask = pd.Series(
+                    [d.isocalendar()[:2] == current_iso_week for d in df.index],
+                    index=df.index
+                )
+                first_day_of_week = df.index[same_week_mask][0] if same_week_mask.any() else current_date
+                
+                # Check for Weekly Stop Loss based on OPEN Price (on Monday/first trading day of week)
                 if current_date == first_day_of_week:
                     open_price = row['open']
                     sl_price = entry_price * (1 - self.stop_loss_pct / 100)
@@ -316,24 +299,20 @@ class SuperTrendStrategy(EquitySegment):
                         loss_pct = (open_price - entry_price) / entry_price * 100
                         reason = f"STOP_LOSS_OPEN (-{abs(loss_pct):.2f}%)"
                         self._log(1, "execution", f"[{date_str}] Weekly Stop Loss on Open triggered for {symbol}: Open {open_price:.2f} <= SL {sl_price:.2f}")
-                        
-                        # Execute immediately at open price
                         exits.append(self._execute_exit(slot, open_price, current_date, reason))
                         realized_something = True
                         continue
                 
-                # Check Trend Breakdown: last trading day of week, Check Close < Supertrend
-                if row['is_last_day_of_week']:
+                # Check Trend Breakdown on last trading day of week
+                if row.get('is_last_day_of_week', False):
                     close_price = row['close']
                     st_value = row['supertrend']
+                    st_dir = row['st_direction']
                     
-                    if not pd.isna(st_value) and row['st_direction'] == -1 and close_price < st_value:
-                        # Breakdown confirmed, exit on NEXT open (or execution price provided)
+                    if not pd.isna(st_value) and not pd.isna(st_dir) and int(st_dir) == -1 and close_price < st_value:
                         self._log(1, "signal", f"[{date_str}] SIGNAL GENERATED: {symbol} Sell Signal Triggered!")
                         self._log(1, "signal", f"  Formula: Breakdown = Close < SuperTrend")
                         self._log(1, "signal", f"  Breakdown Values: Close ({close_price:.2f}) < ST ({st_value:.2f})")
-                        
-                        # Note: Execution is typically next day open for these signals. We'll simulate execution at exec_price.
                         
                         loss_pct = (exec_price - entry_price) / entry_price * 100
                         reason = f"TREND_BREAKDOWN ({loss_pct:.2f}%)"

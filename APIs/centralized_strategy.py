@@ -60,186 +60,151 @@ def get_strategy_module(strategy_type: str):
 # ============================================================================
 
 @strategy_router.get("/assets")
-async def get_assets(strategy_type: str = Query(..., description="Strategy type")):
+async def get_assets(
+    strategy_type: Optional[str] = Query(None, description="Strategy type (legacy, optional)"),
+    market: Optional[str] = Query(None, description="Market: INDIA or US"),
+    asset_type: Optional[str] = Query(None, description="Asset type: ETF or STOCK")
+):
     """
-    Get available assets (ETFs/Stocks) for a strategy
-    
-    **Strategy Types:**
-    - ETF_Rotation, International_ETF_Rotation: Returns ETF list
-    - Rotation_Stocks: Returns stock list
-    - RS_ETF_Rotation: Returns ETF universe
-    - RS_Stocks: Returns stock universe
+    Get available assets (ETFs/Stocks).
+
+    **New Usage (preferred):**
+    - `?market=INDIA&asset_type=ETF`     → Indian ETF list
+    - `?market=INDIA&asset_type=STOCK`   → Indian Stock list
+    - `?market=US&asset_type=ETF`        → US ETF list
+    - `?market=US&asset_type=STOCK`      → US Stock list
+
+    **Legacy Usage (still supported):**
+    - `?strategy_type=ETF_Rotation`, `Rotation_Stocks`, etc.
     """
     try:
+        # ── NEW: market + asset_type path ────────────────────────────────────
+        if market and asset_type:
+            market = market.upper()
+            asset_type = asset_type.upper()
+            logger.info(f"Getting assets for market={market}, asset_type={asset_type}")
+
+            from Services.market_data_service import MarketDataService
+            from Databases.app_data_db_connection import get_session
+
+            db = get_session()
+            try:
+                model = MarketDataService.get_model(market, asset_type)
+                rows = db.query(model.symbol).distinct().order_by(model.symbol).all()
+                symbols = [r[0] for r in rows]
+                
+                assets = [{"ticker": s, "symbol": s} for s in symbols]
+                asset_key = "stocks" if asset_type == "STOCK" else "etfs"
+                return {
+                    "success": True,
+                    "market": market,
+                    "asset_type": asset_type,
+                    asset_key: assets,
+                    "total": len(assets)
+                }
+            finally:
+                db.close()
+
+        # ── LEGACY: strategy_type path ───────────────────────────────────────
+        if not strategy_type:
+            raise HTTPException(status_code=400, detail="Provide either 'market'+'asset_type' or 'strategy_type'")
+
         logger.info(f"Getting assets for strategy: {strategy_type}")
-        
+
         if strategy_type == "ETF_Rotation":
-            # Get ETF list using global backtester instance from API routes
             from Strategies.Rotation_ETF.api.etf_routes import etf_backtester
-            
             if etf_backtester is None:
                 raise HTTPException(status_code=500, detail="ETF backtester not initialized")
-            
-            # Load ETF metadata
             metadata = etf_backtester.load_metadata()
-            etfs = []
-            
-            for ticker, data in metadata.items():
-                etfs.append({
-                    "ticker": ticker,
-                    "name": data.get('name', ticker),
-                    "category": data.get('category', 'Unknown'),
-                    "expense_ratio": data.get('expense_ratio', 0.0),
-                    "aum": data.get('aum', 0.0)
-                })
-            
+            etfs = [{"ticker": t, "name": d.get('name', t), "category": d.get('category', ''), "expense_ratio": d.get('expense_ratio', 0.0), "aum": d.get('aum', 0.0)} for t, d in metadata.items()]
             return {"etfs": etfs}
-            
+
         elif strategy_type == "International_ETF_Rotation":
-            # Get International ETF list using its own backtester instance
             from Strategies.Rotation_International_ETF.api.routes import international_etf_backtester
-            
             if international_etf_backtester is None:
                 raise HTTPException(status_code=500, detail="International ETF backtester not initialized")
-            
-            # Load International ETF metadata
             metadata = international_etf_backtester.load_metadata()
-            etfs = []
-            
-            for ticker, data in metadata.items():
-                etfs.append({
-                    "ticker": ticker,
-                    "name": data.get('name', ticker),
-                    "category": data.get('category', 'Unknown'),
-                    "expense_ratio": data.get('expense_ratio', 0.0),
-                    "aum": data.get('aum', 0.0)
-                })
-            
+            etfs = [{"ticker": t, "name": d.get('name', t), "category": d.get('category', ''), "expense_ratio": d.get('expense_ratio', 0.0), "aum": d.get('aum', 0.0)} for t, d in metadata.items()]
             return {"etfs": etfs}
-            
+
         elif strategy_type == "Rotation_Stocks":
-            # Get stock list using global backtester instance from API routes
             from Strategies.Rotation_Stocks.api.stock_routes import stock_backtester
-            
             if stock_backtester is None:
                 raise HTTPException(status_code=500, detail="Stock backtester not initialized")
-            
-            # Load stock metadata
             metadata = stock_backtester.load_metadata()
-            stocks = []
-            
-            for ticker, data in metadata.items():
-                stocks.append({
-                    "ticker": ticker,
-                    "name": data.get('name', ticker),
-                    "sector": data.get('sector', 'Unknown'),
-                    "market_cap": data.get('market_cap', 0.0)
-                })
-            
+            stocks = [{"ticker": t, "name": d.get('name', t), "sector": d.get('sector', ''), "market_cap": d.get('market_cap', 0.0)} for t, d in metadata.items()]
             return {"stocks": stocks}
-            
+
         elif strategy_type == "RS_ETF_Rotation":
-            # Get ETF universe from RS ETF
             from Strategies.RS_ETF.rs_etf_backtester_core import RSETFStrategyBacktester
             from Strategies.RS_ETF.database import get_db
-            
             db = next(get_db())
             try:
-                # Create temporary backtester with minimal config
-                temp_config = {
-                    'main_index': '^NSEI',
-                    'etf_universe': 'ALL_ETFS',
-                    'buffer_capital_pct': 10.0,
-                    'max_positions': 20
-                }
-                backtester = RSETFStrategyBacktester.from_config_dict(db, temp_config)
+                backtester = RSETFStrategyBacktester.from_config_dict(db, {'main_index': '^NSEI', 'etf_universe': 'ALL_ETFS', 'buffer_capital_pct': 10.0, 'max_positions': 20})
                 etf_list = backtester.get_custom_etf_universe()
-                
-                # Format for frontend
-                etfs = [{"ticker": ticker, "symbol": ticker} for ticker in etf_list]
-                return {"success": True, "strategy_type": strategy_type, "etfs": etfs}
+                return {"success": True, "strategy_type": strategy_type, "etfs": [{"ticker": t, "symbol": t} for t in etf_list]}
             finally:
                 db.close()
-            
+
         elif strategy_type == "RS_Stocks":
-            # Get stock universe from RS Stocks
             from Strategies.RS_Stocks.rs_backtester_core import RSStrategyBacktester
             from Strategies.RS_Stocks.database import get_db
-            
             db = next(get_db())
             try:
-                # Create temporary backtester with minimal config
-                temp_config = {
-                    'main_index': '^NSEI',
-                    'stock_universe': 'NIFTY_500',
-                    'buffer_capital_pct': 10.0,
-                    'max_positions': 20
-                }
-                backtester = RSStrategyBacktester.from_config_dict(db, temp_config)
+                backtester = RSStrategyBacktester.from_config_dict(db, {'main_index': '^NSEI', 'stock_universe': 'NIFTY_500', 'buffer_capital_pct': 10.0, 'max_positions': 20})
                 stock_list = backtester.get_custom_stock_universe()
-                
-                # Format for frontend
-                stocks = [{"ticker": ticker, "symbol": ticker} for ticker in stock_list]
-                return {"success": True, "strategy_type": strategy_type, "stocks": stocks}
+                return {"success": True, "strategy_type": strategy_type, "stocks": [{"ticker": t, "symbol": t} for t in stock_list]}
             finally:
                 db.close()
-        
+
         elif strategy_type == "ETF_Payout":
-            # ETF_Payout uses same ETF list as ETF_Rotation
             from Strategies.CustomStrategies.Rotation_ETF_Payout.api_routes import rotation_etf_payout_backtester
-            
             if rotation_etf_payout_backtester is None:
                 raise HTTPException(status_code=500, detail="ETF Payout backtester not initialized")
-            
-            # Load ETF metadata
             metadata = rotation_etf_payout_backtester.load_metadata()
-            etfs = []
-            
-            for ticker, data in metadata.items():
-                etfs.append({
-                    "ticker": ticker,
-                    "name": data.get('name', ticker),
-                    "category": data.get('category', 'Unknown'),
-                    "expense_ratio": data.get('expense_ratio', 0.0),
-                    "aum": data.get('aum', 0.0)
-                })
-            
+            etfs = [{"ticker": t, "name": d.get('name', t), "category": d.get('category', ''), "expense_ratio": d.get('expense_ratio', 0.0), "aum": d.get('aum', 0.0)} for t, d in metadata.items()]
             return {"etfs": etfs}
-            
+
         elif strategy_type == "ETF_Swing_Strategy":
-             # ETF_Swing_Strategy uses same ETF list as ETF_Rotation
             from Strategies.Rotation_ETF.api.etf_routes import etf_backtester, initialize_etf_backtester
-            
             if etf_backtester is None:
-                # Initialize if not present
                 initialize_etf_backtester()
                 from Strategies.Rotation_ETF.api.etf_routes import etf_backtester
-            
             if etf_backtester is None:
                 raise HTTPException(status_code=500, detail="ETF backtester not initialized")
-            
-            # Load ETF metadata
             metadata = etf_backtester.load_metadata()
-            etfs = []
-            
+            etfs = [{"ticker": t, "name": d.get('name', t), "category": d.get('category', ''), "expense_ratio": d.get('expense_ratio', 0.0), "aum": d.get('aum', 0.0)} for t, d in metadata.items()]
+            return {"etfs": etfs}
+
+        elif strategy_type == "SuperTrend":
+            from Strategies.SuperTrend.services.backtester import SuperTrendBacktester
+            # SuperTrend can be STOCK or ETF, defaults to STOCK if not specified
+            backtester = SuperTrendBacktester(market=market or "INDIA", asset_type=asset_type or "STOCK")
+            metadata = backtester.load_metadata()
+            assets = []
             for ticker, data in metadata.items():
-                etfs.append({
+                asset_item = {
                     "ticker": ticker,
                     "name": data.get('name', ticker),
                     "category": data.get('category', 'Unknown'),
-                    "expense_ratio": data.get('expense_ratio', 0.0),
-                    "aum": data.get('aum', 0.0)
-                })
+                    "start_date": data.get('start_date'),
+                    "end_date": data.get('end_date'),
+                    "years_available": data.get('years_available', 0),
+                    "total_records": data.get('total_records', 0)
+                }
+                assets.append(asset_item)
             
-            return {"etfs": etfs}
+            # Return as stocks or etfs based on actual asset_type
+            key = "etfs" if backtester.asset_type == "ETF" else "stocks"
+            return {key: assets}
 
         else:
             raise HTTPException(status_code=400, detail=f"Invalid strategy_type: {strategy_type}")
-            
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting assets for {strategy_type}: {str(e)}")
+        logger.error(f"Error getting assets: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to get assets: {str(e)}")
@@ -465,7 +430,27 @@ async def calculate_date_range(request: DateRangeRequest):
                 }
             else:
                 raise HTTPException(status_code=400, detail="Could not calculate date range for provided tickers")
+                
+        elif request.strategy_type == "SuperTrend":
+            from Strategies.SuperTrend.services.backtester import SuperTrendBacktester
+            backtester = SuperTrendBacktester(
+                market=request.market or "INDIA",
+                asset_type=request.asset_type or "STOCK"
+            )
+            tickers = request.tickers or []
+            if not tickers:
+                raise HTTPException(status_code=400, detail="No tickers provided")
             
+            start_date, end_date, years = backtester.calculate_common_date_range(tickers)
+            if start_date and end_date:
+                return {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "years": years
+                }
+            else:
+                raise HTTPException(status_code=400, detail="Could not calculate date range for provided symbols")
+
         else:
             raise HTTPException(status_code=400, detail=f"Invalid strategy_type: {request.strategy_type}")
             
@@ -475,184 +460,159 @@ async def calculate_date_range(request: DateRangeRequest):
 
 
 @strategy_router.get("/assets/overview")
-async def get_assets_overview(strategy_type: str = Query(..., description="Strategy type")):
+async def get_assets_overview(
+    strategy_type: Optional[str] = Query(None, description="Strategy type (legacy, optional)"),
+    market: Optional[str] = Query(None, description="Market: INDIA or US"),
+    asset_type: Optional[str] = Query(None, description="Asset type: ETF or STOCK")
+):
     """
-    Get metadata/overview for all available assets
-    
-    Returns detailed information about each asset including data availability,
-    sector classification, etc.
+    Get metadata/overview for all available assets.
+
+    **New Usage (preferred):**
+    - `?market=INDIA&asset_type=ETF`   → Indian ETF overview
+    - `?market=INDIA&asset_type=STOCK` → Indian Stock overview
+    - `?market=US&asset_type=ETF`      → US ETF overview
+    - `?market=US&asset_type=STOCK`    → US Stock overview
+
+    **Legacy Usage (still supported):**
+    - `?strategy_type=ETF_Rotation`, `Rotation_Stocks`, etc.
     """
     try:
+        # ── NEW: market + asset_type path ────────────────────────────────────
+        if market and asset_type:
+            market = market.upper()
+            asset_type = asset_type.upper()
+            logger.info(f"Getting assets overview for market={market}, asset_type={asset_type}")
+
+            from Services.market_data_service import MarketDataService
+            from Databases.app_data_db_connection import get_session
+            from sqlalchemy import func
+
+            db = get_session()
+            try:
+                model = MarketDataService.get_model(market, asset_type)
+
+                # Aggregate per symbol: min date, max date, count
+                rows = db.query(
+                    model.symbol,
+                    func.min(model.date).label('start_date'),
+                    func.max(model.date).label('end_date'),
+                    func.count(model.date).label('total_records')
+                ).group_by(model.symbol).order_by(model.symbol).all()
+
+                overview = []
+                for row in rows:
+                    start_dt = row.start_date
+                    end_dt = row.end_date
+                    try:
+                        years = round((end_dt - start_dt).days / 365.25, 1)
+                    except Exception:
+                        years = 0.0
+                    overview.append({
+                        'symbol': row.symbol,
+                        'start_date': str(start_dt),
+                        'end_date': str(end_dt),
+                        'years_available': years,
+                        'total_records': row.total_records
+                    })
+
+                overview_key = "stock_overview" if asset_type == "STOCK" else "etf_overview"
+                return {
+                    "success": True,
+                    "market": market,
+                    "asset_type": asset_type,
+                    overview_key: overview,
+                    "total": len(overview)
+                }
+            finally:
+                db.close()
+
+        # ── LEGACY: strategy_type path ───────────────────────────────────────
+        if not strategy_type:
+            raise HTTPException(status_code=400, detail="Provide either 'market'+'asset_type' or 'strategy_type'")
+
         logger.info(f"Getting assets overview for strategy: {strategy_type}")
-        
+
         if strategy_type == "ETF_Rotation":
-            # Get ETF overview using global backtester from API routes
             from Strategies.Rotation_ETF.api.etf_routes import etf_backtester
-            
             if etf_backtester is None:
                 raise HTTPException(status_code=500, detail="ETF backtester not initialized")
-            
             metadata = etf_backtester.load_metadata()
             etf_overview = []
-            
             for symbol, meta in metadata.items():
                 description = etf_backtester.generate_asset_description(symbol)
                 sector = etf_backtester.get_asset_sector_classification(symbol)
-                etf_overview.append({
-                    'symbol': symbol,
-                    'description': description,
-                    'sector': sector,
-                    'start_date': meta['start_date'],
-                    'end_date': meta['end_date'],
-                    'years_available': round(meta['years_available'], 1),
-                    'total_records': meta['total_records']
-                })
-            
-            # Sort by start date
+                etf_overview.append({'symbol': symbol, 'description': description, 'sector': sector, 'start_date': meta['start_date'], 'end_date': meta['end_date'], 'years_available': round(meta['years_available'], 1), 'total_records': meta['total_records']})
             etf_overview.sort(key=lambda x: x['start_date'])
             return {"etf_overview": etf_overview}
-        
+
         elif strategy_type == "International_ETF_Rotation":
-            # Get International ETF overview
             from Strategies.Rotation_International_ETF.api.routes import international_etf_backtester
-            
             if international_etf_backtester is None:
                 raise HTTPException(status_code=500, detail="International ETF backtester not initialized")
-            
             metadata = international_etf_backtester.load_metadata()
             etf_overview = []
-            
             for symbol, meta in metadata.items():
                 description = international_etf_backtester.generate_asset_description(symbol)
                 sector = international_etf_backtester.get_asset_sector_classification(symbol)
-                etf_overview.append({
-                    'symbol': symbol,
-                    'description': description,
-                    'sector': sector,
-                    'start_date': meta['start_date'],
-                    'end_date': meta['end_date'],
-                    'years_available': round(meta['years_available'], 1),
-                    'total_records': meta['total_records']
-                })
-            
-            # Sort by start date
+                etf_overview.append({'symbol': symbol, 'description': description, 'sector': sector, 'start_date': meta['start_date'], 'end_date': meta['end_date'], 'years_available': round(meta['years_available'], 1), 'total_records': meta['total_records']})
             etf_overview.sort(key=lambda x: x['start_date'])
             return {"etf_overview": etf_overview}
-            
+
         elif strategy_type == "Rotation_Stocks":
-            # Get stock overview using global backtester from API routes
             from Strategies.Rotation_Stocks.api.stock_routes import stock_backtester
-            
             if stock_backtester is None:
                 raise HTTPException(status_code=500, detail="Stock backtester not initialized")
-            
             metadata = stock_backtester.load_metadata()
             stock_overview = []
-            
             for symbol, meta in metadata.items():
                 description = stock_backtester.generate_asset_description(symbol)
                 sector = stock_backtester.get_asset_sector_classification(symbol)
-                stock_overview.append({
-                    'symbol': symbol,
-                    'description': description,
-                    'sector': sector,
-                    'start_date': meta['start_date'],
-                    'end_date': meta['end_date'],
-                    'years_available': round(meta['years_available'], 1),
-                    'total_records': meta['total_records']
-                })
-            
-            # Sort by start date
+                stock_overview.append({'symbol': symbol, 'description': description, 'sector': sector, 'start_date': meta['start_date'], 'end_date': meta['end_date'], 'years_available': round(meta['years_available'], 1), 'total_records': meta['total_records']})
             stock_overview.sort(key=lambda x: x['start_date'])
             return {"stock_overview": stock_overview}
 
         elif strategy_type == "ETF_Swing_Strategy":
             from Strategies.Rotation_ETF.api.etf_routes import etf_backtester, initialize_etf_backtester
-            
             if etf_backtester is None:
                 initialize_etf_backtester()
                 from Strategies.Rotation_ETF.api.etf_routes import etf_backtester
-            
             if etf_backtester is None:
                 raise HTTPException(status_code=500, detail="ETF backtester not initialized")
-            
             metadata = etf_backtester.load_metadata()
             etf_overview = []
-            
             for symbol, meta in metadata.items():
                 description = etf_backtester.generate_asset_description(symbol)
                 sector = etf_backtester.get_asset_sector_classification(symbol)
-                etf_overview.append({
-                    'symbol': symbol,
-                    'description': description,
-                    'sector': sector,
-                    'start_date': meta['start_date'],
-                    'end_date': meta['end_date'],
-                    'years_available': round(meta['years_available'], 1),
-                    'total_records': meta['total_records']
-                })
-            
-            # Sort by start date
+                etf_overview.append({'symbol': symbol, 'description': description, 'sector': sector, 'start_date': meta['start_date'], 'end_date': meta['end_date'], 'years_available': round(meta['years_available'], 1), 'total_records': meta['total_records']})
             etf_overview.sort(key=lambda x: x['start_date'])
             return {"etf_overview": etf_overview}
-            
+
         elif strategy_type == "ETF_Payout":
-            # ETF_Payout uses same overview as ETF_Rotation
             from Strategies.CustomStrategies.Rotation_ETF_Payout.api_routes import rotation_etf_payout_backtester
-            
             if rotation_etf_payout_backtester is None:
                 raise HTTPException(status_code=500, detail="ETF Payout backtester not initialized")
-            
             metadata = rotation_etf_payout_backtester.load_metadata()
             etf_overview = []
-            
             for symbol, meta in metadata.items():
                 description = rotation_etf_payout_backtester.generate_asset_description(symbol)
                 sector = rotation_etf_payout_backtester.get_asset_sector_classification(symbol)
-                etf_overview.append({
-                    'symbol': symbol,
-                    'description': description,
-                    'sector': sector,
-                    'start_date': meta['start_date'],
-                    'end_date': meta['end_date'],
-                    'years_available': round(meta['years_available'], 1),
-                    'total_records': meta['total_records']
-                })
-            
-            # Sort by start date
+                etf_overview.append({'symbol': symbol, 'description': description, 'sector': sector, 'start_date': meta['start_date'], 'end_date': meta['end_date'], 'years_available': round(meta['years_available'], 1), 'total_records': meta['total_records']})
             etf_overview.sort(key=lambda x: x['start_date'])
             return {"etf_overview": etf_overview}
-            
+
         elif strategy_type == "RS_ETF_Rotation":
             from Strategies.RS_ETF.rs_etf_backtester_core import RSETFStrategyBacktester
             from Strategies.RS_ETF.database import get_db as get_rs_etf_db
-            
             db = next(get_rs_etf_db())
             try:
-                # Create temporary backtester
-                temp_config = {
-                    'main_index': '^NSEI',
-                    'buffer_capital_pct': 10.0,
-                    'max_positions': 10
-                }
-                backtester = RSETFStrategyBacktester.from_config_dict(db, temp_config)
+                backtester = RSETFStrategyBacktester.from_config_dict(db, {'main_index': '^NSEI', 'buffer_capital_pct': 10.0, 'max_positions': 10})
                 metadata = backtester.load_metadata()
                 etf_overview = []
-                
                 for symbol, meta in metadata.items():
                     description = backtester.generate_asset_description(symbol)
                     sector = backtester.get_asset_sector_classification(symbol)
-                    etf_overview.append({
-                        'symbol': symbol,
-                        'description': description,
-                        'sector': sector,
-                        'start_date': meta['start_date'],
-                        'end_date': meta['end_date'],
-                        'years_available': round(meta['years_available'], 1),
-                        'total_records': meta['total_records']
-                    })
-                
-                # Sort by symbol
+                    etf_overview.append({'symbol': symbol, 'description': description, 'sector': sector, 'start_date': meta['start_date'], 'end_date': meta['end_date'], 'years_available': round(meta['years_available'], 1), 'total_records': meta['total_records']})
                 etf_overview.sort(key=lambda x: x['symbol'])
                 return {"etf_overview": etf_overview}
             finally:
@@ -661,45 +621,51 @@ async def get_assets_overview(strategy_type: str = Query(..., description="Strat
         elif strategy_type == "RS_Stocks":
             from Strategies.RS_Stocks.rs_backtester_core import RSStrategyBacktester
             from Strategies.RS_Stocks.database import get_db as get_rs_stocks_db
-            
             db = next(get_rs_stocks_db())
             try:
-                # Create temporary backtester
-                temp_config = {
-                    'main_index': '^NSEI',
-                    'stock_universe': 'NIFTY_500',
-                    'buffer_capital_pct': 10.0,
-                    'max_positions': 20
-                }
-                backtester = RSStrategyBacktester.from_config_dict(db, temp_config)
+                backtester = RSStrategyBacktester.from_config_dict(db, {'main_index': '^NSEI', 'stock_universe': 'NIFTY_500', 'buffer_capital_pct': 10.0, 'max_positions': 20})
                 metadata = backtester.load_metadata()
                 stock_overview = []
-                
                 for symbol, meta in metadata.items():
                     description = backtester.generate_asset_description(symbol)
                     sector = backtester.get_asset_sector_classification(symbol)
-                    stock_overview.append({
-                        'symbol': symbol,
-                        'description': description,
-                        'sector': sector,
-                        'start_date': meta['start_date'],
-                        'end_date': meta['end_date'],
-                        'years_available': round(meta['years_available'], 1),
-                        'total_records': meta['total_records']
-                    })
-                
-                # Sort by symbol
+                    stock_overview.append({'symbol': symbol, 'description': description, 'sector': sector, 'start_date': meta['start_date'], 'end_date': meta['end_date'], 'years_available': round(meta['years_available'], 1), 'total_records': meta['total_records']})
                 stock_overview.sort(key=lambda x: x['symbol'])
                 return {"stock_overview": stock_overview}
             finally:
                 db.close()
-            
+
+        elif strategy_type == "SuperTrend":
+            from Strategies.SuperTrend.services.backtester import SuperTrendBacktester
+            backtester = SuperTrendBacktester(market=market or "INDIA", asset_type=asset_type or "STOCK")
+            metadata = backtester.load_metadata()
+            overview = []
+            for symbol, meta in metadata.items():
+                overview.append({
+                    'symbol': symbol,
+                    'description': backtester.generate_asset_description(symbol),
+                    'sector': backtester.get_asset_sector_classification(symbol),
+                    'start_date': meta.get('start_date'),
+                    'end_date': meta.get('end_date'),
+                    'years_available': round(meta.get('years_available', 0), 1),
+                    'total_records': meta.get('total_records', 0)
+                })
+            overview.sort(key=lambda x: x['start_date'] if x['start_date'] else '9999-99-99')
+            # Use appropriate key
+            key = "etf_overview" if backtester.asset_type == "ETF" else "stock_overview"
+            return {key: overview}
+
         else:
             raise HTTPException(status_code=400, detail=f"Invalid strategy_type: {strategy_type}")
-            
+
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error getting assets overview for {strategy_type}: {str(e)}")
+        logger.error(f"Error getting assets overview: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get assets overview: {str(e)}")
+
+
+
 
 
 @strategy_router.get("/debug/cache")

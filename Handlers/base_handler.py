@@ -50,24 +50,31 @@ class BaseStrategyHandler(ABC):
     
     def _clean_tickers(self, tickers: Any) -> Any:
         """
-        Clean tickers by removing .NS suffix.
-        
-        Args:
-            tickers: List of tickers, single ticker string, or None
-            
-        Returns:
-            Cleaned tickers in the same format
+        Clean tickers: splits comma-separated strings, removes .NS suffix.
+        Accepts: a list of strings, a single string, or a comma-separated string.
+        Returns: a list of cleaned ticker strings.
         """
         if tickers is None:
-            return None
-        
-        if isinstance(tickers, list):
-            return [t.replace('.NS', '') if isinstance(t, str) else t for t in tickers]
-        
+            return []
+
+        # Normalize to a flat list first
         if isinstance(tickers, str):
-            return tickers.replace('.NS', '')
-            
-        return tickers
+            # Could be "GOLDBEES, ITBEES, MON100" — split on comma
+            tickers = [t.strip() for t in tickers.split(',') if t.strip()]
+        elif isinstance(tickers, list):
+            # Each item itself could be a comma-separated string
+            expanded = []
+            for t in tickers:
+                if isinstance(t, str) and ',' in t:
+                    expanded.extend([x.strip() for x in t.split(',') if x.strip()])
+                elif isinstance(t, str):
+                    expanded.append(t.strip())
+                else:
+                    expanded.append(t)
+            tickers = expanded
+
+        # Remove .NS suffix and filter blanks
+        return [t.replace('.NS', '').strip() for t in tickers if t and isinstance(t, str)]
 
     def _normalize_benchmark_metrics(self, raw_metrics: Dict[str, Any]) -> Dict[str, Any]:
         """

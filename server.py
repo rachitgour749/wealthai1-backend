@@ -498,10 +498,12 @@ try:
             "/api/v2/delete_strategy",
             "/api/v2/delete_strategy_client",
             "/api/v2/get_instances",
+            "/api/strategy",              # Centralized backtest endpoints (assets, defaults, date-range, metrics, log)
             "/api/broker/place_order", # Exempt broker place order
             "/api/broker/place_order", # Exempt broker place order
             "/api/broker/broker_login", # Exempt broker login
-            "/api/webhook/wealthai1.in/trade_execute" # Exempt trade execution webhook
+            "/api/webhook/wealthai1.in/trade_execute", # Exempt trade execution webhook
+            "/admin" # Exempt admin routes for ease of use
         ]
     )
     logger.info("SingleSessionMiddleware added")
@@ -658,6 +660,13 @@ try:
 except Exception as e:
     logger.error(f"Failed to import ChatAI1 (Legacy): {e}")
 
+try:
+    from Admin.routes import admin_router
+    logger.info("Admin router loaded successfully")
+except Exception as e:
+    logger.error(f"Failed to import admin_router: {e}")
+    admin_router = None
+
 # Centralized Backtest API (New)
 # Centralized Backtest API (New) - Consolidated in APIs.routes
 # Consolidated Strategy API (New) - Consolidated in APIs.routes
@@ -780,6 +789,10 @@ if chatai_availabe and chatai_router:
 if unified_api_router:
     app.include_router(unified_api_router)
     logger.info("Unified API router mounted at /api")
+
+if admin_router:
+    app.include_router(admin_router)
+    logger.info("Admin router mounted successfully")
 
 # =========================
 # CHATAI ENDPOINTS (Fallback if router not available)

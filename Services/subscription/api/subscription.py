@@ -41,6 +41,30 @@ async def get_user_details(email: str):
         logger.error(f"Error getting user details: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get user details: {str(e)}")
 
+@subscription_router.get("/credits/{email}")
+async def get_user_credits(email: str):
+    """Fetch used_credits and total_credits for a user"""
+    try:
+        logger.info(f"Fetching credits for: {email}")
+        user = await subscription_service.get_user_details(email)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {
+            "success": True,
+            "data": {
+                "user_email": user.user_email,
+                "total_credits": user.total_credits,
+                "used_credits": user.used_credits,
+                "remaining_credits": (user.total_credits or 0) - (user.used_credits or 0)
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching credits: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @subscription_router.post("/activate-trial", response_model=ProductTrialActivationResponse)
 async def activate_product_trial(request: ProductTrialActivationRequest):
     """

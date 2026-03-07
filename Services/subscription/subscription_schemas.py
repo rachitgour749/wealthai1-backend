@@ -251,6 +251,8 @@ class UserDetailsResponse(BaseModel):
     phone_no: Optional[str] = None
     status: str  # TRIAL/PAID
     role: Optional[str] = None
+    total_credits: int = 0
+    used_credits: int = 0
     created_at: datetime
     updated_at: datetime
 

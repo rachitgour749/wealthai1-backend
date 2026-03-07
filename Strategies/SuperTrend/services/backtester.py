@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import os
+from sqlalchemy import func
+from Databases.app_data_db_connection import get_session
 from Services.market_data_service import MarketDataService
 from Strategies.SuperTrend.strategy import SuperTrendStrategy
 
@@ -16,63 +18,59 @@ class SuperTrendBacktester:
         self.daily_nav = pd.DataFrame()
 
     def load_data(self, tickers: List[str], start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
-        """Load data using MarketDataService"""
+        """Load OHLCV data using MarketDataService"""
         data_dict = {}
-        
-        # Buffer for ATR calculation (need weekly bars). e.g., 10 weeks * 7 = 70 days. Let's buffer 150 days.
+
+        # Buffer enough history for ATR warm-up: atr_period weeks * ~7 days/week + margin
         buffer_days = self.strategy.atr_period * 15
         adj_start = pd.to_datetime(start_date) - timedelta(days=buffer_days)
         adj_end = pd.to_datetime(end_date)
-        
-        self.strategy._log(2, "data_fetch", f"Loading {self.market} data from {adj_start.date()} to {adj_end.date()}")
-        
-        try:
-            assets_df = MarketDataService.fetch_close_prices(
-                tickers=tickers, market=self.market, asset_type=self.asset_type,
-                start_date=adj_start, end_date=adj_end
-            )
-            
-            if not assets_df.empty:
-                for ticker in tickers:
-                    if ticker in assets_df.columns:
-                        ticker_df = assets_df[[ticker]].rename(columns={ticker: 'close'})
-                        
-                        # MarketDataService right now fetches only close prices!
-                        # The user has "buy signal generate on close post supertrend breakout"
-                        # "stoploss also check on weekly basic on open price"
-                        # We need full OHLCV data to correctly simulate SuperTrend calculation and open price stoploss!
-                        
-                        full_ticker_df = MarketDataService.fetch_stock_data(
-                            ticker=ticker, market=self.market, asset_type=self.asset_type, 
-                            start_date=adj_start, end_date=adj_end
-                        )
-                        
-                        if not full_ticker_df.empty:
-                            data_dict[ticker] = full_ticker_df
-                            self.strategy._log(2, "data_fetch", f"Fetched {len(full_ticker_df)} OHLVC records for {ticker}.")
-                        else:
-                            # Fallback to close prices if full OHLCV not natively supported
-                            for col in ['open', 'high', 'low']: ticker_df[col] = ticker_df['close']
-                            ticker_df['volume'] = 0
-                            data_dict[ticker] = ticker_df
 
-            # Benchmark
-            benchmark_candidates = ["NIFTY_50", "NIFTYBEES", "NIFTY50"] if self.market == "INDIA" else ["^GSPC", "S&P_500", "SPY", "SPX"]
-            bench_df = MarketDataService.fetch_close_prices(
-                tickers=benchmark_candidates, market=self.market, asset_type="INDEX",
-                start_date=adj_start, end_date=adj_end
+        self.strategy._log(2, "data_fetch", f"Loading {self.market} data from {adj_start.date()} to {adj_end.date()}")
+
+        for ticker in tickers:
+            df = MarketDataService.fetch_ohlcv(
+                ticker=ticker,
+                market=self.market,
+                asset_type=self.asset_type,
+                start_date=adj_start,
+                end_date=adj_end
             )
-            
+            if not df.empty:
+                data_dict[ticker] = df
+                self.strategy._log(2, "data_fetch", f"Fetched {len(df)} OHLCV records for {ticker}.")
+            else:
+                self.strategy._log(1, "data_fetch", f"[WARNING] No data found for {ticker} — skipping.")
+
+        # Benchmark
+        if self.market == "INDIA":
+            benchmark_candidates = ["NIFTY_50", "NIFTYBEES", "NIFTY50"]
+            bench_asset_type = "INDEX"
+        else:
+            benchmark_candidates = ["^GSPC", "S&P_500", "SPY"]
+            bench_asset_type = "INDEX"
+
+        for candidate in benchmark_candidates:
+            bench_df = MarketDataService.fetch_ohlcv(
+                ticker=candidate,
+                market=self.market,
+                asset_type=bench_asset_type,
+                start_date=adj_start,
+                end_date=adj_end
+            )
             if not bench_df.empty:
-                benchmark_symbol = next((c for c in benchmark_candidates if c in bench_df.columns), None)
-                if benchmark_symbol:
-                    bench_data = bench_df[[benchmark_symbol]].rename(columns={benchmark_symbol: 'close'})
-                    for col in ['open', 'high', 'low']: bench_data[col] = bench_data['close']
-                    bench_data['volume'] = 0
-                    data_dict["BENCHMARK"] = bench_data
-            return data_dict
-        finally:
-            pass
+                data_dict["BENCHMARK"] = bench_df
+                self.strategy._log(2, "data_fetch", f"Benchmark loaded: {candidate} ({len(bench_df)} records)")
+                break
+
+        if "BENCHMARK" not in data_dict:
+            # Use first available ticker as benchmark fallback
+            if data_dict:
+                first_ticker = list(data_dict.keys())[0]
+                data_dict["BENCHMARK"] = data_dict[first_ticker].copy()
+                self.strategy._log(1, "data_fetch", f"[WARNING] No index data found — using {first_ticker} as benchmark fallback.")
+
+        return data_dict
 
     def run_backtest(self, tickers: List[str], start_date: str, end_date: str, initial_capital: float, risk_free_rate: float = 8.0, config_params: dict = None):
         """Run the backtest loop"""
@@ -86,12 +84,18 @@ class SuperTrendBacktester:
             return {"error": "Insufficient data"}
 
         benchmark_df = all_data.pop("BENCHMARK")
-
+        
+        # ── Step 1: Normalize all tickers to the benchmark trading dates ──────
+        # This prevents "spikes" to zero when an ETF has a missing data point
+        benchmark_dates = benchmark_df.index
+        
         processed_data = {}
         for ticker, df in all_data.items():
+            # Reindex to benchmark dates and forward-fill missing values
+            df = df.reindex(benchmark_dates).ffill().bfill()
             processed_data[ticker] = self.strategy.calculate_indicators(df)
 
-        trading_dates = benchmark_df.loc[start_date:end_date].index
+        trading_dates = benchmark_dates[benchmark_dates.slice_indexer(start_date, end_date)]
         self.strategy.initialize_portfolio(initial_capital)
         self.portfolio_history = []
         self.transaction_log = []
@@ -173,18 +177,67 @@ class SuperTrendBacktester:
         
         return self.calculate_results(risk_free_rate)
 
-    def calculate_results(self, risk_free_rate):
-        if self.daily_nav.empty: return {"error": "No data recorded"}
+    def calculate_results(self, risk_free_rate: float = 8.0):
+        """Calculate final metrics and benchmark comparison"""
+        if self.daily_nav.empty:
+            return {"error": "No data recorded"}
+
+        def get_metrics(series, dates):
+            if len(series) < 2:
+                return {}
+                
+            initial_val = series.iloc[0]
+            final_val = series.iloc[-1]
+            total_return = (final_val - initial_val) / initial_val * 100
+            
+            # CAGR
+            days = (dates.iloc[-1] - dates.iloc[0]).days
+            years = days / 365.25
+            cagr = ((final_val / initial_val) ** (1 / years) - 1) * 100 if years > 0 else 0
+            
+            # Daily Returns for Sharpe
+            daily_returns = series.pct_change().dropna()
+            mean_daily_return = daily_returns.mean()
+            std_daily_return = daily_returns.std()
+            
+            # Annualized Metrics
+            trading_days_per_year = 252
+            
+            # Sharpe Ratio
+            rf_daily = (risk_free_rate / 100) / trading_days_per_year
+            sharpe_ratio = 0
+            if std_daily_return > 0:
+                sharpe_ratio = (mean_daily_return - rf_daily) / std_daily_return * np.sqrt(trading_days_per_year)
+            
+            # Max Drawdown
+            peak = series.cummax()
+            drawdown = (series - peak) / peak * 100
+            max_dd = drawdown.min()
+            
+            # Calmar Ratio
+            calmar_ratio = 0
+            if max_dd < 0:
+                calmar_ratio = abs(cagr / max_dd)
+            
+            return {
+                "total_investment": round(float(initial_val), 2),
+                "final_capital": round(float(final_val), 2),
+                "total_return_pct": round(total_return, 2),
+                "cagr": round(cagr, 2),
+                "sharpe_ratio": round(sharpe_ratio, 2),
+                "calmar_ratio": round(calmar_ratio, 2),
+                "max_drawdown_pct": round(max_dd, 2)
+            }
+
+        strategy_metrics = get_metrics(self.daily_nav['strategy'], self.daily_nav['date'])
         
-        initial_val = self.daily_nav['strategy'].iloc[0]
-        final_val = self.daily_nav['strategy'].iloc[-1]
+        # Benchmark comparison
+        if 'benchmark_buyhold' in self.daily_nav.columns:
+            benchmark_metrics = get_metrics(self.daily_nav['benchmark_buyhold'], self.daily_nav['date'])
+            strategy_metrics["benchmark_metrics"] = benchmark_metrics
         
-        strategy_metrics = {
-            "total_investment": round(float(initial_val), 2),
-            "final_capital": round(float(final_val), 2),
-            "total_return_pct": round((final_val - initial_val) / initial_val * 100, 2),
-            "total_trades": len([t for t in self.transaction_log if t['action'] in ['BUY', 'SELL']])
-        }
+        # Add Total Trades
+        strategy_metrics["total_trades"] = len([t for t in self.transaction_log if t['action'] in ['BUY', 'SELL']])
         
         self.strategy._log(1, "performance", f"Metrics: {strategy_metrics}")
         
@@ -199,3 +252,57 @@ class SuperTrendBacktester:
 
     @property
     def weekly_nav_df(self): return self.daily_nav
+
+    def calculate_common_date_range(self, tickers: List[str]) -> Tuple[Optional[str], Optional[str], float]:
+        """Calculate common date range for tickers with SuperTrend buffer"""
+        # Buffer enough history for ATR warm-up: atr_period weeks * 7 days/week + margin
+        # 10 weeks * 15 (buffer multiplier from load_data) = 150 days
+        buffer_days = self.strategy.atr_period * 15
+        return MarketDataService.calculate_date_range(
+            tickers=tickers,
+            market=self.market,
+            asset_type=self.asset_type,
+            buffer_days=buffer_days
+        )
+
+    def load_metadata(self) -> Dict[str, Any]:
+        """Load metadata for all assets in this market/asset_type"""
+        db = get_session()
+        try:
+            model = MarketDataService.get_model(self.market, self.asset_type)
+            # Fetch summary stats for all tickers
+            query = db.query(
+                model.symbol,
+                func.min(model.date).label('start_date'),
+                func.max(model.date).label('end_date'),
+                func.count(model.date).label('total_records')
+            ).group_by(model.symbol).all()
+            
+            metadata = {}
+            for row in query:
+                start_dt = pd.to_datetime(row.start_date)
+                end_dt = pd.to_datetime(row.end_date)
+                years = (end_dt - start_dt).days / 365.25
+                metadata[row.symbol] = {
+                    "start_date": row.start_date.strftime('%Y-%m-%d') if hasattr(row.start_date, 'strftime') else str(row.start_date),
+                    "end_date": row.end_date.strftime('%Y-%m-%d') if hasattr(row.end_date, 'strftime') else str(row.end_date),
+                    "years_available": years,
+                    "total_records": row.total_records,
+                    "name": self.generate_asset_description(row.symbol),
+                    "category": self.get_asset_sector_classification(row.symbol)
+                }
+            return metadata
+        finally:
+            db.close()
+
+    def generate_asset_description(self, symbol: str) -> str:
+        """Generate human-readable name for symbol"""
+        # Simple implementation, can be enhanced with a proper lookup table
+        return symbol.replace(".NS", "").replace("_", " ")
+
+    def get_asset_sector_classification(self, symbol: str) -> str:
+        """Get sector classification for symbol"""
+        # Placeholder, can be enhanced
+        if self.asset_type == "ETF":
+            return "Equity ETF"
+        return "Equity Stock"

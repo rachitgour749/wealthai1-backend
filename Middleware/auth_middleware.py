@@ -104,6 +104,9 @@ class SingleSessionMiddleware(BaseHTTPMiddleware):
                     content={"detail": "Session expired or logged in from another device."}
                 )
 
+            # Pass user_email to request state for use in routes
+            request.state.user_email = user_email
+
         except Exception as e:
             logger.error(f"Middleware session check failed: {e}")
             return await call_next(request)

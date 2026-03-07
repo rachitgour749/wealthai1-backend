@@ -19,6 +19,8 @@ class UserDetails(Base):
     role = Column(String(50), nullable=True, default="CLIENT")  # Admin, RM, Client, etc.
     created_at = Column(DateTime(timezone=True), default=func.now())
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    total_credits = Column(Integer, default=0)
+    used_credits = Column(Integer, default=0)
 
 
 class ProductManager(Base):

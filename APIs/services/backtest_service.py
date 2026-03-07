@@ -8,6 +8,7 @@ from typing import Dict, Any
 
 from APIs.unified_schemas import UnifiedBacktestRequest, UnifiedBacktestResponse
 from APIs.common.cache import cache_backtest_results
+from Services.subscription.database import subscription_manager
 
 # Import Handlers
 from Handlers.etf_rotation_handler import ETFRotationHandler
@@ -22,12 +23,21 @@ from Handlers.etf_swing_handler import ETFSwingHandler
 
 logger = logging.getLogger(__name__)
 
-async def execute_backtest(request: UnifiedBacktestRequest) -> UnifiedBacktestResponse:
+async def execute_backtest(request: UnifiedBacktestRequest, user_email: str = None) -> UnifiedBacktestResponse:
     """
     Execute backtest for the specified strategy type
     """
     try:
         logger.info(f"Received backtest request for strategy: {request.strategy_type}")
+        
+        # Credit Enforcement
+        if user_email:
+            if not subscription_manager.has_backtest_credits(user_email):
+                logger.warning(f"User {user_email} has insufficient backtest credits")
+                raise HTTPException(
+                    status_code=403,
+                    detail="Insufficient backtest credits. Please upgrade your plan or wait for renewal."
+                )
         
         # Route to appropriate strategy handler
         handler = None
@@ -79,6 +89,12 @@ async def execute_backtest(request: UnifiedBacktestRequest) -> UnifiedBacktestRe
         
         if response.success:
             logger.info(f"Backtest completed successfully for {request.strategy_type}")
+            
+            # Deduct credit after successful backtest
+            if user_email:
+                subscription_manager.deduct_backtest_credit(user_email)
+                logger.info(f"Deducted 1 backtest credit for user: {user_email}")
+                
             return response
         else:
             logger.error(f"Backtest failed for {request.strategy_type}: {response.error}")

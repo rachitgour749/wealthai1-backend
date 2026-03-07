@@ -283,6 +283,7 @@ def init_database():
         from Databases import broker_models # noqa: F401
         from Databases import signal_models  # noqa: F401  # Trading signals for all strategies
         from Databases import webhook_models  # noqa: F401  # Webhook security tables
+        from Services.subscription import subscription_models # noqa: F401
         
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables initialized successfully")

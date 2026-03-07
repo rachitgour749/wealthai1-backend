@@ -92,13 +92,19 @@ class ETFSwingBacktester:
 
         benchmark_df = all_data.pop("BENCHMARK")
 
-        # Calculate Indicators for all ETFs
+        # Normalize all tickers to the benchmark trading dates 
+        # This prevents "spikes" to zero when an ETF has a missing data point
+        benchmark_dates = benchmark_df.index
+        
         processed_data = {}
         insufficient_data_tickers = []
         for ticker, df in all_data.items():
+            # Reindex to benchmark dates and forward-fill missing values
+            df = df.reindex(benchmark_dates).ffill().bfill()
+            
             # Check if enough data exists for SMA calculation for this specific ticker
-            if df.empty or len(df) < self.strategy.sma_lookback:
-                available = len(df) if not df.empty else 0
+            if df.empty or len(df.dropna()) < self.strategy.sma_lookback:
+                available = len(df.dropna()) if not df.empty else 0
                 insufficient_data_tickers.append(f"{ticker} ({available} days)")
             
             processed_data[ticker] = self.strategy.calculate_indicators(df)
@@ -112,7 +118,7 @@ class ETFSwingBacktester:
         self.strategy._log(1, "data_fetch", f"Total ETFs in Universe for Backtest: {len(processed_data)}")
 
         # Get Common Trading Dates (Intersects with Benchmark)
-        trading_dates = benchmark_df.loc[start_date:end_date].index
+        trading_dates = benchmark_dates[benchmark_dates.slice_indexer(start_date, end_date)]
         
         self.strategy.initialize_portfolio(initial_capital)
         self.portfolio_history = []
@@ -193,17 +199,7 @@ class ETFSwingBacktester:
                     
                     if symbol in processed_data:
                         df = processed_data[symbol]
-                        price = 0
-                        if current_date in df.index:
-                            price = df.loc[current_date]['close']
-                        else:
-                            # Forward fill: get last available price before current_date
-                            # This handles missing data (e.g., holidays where benchmark open but ETF not)
-                            # to prevent -100% drawdown spikes
-                            last_available = df.loc[:current_date]
-                            if not last_available.empty:
-                                price = last_available.iloc[-1]['close']
-                        
+                        price = df.loc[current_date]['close'] if current_date in df.index else 0
                         current_value += qty * price
             
             # Benchmark NAV (Buy & Hold Nifty 50)

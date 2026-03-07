@@ -39,6 +39,8 @@ class SubscriptionService:
                 phone_no=user.phone_no,
                 status=normalize_status(user.status),
                 role=user.role,
+                total_credits=user.total_credits or 0,
+                used_credits=user.used_credits or 0,
                 created_at=user.created_at,
                 updated_at=user.updated_at,
             )
@@ -55,6 +57,8 @@ class SubscriptionService:
             phone_no=user.phone_no,
             status=normalize_status(user.status),
             role=user.role,
+            total_credits=user.total_credits or 0,
+            used_credits=user.used_credits or 0,
             created_at=user.created_at,
             updated_at=user.updated_at,
         )

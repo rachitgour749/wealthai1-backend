@@ -2,7 +2,7 @@
 Unified API Routes
 Consolidates all API endpoints into a single router, delegating logic to services.
 """
-from fastapi import APIRouter, HTTPException, Depends, Query, Request
+from fastapi import APIRouter, HTTPException, Depends, Query, Request, Body
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 
@@ -29,12 +29,13 @@ api_router = APIRouter(prefix="/api")
 # ============================================================================
 
 @api_router.post("/run_backtest", response_model=UnifiedBacktestResponse, tags=["Centralized APIs"])
-async def run_backtest(request: UnifiedBacktestRequest) -> UnifiedBacktestResponse:
+async def run_backtest(request: UnifiedBacktestRequest, fast_request: Request) -> UnifiedBacktestResponse:
     """
     Centralized backtest endpoint supporting all strategy types.
     Delegates to backtest_service.
     """
-    return await backtest_service.execute_backtest(request)
+    user_email = getattr(fast_request.state, "user_email", None)
+    return await backtest_service.execute_backtest(request, user_email)
 
 @api_router.get("/health", tags=["Centralized APIs"])
 async def health_check():
@@ -129,19 +130,27 @@ async def list_strategies():
 # ============================================================================
 
 @api_router.get("/strategy/assets", tags=["Centralized APIs"])
-async def get_assets(strategy_type: str = Query(..., description="Strategy type")):
-    """Get available assets for the specified strategy type"""
-    return await strategy_service.get_assets(strategy_type)
+async def get_assets(
+    strategy_type: Optional[str] = Query(None, description="Strategy type (legacy)"),
+    market: Optional[str] = Query(None, description="Market: INDIA or US"),
+    asset_type: Optional[str] = Query(None, description="Asset type: ETF or STOCK")
+):
+    """Get available assets for the specified strategy type or market+asset_type."""
+    return await strategy_service.get_assets(strategy_type=strategy_type, market=market, asset_type=asset_type)
 
 @api_router.get("/strategy/assets/overview", tags=["Centralized APIs"])
-async def get_asset_overview(strategy_type: str = Query(..., description="Strategy type")):
-    """Get detailed asset overview for the specified strategy type"""
-    return await strategy_service.get_asset_overview(strategy_type)
+async def get_asset_overview(
+    strategy_type: Optional[str] = Query(None, description="Strategy type (legacy)"),
+    market: Optional[str] = Query(None, description="Market: INDIA or US"),
+    asset_type: Optional[str] = Query(None, description="Asset type: ETF or STOCK")
+):
+    """Get detailed asset overview for the specified strategy type or market+asset_type."""
+    return await strategy_service.get_asset_overview(strategy_type=strategy_type, market=market, asset_type=asset_type)
 
 @api_router.post("/strategy/date-range", tags=["Centralized APIs"])
-async def calculate_date_range(request: DateRangeRequest):
+async def calculate_date_range(payload: DateRangeRequest = Body(...)):
     """Calculate date range for the specified strategy parameters"""
-    return await strategy_service.calculate_date_range(request)
+    return await strategy_service.calculate_date_range(payload)
 
 @api_router.get("/strategy/defaults", tags=["Centralized APIs"])
 async def get_strategy_defaults(strategy_type: str = Query(..., description="Strategy type")):
@@ -199,6 +208,18 @@ async def get_strategy_defaults(strategy_type: str = Query(..., description="Str
             "brokerage_percent": 0.0,
             "market": "US",
             "asset_type": "ETF"
+        },
+        "SuperTrend": {
+            "tickers": ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "ICICIBANK.NS"],
+            "initial_capital": 100000,
+            "supertrend_period": 10,
+            "supertrend_stop_pct": 3.0,
+            "ema_short": 50,
+            "ema_long": 200,
+            "max_holdings": 5,
+            "brokerage_pct": 0.05,
+            "market": "INDIA",
+            "asset_type": "STOCK"
         }
     }
     return defaults.get(strategy_type, {})
