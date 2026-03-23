@@ -1,6 +1,14 @@
 import pandas as pd
 from typing import List, Iterable, Optional
-from stock_indicators import Quote, indicators
+
+try:
+    from stock_indicators import Quote, indicators
+    STOCK_INDICATORS_AVAILABLE = True
+except Exception:
+    Quote = None
+    indicators = None
+    STOCK_INDICATORS_AVAILABLE = False
+
 from datetime import datetime
 
 class IndicatorHelper:

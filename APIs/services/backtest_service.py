@@ -10,16 +10,11 @@ from APIs.unified_schemas import UnifiedBacktestRequest, UnifiedBacktestResponse
 from APIs.common.cache import cache_backtest_results
 from Services.subscription.database import subscription_manager
 
-# Import Handlers
-from Handlers.etf_rotation_handler import ETFRotationHandler
-from Handlers.rs_etf_handler import RSETFHandler
-from Handlers.rs_stocks_handler import RSStocksHandler
-from Handlers.international_etf_handler import InternationalETFHandler
-from Handlers.rotation_stocks_handler import RotationStocksHandler
-from Handlers.etf_payout_handler import ETFPayoutHandler
-from Handlers.supertrend_handler import SuperTrendHandler
-from Handlers.etf_buy_on_dip_handler import ETFBuyOnDipHandler
-from Handlers.etf_swing_handler import ETFSwingHandler
+# NOTE: Handler imports are intentionally NOT at the top level.
+# stock_indicators (used by several handlers) requires .NET runtime which is
+# not available on AWS App Runner. Lazy imports inside execute_backtest()
+# ensure the server starts successfully on all environments, and only
+# fails on the /run_backtest endpoint if .NET is not installed.
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +34,17 @@ async def execute_backtest(request: UnifiedBacktestRequest, user_email: str = No
                     detail="Insufficient backtest credits. Please upgrade your plan or wait for renewal."
                 )
         
+        # Lazy-import handlers to avoid loading .NET-dependent libraries at startup
+        from Handlers.etf_rotation_handler import ETFRotationHandler
+        from Handlers.rs_etf_handler import RSETFHandler
+        from Handlers.rs_stocks_handler import RSStocksHandler
+        from Handlers.international_etf_handler import InternationalETFHandler
+        from Handlers.rotation_stocks_handler import RotationStocksHandler
+        from Handlers.etf_payout_handler import ETFPayoutHandler
+        from Handlers.supertrend_handler import SuperTrendHandler
+        from Handlers.etf_buy_on_dip_handler import ETFBuyOnDipHandler
+        from Handlers.etf_swing_handler import ETFSwingHandler
+
         # Route to appropriate strategy handler
         handler = None
         
@@ -46,9 +52,6 @@ async def execute_backtest(request: UnifiedBacktestRequest, user_email: str = No
             handler = ETFRotationHandler(None)
             
         elif request.strategy_type == "RS_ETF_Rotation":
-            # REJECT call if strategy is disabled, but for now we keep the handler import
-            # If the user wants to hard-disable route access, they can do so in routes.py
-            # or we can check here.
             handler = RSETFHandler(None)
             
         elif request.strategy_type == "RS_Stocks":
@@ -58,11 +61,6 @@ async def execute_backtest(request: UnifiedBacktestRequest, user_email: str = No
             handler = InternationalETFHandler(None)
             
         elif request.strategy_type == "Stock_Rotation":
-            # Verify if this should run (user asked to remove Stock APIs)
-            # But the service logic typically remains, just the route access is cut.
-            # However, if we removed the stock_backtester initialization, this might fail 
-            # if the handler relies on it. 
-            # RotationStocksHandler usually initializes its own backtester or uses global.
             handler = RotationStocksHandler(None)
             
         elif request.strategy_type == "ETF_Payout":
