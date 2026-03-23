@@ -1,16 +1,18 @@
 import logging
+import importlib
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
+from Services.scheduler.config_utils import scheduler_config
 from Services.subscription.database import subscription_manager
 from Services.subscription.subscription_models import UserDetails, ProductManager
 from Services.subscription.subscription_schemas import ProductCode, SubscriptionStatus, SubscriptionType
 from Admin.schemas import (
     ClientListItem, ClientDetailResponse, ProductSummary,
     UpdateClientRequest, UpdatePlanRequest, UpdateSubscriptionDatesRequest,
-    UpdateCreditsRequest
+    UpdateCreditsRequest, SystemTriggerRequest
 )
 
 logger = logging.getLogger(__name__)
@@ -18,6 +20,79 @@ logger = logging.getLogger(__name__)
 class AdminService:
     def __init__(self):
         self.db_manager = subscription_manager
+
+    def _get_strategy_metadata_by_type(self, strategy_type: str) -> Optional[Dict]:
+        """Find strategy configuration by its strategy_type (strategy_filter.strategy_name)"""
+        strategies = scheduler_config.config.get('strategies', {})
+        for key, config in strategies.items():
+            filter_config = config.get('strategy_filter', {})
+            if filter_config.get('strategy_name') == strategy_type:
+                return config
+        return None
+
+    def trigger_signal_generation(self, strategy_type: str) -> Dict[str, Any]:
+        """Manually trigger signal generation for a strategy type"""
+        config = self._get_strategy_metadata_by_type(strategy_type)
+        if not config:
+            return {"success": False, "message": f"No configuration found for strategy type: {strategy_type}"}
+        
+        if 'signal_generation' not in config:
+            return {"success": False, "message": f"Signal generation not configured for: {strategy_type}"}
+
+        try:
+            module_path = config['generator_module']
+            function_name = config['generator_function']
+            
+            logger.info(f"Manually triggering signal generator: {module_path}.{function_name}")
+            
+            module = importlib.import_module(module_path)
+            generator_func = getattr(module, function_name)
+            
+            # Execute the generator
+            # Most generators are synchronous or handle their own async loop if needed
+            # We assume they can be called directly or are awaited if needed (though APScheduler usually handles sync)
+            import inspect
+            if inspect.iscoroutinefunction(generator_func):
+                # If it's async, we might need an event loop, but APScheduler jobs are often sync wrappers
+                return {"success": False, "message": "Async generators not directly supported via API yet without internal loop handling"}
+            
+            generator_func()
+            return {"success": True, "message": f"Successfully triggered signal generation for {strategy_type}"}
+        except Exception as e:
+            logger.error(f"Failed to trigger signal generation for {strategy_type}: {e}")
+            return {"success": False, "message": str(e)}
+
+    def trigger_signal_execution(self, strategy_type: str) -> Dict[str, Any]:
+        """Manually trigger signal execution for a strategy type"""
+        config = self._get_strategy_metadata_by_type(strategy_type)
+        if not config:
+            return {"success": False, "message": f"No configuration found for strategy type: {strategy_type}"}
+        
+        if 'signal_execution' not in config:
+            return {"success": False, "message": f"Signal execution not configured for: {strategy_type}"}
+
+        try:
+            module_path = config.get('executor_module', 'Services.scheduler.executors.signal_executor')
+            function_name = config.get('executor_function', 'SignalExecutor().execute_signals')
+            
+            logger.info(f"Manually triggering signal executor: {module_path}.{function_name}")
+            
+            if '()' in function_name:
+                class_name, method_name = function_name.split('().')
+                module = importlib.import_module(module_path)
+                executor_class = getattr(module, class_name)
+                instance = executor_class()
+                method = getattr(instance, method_name)
+                method()
+            else:
+                module = importlib.import_module(module_path)
+                exec_func = getattr(module, function_name)
+                exec_func()
+                
+            return {"success": True, "message": f"Successfully triggered signal execution for {strategy_type}"}
+        except Exception as e:
+            logger.error(f"Failed to trigger signal execution for {strategy_type}: {e}")
+            return {"success": False, "message": str(e)}
 
     def get_all_clients(self) -> List[ClientListItem]:
         """Fetch all users who are clients"""

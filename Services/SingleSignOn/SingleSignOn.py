@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 
 from Databases.app_data_db_connection import create_connection, get_session
-from Services.subscription.subscription_models import ProductSubscription, Subscription
+from Services.subscription.subscription_models import ProductManager, UserDetails as Subscription
 from Services.subscription.subscription_schemas import ProductCode, SubscriptionStatus
 
 logger = logging.getLogger(__name__)
@@ -189,7 +189,7 @@ async def single_sign_on(userid: str, request: Request) -> Dict[str, Any]:
             .first()
         )
         
-        user_name = main_subscription.user_name if main_subscription and main_subscription.user_name else None
+        user_name = main_subscription.user_name if main_subscription and hasattr(main_subscription, 'user_name') else None
         
         # If user_name is not found, try to extract from email or use a default
         if not user_name:

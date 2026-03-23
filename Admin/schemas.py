@@ -56,6 +56,10 @@ class UpdateCreditsRequest(BaseModel):
     amount: int = Field(..., gt=0, description="Amount of tokens to add or subtract")
     operation: Literal["increase", "decrease"] = Field(..., description="Operation type")
 
+class SystemTriggerRequest(BaseModel):
+    """Request to trigger system operations like signal generation or execution"""
+    strategy_type: str = Field(..., description="Type of strategy to trigger (e.g., 'ETF_Rotation')")
+
 class AdminOperationResponse(BaseModel):
     """Standard response for admin operations"""
     success: bool

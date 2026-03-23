@@ -3,6 +3,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 from Segments.EquitySegment import EquitySegment
+from Strategies.utilities.indicator_utils import IndicatorHelper
 
 class RotationStrategy(EquitySegment):
     """
@@ -27,29 +28,37 @@ class RotationStrategy(EquitySegment):
         
     def calculate_momentum_score(self, df: pd.DataFrame, current_date: datetime) -> pd.DataFrame:
         """
-        Calculates momentum score based on distance from 52-week high.
-        
-        Formula: ((Current Price - 52W High) / 52W High) * 100
+        Calculates momentum score based on distance from 52-week high using pandas.
         """
-        lookback_start = current_date - timedelta(weeks=52)
+        lookback_period = 252 # Approx trading days in a year
         
-        # Filter data for 52-week lookback
-        mask = (df.index >= lookback_start) & (df.index <= current_date)
-        lookback_df = df[mask]
-        
-        if lookback_df.empty:
-            return pd.DataFrame()
-        
-        # Calculate 52-week high/low
-        high_52w = lookback_df.max()
-        low_52w = lookback_df.min()
-        
-        # Get current price (handle missing date by taking last available)
-        if current_date in df.index:
-            current_price = df.loc[current_date]
-        else:
-            current_price = df.iloc[-1]
+        # If df is multi-column, we need to handle it per symbol
+        if isinstance(df, pd.DataFrame):
+            high_52w = {}
+            low_52w = {}
+            current_prices = {}
             
+            for symbol in df.columns:
+                series = df[symbol].dropna()
+                if len(series) < 10: continue
+                
+                # Use pandas for rolling max/min (Old method)
+                window_series = series.tail(lookback_period)
+                last_max = window_series.max()
+                last_min = window_series.min()
+                
+                if not pd.isna(last_max):
+                    high_52w[symbol] = float(last_max)
+                    low_52w[symbol] = float(last_min)
+                    current_prices[symbol] = float(series.iloc[-1])
+            
+            high_52w = pd.Series(high_52w)
+            low_52w = pd.Series(low_52w)
+            current_price = pd.Series(current_prices)
+        else:
+            # Fallback for simple series
+            return pd.DataFrame()
+
         # Calculate distance from high
         distance_from_high = ((current_price - high_52w) / high_52w * 100)
         

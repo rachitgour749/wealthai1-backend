@@ -6,6 +6,7 @@ import os
 import json
 from Segments.EquitySegment import EquitySegment
 from Strategies.utilities.logging_config import StrategyLogger
+from Strategies.utilities.indicator_utils import IndicatorHelper, indicators
 
 class SuperTrendStrategy(EquitySegment):
     """
@@ -106,66 +107,20 @@ class SuperTrendStrategy(EquitySegment):
 
     def _calculate_supertrend(self, df: pd.DataFrame, period: int, multiplier: float) -> pd.DataFrame:
         """
-        Calculate SuperTrend using pure pandas to avoid heavy pandas_ta/numba dependencies
+        Calculate SuperTrend using the stock-indicators library.
         """
-        high = df['high']
-        low = df['low']
-        close = df['close']
+        self._log(4, "calculation", f"Using stock-indicators for SuperTrend (Period: {period}, Multiplier: {multiplier})")
         
-        # Calculate ATR
-        tr1 = pd.DataFrame(high - low)
-        tr2 = pd.DataFrame(abs(high - close.shift(1)))
-        tr3 = pd.DataFrame(abs(low - close.shift(1)))
-        frames = [tr1, tr2, tr3]
-        tr = pd.concat(frames, axis=1, join='inner').max(axis=1)
-        atr = tr.ewm(alpha=1/period, adjust=False).mean()
+        # Convert DataFrame to Quote objects
+        quotes = IndicatorHelper.df_to_quotes(df)
         
-        # Calculate basic bands
-        hl2 = (high + low) / 2
-        final_upperband = hl2 + (multiplier * atr)
-        final_lowerband = hl2 - (multiplier * atr)
+        # Calculate SuperTrend via library
+        st_results = indicators.get_super_trend(quotes, period, multiplier)
         
-        # Initialize Supertrend and Direction
-        supertrend = [0.0] * len(df)
-        direction = [1] * len(df)
+        # Convert back to DataFrame
+        st_df = IndicatorHelper.supertrend_to_df(st_results, df.index)
         
-        for i in range(1, len(df)):
-            curr_close = close.iloc[i]
-            prev_close = close.iloc[i-1]
-            
-            # Final Lowerband
-            if final_lowerband.iloc[i] < final_lowerband.iloc[i-1] and prev_close > final_lowerband.iloc[i-1]:
-                final_lowerband.iloc[i] = final_lowerband.iloc[i-1]
-                
-            # Final Upperband
-            if final_upperband.iloc[i] > final_upperband.iloc[i-1] and prev_close < final_upperband.iloc[i-1]:
-                final_upperband.iloc[i] = final_upperband.iloc[i-1]
-                
-            # Direction
-            if curr_close <= final_lowerband.iloc[i]:
-                direction[i] = -1
-            elif curr_close >= final_upperband.iloc[i]:
-                direction[i] = 1
-            else:
-                direction[i] = direction[i-1]
-                
-            # Supertrend
-            if direction[i] == 1:
-                supertrend[i] = final_lowerband.iloc[i]
-            else:
-                supertrend[i] = final_upperband.iloc[i]
-                
-        # Fill first value
-        if len(df) > 0:
-            supertrend[0] = final_upperband.iloc[0]
-            
-        result = pd.DataFrame(index=df.index)
-        result['supertrend'] = supertrend
-        result['st_direction'] = direction
-        
-        # Set first `period` rows to NaN to simulate window
-        result.iloc[:period, :] = np.nan
-        return result
+        return st_df
 
     def calculate_indicators(self, data: pd.DataFrame) -> pd.DataFrame:
         """Calculate Weekly SuperTrend and merge back to daily dataframe."""

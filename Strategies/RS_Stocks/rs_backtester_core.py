@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional
 from sqlalchemy.orm import Session
 try:
-    from .database import StockData, IndexData, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
+    from Strategies.RS_Stocks.database import StockData, IndexData, SavedRSStrategy as StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
 except ImportError:
     from database import StockData, IndexData, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
 import json

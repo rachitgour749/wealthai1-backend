@@ -920,22 +920,33 @@ class ETFRotationBacktester(RotationStrategy):
             self.logger.info("   ❌ Window data is empty after filtering")
             return pd.DataFrame()
 
-        # Calculate 52-week highs and lows as per PDF specification
-        highs_52w = window_data.max()  # Maximum closing price in trailing 252 trading days
-        lows_52w = window_data.min()  # Minimum closing price in trailing 252 trading days
+        # Calculate 52-week highs and lows using the stock-indicators library
+        highs_52w = {}
+        lows_52w = {}
+        
+        for symbol in historical_data.columns:
+            series = historical_data[symbol].dropna()
+            if len(series) < 252: continue
+            
+            # Use pandas for rolling max/min (Old method)
+            window_series = series.tail(252)
+            highs_52w[symbol] = float(window_series.max())
+            lows_52w[symbol] = float(window_series.min())
+            
+        highs_52w = pd.Series(highs_52w)
+        lows_52w = pd.Series(lows_52w)
         current_prices = historical_data.iloc[-1] if not historical_data.empty else pd.Series()
-
-        self.logger.progress(f"   📈 52-week highs calculated for {len(highs_52w)} ETFs")
-        self.logger.progress(f"   📉 52-week lows calculated for {len(lows_52w)} ETFs")
-        self.logger.progress(f"   💰 Current prices available for {len(current_prices)} ETFs")
+        
+        self.logger.info(f"   📈 52-week highs (indicator-based) calculated for {len(highs_52w)} ETFs")
+        self.logger.info(f"   📉 52-week lows (indicator-based) calculated for {len(lows_52w)} ETFs")
+        self.logger.info(f"   💰 Current prices available for {len(current_prices)} ETFs")
 
         # Create result DataFrame with exact PDF specification calculations
         result_data = []
-        valid_etfs = 0
 
         for symbol in highs_52w.index:
             if (not pd.isna(highs_52w[symbol]) and not pd.isna(lows_52w[symbol]) and
-                    not pd.isna(current_prices[symbol]) and
+                    not pd.isna(current_prices.get(symbol)) and
                     highs_52w[symbol] > 0 and lows_52w[symbol] > 0 and current_prices[symbol] > 0):
 
                 # Ensure data integrity: high >= low
@@ -953,7 +964,6 @@ class ETFRotationBacktester(RotationStrategy):
                         'distance_from_high': distance_from_high
                     })
 
-                    valid_etfs += 1
                     self.logger.progress(
                         f"   ✅ {symbol}: High=₹{highs_52w[symbol]:.2f}, Low=₹{lows_52w[symbol]:.2f}, Current=₹{current_prices[symbol]:.2f}")
                     self.logger.progress(
@@ -2914,51 +2924,21 @@ class ETFRotationBacktester(RotationStrategy):
         Check if a strategy with the same parameters already exists in the PostgreSQL database
         
         Database: PostgreSQL (Neon) - app_data_db_connection
-        Table: etf_saved_strategy
+        Table: saved_instance (via SavedInstance model)
         
         Returns:
             Dict with 'exists' boolean and 'existing_strategy' details if found
         """
         session = None
         try:
-            # Import app_data_db_connection for ETF strategies
+            # Import app_data_db_connection and SavedInstance model
             from Databases.app_data_db_connection import get_session
+            from Services.strategy_manager.models import SavedInstance
             session = get_session()
-            from sqlalchemy import text
             
-            # Check if the etf_saved_strategy table exists
-            table_check = session.execute(text("""
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_schema = 'public' AND table_name = 'etf_saved_strategy'
-            """))
-            if not table_check.fetchone():
-                return {"exists": False, "message": "Strategy table not found"}
-            
-            # Convert tickers to JSON for comparison
-            tickers_json = json.dumps(sorted(tickers))
-            
-            # Check for exact match of all parameters
-            query = text("""
-                SELECT id, strategy_name, created_at, created_timestamp
-                FROM etf_saved_strategy 
-                WHERE user_id = :user_id 
-                AND strategy_name = :strategy_name
-                AND tickers::text = :tickers
-                AND start_date = :start_date
-                AND end_date = :end_date
-                AND capital_per_week = :capital_per_week
-                AND accumulation_weeks = :accumulation_weeks
-                AND brokerage_percent = :brokerage_percent
-                AND compounding_enabled = :compounding_enabled
-                AND risk_free_rate = :risk_free_rate
-                AND use_custom_dates = :use_custom_dates
-            """)
-            
-            result = session.execute(query, {
-                "user_id": user_id,
-                "strategy_name": strategy_name,
-                "tickers": tickers_json,
+            # Prepare the parameters as a dictionary for JSON comparison
+            strategy_params = {
+                "tickers": sorted(tickers),
                 "start_date": start_date,
                 "end_date": end_date,
                 "capital_per_week": capital_per_week,
@@ -2967,27 +2947,36 @@ class ETFRotationBacktester(RotationStrategy):
                 "compounding_enabled": compounding_enabled,
                 "risk_free_rate": risk_free_rate,
                 "use_custom_dates": use_custom_dates
-            })
+            }
             
-            existing_strategy = result.fetchone()
+            # Query for exact match in saved_instance table
+            # We filter by user_id, strategy_name, and strategy_type
+            # 'Rotation_ETF' is the type for this strategy
+            existing = session.query(SavedInstance).filter(
+                SavedInstance.user_id == user_id,
+                SavedInstance.strategy_name == strategy_name,
+                SavedInstance.strategy_type == 'Rotation_ETF'
+            ).all()
             
-            if existing_strategy:
-                return {
-                    "exists": True,
-                    "existing_strategy": {
-                        "id": existing_strategy[0],
-                        "strategy_name": existing_strategy[1],
-                        "created_at": str(existing_strategy[2]) if existing_strategy[2] else None,
-                        "created_timestamp": str(existing_strategy[3]) if existing_strategy[3] else None
-                    },
-                    "message": f"ETF Strategy already exists"
-                }
-            else:
-                return {
-                    "exists": False,
-                    "message": "No identical strategy found"
-                }
-                
+            for instance in existing:
+                # Compare strategy_parameters JSON
+                instance_params = instance.strategies_parameters
+                if instance_params == strategy_params:
+                    return {
+                        "exists": True,
+                        "message": "A strategy with these parameters already exists",
+                        "existing_strategy": {
+                            "id": instance.id,
+                            "strategy_name": instance.strategy_name,
+                            "created_at": str(instance.created_at) if instance.created_at else None
+                        }
+                    }
+            
+            return {
+                "exists": False,
+                "message": "No identical strategy found"
+            }
+            
         except Exception as e:
             return {
                 "exists": False,

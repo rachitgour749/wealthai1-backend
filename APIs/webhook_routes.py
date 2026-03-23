@@ -7,7 +7,7 @@ import json
 
 from Databases.app_data_db_connection import get_db
 from Services.strategy_manager.webhook_manager import create_webhook_strategy
-from Databases.webhook_models import WebhookRA, WebhookIndividual, WebhookExecutionLog
+from Databases.webhook_models import WebhookRA, WebhookExecutionLog
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

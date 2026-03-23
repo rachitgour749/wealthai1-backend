@@ -6,7 +6,7 @@ from datetime import datetime
 
 from Services.strategy_manager.models import SavedInstance
 from Services.strategy_manager.utils import generate_run_id, get_next_trading_day
-from Databases.webhook_models import WebhookIndividual
+
 
 logger = logging.getLogger(__name__)
 

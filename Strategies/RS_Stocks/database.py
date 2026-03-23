@@ -55,32 +55,6 @@ def get_db():
 # Stock data model - using models from app_data_db_connection
 # StockData (StockMarket) and IndexData (Nifty50IndexMarket) are imported from app_data_db_connection
 
-# Strategy configuration
-class StrategyConfig(Base):
-    __tablename__ = "strategy_config"
-    __table_args__ = {'extend_existing': True}
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, index=True)  # User-specific configuration
-    config_name = Column(String)  # Removed unique constraint to allow same name per user
-    main_index = Column(String, default="NIFTY50")  # Nifty 50
-    stock_universe = Column(String)  # Add missing stock_universe field
-    lookback_weeks = Column(Integer, default=5)
-    lookback_months = Column(Integer, default=20)
-    lookback_quarters = Column(Integer, default=60)
-    max_positions = Column(Integer, default=20)
-    position_size_pct = Column(Float, default=5.0)  # 5% per position
-    buffer_capital_pct = Column(Float, default=10.0)  # 10% buffer
-    total_capital = Column(Float, default=1000000)  # 10 Lakh
-    stop_loss_pct = Column(Float, default=15.0)  # 15% stop loss
-    capital_reset_threshold_pct = Column(Float, default=25.0)  # 25% reset threshold
-    max_holding_period = Column(Integer, default=52)  # 52 weeks
-    min_turnover = Column(Float, default=1000000)  # Min daily turnover
-    min_price = Column(Float, default=10.0)  # Min price filter
-    transaction_cost_pct = Column(Float, default=0.1)  # 0.1% transaction cost
-    is_active = Column(Boolean, default=True)
-    created_at = Column(String)  # Store as string to match database schema
-    updated_at = Column(String)  # Store as string to match database schema
 
 # Backtest results
 class BacktestResult(Base):
@@ -88,8 +62,8 @@ class BacktestResult(Base):
     __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, index=True)  # User-specific results
-    config_id = Column(Integer, index=True, nullable=True)  # Allow None for custom config backtests
+    user_id = Column(String, index=True)  # User-specific backtest
+    config_id = Column(Integer, index=True, nullable=True) # Linked config
     start_date = Column(DateTime, index=True)
     end_date = Column(DateTime, index=True)
     total_return_pct = Column(Float)
@@ -103,7 +77,7 @@ class BacktestResult(Base):
     calmar_ratio = Column(Float)
     win_rate_pct = Column(Float)
     total_trades = Column(Integer)
-    avg_holding_period = Column(Float)
+    avg_holding_period = Column(Float) # in weeks
     final_capital = Column(Float)
     created_at = Column(DateTime)
 
@@ -202,10 +176,23 @@ class RSLiveSignal(Base):
     update_price_json = Column(String)  # NEW: JSON with price updates
     created_at = Column(DateTime, default=datetime.now)
 
-# Backtest database setup - use same PostgreSQL connection for market data
-# Strategy-specific tables (backtest_results, trade_logs, etc.) use the same ApplicationData connection
-backtest_engine = engine  # Use the same engine
-BacktestSessionLocal = SessionLocal  # Use the same session maker
+backtest_engine = None  # Will be initialized lazily
+BacktestSessionLocal = None  # Will be initialized lazily
+
+def _init_engine_and_session():
+    """Initialize engine and SessionLocal if not already done"""
+    global engine, SessionLocal
+    if engine is None:
+        engine = get_app_data_engine()
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def _init_backtest_session():
+    """Initialize backtest engine and session if not already done"""
+    global backtest_engine, BacktestSessionLocal
+    if backtest_engine is None:
+        _init_engine_and_session()  # Ensure main engine is initialized first
+        backtest_engine = engine
+        BacktestSessionLocal = SessionLocal
 
 # Utility functions
 async def execute_with_retry(func, max_retries=3, delay=0.5):
@@ -237,6 +224,7 @@ def check_database_health():
 
 async def save_backtest_result_safely(result_data, max_retries=5, retry_delay=2):
     """Save backtest result with enhanced error handling and retry logic"""
+    _init_backtest_session()  # Ensure backtest session is initialized
     db = None
     for attempt in range(max_retries):
         try:
@@ -248,7 +236,7 @@ async def save_backtest_result_safely(result_data, max_retries=5, retry_delay=2)
             result_id = result.id
             db.close()
             db = None
-            logging.info(f"Successfully saved backtest result with ID: {result_id}")
+            logging.info(f"Successfully saved RS backtest result with ID: {result_id}")
             return result
         except Exception as e:
             if db:
@@ -262,16 +250,16 @@ async def save_backtest_result_safely(result_data, max_retries=5, retry_delay=2)
             
             if attempt == max_retries - 1:
                 logging.error(f"Failed to save backtest result after {max_retries} attempts: {e}")
-                # Force unlock database before final failure
                 force_unlock_database()
                 raise
             else:
                 logging.warning(f"Failed to save backtest result (attempt {attempt + 1}/{max_retries}): {e}")
                 await asyncio.sleep(retry_delay)
-                retry_delay *= 1.5  # Gradual backoff
+                retry_delay *= 1.5
 
 async def save_additional_data_safely(trade_logs=None, portfolio_snapshots=None, max_retries=3, retry_delay=1):
     """Save trade logs and portfolio snapshots with enhanced error handling and retry logic"""
+    _init_backtest_session()  # Ensure backtest session is initialized
     db = None
     for attempt in range(max_retries):
         try:
@@ -305,19 +293,21 @@ async def save_additional_data_safely(trade_logs=None, portfolio_snapshots=None,
             
             if attempt == max_retries - 1:
                 logging.error(f"Failed to save additional data after {max_retries} attempts: {e}")
-                # Force unlock database before final failure
                 force_unlock_database()
                 raise
             else:
                 logging.warning(f"Failed to save additional data (attempt {attempt + 1}/{max_retries}): {e}")
                 await asyncio.sleep(retry_delay)
-                retry_delay *= 1.5  # Gradual backoff
+                retry_delay *= 1.5
 
 def reset_database_connections():
     """Reset database connections"""
     try:
-        engine.dispose()
-        backtest_engine.dispose()
+        global engine, backtest_engine
+        if engine is not None:
+            engine.dispose()
+        if backtest_engine is not None:
+            backtest_engine.dispose()
         logging.info("Database connections reset successfully")
     except Exception as e:
         logging.error(f"Failed to reset database connections: {e}")
@@ -355,6 +345,7 @@ def get_backtest_session():
 @contextmanager
 def get_main_session():
     """Context manager for main database sessions with proper cleanup"""
+    _init_engine_and_session()  # Ensure connection is initialized
     db = None
     try:
         db = SessionLocal()
@@ -370,3 +361,7 @@ def get_main_session():
                 db.close()
             except Exception as e:
                 logging.error(f"Error closing database session: {e}")
+
+
+# Alias for backward compatibility
+StrategyConfig = SavedRSStrategy

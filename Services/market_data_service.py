@@ -231,3 +231,133 @@ class MarketDataService:
             return None, None, 0.0
         finally:
             db.close()
+
+    @classmethod
+    def generate_asset_description(cls, symbol: str, asset_type: str = "ETF") -> str:
+        """Generate intelligent asset descriptions based on symbol names"""
+        etf_mappings = {
+            'NIFTYBEES': 'Nifty 50 ETF - Broad Market',
+            'BANKBEES': 'Banking Sector ETF',
+            'JUNIORBEES': 'Nifty Next 50 ETF - Mid Cap',
+            'ITBEES': 'Information Technology ETF',
+            'PHARMABEES': 'Pharmaceutical Sector ETF',
+            'INFRABEES': 'Infrastructure Sector ETF',
+            'GOLDBEES': 'Gold Commodity ETF',
+            'METALIETF': 'Metal & Mining Sector ETF',
+            'OILIETF': 'Oil & Gas Sector ETF',
+            'LIQUIDBEES': 'Liquid Fund ETF - Money Market',
+            'CPSEETF': 'CPSE (Central PSE) ETF',
+            'PSUBNKBEES': 'PSU Banking ETF',
+            'MON100': 'NASDAQ 100 ETF - US Tech',
+            'MODEFENCE': 'Defence Sector ETF',
+            'MIDCAPETF': 'Mid Cap ETF',
+        }
+
+        if symbol in etf_mappings and asset_type.upper() == "ETF":
+            return etf_mappings[symbol]
+
+        symbol_lower = symbol.lower()
+        suffix = " ETF" if asset_type.upper() == "ETF" else ""
+
+        if 'pharma' in symbol_lower:
+            return f'Pharmaceutical Sector{suffix}'
+        elif 'bank' in symbol_lower:
+            return f'Banking Sector{suffix}'
+        elif 'it' in symbol_lower or 'tech' in symbol_lower:
+            return f'Technology Sector{suffix}'
+        elif 'gold' in symbol_lower:
+            return f'Gold Commodity{suffix}'
+        elif 'oil' in symbol_lower or 'energy' in symbol_lower:
+            return f'Oil & Gas Sector{suffix}'
+        elif 'metal' in symbol_lower:
+            return f'Metal & Mining Sector{suffix}'
+        elif 'infra' in symbol_lower:
+            return f'Infrastructure Sector{suffix}'
+        elif 'defence' in symbol_lower or 'defense' in symbol_lower:
+            return f'Defence Sector{suffix}'
+        elif 'midcap' in symbol_lower or 'mid' in symbol_lower:
+            return f'Mid Cap{suffix}'
+        elif 'smallcap' in symbol_lower or 'small' in symbol_lower:
+            return f'Small Cap{suffix}'
+        elif 'liquid' in symbol_lower:
+            return f'Liquid Fund{suffix}'
+        elif 'nifty' in symbol_lower:
+            return f'Nifty Index{suffix}'
+        elif 'sensex' in symbol_lower:
+            return f'Sensex Index{suffix}'
+        elif 'psu' in symbol_lower:
+            return f'PSU Sector{suffix}'
+        elif 'cpse' in symbol_lower:
+            return f'CPSE{suffix}'
+        elif any(geo in symbol_lower for geo in ['us', 'usa', 'nasdaq', 'sp500', 'dow']):
+            return f'International{suffix}'
+        elif 'fmcg' in symbol_lower:
+            return f'FMCG Sector{suffix}'
+        elif 'auto' in symbol_lower:
+            return f'Automotive Sector{suffix}'
+        else:
+            return f'{symbol.replace(".NS", "").replace("_", " ")}{suffix}'
+
+    @classmethod
+    def get_asset_sector_classification(cls, symbol: str, asset_type: str = "ETF") -> str:
+        """Classify asset into sector categories"""
+        clean_symbol = symbol.replace('.NS', '').replace('.BO', '')
+        symbol_lower = symbol.lower()
+        
+        sector_map = {
+            'HDFCBANK': 'Financials', 'ICICIBANK': 'Financials', 'SBIN': 'Financials', 'AXISBANK': 'Financials',
+            'KOTAKBANK': 'Financials', 'BAJFINANCE': 'Financials', 'BAJAJFINSV': 'Financials', 'HDFCLIFE': 'Financials',
+            'SBILIFE': 'Financials', 'INDUSINDBK': 'Financials', 'BANKBARODA': 'Financials', 'PNB': 'Financials',
+            'JIOFIN': 'Financials', 'PFC': 'Financials', 'RECLTD': 'Financials', 'SHRIRAMFIN': 'Financials',
+            'CHOLAFIN': 'Financials', 'MUTHOOTFIN': 'Financials', 'PSUBANK': 'Financials', 'BANKBEES': 'Financials',
+            'BANKETF': 'Financials', 'PVTBANK': 'Financials', 'HDFCPVTBAN': 'Financials', 'HDFCPSUBK': 'Financials',
+            'TCS': 'Technology', 'INFY': 'Technology', 'HCLTECH': 'Technology', 'WIPRO': 'Technology',
+            'TECHM': 'Technology', 'LTIM': 'Technology', 'PERSISTENT': 'Technology', 'COFORGE': 'Technology',
+            'MPHASIS': 'Technology', 'LTTS': 'Technology', 'KPITTECH': 'Technology', 'TATAELXSI': 'Technology',
+            'ITBEES': 'Technology', 'ITETF': 'Technology', 'HDFCNIFIT': 'Technology', 'MAHKTECH': 'Technology',
+            'RELIANCE': 'Energy', 'ONGC': 'Energy', 'BPCL': 'Energy', 'POWERGRID': 'Utilities',
+            'NTPC': 'Utilities', 'ADANIGREEN': 'Utilities', 'TATAPOWER': 'Utilities', 'IOC': 'Energy',
+            'GAIL': 'Energy', 'HPCL': 'Energy', 'COALINDIA': 'Energy', 'MOENERGY': 'Energy',
+            'HINDUNILVR': 'FMCG', 'ITC': 'FMCG', 'NESTLEIND': 'FMCG', 'BRITANNIA': 'FMCG', 'COLPAL': 'FMCG',
+            'TITAN': 'Consumer Discretionary', 'ASIANPAINTS': 'Materials', 'MARICO': 'FMCG',
+            'DABUR': 'FMCG', 'GODREJCP': 'FMCG', 'TATACONSUM': 'FMCG', 'VARUN': 'FMCG',
+            'FMCGIETF': 'FMCG', 'CONSUMBEES': 'FMCG', 'ICICIFMCG': 'FMCG', 'CONSUMER': 'Consumption',
+            'TATAMOTORS': 'Automotive', 'MARUTI': 'Automotive', 'M&M': 'Automotive', 'BAJAJ-AUTO': 'Automotive',
+            'EICHERMOT': 'Automotive', 'HEROMOTOCO': 'Automotive', 'TVSMOTOR': 'Automotive', 'BHARATFORG': 'Automotive',
+            'AUTOBEES': 'Automotive', 'AUTOIETF': 'Automotive', 'ICICIAUTO': 'Automotive',
+            'SUNPHARMA': 'Healthcare', 'DRREDDY': 'Healthcare', 'CIPLA': 'Healthcare', 'DIVISLAB': 'Healthcare',
+            'APOLLOHOSP': 'Healthcare', 'LUPIN': 'Healthcare', 'TORNTPHARM': 'Healthcare', 'MANKIND': 'Healthcare',
+            'PHARMABEES': 'Healthcare', 'HEALTHY': 'Healthcare', 'HDFCHEALTH': 'Healthcare', 'ICICIPHARM': 'Healthcare',
+            'TATASTEEL': 'Materials', 'JSWSTEEL': 'Materials', 'HINDALCO': 'Materials', 'VEDANTA': 'Materials', 'VEDL': 'Materials',
+            'ULTRACEMCO': 'Materials', 'AMBUJACEM': 'Materials', 'PIDILITIND': 'Materials', 'JUBLFOOD': 'Consumer Services',
+            'SAIL': 'Materials', 'JINDALSTEL': 'Materials', 'SHREECEM': 'Materials', 'GRASIM': 'Materials',
+            'METALIETF': 'Materials', 'METAL': 'Materials', 'HDFCSILVER': 'Commodities', 'SILVERBEES': 'Commodities',
+            'LT': 'Infrastructure', 'SIEMENS': 'Capital Goods', 'ABB': 'Capital Goods', 'HAL': 'Defence',
+            'BEL': 'Defence', 'ADANIENT': 'Services', 'ADANIPORTS': 'Infrastructure',
+            'INFRABEES': 'Infrastructure', 'INFRAIETF': 'Infrastructure', 'ICICIINFRA': 'Infrastructure',
+            'BHARTIARTL': 'Telecommunication', 'VODAFONE': 'Telecommunication',
+            'NIFTYBEES': 'Broad Market', 'JUNIORBEES': 'Mid Cap', 'MIDCAPETF': 'Mid Cap', 
+            'ELM250': 'Broad Market', 'EQUAL200': 'Broad Market', 'EMULTIMQ': 'Multi-Factor',
+            'MON100': 'Technology (US)', 'MAFANG': 'Technology (US)', 'GOLDBEES': 'Commodities',
+            'LIQUIDBEES': 'Cash/Liquid', 'CPSEETF': 'PSU', 'PSUBNKBEES': 'PSU Banking'
+        }
+        
+        if clean_symbol in sector_map: return sector_map[clean_symbol]
+        if symbol in sector_map: return sector_map[symbol]
+
+        if symbol in ['NIFTYBEES', 'JUNIORBEES', 'MIDCAPETF', 'ELM250', 'EQUAL200', 'EMULTIMQ']: return 'Broad Market'
+        elif 'bank' in symbol_lower or 'psu' in symbol_lower: return 'Financial'
+        elif 'it' in symbol_lower or 'tech' in symbol_lower or 'mon100' in symbol_lower: return 'Technology'
+        elif 'pharma' in symbol_lower or 'health' in symbol_lower: return 'Healthcare'
+        elif 'gold' in symbol_lower or 'silver' in symbol_lower: return 'Commodity'
+        elif 'oil' in symbol_lower or 'energy' in symbol_lower: return 'Energy'
+        elif 'metal' in symbol_lower: return 'Materials'
+        elif 'infra' in symbol_lower: return 'Infrastructure'
+        elif 'defence' in symbol_lower or 'defense' in symbol_lower: return 'Defence'
+        elif 'liquid' in symbol_lower: return 'Cash/Liquid'
+        elif 'cpse' in symbol_lower: return 'PSU'
+        elif 'fmcg' in symbol_lower: return 'FMCG'
+        elif 'auto' in symbol_lower: return 'Automotive'
+        elif 'realty' in symbol_lower or 'real' in symbol_lower: return 'Real Estate'
+        elif 'consumer' in symbol_lower: return 'Consumption'
+        else: return 'Equity ETF' if asset_type.upper() == 'ETF' else 'Equity Stock'

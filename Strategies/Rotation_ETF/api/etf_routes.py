@@ -857,38 +857,16 @@ async def get_etf_costs_breakdown():
 # SAVED STRATEGY DATABASE FUNCTIONS
 # ============================================================================
 
+# ============================================================================
+# SAVED STRATEGY DATABASE FUNCTIONS
+# ============================================================================
+
 def init_saved_etf_strategies_table(db_path: str = None):
-    """Initialize the etf_saved_strategy table in PostgreSQL (db_path parameter ignored, kept for compatibility)"""
-    try:
-        # Import database connection and models
-        from Databases.app_data_db_connection import create_connection, init_database, get_engine
-        
-        # Check if connection already exists, if not create it
-        try:
-            # Try to get engine to check if connection exists
-            engine = get_engine()
-            # Connection exists, just initialize tables
-        except RuntimeError:
-            # Connection doesn't exist, create it
-            if not create_connection():
-                error_msg = "Failed to connect to PostgreSQL database"
-                logger.error(error_msg)  # Removed unicode cross
-                return False, error_msg
-        
-        # Initialize all tables (including etf_saved_strategy) using the centralized init_database
-        if not init_database():
-            error_msg = "Failed to initialize database tables"
-            logger.error(error_msg)
-            return False, error_msg
-            
-        logger.info("etf_saved_strategy table initialized successfully in PostgreSQL")
-        return True, None
-    except Exception as e:
-        error_msg = f"Error initializing etf_saved_strategy table: {e}"
-        logger.error(error_msg)
-        import traceback
-        traceback.print_exc()
-        return False, str(e)
+    """
+    Now a no-op as tables are managed centrally.
+    Kept for compatibility with existing imports.
+    """
+    return True, None
 
 # ============================================================================
 # SAVED STRATEGY ROUTES
@@ -896,288 +874,250 @@ def init_saved_etf_strategies_table(db_path: str = None):
 
 @etf_router.post("/save-strategy")
 async def save_etf_strategy(request: SaveETFStrategyRequest):
-    """Save an ETF strategy to the database with validation"""
+    """Save an ETF strategy to the unified saved_instances table"""
+    session = None
     try:
-        # Initialize the table if it doesn't exist
-        success, error_msg = init_saved_etf_strategies_table()
-        if not success:
-            raise HTTPException(status_code=500, detail=f"Failed to initialize database table: {error_msg}")
+        from Services.strategy_manager.models import SavedInstance
+        from Databases.app_data_db_connection import get_session
+        import uuid
+
+        session = get_session()
         
-        # Check if strategy already exists using the backtester core validation
-        from ..services.backtester import ETFRotationBacktester
-        
-        backtester = ETFRotationBacktester()
-        validation_result = backtester.check_strategy_exists(
-            strategy_name=request.strategy_name,
-            user_id=request.user_id,
-            tickers=request.tickers,
-            start_date=request.start_date,
-            end_date=request.end_date,
-            capital_per_week=request.capital_per_week,
-            accumulation_weeks=request.accumulation_weeks,
-            brokerage_percent=request.brokerage_percent,
-            compounding_enabled=request.compounding_enabled,
-            risk_free_rate=request.risk_free_rate,
-            use_custom_dates=request.use_custom_dates
-        )
-        
-        # If strategy exists, return appropriate response
-        if validation_result.get("exists", False):
-            existing_strategy = validation_result.get("existing_strategy", {})
+        # Check if strategy with same name and user exists
+        existing = session.query(SavedInstance).filter(
+            SavedInstance.user_id == request.user_id,
+            SavedInstance.strategy_name == request.strategy_name,
+            SavedInstance.strategy_type == request.strategy_type
+        ).first()
+
+        if existing:
             return {
                 "success": False,
-                "message": validation_result.get("message", "Strategy already exists"),
-                "existing_strategy": existing_strategy,
+                "message": f"Strategy '{request.strategy_name}' already exists for this user.",
                 "strategy_exists": True
             }
-        
-        # If validation failed due to error, return error
-        if "error" in validation_result:
-            raise HTTPException(status_code=500, detail=validation_result["error"])
-        
-        # Strategy doesn't exist, proceed with saving
-        # Import helper functions
-        from Databases.strategy_db_helpers import save_etf_strategy as save_strategy_db
-        
-        # Convert tickers list to JSON string
-        tickers_json = json.dumps(request.tickers)
-        
-        # Convert backtest_results to JSON string (handle None values)
+
+        # Convert backtest results to dict
         backtest_results_dict = request.backtest_results.dict()
-        # Filter out None values
         backtest_results_dict = {k: v for k, v in backtest_results_dict.items() if v is not None}
-        backtest_results_json = json.dumps(backtest_results_dict)
-        
-        # Prepare strategy data
-        strategy_data = {
-            'strategy_name': request.strategy_name,
-            'strategy_type': request.strategy_type,
-            'user_id': request.user_id,
-            'tickers': tickers_json,
-            'start_date': request.start_date,
-            'end_date': request.end_date,
-            'capital_per_week': request.capital_per_week,
-            'accumulation_weeks': request.accumulation_weeks,
-            'brokerage_percent': request.brokerage_percent,
-            'compounding_enabled': request.compounding_enabled,
-            'risk_free_rate': request.risk_free_rate,
-            'use_custom_dates': request.use_custom_dates,
-            'backtest_results': backtest_results_json,
-            'created_at': request.created_at,
-            'status': 'deploy'
+
+        # Combine parameters
+        strat_params = {
+            "capital_per_week": request.capital_per_week,
+            "accumulation_weeks": request.accumulation_weeks,
+            "brokerage_percent": request.brokerage_percent,
+            "compounding_enabled": request.compounding_enabled,
+            "risk_free_rate": request.risk_free_rate,
+            "backtest_results": backtest_results_dict
         }
-        
-        # Save to PostgreSQL
-        strategy_id = save_strategy_db(strategy_data)
+
+        # Generate a run_id if not present
+        run_id = f"run_{request.strategy_type.lower()}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}"
+
+        new_instance = SavedInstance(
+            user_id=request.user_id,
+            strategy_name=request.strategy_name,
+            strategy_type=request.strategy_type,
+            tickers=json.dumps(request.tickers),
+            start_date=request.start_date,
+            end_date=request.end_date,
+            strategies_parameters=strat_params,
+            use_custom_date=request.use_custom_dates,
+            run_id=run_id,
+            status='deploy',
+            source='internal'
+        )
+
+        session.add(new_instance)
+        session.commit()
         
         return {
             "success": True,
             "message": "Strategy saved successfully",
-            "strategy_id": strategy_id,
+            "strategy_id": new_instance.id,
             "strategy_exists": False
         }
         
     except Exception as e:
-        print(f"ERROR: Detailed error in save strategy: {str(e)}")
-        print(f"ERROR: Exception type: {type(e).__name__}")
+        if session:
+            session.rollback()
+        logger.error(f"Error saving strategy: {e}")
         import traceback
-        print(f"ERROR: Traceback: {traceback.format_exc()}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Error saving strategy: {str(e)}")
+    finally:
+        if session:
+            session.close()
 
 @etf_router.get("/get-saved-strategies-list/{user_id}")
 async def get_saved_etf_strategies(user_id: str):
-    """Get all saved ETF strategies for a specific user"""
+    """Get all saved ETF strategies for a specific user from unified table"""
+    session = None
     try:
-        # Initialize the table if it doesn't exist
-        if not init_saved_etf_strategies_table():
-            raise HTTPException(status_code=500, detail="Failed to initialize database table")
+        from Services.strategy_manager.models import SavedInstance
+        from Databases.app_data_db_connection import get_session
         
-        # Import helper functions
-        from Databases.strategy_db_helpers import get_etf_strategies_by_user
+        session = get_session()
         
-        # Get strategies from PostgreSQL
-        strategies_list = get_etf_strategies_by_user(user_id)
+        # Query unified table for ETF strategies
+        instances = session.query(SavedInstance).filter(
+            SavedInstance.user_id == user_id,
+            SavedInstance.strategy_type.like('%ETF%')
+        ).order_by(SavedInstance.created_at.desc()).all()
         
-        # Parse JSON fields and format response
         strategies = []
-        for strategy in strategies_list:
-            try:
-                # Parse JSON fields
-                tickers = json.loads(strategy['tickers']) if strategy.get('tickers') else []
-                backtest_results = json.loads(strategy['backtest_results']) if strategy.get('backtest_results') else {}
-                
-                strategies.append({
-                    "id": strategy['id'],
-                    "strategy_name": strategy['strategy_name'],
-                    "strategy_type": strategy['strategy_type'],
-                    "user_id": strategy['user_id'],
-                    "tickers": tickers,
-                    "start_date": strategy['start_date'],
-                    "end_date": strategy['end_date'],
-                    "capital_per_week": strategy['capital_per_week'],
-                    "accumulation_weeks": strategy['accumulation_weeks'],
-                    "brokerage_percent": strategy['brokerage_percent'],
-                    "compounding_enabled": strategy['compounding_enabled'],
-                    "risk_free_rate": strategy['risk_free_rate'],
-                    "use_custom_dates": strategy['use_custom_dates'],
-                    "backtest_results": backtest_results,
-                    "created_at": strategy['created_at'],
-                    "created_timestamp": strategy.get('created_timestamp'),
-                    "status": strategy.get('status', 'deploy'),
-                    "run_id": strategy.get('run_id'),
-                    "webhook_url": strategy.get('webhook_url'),
-                    "client_information_json": strategy.get('client_information_json'),
-                    "last_execution_date": strategy.get('last_execution_date'),
-                    "next_execution_date": strategy.get('next_execution_date')
-                })
-            except (json.JSONDecodeError, KeyError) as e:
-                print(f"Warning: Could not parse strategy ID {strategy.get('id')}: {e}")
-                continue
-        
-        # Ensure we always return a proper structure
-        if not strategies:
-            strategies = []
+        for inst in instances:
+            params = inst.strategies_parameters or {}
+            
+            # Unpack params for compatibility
+            strategies.append({
+                "id": inst.id,
+                "strategy_name": inst.strategy_name,
+                "strategy_type": inst.strategy_type,
+                "user_id": inst.user_id,
+                "tickers": json.loads(inst.tickers) if inst.tickers else [],
+                "start_date": inst.start_date,
+                "end_date": inst.end_date,
+                "capital_per_week": params.get('capital_per_week', 0),
+                "accumulation_weeks": params.get('accumulation_weeks', 0),
+                "brokerage_percent": params.get('brokerage_percent', 0),
+                "compounding_enabled": params.get('compounding_enabled', False),
+                "risk_free_rate": params.get('risk_free_rate', 8.0),
+                "use_custom_dates": inst.use_custom_date,
+                "backtest_results": params.get('backtest_results', {}),
+                "created_at": str(inst.created_at),
+                "status": inst.status or 'deploy',
+                "run_id": inst.run_id,
+                "webhook_url": inst.webhook_url,
+                "client_information_json": inst.client_info,
+                "last_execution_date": str(inst.last_execution_date) if inst.last_execution_date else None,
+                "next_execution_date": str(inst.next_execution_date) if inst.next_execution_date else None
+            })
         
         return {"strategies": strategies}
         
     except Exception as e:
-        print(f"Error retrieving saved strategies: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        # Return empty array instead of throwing error to prevent frontend crashes
+        logger.error(f"Error retrieving saved strategies: {e}")
         return {"strategies": []}
+    finally:
+        if session:
+            session.close()
 
 @etf_router.get("/get-saved-strategy/{strategy_id}")
 async def get_saved_etf_strategy_by_id(strategy_id: int):
-    """Get a specific saved ETF strategy by ID"""
+    """Get a specific saved ETF strategy by ID from unified table"""
+    session = None
     try:
-        # Initialize the table if it doesn't exist
-        if not init_saved_etf_strategies_table():
-            raise HTTPException(status_code=500, detail="Failed to initialize database table")
+        from Services.strategy_manager.models import SavedInstance
+        from Databases.app_data_db_connection import get_session
         
-        # Import helper functions
-        from Databases.strategy_db_helpers import get_etf_strategy_by_id
+        session = get_session()
+        inst = session.query(SavedInstance).filter(SavedInstance.id == strategy_id).first()
         
-        # Get strategy from PostgreSQL
-        strategy = get_etf_strategy_by_id(strategy_id)
-        
-        if not strategy:
+        if not inst:
             raise HTTPException(status_code=404, detail="Strategy not found")
         
-        try:
-            # Parse JSON fields
-            tickers = json.loads(strategy['tickers']) if strategy.get('tickers') else []
-            backtest_results = json.loads(strategy['backtest_results']) if strategy.get('backtest_results') else {}
-            
-            strategy_response = {
-                "id": strategy['id'],
-                "strategy_name": strategy['strategy_name'],
-                "strategy_type": strategy['strategy_type'],
-                "user_id": strategy['user_id'],
-                "tickers": tickers,
-                "start_date": strategy['start_date'],
-                "end_date": strategy['end_date'],
-                "capital_per_week": strategy['capital_per_week'],
-                "accumulation_weeks": strategy['accumulation_weeks'],
-                "brokerage_percent": strategy['brokerage_percent'],
-                "compounding_enabled": strategy['compounding_enabled'],
-                "risk_free_rate": strategy['risk_free_rate'],
-                "use_custom_dates": strategy['use_custom_dates'],
-                "backtest_results": backtest_results,
-                "created_at": strategy['created_at'],
-                "created_timestamp": strategy['created_timestamp']
-            }
-            
-            return {"strategy": strategy_response}
-            
-        except json.JSONDecodeError as e:
-            raise HTTPException(status_code=500, detail=f"Error parsing strategy data: {str(e)}")
+        params = inst.strategies_parameters or {}
         
+        strategy_response = {
+            "id": inst.id,
+            "strategy_name": inst.strategy_name,
+            "strategy_type": inst.strategy_type,
+            "user_id": inst.user_id,
+            "tickers": json.loads(inst.tickers) if inst.tickers else [],
+            "start_date": inst.start_date,
+            "end_date": inst.end_date,
+            "capital_per_week": params.get('capital_per_week', 0),
+            "accumulation_weeks": params.get('accumulation_weeks', 0),
+            "brokerage_percent": params.get('brokerage_percent', 0),
+            "compounding_enabled": params.get('compounding_enabled', False),
+            "risk_free_rate": params.get('risk_free_rate', 8.0),
+            "use_custom_dates": inst.use_custom_date,
+            "backtest_results": params.get('backtest_results', {}),
+            "created_at": str(inst.created_at)
+        }
+        
+        return {"strategy": strategy_response}
+            
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error retrieving strategy {strategy_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error retrieving strategy: {str(e)}")
-
-
+    finally:
+        if session:
+            session.close()
 
 @etf_router.get("/get-saved-strategies-count/{user_id}")
 async def get_saved_etf_strategies_count(user_id: str):
-    """Get count of saved ETF strategies for a specific user"""
+    """Get count of saved ETF strategies for user from unified table"""
     session = None
     try:
-        # Initialize the table if it doesn't exist
-        if not init_saved_etf_strategies_table():
-            raise HTTPException(status_code=500, detail="Failed to initialize database table")
-        
+        from Services.strategy_manager.models import SavedInstance
         from Databases.app_data_db_connection import get_session
-        from sqlalchemy import text
         
         session = get_session()
-        
-        # Get count of strategies for the user
-        result = session.execute(text("SELECT COUNT(*) FROM etf_saved_strategy WHERE user_id = :user_id"), {"user_id": user_id})
-        count = result.scalar()
+        count = session.query(SavedInstance).filter(
+            SavedInstance.user_id == user_id,
+            SavedInstance.strategy_type.like('%ETF%')
+        ).count()
         
         return {"count": count}
-        
     except Exception as e:
+        logger.error(f"Error getting strategy count: {e}")
         raise HTTPException(status_code=500, detail=f"Error getting strategy count: {str(e)}")
     finally:
         if session:
             session.close()
 
-# ============================================================================
-# NEW RS-STYLE ENDPOINTS FOR ETF STRATEGIES
-# ============================================================================
-
 @etf_router.get("/get-saved-strategies-table/{user_id}")
 async def get_saved_etf_strategies_table(user_id: str):
-    """Get saved ETF strategies in table format like RS strategy"""
+    """Get saved ETF strategies in table format for unified dashboard"""
+    session = None
     try:
-        # Initialize the table if it doesn't exist
-        if not init_saved_etf_strategies_table():
-            raise HTTPException(status_code=500, detail="Failed to initialize database table")
+        from Services.strategy_manager.models import SavedInstance
+        from Databases.app_data_db_connection import get_session
         
-        # Import helper functions
-        from Databases.strategy_db_helpers import get_etf_strategies_by_user
+        session = get_session()
+        instances = session.query(SavedInstance).filter(
+            SavedInstance.user_id == user_id,
+            SavedInstance.strategy_type.like('%ETF%')
+        ).all()
         
-        # Get strategies from PostgreSQL
-        strategies_list = get_etf_strategies_by_user(user_id)
-        
-        # Format response
         strategies = []
-        for strategy in strategies_list:
-            strategy_response = {
-                "id": strategy['id'],
-                "strategy_name": strategy['strategy_name'],
-                "strategy_type": strategy['strategy_type'],
-                "user_id": strategy['user_id'],
-                "config_id": strategy.get('config_id'),
-                "backtest_id": strategy.get('backtest_id'),
-                "start_date": strategy['start_date'],
-                "end_date": strategy['end_date'],
-                "etf_universe": strategy.get('etf_universe', 'NIFTY500'),
-                "backtest_results": json.loads(strategy['backtest_results']) if isinstance(strategy.get('backtest_results'), str) else (strategy.get('backtest_results') or {}),
-                "strategy_config": json.loads(strategy['strategy_config']) if isinstance(strategy.get('strategy_config'), str) else (strategy.get('strategy_config') or {}),
-                "run_id": strategy.get('run_id'),
-                "client_information_json": json.loads(strategy['client_information_json']) if isinstance(strategy.get('client_information_json'), str) else (strategy.get('client_information_json') or {}),
-                "webhook_url": strategy.get('webhook_url'),
-                "status": strategy.get('status', 'deploy'),
-                "created_at": strategy.get('created_at')
-            }
-            strategies.append(strategy_response)
+        for inst in instances:
+            params = inst.strategies_parameters or {}
+            
+            strategies.append({
+                "id": inst.id,
+                "strategy_name": inst.strategy_name,
+                "strategy_type": inst.strategy_type,
+                "user_id": inst.user_id,
+                "start_date": inst.start_date,
+                "end_date": inst.end_date,
+                "backtest_results": params.get('backtest_results', {}),
+                "strategy_config": params, # Everything else is in params
+                "run_id": inst.run_id,
+                "client_information_json": inst.client_info,
+                "webhook_url": inst.webhook_url,
+                "status": inst.status or 'deploy',
+                "created_at": str(inst.created_at)
+            })
         
         return {
             "success": True,
             "strategies": strategies
         }
-        
     except Exception as e:
+        logger.error(f"Error getting strategies table: {e}")
         raise HTTPException(status_code=500, detail=f"Error getting ETF strategies table: {str(e)}")
+    finally:
+        if session:
+            session.close()
 
 @etf_router.post("/stop-etf-strategy")
-async def stop_etf_strategy(request: dict):
-    """Stop a running ETF strategy"""
+async def stop_etf_strategy_v1(request: dict):
+    """Stop a running ETF strategy (V1)"""
     session = None
     try:
         strategy_id = request.get("strategy_id")
@@ -1186,28 +1126,22 @@ async def stop_etf_strategy(request: dict):
         if not strategy_id or not user_id:
             raise HTTPException(status_code=400, detail="Missing required parameters")
         
+        from Services.strategy_manager.models import SavedInstance
         from Databases.app_data_db_connection import get_session
-        from sqlalchemy import text
         
         session = get_session()
+        inst = session.query(SavedInstance).filter(
+            SavedInstance.id == strategy_id, 
+            SavedInstance.user_id == user_id
+        ).first()
         
-        # Update status to 'stopped'
-        result = session.execute(text("""
-            UPDATE etf_saved_strategy 
-            SET status = 'stopped', updated_at = CURRENT_TIMESTAMP
-            WHERE id = :strategy_id AND user_id = :user_id
-        """), {"strategy_id": strategy_id, "user_id": user_id})
-        
-        if result.rowcount == 0:
+        if not inst:
             raise HTTPException(status_code=404, detail="Strategy not found")
         
+        inst.status = 'stopped'
         session.commit()
         
-        return {
-            "success": True,
-            "message": "ETF strategy stopped successfully"
-        }
-        
+        return {"success": True, "message": "ETF strategy stopped successfully"}
     except HTTPException:
         raise
     except Exception as e:
@@ -1219,8 +1153,8 @@ async def stop_etf_strategy(request: dict):
             session.close()
 
 @etf_router.post("/restart-etf-strategy")
-async def restart_etf_strategy(request: dict):
-    """Restart a stopped ETF strategy"""
+async def restart_etf_strategy_v1(request: dict):
+    """Restart a stopped ETF strategy (V1)"""
     session = None
     try:
         strategy_id = request.get("strategy_id")
@@ -1229,28 +1163,22 @@ async def restart_etf_strategy(request: dict):
         if not strategy_id or not user_id:
             raise HTTPException(status_code=400, detail="Missing required parameters")
         
+        from Services.strategy_manager.models import SavedInstance
         from Databases.app_data_db_connection import get_session
-        from sqlalchemy import text
         
         session = get_session()
+        inst = session.query(SavedInstance).filter(
+            SavedInstance.id == strategy_id, 
+            SavedInstance.user_id == user_id
+        ).first()
         
-        # Update status to 'running'
-        result = session.execute(text("""
-            UPDATE etf_saved_strategy 
-            SET status = 'running', updated_at = CURRENT_TIMESTAMP
-            WHERE id = :strategy_id AND user_id = :user_id
-        """), {"strategy_id": strategy_id, "user_id": user_id})
-        
-        if result.rowcount == 0:
+        if not inst:
             raise HTTPException(status_code=404, detail="Strategy not found")
         
+        inst.status = 'running'
         session.commit()
         
-        return {
-            "success": True,
-            "message": "ETF strategy restarted successfully"
-        }
-        
+        return {"success": True, "message": "ETF strategy restarted successfully"}
     except HTTPException:
         raise
     except Exception as e:
@@ -1261,49 +1189,21 @@ async def restart_etf_strategy(request: dict):
         if session:
             session.close()
 
-
 @etf_router.post("/stop-strategy/{strategy_id}")
-async def stop_etf_strategy(strategy_id: int):
-    """
-    Stop a running ETF strategy by changing status to 'stopped'
-    
-    Database: PostgreSQL (Neon) - app_data_db_connection (ApplicationData database)
-    Table: etf_saved_strategy
-    """
+async def stop_etf_strategy_v2(strategy_id: int):
+    """Stop a running ETF strategy (V2)"""
     session = None
     try:
-        # Initialize the table if it doesn't exist
-        if not init_saved_etf_strategies_table():
-            raise HTTPException(status_code=500, detail="Failed to initialize database table")
-        
-        # Use PostgreSQL connection
+        from Services.strategy_manager.models import SavedInstance
         from Databases.app_data_db_connection import get_session
-        from sqlalchemy import text
         
         session = get_session()
+        inst = session.query(SavedInstance).filter(SavedInstance.id == strategy_id).first()
         
-        # Check if strategy exists and get current status
-        result = session.execute(text("""
-            SELECT id, status FROM etf_saved_strategy 
-            WHERE id = :strategy_id
-        """), {"strategy_id": strategy_id})
-        
-        strategy = result.fetchone()
-        
-        if not strategy:
+        if not inst:
             raise HTTPException(status_code=404, detail="Strategy not found")
         
-        current_status = strategy[1]
-        if current_status != 'running':
-            raise HTTPException(status_code=400, detail=f"Strategy is not running. Current status: {current_status}")
-        
-        # Update status to 'stopped'
-        session.execute(text("""
-            UPDATE etf_saved_strategy 
-            SET status = 'stopped', updated_at = CURRENT_TIMESTAMP
-            WHERE id = :strategy_id
-        """), {"strategy_id": strategy_id})
-        
+        inst.status = 'stopped'
         session.commit()
         
         return {
@@ -1317,54 +1217,27 @@ async def stop_etf_strategy(strategy_id: int):
     except Exception as e:
         if session:
             session.rollback()
-        logger.error(f"Error stopping strategy: {e}")
+        logger.error(f"Error stopping strategy {strategy_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error stopping strategy: {str(e)}")
     finally:
         if session:
             session.close()
 
 @etf_router.post("/restart-strategy/{strategy_id}")
-async def restart_etf_strategy(strategy_id: int):
-    """
-    Restart a stopped ETF strategy by changing status to 'running'
-    
-    Database: PostgreSQL (Neon) - app_data_db_connection (ApplicationData database)
-    Table: etf_saved_strategy
-    """
+async def restart_etf_strategy_v2(strategy_id: int):
+    """Restart a stopped ETF strategy (V2)"""
     session = None
     try:
-        # Initialize the table if it doesn't exist
-        if not init_saved_etf_strategies_table():
-            raise HTTPException(status_code=500, detail="Failed to initialize database table")
-        
-        # Use PostgreSQL connection
+        from Services.strategy_manager.models import SavedInstance
         from Databases.app_data_db_connection import get_session
-        from sqlalchemy import text
         
         session = get_session()
+        inst = session.query(SavedInstance).filter(SavedInstance.id == strategy_id).first()
         
-        # Check if strategy exists and get current status
-        result = session.execute(text("""
-            SELECT id, status FROM etf_saved_strategy 
-            WHERE id = :strategy_id
-        """), {"strategy_id": strategy_id})
-        
-        strategy = result.fetchone()
-        
-        if not strategy:
+        if not inst:
             raise HTTPException(status_code=404, detail="Strategy not found")
         
-        current_status = strategy[1]
-        if current_status != 'stopped':
-            raise HTTPException(status_code=400, detail=f"Strategy is not stopped. Current status: {current_status}")
-        
-        # Update status to 'running'
-        session.execute(text("""
-            UPDATE etf_saved_strategy 
-            SET status = 'running', updated_at = CURRENT_TIMESTAMP
-            WHERE id = :strategy_id
-        """), {"strategy_id": strategy_id})
-        
+        inst.status = 'running'
         session.commit()
         
         return {
@@ -1378,7 +1251,7 @@ async def restart_etf_strategy(strategy_id: int):
     except Exception as e:
         if session:
             session.rollback()
-        logger.error(f"Error restarting strategy: {e}")
+        logger.error(f"Error restarting strategy {strategy_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error restarting strategy: {str(e)}")
     finally:
         if session:
@@ -1389,478 +1262,161 @@ async def restart_etf_strategy(strategy_id: int):
 # ETF SIGNAL GENERATION ENDPOINTS
 # ============================================================================
 
-@etf_router.post("/etf-signals/generate")
-async def generate_etf_signals(request: Dict[str, Any] = None):
-    """
-    Generate ETF trading signals
-    
-    If run_id is provided, generates signals for that specific strategy.
-    If no run_id is provided, generates signals for ALL running strategies in etf_saved_strategy table.
-    
-    Request body (optional):
-    {
-        "run_id": "run_etf_strategy_2025-10-15_1760544030144",  # Optional - if not provided, processes all running
-        "strategy_type": "SurfTrend",  # Optional, default: "SurfTrend"
-        "strategy_config": {}  # Optional strategy configuration
-    }
-    
-    Returns (single run_id):
-    {
-        "success": bool,
-        "run_id": str,
-        "signals_count": int,
-        "buy_count": int,
-        "sell_count": int,
-        "duration_seconds": float,
-        "signals": List[Dict],
-        "message": str
-    }
-    
-    Returns (batch - all running):
-    {
-        "success": bool,
-        "total_strategies": int,
-        "successful": int,
-        "failed": int,
-        "results": List[Dict],
-        "duration_seconds": float
-    }
-    """
-    try:
-        if LiveSignalGenerator is None:
-            raise HTTPException(
-                status_code=500, 
-                detail="Signal generator not available. Check imports and dependencies."
-            )
-        
-        # Handle empty request body
-        if request is None:
-            request = {}
-        
-        run_id = request.get("run_id") if request else None
-        strategy_type = request.get("strategy_type", "SurfTrend") if request else "SurfTrend"
-        strategy_config = request.get("strategy_config") if request else None
-        
-        # Initialize signal generator
-        db_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
-            "unified_etf_data.sqlite"
-        )
-        
-        generator = LiveSignalGenerator(db_path=db_path)
-        
-        # If run_id is provided, generate for that specific strategy
-        if run_id:
-            result = generator.run_weekly_signal_generation(
-                run_id=run_id,
-                strategy_type=strategy_type,
-                strategy_config=strategy_config
-            )
-            
-            generator.cleanup()
-            
-            if result.get("success"):
-                return {
-                    "success": True,
-                    "run_id": result["run_id"],
-                    "signals_count": result["signals_count"],
-                    "buy_count": result["buy_count"],
-                    "sell_count": result["sell_count"],
-                    "duration_seconds": result.get("duration_seconds", 0),
-                    "signals": result.get("signals", []),
-                    "message": f"Successfully generated {result['signals_count']} signals"
-                }
-            else:
-                return {
-                    "success": False,
-                    "run_id": result.get("run_id"),
-                    "signals_count": 0,
-                    "buy_count": 0,
-                    "sell_count": 0,
-                    "error": result.get("error", "Unknown error"),
-                    "message": result.get("message", "Signal generation failed")
-                }
-        
-        # No run_id provided - generate for all running strategies
-        start_time = datetime.now()
-        running_strategies = generator.get_all_running_strategies()
-        
-        if not running_strategies:
-            generator.cleanup()
-            return {
-                "success": True,
-                "total_strategies": 0,
-                "successful": 0,
-                "failed": 0,
-                "results": [],
-                "duration_seconds": 0,
-                "message": "No running strategies found with run_id"
-            }
-        
-        results = []
-        successful = 0
-        failed = 0
-        
-        for strategy in running_strategies:
-            strategy_run_id = strategy['run_id']
-            strategy_type_from_db = strategy.get('strategy_type', strategy_type)
-            
-            try:
-                result = generator.run_weekly_signal_generation(
-                    run_id=strategy_run_id,
-                    strategy_type=strategy_type_from_db,
-                    strategy_config=strategy_config
-                )
-                
-                if result.get("success"):
-                    successful += 1
-                else:
-                    failed += 1
-                
-                results.append({
-                    "run_id": strategy_run_id,
-                    "user_id": strategy.get('user_id'),
-                    "strategy_name": strategy.get('strategy_name'),
-                    "success": result.get("success", False),
-                    "signals_count": result.get("signals_count", 0),
-                    "buy_count": result.get("buy_count", 0),
-                    "sell_count": result.get("sell_count", 0),
-                    "error": result.get("error"),
-                    "message": result.get("message", "Signal generation completed")
-                })
-                
-            except Exception as e:
-                failed += 1
-                results.append({
-                    "run_id": strategy_run_id,
-                    "user_id": strategy.get('user_id'),
-                    "strategy_name": strategy.get('strategy_name'),
-                    "success": False,
-                    "signals_count": 0,
-                    "buy_count": 0,
-                    "sell_count": 0,
-                    "error": str(e),
-                    "message": f"Error generating signals: {str(e)}"
-                })
-        
-        generator.cleanup()
-        
-        end_time = datetime.now()
-        total_duration = (end_time - start_time).total_seconds()
-        
-        return {
-            "success": True,
-            "total_strategies": len(running_strategies),
-            "successful": successful,
-            "failed": failed,
-            "results": results,
-            "duration_seconds": total_duration,
-            "message": f"Processed {len(running_strategies)} strategies: {successful} successful, {failed} failed"
-        }
-            
-    except Exception as e:
-        print(f"Error generating ETF signals: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error generating ETF signals: {str(e)}")
-
+# ============================================================================
+# ETF SIGNAL RETRIEVAL ENDPOINTS
+# ============================================================================
 
 @etf_router.get("/etf-signals/recent")
 async def get_recent_etf_signals(days: int = 7):
-    """
-    Get recent ETF signals from the database
-    
-    Query parameters:
-    - days: Number of days to look back (default: 7)
-    
-    Returns:
-    {
-        "success": bool,
-        "signals": List[Dict],
-        "count": int
-    }
-    """
+    """Get recent ETF signals from the unified TradingSignal table"""
+    session = None
     try:
-        if LiveSignalGenerator is None:
-            raise HTTPException(
-                status_code=500, 
-                detail="Signal generator not available. Check imports and dependencies."
-            )
+        from Databases.app_data_db_connection import get_session
+        from Databases.signal_models import TradingSignal
+        from datetime import datetime, timedelta
         
-        # Get database path
-        db_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
-            "unified_etf_data.sqlite"
-        )
+        session = get_session()
+        cutoff = datetime.now() - timedelta(days=days)
         
-        generator = LiveSignalGenerator(db_path=db_path)
-        
-        # Get recent signals
-        signals = generator.get_recent_signals(days=days)
-        
-        # Cleanup
-        generator.cleanup()
+        signals = session.query(TradingSignal).filter(
+            TradingSignal.strategy_type.like('%ETF%'),
+            TradingSignal.signal_date >= cutoff
+        ).order_by(TradingSignal.signal_date.desc()).all()
         
         return {
             "success": True,
-            "signals": signals,
+            "signals": [s.to_dict() for s in signals],
             "count": len(signals)
         }
-        
     except Exception as e:
-        print(f"Error getting recent ETF signals: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error getting recent ETF signals: {str(e)}")
-
+        logger.error(f"Error getting recent ETF signals: {e}")
+        return {"success": False, "signals": [], "count": 0}
+    finally:
+        if session:
+            session.close()
 
 @etf_router.get("/etf-signals/run/{run_id}")
 async def get_etf_signals_by_run_id(run_id: str):
-    """
-    Get ETF signals for a specific run_id
-    
-    Path parameters:
-    - run_id: Deployment run ID
-    
-    Returns:
-    {
-        "success": bool,
-        "run_id": str,
-        "signals": List[Dict],
-        "count": int,
-        "buy_count": int,
-        "sell_count": int
-    }
-    """
+    """Get ETF signals for a specific run_id from unified TradingSignal table"""
+    session = None
     try:
-        if LiveSignalGenerator is None:
-            raise HTTPException(
-                status_code=500, 
-                detail="Signal generator not available. Check imports and dependencies."
-            )
-        
-        # Query signals from PostgreSQL
         from Databases.app_data_db_connection import get_session
-        from Databases.strategy_models import LiveSignal, LiveRun
+        from Databases.signal_models import TradingSignal
         
         session = get_session()
-        try:
-            # Query signals with join to runs
-            signals_query = session.query(LiveSignal, LiveRun).join(
-                LiveRun, LiveSignal.run_id == LiveRun.run_id
-            ).filter(
-                LiveSignal.run_id == run_id
-            ).order_by(LiveSignal.created_at.desc())
-            
-            signals = []
-            for signal, run in signals_query.all():
-                signal_dict = {
-                    'id': signal.id,
-                    'run_id': signal.run_id,
-                    'user_id': signal.user_id,
-                    'strategy_version': signal.strategy_version,
-                    'signal_date': signal.signal_date,
-                    'signal_symbol': signal.signal_symbol,
-                    'etf_name': signal.etf_name,
-                    'side': signal.side,
-                    'score': signal.score,
-                    'reason': signal.reason,
-                    'payload_json': signal.payload_json,
-                    'created_at': signal.created_at.isoformat() if signal.created_at else None,
-                    'status': run.status,
-                    'summary_json': run.summary_json
-                }
-                
-                # Parse JSON fields
-                if signal_dict.get('payload_json'):
-                    try:
-                        signal_dict['payload'] = json.loads(signal_dict['payload_json'])
-                    except:
-                        signal_dict['payload'] = {}
-                if signal_dict.get('summary_json'):
-                    try:
-                        signal_dict['summary'] = json.loads(signal_dict['summary_json'])
-                    except:
-                        signal_dict['summary'] = {}
-                signals.append(signal_dict)
-        finally:
-            session.close()
-        
-        buy_count = len([s for s in signals if s.get('side') == 'BUY'])
-        sell_count = len([s for s in signals if s.get('side') == 'SELL'])
+        signals = session.query(TradingSignal).filter(
+            TradingSignal.run_id == run_id
+        ).order_by(TradingSignal.signal_date.desc()).all()
         
         return {
             "success": True,
             "run_id": run_id,
-            "signals": signals,
+            "signals": [s.to_dict() for s in signals],
             "count": len(signals),
-            "buy_count": buy_count,
-            "sell_count": sell_count
+            "buy_count": len([s for s in signals if s.order_side == 'BUY']),
+            "sell_count": len([s for s in signals if s.order_side == 'SELL'])
         }
-        
     except Exception as e:
-        print(f"Error getting ETF signals by run_id: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error getting ETF signals by run_id: {str(e)}")
-
+        logger.error(f"Error getting signals for run {run_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if session:
+            session.close()
 
 @etf_router.get("/etf-signals/runs")
 async def get_etf_signal_runs(days: int = 30):
-    """
-    Get list of signal generation runs within the specified days
-    
-    Query parameters:
-    - days: Number of days to look back (default: 30)
-    
-    Returns:
-    {
-        "success": bool,
-        "runs": List[Dict],
-        "count": int
-    }
-    """
+    """Get list of signal generation runs within the specified days by grouping TradingSignal entries"""
+    session = None
     try:
-        # Query runs from PostgreSQL
         from Databases.app_data_db_connection import get_session
-        from Databases.strategy_models import LiveRun, LiveSignal
+        from Databases.signal_models import TradingSignal
         from sqlalchemy import func
+        from datetime import datetime, timedelta
         
         session = get_session()
-        try:
-            cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
-            
-            # Query runs with signal counts
-            runs_query = session.query(
-                LiveRun,
-                func.count(LiveSignal.id).label('signal_count'),
-                func.sum(func.case((LiveSignal.side == 'BUY', 1), else_=0)).label('buy_count'),
-                func.sum(func.case((LiveSignal.side == 'SELL', 1), else_=0)).label('sell_count')
-            ).outerjoin(
-                LiveSignal, LiveRun.run_id == LiveSignal.run_id
-            ).filter(
-                LiveRun.signal_date >= cutoff_date
-            ).group_by(LiveRun.run_id).order_by(LiveRun.created_at.desc())
-            
-            runs = []
-            for run, signal_count, buy_count, sell_count in runs_query.all():
-                run_dict = {
-                    'id': run.id,
-                    'run_id': run.run_id,
-                    'strategy_version': run.strategy_version,
-                    'signal_date': run.signal_date,
-                    'created_at': run.created_at.isoformat() if run.created_at else None,
-                    'status': run.status,
-                    'webhook_attempts': run.webhook_attempts,
-                    'last_error': run.last_error,
-                    'summary_json': run.summary_json,
-                    'signal_count': signal_count or 0,
-                    'buy_count': int(buy_count) if buy_count else 0,
-                    'sell_count': int(sell_count) if sell_count else 0
-                }
-                
-                if run_dict.get('summary_json'):
-                    try:
-                        run_dict['summary'] = json.loads(run_dict['summary_json'])
-                    except:
-                        run_dict['summary'] = {}
-                runs.append(run_dict)
-        finally:
-            session.close()
+        cutoff = datetime.now() - timedelta(days=days)
         
+        # Group TradingSignal by run_id to simulate 'runs'
+        runs_query = session.query(
+            TradingSignal.run_id,
+            func.min(TradingSignal.signal_date).label('run_date'),
+            TradingSignal.strategy_name,
+            func.count(TradingSignal.id).label('signal_count'),
+            func.sum(func.case((TradingSignal.order_side == 'BUY', 1), else_=0)).label('buy_count'),
+            func.sum(func.case((TradingSignal.order_side == 'SELL', 1), else_=0)).label('sell_count')
+        ).filter(
+            TradingSignal.strategy_type.like('%ETF%'),
+            TradingSignal.signal_date >= cutoff
+        ).group_by(
+            TradingSignal.run_id, 
+            TradingSignal.strategy_name
+        ).order_by(func.min(TradingSignal.signal_date).desc())
+        
+        runs = []
+        for run_id, run_date, strat_name, count, buys, sells in runs_query.all():
+            runs.append({
+                'run_id': run_id,
+                'signal_date': str(run_date),
+                'strategy_name': strat_name,
+                'signal_count': count,
+                'buy_count': int(buys or 0),
+                'sell_count': int(sells or 0),
+                'status': 'completed' # Logic assumes if they are in TradingSignal, it's done
+            })
+            
         return {
             "success": True,
             "runs": runs,
             "count": len(runs)
         }
-        
     except Exception as e:
-        print(f"Error getting ETF signal runs: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error getting ETF signal runs: {str(e)}")
-
+        logger.error(f"Error getting ETF signal runs: {e}")
+        return {"success": False, "runs": [], "count": 0}
+    finally:
+        if session:
+            session.close()
 
 @etf_router.get("/etf-signals/latest")
 async def get_latest_etf_signals():
-    """
-    Get the latest ETF signals (most recent run)
-    
-    Returns:
-    {
-        "success": bool,
-        "run_id": str,
-        "signals": List[Dict],
-        "count": int,
-        "buy_count": int,
-        "sell_count": int,
-        "signal_date": str
-    }
-    """
+    """Get the latest ETF signals from the most recent run in TradingSignal table"""
+    session = None
     try:
-        # Query from PostgreSQL
         from Databases.app_data_db_connection import get_session
-        from Databases.strategy_models import LiveRun, LiveSignal
+        from Databases.signal_models import TradingSignal
         
         session = get_session()
-        try:
-            # Get the most recent run
-            run = session.query(LiveRun).order_by(LiveRun.created_at.desc()).first()
-            
-            if not run:
-                return {
-                    "success": False,
-                    "message": "No signals found",
-                    "run_id": None,
-                    "signals": [],
-                    "count": 0,
-                    "buy_count": 0,
-                    "sell_count": 0
-                }
-            
-            run_id = run.run_id
-            strategy_version = run.strategy_version
-            signal_date = run.signal_date
-            
-            # Get signals for this run
-            signals_query = session.query(LiveSignal).filter(
-                LiveSignal.run_id == run_id
-            ).order_by(LiveSignal.created_at.desc())
-            
-            signals = []
-            for signal in signals_query.all():
-                signal_dict = {
-                    'id': signal.id,
-                    'run_id': signal.run_id,
-                    'user_id': signal.user_id,
-                    'strategy_version': signal.strategy_version,
-                    'signal_date': signal.signal_date,
-                    'signal_symbol': signal.signal_symbol,
-                    'etf_name': signal.etf_name,
-                    'side': signal.side,
-                    'score': signal.score,
-                    'reason': signal.reason,
-                    'payload_json': signal.payload_json,
-                    'created_at': signal.created_at.isoformat() if signal.created_at else None
-                }
-                
-                if signal_dict.get('payload_json'):
-                    try:
-                        signal_dict['payload'] = json.loads(signal_dict['payload_json'])
-                    except:
-                        signal_dict['payload'] = {}
-                signals.append(signal_dict)
-        finally:
-            session.close()
         
-        buy_count = len([s for s in signals if s.get('side') == 'BUY'])
-        sell_count = len([s for s in signals if s.get('side') == 'SELL'])
+        # Find the latest run_id
+        latest_run = session.query(TradingSignal.run_id).filter(
+            TradingSignal.strategy_type.like('%ETF%')
+        ).order_by(TradingSignal.signal_date.desc()).first()
+        
+        if not latest_run:
+            return {
+                "success": False,
+                "message": "No signals found",
+                "run_id": None,
+                "signals": [],
+                "count": 0
+            }
+        
+        run_id = latest_run[0]
+        signals = session.query(TradingSignal).filter(
+            TradingSignal.run_id == run_id
+        ).order_by(TradingSignal.id.asc()).all()
         
         return {
             "success": True,
             "run_id": run_id,
-            "strategy_version": strategy_version,
-            "signal_date": signal_date,
-            "signals": signals,
+            "signal_date": str(signals[0].signal_date) if signals else None,
+            "signals": [s.to_dict() for s in signals],
             "count": len(signals),
-            "buy_count": buy_count,
-            "sell_count": sell_count
+            "buy_count": len([s for s in signals if s.order_side == 'BUY']),
+            "sell_count": len([s for s in signals if s.order_side == 'SELL'])
         }
-        
     except Exception as e:
-        print(f"Error getting latest ETF signals: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error getting latest ETF signals: {str(e)}")
+        logger.error(f"Error getting latest ETF signals: {e}")
+        return {"success": False, "message": str(e)}
+    finally:
+        if session:
+            session.close()

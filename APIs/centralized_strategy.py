@@ -510,6 +510,8 @@ async def get_assets_overview(
                         years = 0.0
                     overview.append({
                         'symbol': row.symbol,
+                        'description': MarketDataService.generate_asset_description(row.symbol, asset_type),
+                        'sector': MarketDataService.get_asset_sector_classification(row.symbol, asset_type),
                         'start_date': str(start_dt),
                         'end_date': str(end_dt),
                         'years_available': years,

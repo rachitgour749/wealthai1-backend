@@ -1,5 +1,5 @@
 """SQLAlchemy models for portfolio tracking"""
-from sqlalchemy import Column, Integer, String, Numeric, Date, DateTime, Index
+from sqlalchemy import Column, Integer, String, Numeric, Date, DateTime, Index, UniqueConstraint
 from sqlalchemy.sql import func
 from Databases.app_data_db_connection import Base
 
@@ -21,6 +21,7 @@ class PortfolioTrade(Base):
     
     # Trade Details
     trade_date = Column(Date, nullable=False, index=True)
+    executed_at = Column(DateTime(timezone=True), nullable=False, index=True)  # Exact execution timestamp
     symbol = Column(String(50), nullable=False, index=True)
     side = Column(String(10), nullable=False)  # 'BUY' or 'SELL'
     quantity = Column(Integer, nullable=False)
@@ -34,5 +35,5 @@ class PortfolioTrade(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     __table_args__ = (
-        Index('idx_trades_composite', 'run_id', 'client_code', 'symbol', 'trade_date', 'side', unique=True),
+        Index('idx_trades_composite', 'run_id', 'client_code', 'symbol', 'trade_date', 'side', 'executed_at', unique=True),
     )

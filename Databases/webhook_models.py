@@ -4,50 +4,76 @@ from sqlalchemy.sql import func
 from Databases.app_data_db_connection import Base
 
 
-class WebhookRA(Base):
+class RAConfig(Base):
     """
-    Global webhook security configuration for Research Analysts (RA mode).
-    Stores the master secret and IP whitelist used for RA (bulk) mode.
-    There should only be ONE active row in this table.
+    Configuration for Research Analysts (RA).
+    Stores secret keys per strategy type for each RA.
     """
-    __tablename__ = "webhook_ra"
+    __tablename__ = "ra_config"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    master_secret = Column(String(255), nullable=False)          # RA Master Secret
-    allowed_ips = Column(Text, nullable=True)                    # Comma-separated IP whitelist, NULL = allow all
-    is_ip_check_enabled = Column(Boolean, default=True)          # Toggle IP check on/off
-    created_at = Column(DateTime(timezone=True), default=func.now())
-    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
-
-    def get_allowed_ips(self):
-        """Parse allowed_ips string into a list"""
-        if not self.allowed_ips:
-            return []
-        return [ip.strip() for ip in self.allowed_ips.split(",") if ip.strip()]
-
-    def __repr__(self):
-        return f"<WebhookRA(id={self.id}, ip_check={self.is_ip_check_enabled})>"
-
-
-class WebhookIndividual(Base):
-    """
-    Per-user, per-strategy webhook secret keys (Individual User Mode).
-    Each webhook strategy gets a unique key stored here.
-    """
-    __tablename__ = "webhook_individual"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_email = Column(String(255), nullable=False, index=True)  # Owner email
-    run_id = Column(String(100), nullable=False, unique=True, index=True)  # Strategy Run ID
-    strategy_name = Column(String(255), nullable=True)             # Strategy display name
-    webhook_key = Column(String(255), nullable=False)              # Unique secret key
-    webhook_type = Column(String(50), default='individual')        # 'ra' or 'individual'
-    is_active = Column(Boolean, default=True)                      # Enable/disable key
+    ra_email = Column(String(255), nullable=True, index=True) # New column
+    ra_code = Column(String(100), index=True, nullable=False)
+    strategy_type = Column(String(100), nullable=False)
+    secret_key = Column(String(100), nullable=False)
+    is_active = Column(Boolean, default=True)
+    is_ip_check_enabled = Column(Boolean, default=True) # Legacy field
+    allowed_ips = Column(Text, nullable=True)           # Legacy field
     created_at = Column(DateTime(timezone=True), default=func.now())
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
 
     def __repr__(self):
-        return f"<WebhookIndividual(user={self.user_email}, run_id={self.run_id}, active={self.is_active})>"
+        return f"<RAConfig(ra_code={self.ra_code}, strategy={self.strategy_type})>"
+
+    @property
+    def master_secret(self):
+        """Legacy alias for secret_key"""
+        return self.secret_key
+
+# Backward compatibility alias
+WebhookRA = RAConfig
+
+
+
+
+class WebhookConf(Base):
+    """
+    Detailed configuration for webhooks.
+    """
+    __tablename__ = "webhook_conf"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(255), nullable=False, index=True)
+    strategy_type = Column(String(255), nullable=True)
+    run_id = Column(String(100), nullable=True, unique=True, index=True)
+    client_info = Column(Text, nullable=True)  # Store as JSON string
+    status = Column(String(50), default='active')
+    category = Column(String(50), nullable=True) # FNO or EQUITY
+    source = Column(String(50), nullable=True)   # INDIVIDUAL or RA
+    ra_code = Column(String(255), nullable=True) # Renamed from reference
+    name = Column(String(255), nullable=True)    # Strategy name from caller
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<WebhookConf(user_id={self.user_id}, run_id={self.run_id}, source={self.source})>"
+
+
+class WebhookKey(Base):
+    """
+    User/RA secret keys for webhook authentication.
+    """
+    __tablename__ = "webhook_key"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(255), nullable=False, index=True)
+    secret_key = Column(String(255), nullable=False, unique=True)
+    source = Column(String(50), nullable=False) # RA or INDIVIDUAL
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<WebhookKey(user_id={self.user_id}, source={self.source})>"
 
 
 class WebhookExecutionLog(Base):

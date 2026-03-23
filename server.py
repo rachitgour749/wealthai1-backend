@@ -332,18 +332,18 @@ async def lifespan(app: FastAPI):
     # Start backtesters in background (non-blocking)
     await _init_backtesters_lazy()
     
-    # Initialize and start the scheduler service
-    try:
-        from Services.scheduler.scheduler_service import start_scheduler
-        logger.info("="*60)
-        logger.info("STARTING SCHEDULER SERVICE")
-        logger.info("="*60)
-        scheduler = start_scheduler()
-        logger.info("Scheduler service started successfully")
-    except Exception as e:
-        logger.error(f"Failed to start scheduler service: {e}")
-        import traceback
-        traceback.print_exc()
+    # Initialize and start the scheduler service - DISABLED (Triggered via API)
+    # try:
+    #     from Services.scheduler.scheduler_service import start_scheduler
+    #     logger.info("="*60)
+    #     logger.info("STARTING SCHEDULER SERVICE")
+    #     logger.info("="*60)
+    #     scheduler = start_scheduler()
+    #     logger.info("Scheduler service started successfully")
+    # except Exception as e:
+    #     logger.error(f"Failed to start scheduler service: {e}")
+    #     import traceback
+    #     traceback.print_exc()
     
     # Use ChatAI (New) lifespan if available
     if chatai_availabe and chatai_lifespan:
@@ -357,14 +357,14 @@ async def lifespan(app: FastAPI):
         yield
     
     # Shutdown
-    # Shutdown scheduler
-    try:
-        from Services.scheduler.scheduler_service import get_scheduler
-        scheduler = get_scheduler()
-        scheduler.shutdown()
-        logger.info("Scheduler shut down successfully")
-    except Exception as e:
-        logger.error(f"Failed to shutdown scheduler: {e}")
+    # Shutdown scheduler - DISABLED
+    # try:
+    #     from Services.scheduler.scheduler_service import get_scheduler
+    #     scheduler = get_scheduler()
+    #     scheduler.shutdown()
+    #     logger.info("Scheduler shut down successfully")
+    # except Exception as e:
+    #     logger.error(f"Failed to shutdown scheduler: {e}")
     
     if close_db:
         try:
@@ -503,6 +503,8 @@ try:
             "/api/broker/place_order", # Exempt broker place order
             "/api/broker/broker_login", # Exempt broker login
             "/api/webhook/wealthai1.in/trade_execute", # Exempt trade execution webhook
+            "/api/webhook/trade_execute", # Exempt unified trade execution
+            "/api/webhook/ra", # Exempt RA CRUD
             "/admin" # Exempt admin routes for ease of use
         ]
     )
@@ -522,7 +524,8 @@ app.add_middleware(
         "https://wealthai1.in",
         "https://www.wealthai1.in",
         "https://trade.wealthai1.in",
-        "http://localhost:5173", # ChatAI frontend dev
+        "http://localhost:5173",
+        "http://localhost:5174", # ChatAI frontend dev
     ],
     allow_credentials=True,
     allow_headers=["*"],
@@ -557,7 +560,7 @@ etf_router = None
 rs_etf_router = None
 
 try:
-    from Strategies.customStrategy.api import custom_strategy_router
+    pass # from Strategies.customStrategy.api import custom_strategy_router
 except Exception as e:
     logger.error(f"Failed to import custom_strategy_router: {e}")
 
@@ -575,10 +578,10 @@ initialize_rotation_etf_payout_backtester = None
 webhook_router = None
 
 try:
-    from APIs.webhook_routes import router as webhook_router
-    logger.info("Webhook router loaded successfully")
+    from Services.webhook.webhook_api import router as webhook_router
+    logger.info("New Webhook router loaded successfully from Services.webhook.webhook_api")
 except Exception as e:
-    logger.error(f"Failed to import webhook_router: {e}")
+    logger.error(f"Failed to import new webhook_router: {e}")
 
 # Critical: Subscription routers - provide detailed error info
 try:

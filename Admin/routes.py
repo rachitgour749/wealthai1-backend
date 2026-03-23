@@ -3,7 +3,7 @@ from typing import List
 from Admin.schemas import (
     ClientListItem, ClientDetailResponse, UpdateClientRequest,
     UpdatePlanRequest, UpdateSubscriptionDatesRequest,
-    UpdateCreditsRequest, AdminOperationResponse
+    UpdateCreditsRequest, SystemTriggerRequest, AdminOperationResponse
 )
 from Admin.services import admin_service
 
@@ -57,3 +57,19 @@ async def update_client_credits(email: str, request: UpdateCreditsRequest):
         message=result.get("message"), 
         data=result.get("data")
     )
+
+@admin_router.post("/system/trigger-generation", response_model=AdminOperationResponse)
+async def trigger_signal_generation(strategy_type: str = Query(..., description="Strategy type (e.g., 'ETF_Rotation')")):
+    """Manually trigger signal generation for a specific strategy type"""
+    result = admin_service.trigger_signal_generation(strategy_type)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message", "Trigger failed"))
+    return AdminOperationResponse(success=True, message=result.get("message"))
+
+@admin_router.post("/system/trigger-execution", response_model=AdminOperationResponse)
+async def trigger_signal_execution(strategy_type: str = Query(..., description="Strategy type (e.g., 'ETF_Rotation')")):
+    """Manually trigger signal execution for a specific strategy type"""
+    result = admin_service.trigger_signal_execution(strategy_type)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message", "Trigger failed"))
+    return AdminOperationResponse(success=True, message=result.get("message"))
