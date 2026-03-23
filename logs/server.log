@@ -67538,3 +67538,18 @@ DETAIL:  Key (run_id, client_code, symbol, trade_date, side)=(EXT_23032026997, R
 2026-03-23 22:53:43 - __main__ - INFO - ChatAI (New) router mounted successfully
 2026-03-23 22:53:43 - __main__ - INFO - Unified API router mounted at /api
 2026-03-23 22:53:43 - __main__ - INFO - Admin router mounted successfully
+2026-03-23 22:53:46 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-23 22:53:46 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-23 22:53:46 - __main__ - INFO - ============================================================
+2026-03-23 22:53:46 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-23 22:53:46 - __main__ - INFO - ============================================================
+2026-03-23 22:53:46 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-23 22:53:46 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-23 22:53:46 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-23 22:53:47 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-23 22:53:47 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-23 22:53:47 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-23 22:53:47 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-23 22:53:47 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-23 22:53:47 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-23 22:53:51 - Services.ChatAI.api.main - INFO - Gemini client initialized
