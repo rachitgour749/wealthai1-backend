@@ -36,33 +36,33 @@ def kill_process_on_port(port):
 
 def start_server(port=8000):
     """Start the server on the specified port"""
-    print(f"🚀 Starting server on port {port}...")
+    print(f"Starting server on port {port}...")
     
     # Check if port is in use
     if is_port_in_use(port):
-        print(f"⚠️  Port {port} is in use. Attempting to free it...")
+        print(f"Port {port} is in use. Attempting to free it...")
         if kill_process_on_port(port):
-            print(f"✅ Port {port} has been freed")
+            print(f"Port {port} has been freed")
         else:
-            print(f"❌ Could not free port {port}. Trying alternative port...")
+            print(f"Could not free port {port}. Trying alternative port...")
             # Try alternative ports
             for alt_port in [8001, 8002, 8003, 8004, 8005]:
                 if not is_port_in_use(alt_port):
                     port = alt_port
-                    print(f"✅ Using alternative port {port}")
+                    print(f"Using alternative port {port}")
                     break
             else:
-                print("❌ No available ports found. Please manually stop processes using ports 8000-8005")
+                print("No available ports found. Please manually stop processes using ports 8000-8005")
                 return False
     
     # Start the server
     try:
-        print(f"🌐 Server starting at http://127.0.0.1:{port}")
+        print(f"Server starting at http://127.0.0.1:{port}")
         subprocess.run([sys.executable, 'server.py'], env={**os.environ, 'PORT': str(port)})
     except KeyboardInterrupt:
-        print("\n🛑 Server stopped by user")
+        print("\nServer stopped by user")
     except Exception as e:
-        print(f"❌ Error starting server: {e}")
+        print(f"Error starting server: {e}")
         return False
     
     return True

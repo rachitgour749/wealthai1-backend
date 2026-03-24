@@ -16,7 +16,8 @@ from .models import (
     WebhookCreateRequest, WebhookCreateResponse,
     RACreateRequest, RAUpdateRequest, RAResponse,
     TradeExecuteRequest, TradeExecuteResponse,
-    WebhookDetailResponse, WebhookListResponse, TradeExecuteIndividualRequest, UnifiedTradeExecuteRequest
+    WebhookDetailResponse, WebhookListResponse, TradeExecuteIndividualRequest, UnifiedTradeExecuteRequest,
+    RAListResponse, RAStrategiesResponse
 )
 from fastapi import Request, Header
 from Services.subscription.services.auth_integration import get_current_user_from_google_token
@@ -282,13 +283,33 @@ async def create_ra(request: RACreateRequest):
         logger.error(f"Error creating RA: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/ra", response_model=List[RAResponse])
+@router.get("/ra", response_model=RAListResponse)
 async def get_ras():
     """List all Research Analyst configurations"""
     try:
-        return webhook_logic.get_ras()
+        data = webhook_logic.get_ras()
+        return RAListResponse(
+            status_code=200,
+            data=data,
+            message="RAs fetched successfully"
+        )
     except Exception as e:
         logger.error(f"Error listing RAs: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/ra/{ra_code}/strategies", response_model=RAStrategiesResponse)
+async def get_ra_strategies(ra_code: str):
+    """Fetch all strategy types associated with a specific RA code"""
+    try:
+        strategies = webhook_logic.get_ra_strategies(ra_code)
+        return RAStrategiesResponse(
+            status_code=200,
+            ra_code=ra_code,
+            strategies=strategies,
+            message="Strategies fetched successfully"
+        )
+    except Exception as e:
+        logger.error(f"Error getting strategies for RA {ra_code}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/ra/{ra_code}/{strategy_type}", response_model=RAResponse)
@@ -312,6 +333,7 @@ async def update_ra(ra_code: str, strategy_type: str, request: RAUpdateRequest):
     except Exception as e:
         logger.error(f"Error updating RA: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @router.delete("/ra/{ra_code}/{strategy_type}")
 async def delete_ra(ra_code: str, strategy_type: str):

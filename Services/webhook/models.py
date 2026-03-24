@@ -179,6 +179,20 @@ class RAResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class RAStrategiesResponse(BaseModel):
+    status_code: int
+    ra_code: str
+    strategies: List[str]
+    message: str
+
+class RAListResponse(BaseModel):
+    status_code: int
+    data: List[RAResponse]
+    message: str
 
 # Execution Engine Schemas
 class TradeExecuteRequest(BaseModel):

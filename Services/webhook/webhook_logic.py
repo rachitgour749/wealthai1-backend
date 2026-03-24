@@ -702,6 +702,18 @@ class WebhookLogic:
         finally:
             session.close()
 
+    def get_ra_strategies(self, ra_code: str) -> List[str]:
+        """Get all unique strategy types for a specific RA code"""
+        session = get_session()
+        try:
+            strategies = session.query(RAConfig.strategy_type).filter(
+                RAConfig.ra_code == ra_code,
+                RAConfig.is_active == True
+            ).distinct().all()
+            return [s[0] for s in strategies]
+        finally:
+            session.close()
+
     def get_ra(self, ra_code: str, strategy_type: str) -> RAResponse:
         """Get a specific RA configuration"""
         session = get_session()
