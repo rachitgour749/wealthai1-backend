@@ -68890,3 +68890,24 @@ DETAIL:  Key (run_id, client_code, symbol, trade_date, side)=(EXT_23032026997, R
 2026-03-24 14:38:02 - __main__ - INFO - ChatAI (New) router mounted successfully
 2026-03-24 14:38:02 - __main__ - INFO - Unified API router mounted at /api
 2026-03-24 14:38:02 - __main__ - INFO - Admin router mounted successfully
+2026-03-24 14:38:05 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-24 14:38:05 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-24 14:38:05 - __main__ - INFO - ============================================================
+2026-03-24 14:38:05 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-24 14:38:05 - __main__ - INFO - ============================================================
+2026-03-24 14:38:05 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-24 14:38:05 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-24 14:38:05 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-24 14:38:06 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-24 14:38:06 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-24 14:38:06 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-24 14:38:06 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-24 14:38:06 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-24 14:38:06 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-24 14:38:10 - Services.ChatAI.api.main - INFO - Gemini client initialized
+2026-03-24 14:39:56 - Services.subscription.api.subscription - INFO - Fetching credits for: rachit.gour749@gmail.com
+2026-03-24 14:39:59 - Services.subscription.api.subscription - INFO - Fetching credits for: rachit.gour749@gmail.com
+2026-03-24 14:49:24 - Services.subscription.api.subscription - INFO - Fetching credits for: rachit.gour749@gmail.com
+2026-03-24 14:49:26 - Services.subscription.api.subscription - INFO - Fetching credits for: rachit.gour749@gmail.com
+2026-03-24 14:49:52 - Services.subscription.api.subscription - INFO - Fetching credits for: rachit.gour749@gmail.com
+2026-03-24 14:49:55 - Services.subscription.api.subscription - INFO - Fetching credits for: rachit.gour749@gmail.com
