@@ -358,9 +358,9 @@ Access the interactive API documentation at:
 http://localhost:8000/docs
 ```
 
-Login credentials:
-- Username: `wealthwisers@fintech.gmail.com`
-- Password: `WW@fintech.2025`
+Login credentials (set via environment variables):
+- Username: `SWAGGER_USERNAME` env var
+- Password: `SWAGGER_PASSWORD` env var
 
 ## 🔧 Troubleshooting
 

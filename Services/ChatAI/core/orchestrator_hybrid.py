@@ -318,7 +318,7 @@ class QueryOrchestrator:
                 config={
                     "system_instruction": CHATAI1_ENHANCED_PROMPT,
                     "temperature": 0.4,
-                    "max_output_tokens": 2000
+                    "max_output_tokens": 4000
                 }
             )
             return response
@@ -352,7 +352,7 @@ Provide a comprehensive, expert answer. Use your knowledge to supplement retriev
                 contents=enriched_query,
                 config={
                     "temperature": 0.4,
-                    "max_output_tokens": 2000
+                    "max_output_tokens": 4000
                 }
             )
             return response
@@ -409,7 +409,7 @@ Be thorough and actionable. Never say "data is limited"."""
                 contents=comparison_prompt,
                 config={
                     "temperature": 0.3,
-                    "max_output_tokens": 2500
+                    "max_output_tokens": 6000
                 }
             )
             return response
@@ -451,7 +451,7 @@ Provide actionable insights for this client."""
                 contents=enriched_query,
                 config={
                     "temperature": 0.4,
-                    "max_output_tokens": 2000
+                    "max_output_tokens": 4000
                 }
             )
             
@@ -492,7 +492,7 @@ Provide step-by-step guidance for this action, including:
             contents=guidance_prompt,
             config={
                 "temperature": 0.3,
-                "max_output_tokens": 1500
+                "max_output_tokens": 4000
             }
         )
         return response
@@ -524,7 +524,7 @@ Provide accurate regulatory guidance with specific references to SEBI/AMFI/IRDAI
                 contents=regulatory_prompt,
                 config={
                     "temperature": 0.2,
-                    "max_output_tokens": 2000
+                    "max_output_tokens": 4000
                 }
             )
             return response
@@ -554,7 +554,7 @@ Provide current market analysis and actionable insights."""
                 contents=market_prompt,
                 config={
                     "temperature": 0.4,
-                    "max_output_tokens": 2000
+                    "max_output_tokens": 4000
                 }
             )
             return response

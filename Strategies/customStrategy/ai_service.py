@@ -10,12 +10,15 @@ try:
     GENAI_AVAILABLE = True
 except ImportError:
     GENAI_AVAILABLE = False
-    print("Warning: google-generativeai not installed. Please run: pip install google-generativeai")
+    logging.getLogger(__name__).warning("google-generativeai not installed. Please run: pip install google-generativeai")
 
 class AIService:
     def __init__(self):
-        # Use the provided Gemini API key
-        self.gemini_api_key = 'AIzaSyDAjctw1OWrqUa-yLfzWPi02uh4AGErUDE'
+        self.gemini_api_key = os.getenv('GEMINI_API_KEY', '')
+        if not self.gemini_api_key:
+            self.logger = logging.getLogger(__name__)
+            self.logger.error("GEMINI_API_KEY environment variable not set")
+            return
         self.logger = logging.getLogger(__name__)
         self.logger.info(f"Gemini API Key loaded: {self.gemini_api_key[:10]}...")
         
@@ -102,7 +105,7 @@ class AIService:
                         )
                     )
                     
-                    print( "response", response)
+                    self.logger.debug(f"Response received from {model_name}")
                     # Check if response was blocked
                     if not response.candidates:
                         self.logger.warning(f"No candidates returned from {model_name}")
@@ -120,12 +123,7 @@ class AIService:
                         content = response.text
                         self.logger.info(f"Received response from {model_name}")
                         
-                        # Print the raw response for debugging
-                        print("=" * 50)
-                        print(f"RAW RESPONSE FROM {model_name.upper()}:")
-                        print("=" * 50)
-                        print(content)
-                        print("=" * 50)
+                        self.logger.debug(f"Raw response from {model_name}: {content[:200]}")
                         
                         # Try to parse JSON from the response
                         try:
@@ -140,12 +138,7 @@ class AIService:
                                 analysis['strategy_levels'] = 2  # Default to medium complexity
                                 self.logger.warning("strategy_levels missing, using default value: 2")
                             
-                            # Print the parsed JSON for debugging
-                            print("=" * 50)
-                            print(f"PARSED JSON FROM {model_name.upper()}:")
-                            print("=" * 50)
-                            print(json.dumps(analysis, indent=2))
-                            print("=" * 50)
+                            self.logger.debug(f"Parsed JSON from {model_name}: {list(analysis.keys())}")
                             
                             return analysis
                         except json.JSONDecodeError as e:
@@ -169,12 +162,7 @@ class AIService:
                                     #     analysis['strategy_rating'] = 2  # Default to medium complexity
                                     #     self.logger.warning("strategy_rating missing, using default value: 2")
                                     
-                                    # Print the fallback parsed JSON for debugging
-                                    print("=" * 50)
-                                    print(f"FALLBACK PARSED JSON FROM {model_name.upper()}:")
-                                    print("=" * 50)
-                                    print(json.dumps(analysis, indent=2))
-                                    print("=" * 50)
+                                    self.logger.debug(f"Fallback parsed JSON from {model_name}: {list(analysis.keys())}")
                                     
                                     return analysis
                                 except json.JSONDecodeError:

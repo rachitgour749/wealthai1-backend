@@ -74,9 +74,8 @@ class SingleSessionMiddleware(BaseHTTPMiddleware):
                 }
             )
         
-        token = auth_header.replace("Bearer ", "").strip()
-        
-        # 2. Compute Hash - DISABLED (Using Raw Token Comparison)
+        # Note: Token hashing disabled for backward compatibility.
+        # TODO: Re-enable hashlib.sha256 hashing once login flow is updated to store hashes.
         # token_hash = hashlib.sha256(token.encode()).hexdigest()
 
         # 3. Check DB
@@ -109,6 +108,10 @@ class SingleSessionMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             logger.error(f"Middleware session check failed: {e}")
-            return await call_next(request)
+            # SECURITY: Fail-closed — deny access if auth check fails
+            return JSONResponse(
+                status_code=503,
+                content={"detail": "Authentication service temporarily unavailable. Please try again."}
+            )
 
         return await call_next(request)

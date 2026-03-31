@@ -1,24 +1,44 @@
 {
   "customers": [
     {
-      "id": "cust_d324d314",
-      "name": "Shourya",
-      "email": "shouryabiz07@gmail.com",
-      "status": "pending",
-      "file_search_store": "fileSearchStores/products-shourya-i6nbjk898jtn",
-      "docs_synced": 0,
-      "last_sync": null,
-      "created_at": "2025-12-29T20:29:59.630154"
-    },
-    {
       "id": "money_compound",
       "name": "Money Compound",
       "email": "Moneycompoundinfo@gmail.com",
       "status": "active",
-      "file_search_store": "fileSearchStores/money-compound-client-data-eb32ihr02r59",
-      "docs_synced": 10,
-      "last_sync": "2026-01-02T08:00:00",
+      "file_search_store": "fileSearchStores/money-compound-client-trans-asaa1388w5jx",
+      "docs_synced": 1310,
+      "last_sync": "2026-02-25T17:42:53.571312",
       "created_at": "2026-01-02T07:10:00"
+    },
+    {
+      "id": "cust_699df139",
+      "name": "Shourya Ahuja",
+      "email": "iamshourya007@gmail.com",
+      "status": "active",
+      "file_search_store": "fileSearchStores/moneycompchattest-5r1aebaffgan",
+      "docs_synced": 1311,
+      "last_sync": "2026-02-26T14:14:01.756059",
+      "created_at": "2026-02-23T14:29:34.190828"
+    },
+    {
+      "id": "cust_98a74f27",
+      "name": "wealthwisersfinancialservices",
+      "email": "wealthwisersfinancialservices@gmail.com",
+      "status": "active",
+      "file_search_store": "fileSearchStores/test-store-with-zoho-data-rtkhbwlkwjn6",
+      "docs_synced": 15,
+      "last_sync": "2026-02-24T11:54:08.210923",
+      "created_at": "2026-02-23T14:59:36.496476"
+    },
+    {
+      "id": "cust_5348dd04",
+      "name": "rachit.gour749",
+      "email": "rachit.gour749@gmail.com",
+      "status": "active",
+      "file_search_store": null,
+      "docs_synced": 0,
+      "last_sync": null,
+      "created_at": "2026-03-31T13:31:23.597538"
     }
   ]
 }

@@ -105,9 +105,9 @@ def get_subscription_dir_name():
 # Store subscription directory name globally for use in async functions
 SUBSCRIPTION_DIR_NAME = get_subscription_dir_name()
 if SUBSCRIPTION_DIR_NAME:
-    logger.info(f"Detected subscription directory: {SUBSCRIPTION_DIR_NAME}")
+    logger.info(f"[PKG] Detected subscription directory: {SUBSCRIPTION_DIR_NAME}")
 else:
-    logger.warning("Subscription directory not found - subscription features will be unavailable")
+    logger.warning("[WARN]  Subscription directory not found - subscription features will be unavailable")
 
 # Add subdirectories for direct imports (legacy support)
 sys.path.extend([
@@ -159,11 +159,8 @@ def _lazy_import_chatai():
         return None, None, None, None
 
 def _lazy_import_backtesters():
-    """Lazy import backtester initialization functions"""
-    try:
-        return None, None, None, None
-    except Exception:
-        return None, None, None, None
+    """Lazy import backtester initialization functions — currently disabled."""
+    return None, None, None, None
 
 # =========================
 # ASYNC INITIALIZATION FUNCTIONS
@@ -190,12 +187,12 @@ async def _init_database_services() -> Dict[str, bool]:
             subscription_manager = subscription_db.subscription_manager
             
             # Run in thread pool to avoid blocking
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 await loop.run_in_executor(executor, subscription_manager.init_database)
             results['subscription'] = True
             logger.info("=" * 60)
-            logger.info("SUCCESS: Subscription database service initialized!")
+            logger.info("[OK] SUCCESS: Subscription database service initialized!")
             logger.info("=" * 60)
         except Exception as e:
             logger.error(f"Subscription init failed: {e}")
@@ -207,7 +204,7 @@ async def _init_database_services() -> Dict[str, bool]:
         """Initialize webhook database"""
         try:
             from Services.webhook.webhook_logic import init_db as init_webhook_db
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 await loop.run_in_executor(executor, init_webhook_db)
             results['webhook'] = True
@@ -219,7 +216,7 @@ async def _init_database_services() -> Dict[str, bool]:
         """Initialize custom strategy database"""
         try:
             from Strategies.customStrategy.database import CustomStrategyDatabase
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 await loop.run_in_executor(
                     executor, 
@@ -234,7 +231,7 @@ async def _init_database_services() -> Dict[str, bool]:
         """Initialize SingleSignOn service"""
         try:
             from Databases.app_data_db_connection import create_connection as init_sso_db
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 sso_init = await loop.run_in_executor(executor, init_sso_db)
             results['single_sign_on'] = bool(sso_init)
@@ -246,12 +243,12 @@ async def _init_database_services() -> Dict[str, bool]:
         """Initialize Broker database (broker_sessions table)"""
         try:
             from Databases.app_data_db_connection import init_database as init_broker_db
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 broker_init = await loop.run_in_executor(executor, init_broker_db)
             results['broker'] = bool(broker_init)
             if broker_init:
-                logger.info("Broker database initialized (broker_sessions table created)")
+                logger.info("[OK] Broker database initialized (broker_sessions table created)")
         except Exception as e:
             logger.error(f"Broker database init failed: {e}")
             results['broker'] = False
@@ -269,7 +266,7 @@ async def _init_database_services() -> Dict[str, bool]:
     return results
 
 async def _init_backtesters_lazy():
-    """Lazy initialize backtesters - disabled"""
+    """Lazy initialize backtesters — currently disabled / no-op."""
     pass
 
 # =========================
@@ -291,13 +288,19 @@ try:
         rate_limit_handler
     )
     # Using print to ensure visibility despite logging level
-    logger.info("ChatAI INITIALIZATION SUCCESSFUL")
+    logger.info("=" * 60)
+    logger.info("[OK] ChatAI INITIALIZATION SUCCESSFUL")
     logger.info("   - Router: LOADED")
     logger.info("   - Lifespan: LOADED")
     logger.info("   - Rate Limiter: LOADED")
+    logger.info("=" * 60)
     chatai_availabe = True
 except Exception as e:
-    logger.error(f"ChatAI INITIALIZATION FAILED: {e}")
+    logger.error("=" * 60)
+    logger.error("[FAIL] ChatAI INITIALIZATION FAILED")
+    logger.error(f"   Error: {e}")
+    logger.error("   ChatAI routes will NOT be available.")
+    logger.error("=" * 60)
     chatai_router = None
     chatai_lifespan = None
     chatai_availabe = False
@@ -332,18 +335,18 @@ async def lifespan(app: FastAPI):
     # Start backtesters in background (non-blocking)
     await _init_backtesters_lazy()
     
-    # Initialize and start the scheduler service - DISABLED (Triggered via API)
-    # try:
-    #     from Services.scheduler.scheduler_service import start_scheduler
-    #     logger.info("="*60)
-    #     logger.info("STARTING SCHEDULER SERVICE")
-    #     logger.info("="*60)
-    #     scheduler = start_scheduler()
-    #     logger.info("Scheduler service started successfully")
-    # except Exception as e:
-    #     logger.error(f"Failed to start scheduler service: {e}")
-    #     import traceback
-    #     traceback.print_exc()
+    # Initialize and start the scheduler service
+    try:
+        from Services.scheduler.scheduler_service import start_scheduler
+        logger.info("="*60)
+        logger.info("STARTING SCHEDULER SERVICE")
+        logger.info("="*60)
+        scheduler = start_scheduler()
+        logger.info("[OK] Scheduler service started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start scheduler service: {e}")
+        import traceback
+        traceback.print_exc()
     
     # Use ChatAI (New) lifespan if available
     if chatai_availabe and chatai_lifespan:
@@ -357,14 +360,14 @@ async def lifespan(app: FastAPI):
         yield
     
     # Shutdown
-    # Shutdown scheduler - DISABLED
-    # try:
-    #     from Services.scheduler.scheduler_service import get_scheduler
-    #     scheduler = get_scheduler()
-    #     scheduler.shutdown()
-    #     logger.info("Scheduler shut down successfully")
-    # except Exception as e:
-    #     logger.error(f"Failed to shutdown scheduler: {e}")
+    # Shutdown scheduler
+    try:
+        from Services.scheduler.scheduler_service import get_scheduler
+        scheduler = get_scheduler()
+        scheduler.shutdown()
+        logger.info("[OK] Scheduler shut down successfully")
+    except Exception as e:
+        logger.error(f"Failed to shutdown scheduler: {e}")
     
     if close_db:
         try:
@@ -403,9 +406,11 @@ security = HTTPBasic()
 
 def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
     """Authenticate user for Swagger UI access"""
-    # Credentials provided by user
-    correct_username = secrets.compare_digest(credentials.username, "wealthwisers@fintech.gmail.com")
-    correct_password = secrets.compare_digest(credentials.password, "WW@fintech.2025")
+    expected_username = os.getenv("SWAGGER_USERNAME", "admin@wealthai1.in")
+    expected_password = os.getenv("SWAGGER_PASSWORD", "change-this-password")
+    
+    correct_username = secrets.compare_digest(credentials.username, expected_username)
+    correct_password = secrets.compare_digest(credentials.password, expected_password)
     
     if not (correct_username and correct_password):
         raise HTTPException(
@@ -487,6 +492,19 @@ try:
             "/",
             "/api/chat/health", # Exempt ChatAI health
             "/health", # ChatAI health
+            "/single-sign-on", # Exempt SSO to allow login/token update
+            "/api/auth", # Exempt Google OAuth
+            "/paymentSuccess", # Exempt payment callback
+            "/api/portfolio/webhook/trade-executed", # Exempt portfolio webhook callback
+            "/api/portfolio", # Exempt all portfolio endpoints for testing
+            "/api/hierarchy", # Exempt all hierarchy endpoints for testing
+            "/docs",
+            "/redoc",
+            "/openapi.json",
+            "/health_check",
+            "/",
+            "/api/chat/health", # Exempt ChatAI health
+            "/health", # ChatAI health
             "/api/v2/run_backtest",       # Backtest engine
             "/api/v2/strategies",         # List all strategies
             "/api/v2/strategy",           # /api/v2/strategy/* (assets, defaults, date-range, metrics, log)
@@ -500,15 +518,17 @@ try:
             "/api/v2/get_instances",
             "/api/strategy",              # Centralized backtest endpoints (assets, defaults, date-range, metrics, log)
             "/api/broker/place_order", # Exempt broker place order
-            "/api/broker/place_order", # Exempt broker place order
             "/api/broker/broker_login", # Exempt broker login
             "/api/webhook/wealthai1.in/trade_execute", # Exempt trade execution webhook
             "/api/webhook/trade_execute", # Exempt unified trade execution
             "/api/webhook/ra", # Exempt RA CRUD
-            "/admin" # Exempt admin routes for ease of use
+            "/admin", # ChatAI Admin routes (has own X-Admin-Key auth)
+            "/api/mfd", # MFD Self-Service routes (has own x-user-email auth)
+            "/api/query", # ChatAI query endpoint
+            "/api/health", # ChatAI health endpoint
+            "/api/run_backtest", # Exempt centralized backtest for verified access
+            "/api/strategies", # Exempt centralized list strategies
         ]
-    )
-    logger.info("SingleSessionMiddleware added")
 except Exception as e:
     logger.error(f"Failed to add SingleSessionMiddleware: {e}")
 
@@ -528,7 +548,7 @@ app.add_middleware(
         "http://localhost:5174", # ChatAI frontend dev
     ],
     allow_credentials=True,
-    allow_headers=["*"],
+    allow_headers=["*", "x-admin-key", "x-user-email", "x-session-id", "x-tenant-id", "Authorization", "Content-Type"],
     allow_methods=["*"], # Explicitly allow all methods
 )
 
@@ -556,8 +576,6 @@ chatai1_new_settings = None
 chatai1_new = None
 
 
-etf_router = None
-rs_etf_router = None
 
 try:
     pass # from Strategies.customStrategy.api import custom_strategy_router
@@ -568,7 +586,7 @@ supertrend_router = None
 
 try:
     from APIs.broker_routes import router as broker_router
-    logger.info("Broker router loaded successfully")
+    logger.info("[OK] Broker router loaded successfully")
 except Exception as e:
     logger.error(f"Failed to import broker_router: {e}")
 
@@ -598,7 +616,7 @@ try:
         import importlib
         logger.info(f"Attempting to import Services.{SUBSCRIPTION_DIR_NAME}...")
         subscription_module = importlib.import_module(f'Services.{SUBSCRIPTION_DIR_NAME}')
-        logger.info(f"Successfully imported Services.{SUBSCRIPTION_DIR_NAME} module")
+        logger.info(f"[OK] Successfully imported Services.{SUBSCRIPTION_DIR_NAME} module")
         
         # Now import the routers using the actual module
         logger.info(f"Loading routers from Services.{SUBSCRIPTION_DIR_NAME}...")
@@ -612,11 +630,11 @@ try:
         hierarchy_router = hierarchy_api.hierarchy_router
         
         logger.info("=" * 60)
-        logger.info("SUCCESS: Subscription routers loaded successfully!")
-        logger.info("subscription_router: LOADED")
-        logger.info("google_oauth_router: LOADED")
-        logger.info("hierarchy_router: LOADED")
-        logger.info("Subscription endpoints available:")
+        logger.info("[OK] SUCCESS: Subscription routers loaded successfully!")
+        logger.info("[OK] subscription_router: LOADED")
+        logger.info("[OK] google_oauth_router: LOADED")
+        logger.info("[OK] hierarchy_router: LOADED")
+        logger.info("[OK] Subscription endpoints available:")
         logger.info("   - /api/subscription/*")
         logger.info("   - /paymentSuccess")
         logger.info("   - /api/auth/google-login")
@@ -624,7 +642,7 @@ try:
         logger.info("=" * 60)
         
     except ImportError as e:
-        logger.error(f"❌ Failed to import Services.{SUBSCRIPTION_DIR_NAME}: {e}")
+        logger.error(f"[FAIL] Failed to import Services.{SUBSCRIPTION_DIR_NAME}: {e}")
         logger.error(f"Services directory contents: {os.listdir(SERVICES_DIR) if os.path.exists(SERVICES_DIR) else 'N/A'}")
         logger.error(f"Services/__init__.py exists: {os.path.exists(SERVICES_INIT)}")
         logger.error(f"Python path: {sys.path[:5]}")  # Show first 5 entries
@@ -648,7 +666,7 @@ deployment_router = None
 portfolio_router = None
 try:
     from Services.portfolio.portfolio_api import portfolio_router
-    logger.info("Portfolio API router loaded successfully")
+    logger.info("[OK] Portfolio API router loaded successfully")
 except Exception as e:
     logger.error(f"Failed to import portfolio_router: {e}")
 
@@ -677,7 +695,7 @@ except Exception as e:
 
 try:
     from APIs.routes import api_router as unified_api_router
-    logger.info("Unified API router loaded successfully from APIs.routes")
+    logger.info("[OK] Unified API router loaded successfully from APIs.routes")
 except Exception as e:
     logger.error(f"Failed to import unified_api_router: {e}")
     import traceback
@@ -691,7 +709,7 @@ except Exception as e:
 async def root():
     """Root endpoint - fast response"""
     return {
-        "message": "WealthAI1 API Running",
+        "message": "WealthAI1 API Running [OK]",
         "version": "1.0.1 (API Verif)",
         "strategies": ["rs-strategy", "custom-strategy", "chat"],
         "services": ["subscription", "webhook", "single-sign-on", "deployments"],
@@ -700,9 +718,19 @@ async def root():
 
 @app.get("/health_check")
 async def health_check():
-    """Health check endpoint - shows initialization status"""
+    """Health check endpoint - shows initialization status and verifies DB connectivity."""
+    db_healthy = False
+    try:
+        from Services.subscription.database import subscription_manager
+        # Quick DB ping — if this fails, the service is degraded
+        db_healthy = subscription_manager.engine is not None
+    except Exception:
+        pass
+    
+    overall = "healthy" if db_healthy else "degraded"
     return {
-        "api_status": "healthy",
+        "api_status": overall,
+        "database": "connected" if db_healthy else "unreachable",
         "services": {
             "subscription": subscription_service_initialized,
             "webhook": webhook_service_initialized,
@@ -736,7 +764,11 @@ if custom_strategy_router:
 if subscription_router:
     app.include_router(subscription_router)
 else:
+<<<<<<< HEAD
     logger.error("Subscription router not loaded - subscription endpoints will not be available")
+=======
+    logger.error("[WARN]  Subscription router not loaded - subscription endpoints will not be available")
+>>>>>>> feature/chatai
 
 if payment_router:
     app.include_router(payment_router)
@@ -744,21 +776,27 @@ if payment_router:
 if google_oauth_router:
     app.include_router(google_oauth_router)
 else:
-    logger.error("⚠️  Google OAuth router not loaded - OAuth endpoints will not be available")
+    logger.error("[WARN]  Google OAuth router not loaded - OAuth endpoints will not be available")
 
 # Portfolio router
 if portfolio_router:
     app.include_router(portfolio_router)
-    logger.info("✅ Portfolio router mounted successfully")
+    logger.info("[OK] Portfolio router mounted successfully")
 else:
-    logger.error("⚠️  Portfolio router not loaded - portfolio endpoints will not be available")
+    logger.error("[WARN]  Portfolio router not loaded - portfolio endpoints will not be available")
 
 # Hierarchy router
 if hierarchy_router:
     app.include_router(hierarchy_router)
+<<<<<<< HEAD
     logger.info("Hierarchy router mounted successfully")
 else:
     logger.error("Hierarchy router not loaded - hierarchy endpoints will not be available")
+=======
+    logger.info("[OK] Hierarchy router mounted successfully")
+else:
+    logger.error("[WARN]  Hierarchy router not loaded - hierarchy endpoints will not be available")
+>>>>>>> feature/chatai
 
 
 if single_sign_on_router:
@@ -782,7 +820,27 @@ if chatai1_new and hasattr(chatai1_new, 'router'):
 # ChatAI router (New)
 if chatai_availabe and chatai_router:
     app.include_router(chatai_router)
+<<<<<<< HEAD
     logger.info("ChatAI (New) router mounted successfully")
+=======
+    logger.info("[OK] ChatAI (New) router mounted successfully")
+    
+    # Also mount admin and MFD self-service routes
+    try:
+        from Services.ChatAI.api.admin_routes import router as admin_router
+        app.include_router(admin_router)
+        logger.info("[OK] ChatAI Admin router mounted")
+    except Exception as e:
+        logger.error(f"[FAIL] ChatAI Admin router: {e}")
+    
+    try:
+        from Services.ChatAI.api.mfd_routes import router as mfd_router
+        app.include_router(mfd_router)
+        logger.info("[OK] MFD Self-Service router mounted at /api/mfd")
+    except Exception as e:
+        logger.error(f"[FAIL] MFD router: {e}")
+
+>>>>>>> feature/chatai
 
 # SuperTrend router (handle duplicate root route)
 
@@ -791,11 +849,15 @@ if chatai_availabe and chatai_router:
 # Unified API Router (Consolidated)
 if unified_api_router:
     app.include_router(unified_api_router)
+<<<<<<< HEAD
     logger.info("Unified API router mounted at /api")
 
 if admin_router:
     app.include_router(admin_router)
     logger.info("Admin router mounted successfully")
+=======
+    logger.info("[OK] Unified API router mounted at /api")
+>>>>>>> feature/chatai
 
 # =========================
 # CHATAI ENDPOINTS (Fallback if router not available)

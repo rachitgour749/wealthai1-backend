@@ -148,11 +148,14 @@ REGULATORY_KEYWORDS = [
     'arn', 'euin', 'fatca', 'crs',
 ]
 
-# Market keywords
+# Market keywords — must be specific to avoid false positives with product queries
+# e.g., "premium budget" should NOT trigger MARKET; use "union budget" instead
 MARKET_KEYWORDS = [
-    'market', 'nifty', 'sensex', 'index', 'sector', 'fii', 'dii',
-    'trend', 'outlook', 'today', 'performance', 'rally', 'crash', 'correction',
-    'rate cut', 'inflation', 'rbi policy', 'budget',
+    'nifty', 'sensex', 'index fund', 'fii', 'dii',
+    'market trend', 'market outlook', 'market crash', 'market rally',
+    'market correction', 'stock market', 'bull market', 'bear market',
+    'rate cut', 'inflation rate', 'rbi policy', 'union budget',
+    'market today', 'market performance',
 ]
 
 # Education signal words
@@ -234,8 +237,9 @@ def has_regulatory_keyword(query: str) -> bool:
 
 
 def has_market_keyword(query: str) -> bool:
-    """Check for market-related keywords."""
+    """Check for market-related keywords using phrase matching."""
     query_lower = query.lower()
+    # Use phrase matching — each keyword is checked as a complete phrase
     return any(kw in query_lower for kw in MARKET_KEYWORDS)
 
 

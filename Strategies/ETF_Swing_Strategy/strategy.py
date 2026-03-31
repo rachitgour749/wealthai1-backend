@@ -9,6 +9,7 @@ from Strategies.utilities.logging_config import StrategyLogger
 
 class ETFSwingStrategy(EquitySegment):
     """
+<<<<<<< HEAD
     Generalized Swing Trading Strategy
     
     Now supports both Indian and US markets (Stocks & ETFs).
@@ -27,6 +28,21 @@ class ETFSwingStrategy(EquitySegment):
         self.market = market.upper()
         self.asset_type = asset_type.upper()
         self.strategy_name = f"{self.market}_{self.asset_type}_Swing_Strategy"
+=======
+    ETF-Based Equity Swing Trading Strategy
+    
+    Rules:
+    - Entry: Close > SMA(50)
+    - Ranking: (Close - SMA) / SMA (Lower positive distance preferred)
+    - Exit (Profit): Close < SMA AND Profit >= Threshold
+    - Stop Loss: Fixed % from Entry
+    - Portfolio: Slot-based with dynamic capital reallocation
+    """
+    
+    def __init__(self, config_path: str = None):
+        super().__init__()
+        self.strategy_name = "ETF_Swing_Strategy"
+>>>>>>> feature/chatai
         self.logger = StrategyLogger(self.strategy_name)
         
         # Default Config
@@ -50,13 +66,17 @@ class ETFSwingStrategy(EquitySegment):
         self.stop_loss_pct = params.get("stop_loss_pct", 5.0)
         self.profit_threshold_pct = params.get("profit_threshold_pct", 10.0)
         self.num_slots = params.get("number_of_slots", 5)
+<<<<<<< HEAD
         self.brokerage_percent = float(params.get("brokerage_percent", 0.0))
+=======
+>>>>>>> feature/chatai
         
         # Logging Setup
         self.log_level = self.config.get("logging", {}).get("level", 3)
         self.log_categories = self.config.get("logging", {}).get("categories", {})
         
         # Portfolio State
+<<<<<<< HEAD
         self.total_capital = 0.0
         self._initialize_slots()
 
@@ -92,6 +112,26 @@ class ETFSwingStrategy(EquitySegment):
         if level <= self.log_level:
             log_msg = f"[L{level}][{category}] {message}"
             self.logger.info(log_msg)
+=======
+        self.slots: List[Dict[str, Any]] = [{"id": i, "status": "FREE", "data": {}} for i in range(self.num_slots)]
+        self.total_capital = 0.0
+        self.available_cash = 0.0
+        self.slot_capital = 0.0
+        
+        self._log(1, "system", f"Strategy Initialized: {self.strategy_name}")
+        self._log(2, "system", f"Parameters: SMA={self.sma_lookback}, SL={self.stop_loss_pct}%, ProfitThr={self.profit_threshold_pct}%, Slots={self.num_slots}")
+
+    def _log(self, level: int, category: str, message: str):
+        """Custom logging with levels 1-5 and categories"""
+        if level <= self.log_level:
+            if self.log_categories.get(category, True):
+                if level >= 4: # Debug levels
+                    self.logger.debug(f"[L{level}][{category}] {message}")
+                elif level == 1: # Essential
+                    self.logger.critical(f"[L{level}][{category}] {message}")
+                else:
+                    self.logger.info(f"[L{level}][{category}] {message}")
+>>>>>>> feature/chatai
 
     def load_data(self, start_date: datetime, end_date: datetime) -> Any:
         """Required abstract method implementation. Data loading is handled by the backtester."""
@@ -102,7 +142,11 @@ class ETFSwingStrategy(EquitySegment):
         self.total_capital = initial_capital
         self.available_cash = initial_capital
         self.slot_capital = initial_capital / self.num_slots
+<<<<<<< HEAD
         self._log(1, "execution", f"Portfolio Initialized with {initial_capital:,.2f}. Slot Capital: {self.slot_capital:,.2f}")
+=======
+        self._log(1, "execution", f"Portfolio Initialized with ₹{initial_capital:,.2f}. Slot Capital: ₹{self.slot_capital:,.2f}")
+>>>>>>> feature/chatai
 
     def calculate_indicators(self, data: pd.DataFrame) -> pd.DataFrame:
         """Calculate SMA for entry/exit signals"""
@@ -113,6 +157,7 @@ class ETFSwingStrategy(EquitySegment):
         return df
 
     def evaluate_signals(self, symbol: str, df: pd.DataFrame, current_date: datetime) -> Dict[str, Any]:
+<<<<<<< HEAD
         """Evaluate entry and ranking metrics for a given ETF with extreme verbose logging"""
         date_str = current_date.strftime('%Y-%m-%d')
         
@@ -125,11 +170,18 @@ class ETFSwingStrategy(EquitySegment):
         lookback_start = lookback_df.index[0].strftime('%Y-%m-%d')
         lookback_end = lookback_df.index[-1].strftime('%Y-%m-%d')
         
+=======
+        """Evaluate entry and ranking metrics for a given ETF"""
+        if df.empty or len(df) < self.sma_lookback:
+            return {"eligible": False}
+        
+>>>>>>> feature/chatai
         latest = df.iloc[-1]
         close = latest['close']
         sma = latest['sma']
         distance = latest['distance_pct']
         
+<<<<<<< HEAD
         # LOGGING: Data Fetch Breakdown
         self._log(5, "data_fetch", "="*80)
         self._log(5, "data_fetch", f"[{date_str}] STEP 1: DATABASE DATA FETCH FOR {symbol}")
@@ -160,6 +212,12 @@ class ETFSwingStrategy(EquitySegment):
             self._log(4, "signal", f"[{date_str}] {symbol}: NOT ELIGIBLE (Price {close:.2f} < SMA {sma:.2f}). Distance: {distance:.2f}%")
         
         self._log(5, "calculation", "="*80)
+=======
+        eligible = close > sma
+        
+        if eligible:
+            self._log(5, "signal", f"{symbol}: Eligible (Close={close:.2f} > SMA={sma:.2f}, Dist={distance:.2f}%)")
+>>>>>>> feature/chatai
         
         return {
             "symbol": symbol,
@@ -170,7 +228,11 @@ class ETFSwingStrategy(EquitySegment):
             "date": current_date
         }
 
+<<<<<<< HEAD
     def process_exits(self, eval_prices: Dict[str, float], exec_prices: Dict[str, float], eval_date: datetime, exec_date: datetime) -> List[Dict]:
+=======
+    def process_exits(self, prices: Dict[str, float], current_date: datetime) -> List[Dict]:
+>>>>>>> feature/chatai
         """Process stop loss and profit-based exits"""
         exits = []
         realized_something = False
@@ -180,6 +242,7 @@ class ETFSwingStrategy(EquitySegment):
                 data = slot["data"]
                 symbol = data["symbol"]
                 entry_price = data["entry_price"]
+<<<<<<< HEAD
                 eval_price = eval_prices.get(symbol)
                 exec_price = exec_prices.get(symbol)
                 
@@ -206,6 +269,34 @@ class ETFSwingStrategy(EquitySegment):
                         reason_with_pct = f"PROFIT_EXIT ({real_profit_pct:.2f}%)"
                         self._log(1, "execution", f"PROFIT EXIT TRIGGERED: {symbol} at {eval_price:.2f} (Profit: {profit_pct:.2f}%). Executing at {exec_price:.2f} on {exec_date.strftime('%Y-%m-%d')}")
                         exits.append(self._execute_exit(slot, exec_price, exec_date, reason_with_pct))
+=======
+                current_price = prices.get(symbol)
+                
+                if current_price is None:
+                    continue
+                
+                # Check Stop Loss
+                sl_price = entry_price * (1 - self.stop_loss_pct / 100)
+                if current_price <= sl_price:
+                    self._log(1, "execution", f"STOP LOSS TRIGGERED: {symbol} at ₹{current_price:.2f} (Entry: ₹{entry_price:.2f}, SL: ₹{sl_price:.2f})")
+                    exits.append(self._execute_exit(slot, current_price, current_date, "STOP_LOSS"))
+                    realized_something = True
+                    continue
+                
+                # Check Trend-Based Profit Exit
+                sma_val = data.get("sma") # This might need updating with current SMA
+                profit_pct = (current_price - entry_price) / entry_price * 100
+                
+                # Note: SMA should be recalculated for exit evaluation. 
+                # For simplicity in this method, we assume SMA is passed or available.
+                # In a real backtest, we'd have the latest SMA for each holding.
+                
+                # If we have current SMA for this symbol
+                if "current_sma" in data and current_price < data["current_sma"]:
+                    if profit_pct >= self.profit_threshold_pct:
+                        self._log(1, "execution", f"PROFIT EXIT TRIGGERED: {symbol} at ₹{current_price:.2f} (Profit: {profit_pct:.2f}%)")
+                        exits.append(self._execute_exit(slot, current_price, current_date, "PROFIT_EXIT"))
+>>>>>>> feature/chatai
                         realized_something = True
                     else:
                         self._log(3, "signal", f"{symbol}: Trend violated (Price < SMA) but Profit ({profit_pct:.2f}%) below threshold. Holding.")
@@ -223,6 +314,7 @@ class ETFSwingStrategy(EquitySegment):
         amount = qty * price
         
         # Calculate costs
+<<<<<<< HEAD
         costs = self.calculate_etf_delivery_costs('sell', amount, self.brokerage_percent)
         
         # Update FIFO inventory but ignore Capital Gains Tax as per request
@@ -230,6 +322,12 @@ class ETFSwingStrategy(EquitySegment):
         
         # Net Proceeds = (Amount - Transaction Costs) -> No Capital Gains Tax deduction
         net_proceeds = costs['net_amount'] 
+=======
+        costs = self.calculate_etf_delivery_costs('sell', amount)
+        tax_info = self.calculate_capital_gains(symbol, qty, price, date)
+        
+        net_proceeds = costs['net_amount'] - tax_info['capital_gains_tax']
+>>>>>>> feature/chatai
         self.available_cash += net_proceeds
         
         log_entry = {
@@ -239,6 +337,7 @@ class ETFSwingStrategy(EquitySegment):
             "qty": qty,
             "price": price,
             "amount": amount,
+<<<<<<< HEAD
             "costs": costs, # Store full costs dictionary
             "tax": 0.0, # Capital Gains Tax ignored
             "net_proceeds": net_proceeds,
@@ -277,11 +376,21 @@ class ETFSwingStrategy(EquitySegment):
         
         slot["status"] = "PENDING_FREE" # Mark as pending free to prevent same-day re-entry
         slot["last_symbol_info"] = {"symbol": symbol} # Track symbol for same-day re-entry prevention
+=======
+            "costs": costs['total_costs'],
+            "tax": tax_info['capital_gains_tax'],
+            "net_proceeds": net_proceeds,
+            "date": date
+        }
+        
+        slot["status"] = "FREE"
+>>>>>>> feature/chatai
         slot["data"] = {}
         
         return log_entry
 
     def _recalculate_slot_capital(self):
+<<<<<<< HEAD
         """Update slot capital based on current available cash and free slots (including pending)"""
         # Include PENDING_FREE in the count because they represent capital that will be available
         free_slots_count = sum(1 for s in self.slots if s["status"] in ["FREE", "PENDING_FREE"])
@@ -294,6 +403,13 @@ class ETFSwingStrategy(EquitySegment):
             self._log(2, "execution", f"Calculation: {self.policy.format_currency(self.available_cash)} / {free_slots_count} slots")
             self._log(2, "execution", f"New Slot Capital: {self.policy.format_currency(self.slot_capital)}")
             self._log(2, "execution", f"-----------------------------")
+=======
+        """Update slot capital based on current available cash and free slots"""
+        free_slots_count = sum(1 for s in self.slots if s["status"] == "FREE")
+        if free_slots_count > 0:
+            self.slot_capital = self.available_cash / free_slots_count
+            self._log(2, "execution", f"RECALCULATING: Available Cash: ₹{self.available_cash:,.2f}. New Slot Capital: ₹{self.slot_capital:,.2f}")
+>>>>>>> feature/chatai
 
     def process_entries(self, eligible_etfs: List[Dict], current_date: datetime) -> List[Dict]:
         """Rank and allocate free slots to eligible ETFs"""
@@ -303,6 +419,7 @@ class ETFSwingStrategy(EquitySegment):
         if not free_slots or not eligible_etfs:
             return entries
             
+<<<<<<< HEAD
         # Filter out ETFs already held or just sold today (PENDING_FREE)
         # This prevents same-day re-entry after a Stop Loss exit
         held_symbols = []
@@ -313,6 +430,10 @@ class ETFSwingStrategy(EquitySegment):
                 # We need to track what was in the slot before it was marked PENDING_FREE
                 held_symbols.append(s["last_symbol_info"]["symbol"])
         
+=======
+        # Filter out ETFs already held
+        held_symbols = [s["data"]["symbol"] for s in self.slots if s["status"] == "OCCUPIED"]
+>>>>>>> feature/chatai
         eligible_new = [e for e in eligible_etfs if e["symbol"] not in held_symbols]
         
         if not eligible_new:
@@ -325,16 +446,20 @@ class ETFSwingStrategy(EquitySegment):
         num_to_buy = min(len(free_slots), len(eligible_new))
         to_buy = eligible_new[:num_to_buy]
         
+<<<<<<< HEAD
         self._log(2, "execution", f"--- ENTRY PROCESSING ---")
         self._log(2, "execution", f"Available Cash: {self.policy.format_currency(self.available_cash)}")
         self._log(2, "execution", f"Total Free Slots: {len(free_slots)}")
         self._log(2, "execution", f"Slot Capital: {self.policy.format_currency(self.slot_capital)}")
 
+=======
+>>>>>>> feature/chatai
         for i, etf in enumerate(to_buy):
             slot = free_slots[i]
             symbol = etf["symbol"]
             price = etf["close"] # Execution at Day T+1 Open would be handled by backtester
             
+<<<<<<< HEAD
             self._log(2, "execution", f"Calculating Qty for {symbol}:")
             self._log(2, "execution", f"  Target Purchase Price: {self.policy.format_currency(price)}")
             self._log(2, "execution", f"  Budget (Min of Slot Cap or Avail Cash): {self.policy.format_currency(min(self.slot_capital, self.available_cash))}")
@@ -413,6 +538,41 @@ class ETFSwingStrategy(EquitySegment):
                  self._log(1, "execution", f"[{current_date.strftime('%Y-%m-%d')}] [SKIPPED] Could not afford even 1 unit of {symbol}")
 
         self._log(2, "execution", f"-------------------------")
+=======
+            # Simple assumption: price is the execution price
+            qty = int(self.slot_capital // price)
+            
+            if qty > 0:
+                amount = qty * price
+                costs = self.calculate_etf_delivery_costs('buy', amount)
+                
+                if self.available_cash >= costs['net_amount']:
+                    self.available_cash -= costs['net_amount']
+                    
+                    slot["status"] = "OCCUPIED"
+                    slot["data"] = {
+                        "symbol": symbol,
+                        "qty": qty,
+                        "entry_price": price,
+                        "entry_date": current_date,
+                        "sma": etf["sma"], # Original SMA
+                        "current_sma": etf["sma"] # To be updated daily
+                    }
+                    
+                    self.manage_fifo_inventory(symbol, qty, price, current_date)
+                    
+                    entries.append({
+                        "symbol": symbol,
+                        "action": "BUY",
+                        "qty": qty,
+                        "price": price,
+                        "amount": amount,
+                        "costs": costs['total_costs'],
+                        "date": current_date
+                    })
+                    self._log(1, "execution", f"ENTRY: {symbol} - {qty} units at ₹{price:.2f}. Total: ₹{amount:,.2f}")
+
+>>>>>>> feature/chatai
         return entries
 
     def update_holding_sma(self, symbol: str, current_sma: float):
@@ -421,6 +581,7 @@ class ETFSwingStrategy(EquitySegment):
             if slot["status"] == "OCCUPIED" and slot["data"]["symbol"] == symbol:
                 slot["data"]["current_sma"] = current_sma
                 break
+<<<<<<< HEAD
 
     def finalize_daily_updates(self):
         """Finalize pending slot status changes at the end of the day"""
@@ -430,3 +591,5 @@ class ETFSwingStrategy(EquitySegment):
                 if "last_symbol_info" in slot:
                     del slot["last_symbol_info"]
                 self._recalculate_slot_capital()
+=======
+>>>>>>> feature/chatai
