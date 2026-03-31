@@ -156,15 +156,13 @@ class SuperTrendStrategy(EquitySegment):
             return df
 
         # ── Step 3: compute SuperTrend on weekly bars ─────────────────────────
+        weekly.index = pd.DatetimeIndex(week_last_date.values)
         st_res = self._calculate_supertrend(weekly, self.atr_period, self.atr_multiplier)
         weekly['supertrend'] = st_res['supertrend']
         weekly['st_direction'] = st_res['st_direction']
 
         # ── Step 4: attach last-trading-date and merge back to daily ─────────
-        weekly['last_date'] = week_last_date
-
-        # Build lookup: last_date → (supertrend, st_direction)
-        st_by_date = weekly.set_index('last_date')[['supertrend', 'st_direction']]
+        st_by_date = weekly[['supertrend', 'st_direction']]
 
         # Mark last trading day of each week on daily df
         df['is_last_day_of_week'] = False
