@@ -68911,3 +68911,727 @@ DETAIL:  Key (run_id, client_code, symbol, trade_date, side)=(EXT_23032026997, R
 2026-03-24 14:49:26 - Services.subscription.api.subscription - INFO - Fetching credits for: rachit.gour749@gmail.com
 2026-03-24 14:49:52 - Services.subscription.api.subscription - INFO - Fetching credits for: rachit.gour749@gmail.com
 2026-03-24 14:49:55 - Services.subscription.api.subscription - INFO - Fetching credits for: rachit.gour749@gmail.com
+2026-03-24 15:21:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:21:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:21:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:21:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:21:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:21:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:02 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:02 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:02 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:02 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:02 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:02 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:11 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:11 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:11 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:11 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:11 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:11 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:11 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:11 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:11 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:11 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:16 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:16 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:29 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:29 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:51 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:51 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:52 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:22:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:23:29 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:23:29 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:23:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:23:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:09 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:09 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:09 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:09 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:09 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:09 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:10 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:10 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:10 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:10 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:10 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:10 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:17 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:18 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:18 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:29 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:29 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:39 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:39 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:45 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:45 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:45 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:24:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:25:09 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:25:09 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:25:29 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:25:29 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:25:39 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:25:39 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:25:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:25:59 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:26:09 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:26:09 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:26:29 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-24 15:26:29 - Middleware.auth_middleware - WARNING - Failed to decode token for email extraction: Error decoding token claims.
+2026-03-30 13:35:11 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-30 13:35:11 - __main__ - INFO - Detected subscription directory: subscription
+2026-03-30 13:35:24 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-30 13:35:24 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (a284a84) on aarch64-unknown-linux...
+2026-03-30 13:35:27 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-30 13:35:27 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-30 13:35:29 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-30 13:35:29 - __main__ - INFO - ChatAI INITIALIZATION SUCCESSFUL
+2026-03-30 13:35:29 - __main__ - INFO -    - Router: LOADED
+2026-03-30 13:35:29 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-30 13:35:29 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-30 13:35:29 - __main__ - INFO - SingleSessionMiddleware added
+2026-03-30 13:35:29 - __main__ - INFO - Broker router loaded successfully
+2026-03-30 13:35:32 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-30 13:35:32 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-30 13:35:32 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-30 13:35:32 - __main__ - INFO - New Webhook router loaded successfully from Services.webhook.webhook_api
+2026-03-30 13:35:32 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-30 13:35:32 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-30 13:35:32 - __main__ - INFO - Successfully imported Services.subscription module
+2026-03-30 13:35:32 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-30 13:35:32 - __main__ - INFO - ============================================================
+2026-03-30 13:35:32 - __main__ - INFO - SUCCESS: Subscription routers loaded successfully!
+2026-03-30 13:35:32 - __main__ - INFO - subscription_router: LOADED
+2026-03-30 13:35:32 - __main__ - INFO - google_oauth_router: LOADED
+2026-03-30 13:35:32 - __main__ - INFO - hierarchy_router: LOADED
+2026-03-30 13:35:32 - __main__ - INFO - Subscription endpoints available:
+2026-03-30 13:35:32 - __main__ - INFO -    - /api/subscription/*
+2026-03-30 13:35:32 - __main__ - INFO -    - /paymentSuccess
+2026-03-30 13:35:32 - __main__ - INFO -    - /api/auth/google-login
+2026-03-30 13:35:32 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-30 13:35:32 - __main__ - INFO - ============================================================
+2026-03-30 13:35:32 - __main__ - INFO - Portfolio API router loaded successfully
+2026-03-30 13:35:33 - __main__ - INFO - Admin router loaded successfully
+2026-03-30 13:35:33 - __main__ - INFO - Unified API router loaded successfully from APIs.routes
+2026-03-30 13:35:33 - __main__ - INFO - ✅ Portfolio router mounted successfully
+2026-03-30 13:35:33 - __main__ - INFO - Hierarchy router mounted successfully
+2026-03-30 13:35:34 - __main__ - INFO - ChatAI (New) router mounted successfully
+2026-03-30 13:35:34 - __main__ - INFO - Unified API router mounted at /api
+2026-03-30 13:35:34 - __main__ - INFO - Admin router mounted successfully
+2026-03-30 13:35:36 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-30 13:35:36 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-30 13:35:36 - __main__ - INFO - ============================================================
+2026-03-30 13:35:36 - __main__ - INFO - SUCCESS: Subscription database service initialized!
+2026-03-30 13:35:36 - __main__ - INFO - ============================================================
+2026-03-30 13:35:37 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-30 13:35:37 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-30 13:35:37 - __main__ - INFO - Broker database initialized (broker_sessions table created)
+2026-03-30 13:35:37 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-30 13:35:37 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-30 13:35:37 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-30 13:35:37 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-30 13:35:37 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-30 13:35:37 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-30 13:35:42 - Services.ChatAI.api.main - INFO - Gemini client initialized
+2026-03-30 13:44:36 - APIs.broker_routes - INFO - Attempting relogin for msupasani@gmail.com with broker angelone
+2026-03-30 13:44:36 - Services.broker_manager - INFO - Attempting login for broker: angelone
+2026-03-30 13:44:36 - Services.broker_manager - INFO - Dispatching to AngelOne login handler...
+2026-03-30 13:44:37 - Broker.AngelOne.ANGELONE - INFO - Starting AngelOne login for client: AAAH544835
+2026-03-30 13:44:37 - Broker.AngelOne.ANGELONE - INFO - AngelOne login successful!
+2026-03-30 13:46:55 - Admin.services - INFO - Manually triggering signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-30 13:46:59 - Services.scheduler.generators.etf_rotation_generator - INFO - 
+============================================================
+2026-03-30 13:46:59 - Services.scheduler.generators.etf_rotation_generator - INFO - ETF ROTATION SIGNAL GENERATION
+2026-03-30 13:46:59 - Services.scheduler.generators.etf_rotation_generator - INFO - ============================================================
+2026-03-30 13:46:59 - Services.scheduler.generators.etf_rotation_generator - INFO - Signal Date: 2026-03-30 13:46:59
+2026-03-30 13:47:00 - Services.scheduler.generators.signal_generator_base - INFO - Found 3 active instances for type: ETF_Rotation
+2026-03-30 13:47:03 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-30 13:47:03 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-30 13:47:04 - Services.scheduler.generators.etf_rotation_generator - INFO - 
+Processing instance 2 for user msupasani@gmail.com
+2026-03-30 13:47:04 - Services.scheduler.generators.etf_rotation_generator - INFO -   Tickers: ['GOLDBEES', 'MON100', 'MASPTOP50', 'MID150BEES', 'HNGSNGBEES', 'SILVERBEES']
+2026-03-30 13:47:05 - Services.scheduler.generators.etf_rotation_generator - INFO -   Fetched 269 days of data for 6 ETFs
+2026-03-30 13:47:05 - Rotation.INDIA - INFO - ⏳ 📊 Momentum Calculation for 2026-03-30:
+2026-03-30 13:47:05 - Rotation.INDIA - INFO -    Available historical data: 269 days
+2026-03-30 13:47:05 - Rotation.INDIA - INFO -    Required for 52-week calc: 252 days
+2026-03-30 13:47:05 - Rotation.INDIA - INFO - ⏳    ✅ Using exactly 252 trading days for momentum
+2026-03-30 13:47:05 - Rotation.INDIA - INFO -    📈 52-week highs (indicator-based) calculated for 6 ETFs
+2026-03-30 13:47:05 - Rotation.INDIA - INFO -    📉 52-week lows (indicator-based) calculated for 6 ETFs
+2026-03-30 13:47:05 - Rotation.INDIA - INFO -    💰 Current prices available for 6 ETFs
+2026-03-30 13:47:05 - Rotation.INDIA - INFO - ⏳    ✅ GOLDBEES: High=₹146.53, Low=₹73.00, Current=₹117.53
+2026-03-30 13:47:05 - Rotation.INDIA - INFO - ⏳        Distance from Low: 61.00%, Distance from High: 19.79%
+2026-03-30 13:47:05 - Rotation.INDIA - INFO - ⏳    ✅ HNGSNGBEES: High=₹566.34, Low=₹348.05, Current=₹468.31
+2026-03-30 13:47:05 - Rotation.INDIA - INFO - ⏳        Distance from Low: 34.55%, Distance from High: 17.31%
+2026-03-30 13:47:05 - Rotation.INDIA - INFO - ⏳    ✅ MASPTOP50: High=₹72.78, Low=₹44.81, Current=₹68.96
+2026-03-30 13:47:06 - Rotation.INDIA - INFO - ⏳        Distance from Low: 53.89%, Distance from High: 5.25%
+2026-03-30 13:47:06 - Rotation.INDIA - INFO - ⏳    ✅ MID150BEES: High=₹233.35, Low=₹187.60, Current=₹205.50
+2026-03-30 13:47:06 - Rotation.INDIA - INFO - ⏳        Distance from Low: 9.54%, Distance from High: 11.93%
+2026-03-30 13:47:06 - Rotation.INDIA - INFO - ⏳    ✅ MON100: High=₹250.26, Low=₹163.33, Current=₹231.73
+2026-03-30 13:47:06 - Rotation.INDIA - INFO - ⏳        Distance from Low: 41.88%, Distance from High: 7.40%
+2026-03-30 13:47:06 - Rotation.INDIA - INFO - ⏳    ✅ SILVERBEES: High=₹351.91, Low=₹87.03, Current=₹212.50
+2026-03-30 13:47:06 - Rotation.INDIA - INFO - ⏳        Distance from Low: 144.17%, Distance from High: 39.62%
+2026-03-30 13:47:06 - Rotation.INDIA - INFO - ⏳    🎯 Final momentum result: 6 valid ETFs with proper 52-week data
+2026-03-30 13:47:06 - Rotation.INDIA - INFO - ⏳    📊 ETF Rankings (closest to 52-week low first):
+2026-03-30 13:47:06 - Rotation.INDIA - INFO -       4. MID150BEES: 9.54% from low
+2026-03-30 13:47:06 - Rotation.INDIA - INFO -       2. HNGSNGBEES: 34.55% from low
+2026-03-30 13:47:06 - Rotation.INDIA - INFO -       5. MON100: 41.88% from low
+2026-03-30 13:47:06 - Rotation.INDIA - INFO -       3. MASPTOP50: 53.89% from low
+2026-03-30 13:47:06 - Rotation.INDIA - INFO -       1. GOLDBEES: 61.00% from low
+2026-03-30 13:47:06 - Services.scheduler.generators.etf_rotation_generator - INFO -   Selected ETF: MID150BEES
+2026-03-30 13:47:06 - Services.scheduler.generators.etf_rotation_generator - INFO -     Current Price: ₹205.50
+2026-03-30 13:47:06 - Services.scheduler.generators.etf_rotation_generator - INFO -     52W High: ₹233.35
+2026-03-30 13:47:06 - Services.scheduler.generators.etf_rotation_generator - INFO -     52W Low: ₹187.60
+2026-03-30 13:47:06 - Services.scheduler.generators.etf_rotation_generator - INFO -     Distance from Low: 9.54%
+2026-03-30 13:47:06 - Services.scheduler.generators.etf_rotation_generator - INFO -     Distance from High: 11.93%
+2026-03-30 13:47:06 - Services.scheduler.generators.etf_rotation_generator - INFO - 
+Processing instance 6 for user arooshipkl@gmail.com
+2026-03-30 13:47:06 - Services.scheduler.generators.etf_rotation_generator - INFO -   Tickers: ['NIFTYBEES', 'BANKBEES', 'JUNIORBEES', 'MON100', 'CPSEETF', 'MID150BEES']
+2026-03-30 13:47:07 - Services.scheduler.generators.etf_rotation_generator - INFO -   Fetched 269 days of data for 6 ETFs
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳ 📊 Momentum Calculation for 2026-03-30:
+2026-03-30 13:47:08 - Rotation.INDIA - INFO -    Available historical data: 269 days
+2026-03-30 13:47:08 - Rotation.INDIA - INFO -    Required for 52-week calc: 252 days
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳    ✅ Using exactly 252 trading days for momentum
+2026-03-30 13:47:08 - Rotation.INDIA - INFO -    📈 52-week highs (indicator-based) calculated for 6 ETFs
+2026-03-30 13:47:08 - Rotation.INDIA - INFO -    📉 52-week lows (indicator-based) calculated for 6 ETFs
+2026-03-30 13:47:08 - Rotation.INDIA - INFO -    💰 Current prices available for 6 ETFs
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳    ✅ BANKBEES: High=₹635.86, Low=₹513.32, Current=₹540.27
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳        Distance from Low: 5.25%, Distance from High: 15.03%
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳    ✅ CPSEETF: High=₹104.47, Low=₹82.00, Current=₹100.38
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳        Distance from Low: 22.41%, Distance from High: 3.92%
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳    ✅ JUNIORBEES: High=₹760.84, Low=₹640.00, Current=₹671.06
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳        Distance from Low: 4.85%, Distance from High: 11.80%
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳    ✅ MID150BEES: High=₹233.35, Low=₹187.60, Current=₹205.50
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳        Distance from Low: 9.54%, Distance from High: 11.93%
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳    ✅ MON100: High=₹250.26, Low=₹163.33, Current=₹231.73
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳        Distance from Low: 41.88%, Distance from High: 7.40%
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳    ✅ NIFTYBEES: High=₹297.55, Low=₹249.10, Current=₹258.89
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳        Distance from Low: 3.93%, Distance from High: 12.99%
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳    🎯 Final momentum result: 6 valid ETFs with proper 52-week data
+2026-03-30 13:47:08 - Rotation.INDIA - INFO - ⏳    📊 ETF Rankings (closest to 52-week low first):
+2026-03-30 13:47:08 - Rotation.INDIA - INFO -       6. NIFTYBEES: 3.93% from low
+2026-03-30 13:47:08 - Rotation.INDIA - INFO -       3. JUNIORBEES: 4.85% from low
+2026-03-30 13:47:08 - Rotation.INDIA - INFO -       1. BANKBEES: 5.25% from low
+2026-03-30 13:47:08 - Rotation.INDIA - INFO -       4. MID150BEES: 9.54% from low
+2026-03-30 13:47:08 - Rotation.INDIA - INFO -       2. CPSEETF: 22.41% from low
+2026-03-30 13:47:08 - Services.scheduler.generators.etf_rotation_generator - INFO -   Selected ETF: NIFTYBEES
+2026-03-30 13:47:08 - Services.scheduler.generators.etf_rotation_generator - INFO -     Current Price: ₹258.89
+2026-03-30 13:47:08 - Services.scheduler.generators.etf_rotation_generator - INFO -     52W High: ₹297.55
+2026-03-30 13:47:08 - Services.scheduler.generators.etf_rotation_generator - INFO -     52W Low: ₹249.10
+2026-03-30 13:47:08 - Services.scheduler.generators.etf_rotation_generator - INFO -     Distance from Low: 3.93%
+2026-03-30 13:47:08 - Services.scheduler.generators.etf_rotation_generator - INFO -     Distance from High: 12.99%
+2026-03-30 13:47:08 - Services.scheduler.generators.etf_rotation_generator - INFO - 
+Processing instance 61 for user trade.moneycompound@gmail.com
+2026-03-30 13:47:08 - Services.scheduler.generators.etf_rotation_generator - INFO -   Tickers: ['MON100', 'BANKBEES', 'JUNIORBEES', 'NIFTYBEES', 'GOLDBEES', 'SILVERBEES', 'PHARMABEES', 'HNGSNGBEES', 'MIDCAPIETF']
+2026-03-30 13:47:09 - Services.scheduler.generators.etf_rotation_generator - INFO -   Fetched 269 days of data for 9 ETFs
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳ 📊 Momentum Calculation for 2026-03-30:
+2026-03-30 13:47:09 - Rotation.INDIA - INFO -    Available historical data: 269 days
+2026-03-30 13:47:09 - Rotation.INDIA - INFO -    Required for 52-week calc: 252 days
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳    ✅ Using exactly 252 trading days for momentum
+2026-03-30 13:47:09 - Rotation.INDIA - INFO -    📈 52-week highs (indicator-based) calculated for 9 ETFs
+2026-03-30 13:47:09 - Rotation.INDIA - INFO -    📉 52-week lows (indicator-based) calculated for 9 ETFs
+2026-03-30 13:47:09 - Rotation.INDIA - INFO -    💰 Current prices available for 9 ETFs
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳    ✅ BANKBEES: High=₹635.86, Low=₹513.32, Current=₹540.27
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳        Distance from Low: 5.25%, Distance from High: 15.03%
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳    ✅ GOLDBEES: High=₹146.53, Low=₹73.00, Current=₹117.53
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳        Distance from Low: 61.00%, Distance from High: 19.79%
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳    ✅ HNGSNGBEES: High=₹566.34, Low=₹348.05, Current=₹468.31
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳        Distance from Low: 34.55%, Distance from High: 17.31%
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳    ✅ JUNIORBEES: High=₹760.84, Low=₹640.00, Current=₹671.06
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳        Distance from Low: 4.85%, Distance from High: 11.80%
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳    ✅ MIDCAPIETF: High=₹23.33, Low=₹18.80, Current=₹20.59
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳        Distance from Low: 9.52%, Distance from High: 11.74%
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳    ✅ MON100: High=₹250.26, Low=₹163.33, Current=₹231.73
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳        Distance from Low: 41.88%, Distance from High: 7.40%
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳    ✅ NIFTYBEES: High=₹297.55, Low=₹249.10, Current=₹258.89
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳        Distance from Low: 3.93%, Distance from High: 12.99%
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳    ✅ PHARMABEES: High=₹24.00, Low=₹20.43, Current=₹23.18
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳        Distance from Low: 13.46%, Distance from High: 3.42%
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳    ✅ SILVERBEES: High=₹351.91, Low=₹87.03, Current=₹212.50
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳        Distance from Low: 144.17%, Distance from High: 39.62%
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳    🎯 Final momentum result: 9 valid ETFs with proper 52-week data
+2026-03-30 13:47:09 - Rotation.INDIA - INFO - ⏳    📊 ETF Rankings (closest to 52-week low first):
+2026-03-30 13:47:09 - Rotation.INDIA - INFO -       7. NIFTYBEES: 3.93% from low
+2026-03-30 13:47:09 - Rotation.INDIA - INFO -       4. JUNIORBEES: 4.85% from low
+2026-03-30 13:47:09 - Rotation.INDIA - INFO -       1. BANKBEES: 5.25% from low
+2026-03-30 13:47:09 - Rotation.INDIA - INFO -       5. MIDCAPIETF: 9.52% from low
+2026-03-30 13:47:09 - Rotation.INDIA - INFO -       8. PHARMABEES: 13.46% from low
+2026-03-30 13:47:09 - Services.scheduler.generators.etf_rotation_generator - INFO -   Selected ETF: NIFTYBEES
+2026-03-30 13:47:09 - Services.scheduler.generators.etf_rotation_generator - INFO -     Current Price: ₹258.89
+2026-03-30 13:47:09 - Services.scheduler.generators.etf_rotation_generator - INFO -     52W High: ₹297.55
+2026-03-30 13:47:09 - Services.scheduler.generators.etf_rotation_generator - INFO -     52W Low: ₹249.10
+2026-03-30 13:47:09 - Services.scheduler.generators.etf_rotation_generator - INFO -     Distance from Low: 3.93%
+2026-03-30 13:47:09 - Services.scheduler.generators.etf_rotation_generator - INFO -     Distance from High: 12.99%
+2026-03-30 13:47:10 - Services.scheduler.generators.signal_generator_base - INFO - ✓ Saved 3 signals to database
+2026-03-30 13:47:10 - Services.scheduler.generators.etf_rotation_generator - INFO - ✓ Generated and saved 3 ETF Rotation signals
+2026-03-30 13:47:11 - Services.scheduler.generators.signal_generator_base - INFO - ✓ Expired 1 old signals
+2026-03-30 13:47:11 - Services.scheduler.generators.etf_rotation_generator - INFO - ============================================================
+
+2026-03-30 13:47:53 - Admin.services - INFO - Manually triggering signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-31 14:35:11 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 14:35:11 - __main__ - INFO - [PKG] Detected subscription directory: subscription
+2026-03-31 14:35:27 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-31 14:35:27 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (a284a84) on aarch64-unknown-linux...
+2026-03-31 14:35:29 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:35:29 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:35:30 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-31 14:35:30 - __main__ - INFO - ============================================================
+2026-03-31 14:35:30 - __main__ - INFO - [OK] ChatAI INITIALIZATION SUCCESSFUL
+2026-03-31 14:35:30 - __main__ - INFO -    - Router: LOADED
+2026-03-31 14:35:30 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-31 14:35:30 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-31 14:35:30 - __main__ - INFO - ============================================================
+2026-03-31 14:35:30 - __main__ - INFO - [OK] Broker router loaded successfully
+2026-03-31 14:35:32 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:35:32 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:35:32 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 14:35:32 - __main__ - INFO - New Webhook router loaded successfully from Services.webhook.webhook_api
+2026-03-31 14:35:32 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 14:35:32 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-31 14:35:32 - __main__ - INFO - [OK] Successfully imported Services.subscription module
+2026-03-31 14:35:32 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-31 14:35:32 - __main__ - INFO - ============================================================
+2026-03-31 14:35:32 - __main__ - INFO - [OK] SUCCESS: Subscription routers loaded successfully!
+2026-03-31 14:35:32 - __main__ - INFO - [OK] subscription_router: LOADED
+2026-03-31 14:35:32 - __main__ - INFO - [OK] google_oauth_router: LOADED
+2026-03-31 14:35:32 - __main__ - INFO - [OK] hierarchy_router: LOADED
+2026-03-31 14:35:32 - __main__ - INFO - [OK] Subscription endpoints available:
+2026-03-31 14:35:32 - __main__ - INFO -    - /api/subscription/*
+2026-03-31 14:35:32 - __main__ - INFO -    - /paymentSuccess
+2026-03-31 14:35:32 - __main__ - INFO -    - /api/auth/google-login
+2026-03-31 14:35:32 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-31 14:35:32 - __main__ - INFO - ============================================================
+2026-03-31 14:35:32 - __main__ - INFO - [OK] Portfolio API router loaded successfully
+2026-03-31 14:35:33 - __main__ - INFO - Admin router loaded successfully
+2026-03-31 14:35:33 - __main__ - ERROR - Failed to import unified_api_router: invalid syntax (unified_schemas.py, line 37)
+2026-03-31 14:35:33 - __main__ - ERROR - Traceback: Traceback (most recent call last):
+  File "D:\WEALTHAI_V2\wealthai-backend-v2\server.py", line 698, in <module>
+    from APIs.routes import api_router as unified_api_router
+  File "D:\WEALTHAI_V2\wealthai-backend-v2\APIs\routes.py", line 10, in <module>
+    from APIs.unified_schemas import (
+  File "D:\WEALTHAI_V2\wealthai-backend-v2\APIs\unified_schemas.py", line 37
+    <<<<<<< HEAD
+    ^^
+SyntaxError: invalid syntax
+
+2026-03-31 14:35:33 - __main__ - INFO - [OK] Portfolio router mounted successfully
+2026-03-31 14:35:33 - __main__ - INFO - [OK] Hierarchy router mounted successfully
+2026-03-31 14:35:33 - __main__ - INFO - [OK] ChatAI (New) router mounted successfully
+2026-03-31 14:35:33 - __main__ - INFO - [OK] ChatAI Admin router mounted
+2026-03-31 14:35:33 - __main__ - INFO - [OK] MFD Self-Service router mounted at /api/mfd
+2026-03-31 14:35:35 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:35:35 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:35:35 - __main__ - INFO - ============================================================
+2026-03-31 14:35:35 - __main__ - INFO - [OK] SUCCESS: Subscription database service initialized!
+2026-03-31 14:35:35 - __main__ - INFO - ============================================================
+2026-03-31 14:35:36 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:35:36 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:35:36 - __main__ - INFO - [OK] Broker database initialized (broker_sessions table created)
+2026-03-31 14:35:36 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:35:36 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:35:36 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 14:35:36 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:35:36 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:35:36 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-31 14:35:36 - __main__ - INFO - ============================================================
+2026-03-31 14:35:36 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-31 14:35:36 - __main__ - INFO - ============================================================
+2026-03-31 14:35:42 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-31 14:35:42 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-31 14:35:42 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-31 14:35:45 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-31 14:35:45 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-31 14:35:45 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-31 14:38:37 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 14:38:37 - __main__ - INFO - [PKG] Detected subscription directory: subscription
+2026-03-31 14:38:45 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-31 14:38:45 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (a284a84) on aarch64-unknown-linux...
+2026-03-31 14:38:47 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:38:47 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:38:48 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-31 14:38:48 - __main__ - INFO - ============================================================
+2026-03-31 14:38:48 - __main__ - INFO - [OK] ChatAI INITIALIZATION SUCCESSFUL
+2026-03-31 14:38:48 - __main__ - INFO -    - Router: LOADED
+2026-03-31 14:38:48 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-31 14:38:48 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-31 14:38:48 - __main__ - INFO - ============================================================
+2026-03-31 14:38:48 - __main__ - INFO - [OK] Broker router loaded successfully
+2026-03-31 14:38:50 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:38:50 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:38:50 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 14:38:50 - __main__ - INFO - New Webhook router loaded successfully from Services.webhook.webhook_api
+2026-03-31 14:38:50 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 14:38:50 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-31 14:38:50 - __main__ - INFO - [OK] Successfully imported Services.subscription module
+2026-03-31 14:38:50 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-31 14:38:50 - __main__ - INFO - ============================================================
+2026-03-31 14:38:50 - __main__ - INFO - [OK] SUCCESS: Subscription routers loaded successfully!
+2026-03-31 14:38:50 - __main__ - INFO - [OK] subscription_router: LOADED
+2026-03-31 14:38:50 - __main__ - INFO - [OK] google_oauth_router: LOADED
+2026-03-31 14:38:50 - __main__ - INFO - [OK] hierarchy_router: LOADED
+2026-03-31 14:38:50 - __main__ - INFO - [OK] Subscription endpoints available:
+2026-03-31 14:38:50 - __main__ - INFO -    - /api/subscription/*
+2026-03-31 14:38:50 - __main__ - INFO -    - /paymentSuccess
+2026-03-31 14:38:50 - __main__ - INFO -    - /api/auth/google-login
+2026-03-31 14:38:50 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-31 14:38:50 - __main__ - INFO - ============================================================
+2026-03-31 14:38:50 - __main__ - INFO - [OK] Portfolio API router loaded successfully
+2026-03-31 14:38:51 - __main__ - INFO - Admin router loaded successfully
+2026-03-31 14:38:51 - __main__ - INFO - [OK] Unified API router loaded successfully from APIs.routes
+2026-03-31 14:38:51 - __main__ - INFO - [OK] Portfolio router mounted successfully
+2026-03-31 14:38:51 - __main__ - INFO - [OK] Hierarchy router mounted successfully
+2026-03-31 14:38:51 - __main__ - INFO - [OK] ChatAI (New) router mounted successfully
+2026-03-31 14:38:51 - __main__ - INFO - [OK] ChatAI Admin router mounted
+2026-03-31 14:38:51 - __main__ - INFO - [OK] MFD Self-Service router mounted at /api/mfd
+2026-03-31 14:38:51 - __main__ - INFO - [OK] Unified API router mounted at /api
+2026-03-31 14:38:53 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:38:53 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:38:53 - __main__ - INFO - ============================================================
+2026-03-31 14:38:53 - __main__ - INFO - [OK] SUCCESS: Subscription database service initialized!
+2026-03-31 14:38:53 - __main__ - INFO - ============================================================
+2026-03-31 14:38:53 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:38:53 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:38:53 - __main__ - INFO - [OK] Broker database initialized (broker_sessions table created)
+2026-03-31 14:38:54 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:38:54 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:38:54 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 14:38:54 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:38:54 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:38:54 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-31 14:38:54 - __main__ - INFO - ============================================================
+2026-03-31 14:38:54 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-31 14:38:54 - __main__ - INFO - ============================================================
+2026-03-31 14:38:54 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-31 14:38:54 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-31 14:38:54 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-31 14:38:56 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 14:38:56 - __main__ - INFO - [PKG] Detected subscription directory: subscription
+2026-03-31 14:38:56 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-31 14:38:56 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-31 14:38:56 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-31 14:39:04 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-31 14:39:04 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (a284a84) on aarch64-unknown-linux...
+2026-03-31 14:39:06 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:39:06 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:39:06 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-31 14:39:07 - __main__ - INFO - ============================================================
+2026-03-31 14:39:07 - __main__ - INFO - [OK] ChatAI INITIALIZATION SUCCESSFUL
+2026-03-31 14:39:07 - __main__ - INFO -    - Router: LOADED
+2026-03-31 14:39:07 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-31 14:39:07 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-31 14:39:07 - __main__ - INFO - ============================================================
+2026-03-31 14:39:07 - __main__ - INFO - [OK] Broker router loaded successfully
+2026-03-31 14:39:09 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:39:09 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:39:09 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 14:39:09 - __main__ - INFO - New Webhook router loaded successfully from Services.webhook.webhook_api
+2026-03-31 14:39:09 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 14:39:09 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-31 14:39:09 - __main__ - INFO - [OK] Successfully imported Services.subscription module
+2026-03-31 14:39:09 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-31 14:39:09 - __main__ - INFO - ============================================================
+2026-03-31 14:39:09 - __main__ - INFO - [OK] SUCCESS: Subscription routers loaded successfully!
+2026-03-31 14:39:09 - __main__ - INFO - [OK] subscription_router: LOADED
+2026-03-31 14:39:09 - __main__ - INFO - [OK] google_oauth_router: LOADED
+2026-03-31 14:39:09 - __main__ - INFO - [OK] hierarchy_router: LOADED
+2026-03-31 14:39:09 - __main__ - INFO - [OK] Subscription endpoints available:
+2026-03-31 14:39:09 - __main__ - INFO -    - /api/subscription/*
+2026-03-31 14:39:09 - __main__ - INFO -    - /paymentSuccess
+2026-03-31 14:39:09 - __main__ - INFO -    - /api/auth/google-login
+2026-03-31 14:39:09 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-31 14:39:09 - __main__ - INFO - ============================================================
+2026-03-31 14:39:09 - __main__ - INFO - [OK] Portfolio API router loaded successfully
+2026-03-31 14:39:09 - __main__ - INFO - Admin router loaded successfully
+2026-03-31 14:39:09 - __main__ - INFO - [OK] Unified API router loaded successfully from APIs.routes
+2026-03-31 14:39:09 - __main__ - INFO - [OK] Portfolio router mounted successfully
+2026-03-31 14:39:09 - __main__ - INFO - [OK] Hierarchy router mounted successfully
+2026-03-31 14:39:10 - __main__ - INFO - [OK] ChatAI (New) router mounted successfully
+2026-03-31 14:39:10 - __main__ - INFO - [OK] ChatAI Admin router mounted
+2026-03-31 14:39:10 - __main__ - INFO - [OK] MFD Self-Service router mounted at /api/mfd
+2026-03-31 14:39:10 - __main__ - INFO - [OK] Unified API router mounted at /api
+2026-03-31 14:39:11 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:39:11 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:39:11 - __main__ - INFO - ============================================================
+2026-03-31 14:39:11 - __main__ - INFO - [OK] SUCCESS: Subscription database service initialized!
+2026-03-31 14:39:11 - __main__ - INFO - ============================================================
+2026-03-31 14:39:12 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:39:12 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:39:12 - __main__ - INFO - [OK] Broker database initialized (broker_sessions table created)
+2026-03-31 14:39:12 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:39:12 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:39:12 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:39:12 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:39:12 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 14:39:12 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-31 14:39:13 - __main__ - INFO - ============================================================
+2026-03-31 14:39:13 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-31 14:39:13 - __main__ - INFO - ============================================================
+2026-03-31 14:39:13 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-31 14:39:13 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-31 14:39:13 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-31 14:39:14 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-31 14:39:14 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-31 14:39:14 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-31 14:40:05 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 14:40:05 - __main__ - INFO - [PKG] Detected subscription directory: subscription
+2026-03-31 14:40:13 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-31 14:40:13 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (a284a84) on aarch64-unknown-linux...
+2026-03-31 14:40:15 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:40:15 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:40:16 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-31 14:40:16 - __main__ - INFO - ============================================================
+2026-03-31 14:40:16 - __main__ - INFO - [OK] ChatAI INITIALIZATION SUCCESSFUL
+2026-03-31 14:40:16 - __main__ - INFO -    - Router: LOADED
+2026-03-31 14:40:16 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-31 14:40:16 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-31 14:40:16 - __main__ - INFO - ============================================================
+2026-03-31 14:40:16 - __main__ - INFO - [OK] Broker router loaded successfully
+2026-03-31 14:40:18 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:40:18 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:40:18 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 14:40:18 - __main__ - INFO - New Webhook router loaded successfully from Services.webhook.webhook_api
+2026-03-31 14:40:18 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 14:40:18 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-31 14:40:18 - __main__ - INFO - [OK] Successfully imported Services.subscription module
+2026-03-31 14:40:18 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-31 14:40:18 - __main__ - INFO - ============================================================
+2026-03-31 14:40:18 - __main__ - INFO - [OK] SUCCESS: Subscription routers loaded successfully!
+2026-03-31 14:40:18 - __main__ - INFO - [OK] subscription_router: LOADED
+2026-03-31 14:40:18 - __main__ - INFO - [OK] google_oauth_router: LOADED
+2026-03-31 14:40:18 - __main__ - INFO - [OK] hierarchy_router: LOADED
+2026-03-31 14:40:18 - __main__ - INFO - [OK] Subscription endpoints available:
+2026-03-31 14:40:18 - __main__ - INFO -    - /api/subscription/*
+2026-03-31 14:40:18 - __main__ - INFO -    - /paymentSuccess
+2026-03-31 14:40:18 - __main__ - INFO -    - /api/auth/google-login
+2026-03-31 14:40:18 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-31 14:40:18 - __main__ - INFO - ============================================================
+2026-03-31 14:40:18 - __main__ - INFO - [OK] Portfolio API router loaded successfully
+2026-03-31 14:40:18 - __main__ - INFO - Admin router loaded successfully
+2026-03-31 14:40:18 - __main__ - INFO - [OK] Unified API router loaded successfully from APIs.routes
+2026-03-31 14:40:18 - __main__ - INFO - [OK] Portfolio router mounted successfully
+2026-03-31 14:40:18 - __main__ - INFO - [OK] Hierarchy router mounted successfully
+2026-03-31 14:40:19 - __main__ - INFO - [OK] ChatAI (New) router mounted successfully
+2026-03-31 14:40:19 - __main__ - INFO - [OK] ChatAI Admin router mounted
+2026-03-31 14:40:19 - __main__ - INFO - [OK] MFD Self-Service router mounted at /api/mfd
+2026-03-31 14:40:19 - __main__ - INFO - [OK] Unified API router mounted at /api
+2026-03-31 14:40:21 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:40:21 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:40:21 - __main__ - INFO - ============================================================
+2026-03-31 14:40:21 - __main__ - INFO - [OK] SUCCESS: Subscription database service initialized!
+2026-03-31 14:40:21 - __main__ - INFO - ============================================================
+2026-03-31 14:40:21 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:40:21 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:40:21 - __main__ - INFO - [OK] Broker database initialized (broker_sessions table created)
+2026-03-31 14:40:21 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:40:21 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:40:21 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 14:40:21 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-31 14:40:21 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 14:40:21 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 14:40:22 - __main__ - INFO - ============================================================
+2026-03-31 14:40:22 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-31 14:40:22 - __main__ - INFO - ============================================================
+2026-03-31 14:40:22 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-31 14:40:22 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-31 14:40:22 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-31 14:40:23 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-31 14:40:23 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-31 14:40:23 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-31 15:03:07 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 15:03:07 - __main__ - INFO - [PKG] Detected subscription directory: subscription
+2026-03-31 15:03:16 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-31 15:03:16 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (a284a84) on aarch64-unknown-linux...
+2026-03-31 15:03:18 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:03:18 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:03:19 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-31 15:03:19 - __main__ - INFO - ============================================================
+2026-03-31 15:03:19 - __main__ - INFO - [OK] ChatAI INITIALIZATION SUCCESSFUL
+2026-03-31 15:03:19 - __main__ - INFO -    - Router: LOADED
+2026-03-31 15:03:19 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-31 15:03:19 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-31 15:03:19 - __main__ - INFO - ============================================================
+2026-03-31 15:03:19 - __main__ - INFO - [OK] Broker router loaded successfully
+2026-03-31 15:03:22 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:03:22 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:03:22 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 15:03:22 - __main__ - INFO - New Webhook router loaded successfully from Services.webhook.webhook_api
+2026-03-31 15:03:22 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 15:03:22 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-31 15:03:22 - __main__ - INFO - [OK] Successfully imported Services.subscription module
+2026-03-31 15:03:22 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-31 15:03:22 - __main__ - INFO - ============================================================
+2026-03-31 15:03:22 - __main__ - INFO - [OK] SUCCESS: Subscription routers loaded successfully!
+2026-03-31 15:03:22 - __main__ - INFO - [OK] subscription_router: LOADED
+2026-03-31 15:03:22 - __main__ - INFO - [OK] google_oauth_router: LOADED
+2026-03-31 15:03:22 - __main__ - INFO - [OK] hierarchy_router: LOADED
+2026-03-31 15:03:22 - __main__ - INFO - [OK] Subscription endpoints available:
+2026-03-31 15:03:22 - __main__ - INFO -    - /api/subscription/*
+2026-03-31 15:03:22 - __main__ - INFO -    - /paymentSuccess
+2026-03-31 15:03:22 - __main__ - INFO -    - /api/auth/google-login
+2026-03-31 15:03:22 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-31 15:03:22 - __main__ - INFO - ============================================================
+2026-03-31 15:03:22 - __main__ - INFO - [OK] Portfolio API router loaded successfully
+2026-03-31 15:03:23 - __main__ - INFO - Admin router loaded successfully
+2026-03-31 15:03:23 - __main__ - INFO - [OK] Unified API router loaded successfully from APIs.routes
+2026-03-31 15:03:23 - __main__ - INFO - [OK] Portfolio router mounted successfully
+2026-03-31 15:03:23 - __main__ - INFO - [OK] Hierarchy router mounted successfully
+2026-03-31 15:03:23 - __main__ - INFO - [OK] ChatAI (New) router mounted successfully
+2026-03-31 15:03:23 - __main__ - INFO - [OK] ChatAI Admin router mounted
+2026-03-31 15:03:23 - __main__ - INFO - [OK] MFD Self-Service router mounted at /api/mfd
+2026-03-31 15:03:23 - __main__ - INFO - [OK] Unified API router mounted at /api
+2026-03-31 15:03:27 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:03:27 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:03:27 - __main__ - INFO - ============================================================
+2026-03-31 15:03:27 - __main__ - INFO - [OK] SUCCESS: Subscription database service initialized!
+2026-03-31 15:03:27 - __main__ - INFO - ============================================================
+2026-03-31 15:03:28 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:03:28 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:03:28 - __main__ - INFO - [OK] Broker database initialized (broker_sessions table created)
+2026-03-31 15:03:29 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:03:29 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:03:29 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-31 15:03:29 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:03:29 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:03:29 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 15:03:29 - __main__ - INFO - ============================================================
+2026-03-31 15:03:29 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-31 15:03:29 - __main__ - INFO - ============================================================
+2026-03-31 15:03:29 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-31 15:03:29 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-31 15:03:29 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-31 15:03:31 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-31 15:03:31 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-31 15:03:31 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-31 15:05:11 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 15:05:11 - __main__ - INFO - [PKG] Detected subscription directory: subscription
+2026-03-31 15:05:19 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-31 15:05:19 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (a284a84) on aarch64-unknown-linux...
+2026-03-31 15:05:21 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:05:21 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:05:21 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-31 15:05:21 - __main__ - INFO - ============================================================
+2026-03-31 15:05:21 - __main__ - INFO - [OK] ChatAI INITIALIZATION SUCCESSFUL
+2026-03-31 15:05:21 - __main__ - INFO -    - Router: LOADED
+2026-03-31 15:05:21 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-31 15:05:21 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-31 15:05:21 - __main__ - INFO - ============================================================
+2026-03-31 15:05:21 - __main__ - INFO - [OK] Broker router loaded successfully
+2026-03-31 15:05:24 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:05:24 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:05:24 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 15:05:24 - __main__ - INFO - New Webhook router loaded successfully from Services.webhook.webhook_api
+2026-03-31 15:05:24 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 15:05:24 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-31 15:05:24 - __main__ - INFO - [OK] Successfully imported Services.subscription module
+2026-03-31 15:05:24 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-31 15:05:24 - __main__ - INFO - ============================================================
+2026-03-31 15:05:24 - __main__ - INFO - [OK] SUCCESS: Subscription routers loaded successfully!
+2026-03-31 15:05:24 - __main__ - INFO - [OK] subscription_router: LOADED
+2026-03-31 15:05:24 - __main__ - INFO - [OK] google_oauth_router: LOADED
+2026-03-31 15:05:24 - __main__ - INFO - [OK] hierarchy_router: LOADED
+2026-03-31 15:05:24 - __main__ - INFO - [OK] Subscription endpoints available:
+2026-03-31 15:05:24 - __main__ - INFO -    - /api/subscription/*
+2026-03-31 15:05:24 - __main__ - INFO -    - /paymentSuccess
+2026-03-31 15:05:24 - __main__ - INFO -    - /api/auth/google-login
+2026-03-31 15:05:24 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-31 15:05:24 - __main__ - INFO - ============================================================
+2026-03-31 15:05:24 - __main__ - INFO - [OK] Portfolio API router loaded successfully
+2026-03-31 15:05:24 - __main__ - INFO - Admin router loaded successfully
+2026-03-31 15:05:24 - __main__ - INFO - [OK] Unified API router loaded successfully from APIs.routes
+2026-03-31 15:05:24 - __main__ - INFO - [OK] Portfolio router mounted successfully
+2026-03-31 15:05:24 - __main__ - INFO - [OK] Hierarchy router mounted successfully
+2026-03-31 15:05:24 - __main__ - INFO - [OK] ChatAI (New) router mounted successfully
+2026-03-31 15:05:24 - __main__ - INFO - [OK] ChatAI Admin router mounted
+2026-03-31 15:05:24 - __main__ - INFO - [OK] MFD Self-Service router mounted at /api/mfd
+2026-03-31 15:05:24 - __main__ - INFO - [OK] Unified API router mounted at /api
+2026-03-31 15:05:26 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:05:26 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:05:26 - __main__ - INFO - ============================================================
+2026-03-31 15:05:26 - __main__ - INFO - [OK] SUCCESS: Subscription database service initialized!
+2026-03-31 15:05:26 - __main__ - INFO - ============================================================
+2026-03-31 15:05:27 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:05:27 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:05:27 - __main__ - INFO - [OK] Broker database initialized (broker_sessions table created)
+2026-03-31 15:05:27 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:05:27 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:05:27 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:05:27 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-31 15:05:27 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:05:27 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 15:05:28 - __main__ - INFO - ============================================================
+2026-03-31 15:05:28 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-31 15:05:28 - __main__ - INFO - ============================================================
+2026-03-31 15:05:28 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-31 15:05:28 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-31 15:05:28 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-31 15:05:29 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-31 15:05:29 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-31 15:05:29 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
+2026-03-31 15:07:02 - __main__ - INFO - Services package verified at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 15:07:02 - __main__ - INFO - [PKG] Detected subscription directory: subscription
+2026-03-31 15:07:10 - Databases.app_data_db_connection - INFO - Successfully connected to PostgreSQL database
+2026-03-31 15:07:10 - Databases.app_data_db_connection - INFO - PostgreSQL version: PostgreSQL 17.8 (a284a84) on aarch64-unknown-linux...
+2026-03-31 15:07:12 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:07:12 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:07:12 - Services.portfolio.portfolio_api - INFO - Portfolio API module loaded with DEBUG logging enabled
+2026-03-31 15:07:13 - __main__ - INFO - ============================================================
+2026-03-31 15:07:13 - __main__ - INFO - [OK] ChatAI INITIALIZATION SUCCESSFUL
+2026-03-31 15:07:13 - __main__ - INFO -    - Router: LOADED
+2026-03-31 15:07:13 - __main__ - INFO -    - Lifespan: LOADED
+2026-03-31 15:07:13 - __main__ - INFO -    - Rate Limiter: LOADED
+2026-03-31 15:07:13 - __main__ - INFO - ============================================================
+2026-03-31 15:07:13 - __main__ - INFO - [OK] Broker router loaded successfully
+2026-03-31 15:07:15 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:07:15 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:07:15 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 15:07:15 - __main__ - INFO - New Webhook router loaded successfully from Services.webhook.webhook_api
+2026-03-31 15:07:15 - __main__ - INFO - Services package found at: D:\WEALTHAI_V2\wealthai-backend-v2\Services\__init__.py
+2026-03-31 15:07:15 - __main__ - INFO - Attempting to import Services.subscription...
+2026-03-31 15:07:15 - __main__ - INFO - [OK] Successfully imported Services.subscription module
+2026-03-31 15:07:15 - __main__ - INFO - Loading routers from Services.subscription...
+2026-03-31 15:07:15 - __main__ - INFO - ============================================================
+2026-03-31 15:07:15 - __main__ - INFO - [OK] SUCCESS: Subscription routers loaded successfully!
+2026-03-31 15:07:15 - __main__ - INFO - [OK] subscription_router: LOADED
+2026-03-31 15:07:15 - __main__ - INFO - [OK] google_oauth_router: LOADED
+2026-03-31 15:07:15 - __main__ - INFO - [OK] hierarchy_router: LOADED
+2026-03-31 15:07:15 - __main__ - INFO - [OK] Subscription endpoints available:
+2026-03-31 15:07:15 - __main__ - INFO -    - /api/subscription/*
+2026-03-31 15:07:15 - __main__ - INFO -    - /paymentSuccess
+2026-03-31 15:07:15 - __main__ - INFO -    - /api/auth/google-login
+2026-03-31 15:07:15 - __main__ - INFO -    - /api/hierarchy/*
+2026-03-31 15:07:15 - __main__ - INFO - ============================================================
+2026-03-31 15:07:15 - __main__ - INFO - [OK] Portfolio API router loaded successfully
+2026-03-31 15:07:15 - __main__ - INFO - Admin router loaded successfully
+2026-03-31 15:07:15 - __main__ - INFO - [OK] Unified API router loaded successfully from APIs.routes
+2026-03-31 15:07:15 - __main__ - INFO - [OK] Portfolio router mounted successfully
+2026-03-31 15:07:15 - __main__ - INFO - [OK] Hierarchy router mounted successfully
+2026-03-31 15:07:16 - __main__ - INFO - [OK] ChatAI (New) router mounted successfully
+2026-03-31 15:07:16 - __main__ - INFO - [OK] ChatAI Admin router mounted
+2026-03-31 15:07:16 - __main__ - INFO - [OK] MFD Self-Service router mounted at /api/mfd
+2026-03-31 15:07:16 - __main__ - INFO - [OK] Unified API router mounted at /api
+2026-03-31 15:07:18 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:07:18 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:07:18 - __main__ - INFO - ============================================================
+2026-03-31 15:07:18 - __main__ - INFO - [OK] SUCCESS: Subscription database service initialized!
+2026-03-31 15:07:18 - __main__ - INFO - ============================================================
+2026-03-31 15:07:18 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:07:18 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:07:18 - __main__ - INFO - [OK] Broker database initialized (broker_sessions table created)
+2026-03-31 15:07:18 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:07:18 - Databases.app_data_db_connection - INFO - Database tables initialized successfully
+2026-03-31 15:07:18 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:07:18 - Databases.app_data_db_connection - INFO - Strategy and signal tables are now using PostgreSQL
+2026-03-31 15:07:18 - Strategies.customStrategy.database - INFO - CustomStrategyDatabase initialized with PostgreSQL
+2026-03-31 15:07:18 - Services.webhook.webhook_logic - INFO - Webhook database tables initialized successfully in PostgreSQL
+2026-03-31 15:07:19 - __main__ - INFO - ============================================================
+2026-03-31 15:07:19 - __main__ - INFO - STARTING SCHEDULER SERVICE
+2026-03-31 15:07:19 - __main__ - INFO - ============================================================
+2026-03-31 15:07:19 - Services.scheduler.scheduler_service - INFO - Scheduler initialized with timezone: Asia/Kolkata
+2026-03-31 15:07:19 - Services.scheduler.scheduler_service - INFO - Found 1 enabled strategies/jobs
+2026-03-31 15:07:19 - Services.scheduler.scheduler_service - INFO - Loading signal generator: Services.scheduler.generators.etf_rotation_generator.generate_etf_rotation_signals
+2026-03-31 15:07:20 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-03-31 15:07:20 - Services.scheduler.scheduler_service - INFO - ✓ Registered signal job: rotation_etf
+2026-03-31 15:07:20 - Services.scheduler.scheduler_service - INFO - Loading signal executor: Services.scheduler.executors.signal_executor.SignalExecutor().execute_signals
