@@ -529,6 +529,7 @@ try:
             "/api/run_backtest", # Exempt centralized backtest for verified access
             "/api/strategies", # Exempt centralized list strategies
         ]
+    )
 except Exception as e:
     logger.error(f"Failed to add SingleSessionMiddleware: {e}")
 
@@ -764,11 +765,7 @@ if custom_strategy_router:
 if subscription_router:
     app.include_router(subscription_router)
 else:
-<<<<<<< HEAD
-    logger.error("Subscription router not loaded - subscription endpoints will not be available")
-=======
     logger.error("[WARN]  Subscription router not loaded - subscription endpoints will not be available")
->>>>>>> feature/chatai
 
 if payment_router:
     app.include_router(payment_router)
@@ -788,15 +785,9 @@ else:
 # Hierarchy router
 if hierarchy_router:
     app.include_router(hierarchy_router)
-<<<<<<< HEAD
-    logger.info("Hierarchy router mounted successfully")
-else:
-    logger.error("Hierarchy router not loaded - hierarchy endpoints will not be available")
-=======
     logger.info("[OK] Hierarchy router mounted successfully")
 else:
     logger.error("[WARN]  Hierarchy router not loaded - hierarchy endpoints will not be available")
->>>>>>> feature/chatai
 
 
 if single_sign_on_router:
@@ -820,9 +811,6 @@ if chatai1_new and hasattr(chatai1_new, 'router'):
 # ChatAI router (New)
 if chatai_availabe and chatai_router:
     app.include_router(chatai_router)
-<<<<<<< HEAD
-    logger.info("ChatAI (New) router mounted successfully")
-=======
     logger.info("[OK] ChatAI (New) router mounted successfully")
     
     # Also mount admin and MFD self-service routes
@@ -840,8 +828,6 @@ if chatai_availabe and chatai_router:
     except Exception as e:
         logger.error(f"[FAIL] MFD router: {e}")
 
->>>>>>> feature/chatai
-
 # SuperTrend router (handle duplicate root route)
 
 
@@ -849,15 +835,7 @@ if chatai_availabe and chatai_router:
 # Unified API Router (Consolidated)
 if unified_api_router:
     app.include_router(unified_api_router)
-<<<<<<< HEAD
-    logger.info("Unified API router mounted at /api")
-
-if admin_router:
-    app.include_router(admin_router)
-    logger.info("Admin router mounted successfully")
-=======
     logger.info("[OK] Unified API router mounted at /api")
->>>>>>> feature/chatai
 
 # =========================
 # CHATAI ENDPOINTS (Fallback if router not available)
