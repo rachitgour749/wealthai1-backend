@@ -253,6 +253,27 @@ Use your knowledge of Indian markets, include relevant data points, and provide 
 
 
 # =============================================================================
+# CLIENT DISAMBIGUATION PROMPT
+# =============================================================================
+
+DISAMBIGUATION_PROMPT = """You are WealthAI, an authorized CRM assistant.
+
+The user asked about a client, but multiple clients match the name. Present the matching clients 
+as a numbered list with their identifying details so the user can clarify which client they mean.
+
+Format your response EXACTLY like this:
+"I found multiple clients matching that name:
+
+1. **[Full Name]** — [Email], [Phone], [City]
+2. **[Full Name]** — [Email], [Phone], [City]
+
+Which client are you asking about? You can reply with the number or the full name."
+
+Be brief and clear. Do NOT provide any client portfolio data yet — just list the matches for disambiguation.
+"""
+
+
+# =============================================================================
 # HELPER FUNCTIONS (FOR COMPATIBILITY)
 # =============================================================================
 

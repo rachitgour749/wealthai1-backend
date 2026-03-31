@@ -27,8 +27,12 @@ async def verify_admin_key(x_admin_key: str = Header(..., description="Admin API
     """Verify admin API key from header."""
     expected_key = os.getenv("ADMIN_API_KEY")
     if not expected_key:
-        logger.warning("ADMIN_API_KEY not configured - admin routes are unprotected!")
-        return True  # Allow access if key not configured (development mode)
+        # SECURITY: Refuse to serve admin routes if key is not configured
+        logger.error("ADMIN_API_KEY not configured — all admin routes are blocked.")
+        raise HTTPException(
+            status_code=503,
+            detail="Admin service not configured. Set ADMIN_API_KEY environment variable."
+        )
     
     if x_admin_key != expected_key:
         raise HTTPException(
@@ -226,7 +230,7 @@ async def upload_document(
     If auto_sync is True (default), also uploads to File Search store
     for immediate querying.
     """
-    import time
+    import asyncio
     from google import genai
     
     # Create category directory if needed
@@ -275,7 +279,7 @@ async def upload_document(
                     # Wait for completion (max 60 seconds)
                     wait_time = 0
                     while not operation.done and wait_time < 60:
-                        time.sleep(2)
+                        await asyncio.sleep(2)
                         wait_time += 2
                         operation = client.operations.get(operation)
                     
@@ -298,8 +302,14 @@ async def upload_document(
 
 @router.delete("/documents/{document_path:path}")
 async def delete_document(document_path: str):
-    """Delete a document."""
-    file_path = Path(document_path)
+    """Delete a document. Only allows deletion within the products directory."""
+    file_path = Path(document_path).resolve()
+    # SECURITY: Prevent path traversal — only allow deletion within PRODUCTS_DIR
+    try:
+        file_path.relative_to(PRODUCTS_DIR.resolve())
+    except ValueError:
+        raise HTTPException(403, "Access denied: path is outside the allowed directory")
+    
     if file_path.exists():
         file_path.unlink()
         return {"message": "Document deleted"}
@@ -436,10 +446,10 @@ async def sync_docs_to_customer(customer_id: str):
                 )
                 
                 # Wait for upload
-                import time
+                import asyncio as _asyncio
                 wait_time = 0
                 while not operation.done and wait_time < 60:
-                    time.sleep(2)
+                    await _asyncio.sleep(2)
                     wait_time += 2
                     operation = client.operations.get(operation)
                 
@@ -547,4 +557,258 @@ async def run_zoho_sync_for_customer(customer_id: str):
                 "status": "failed",
                 "error": str(e)
             }, f)
+
+
+# ============== Access Management ==============
+
+class GrantAccessRequest(BaseModel):
+    email: str
+    name: str
+    file_search_store: str
+    status: str = "active"
+
+
+@router.get("/access")
+async def list_access_mappings():
+    """List all email-to-store access mappings."""
+    data = load_customers()
+    customers = data.get("customers", [])
+    
+    return {
+        "mappings": [
+            {
+                "email": c.get("email", ""),
+                "name": c.get("name", ""),
+                "id": c.get("id", ""),
+                "file_search_store": c.get("file_search_store", ""),
+                "status": c.get("status", "unknown"),
+                "docs_synced": c.get("docs_synced", 0),
+                "last_sync": c.get("last_sync"),
+                "created_at": c.get("created_at", "")
+            }
+            for c in customers
+        ],
+        "total": len(customers)
+    }
+
+
+@router.post("/access")
+async def grant_access(request: GrantAccessRequest):
+    """Grant an email address access to a specific file search store."""
+    data = load_customers()
+    customers = data.get("customers", [])
+    
+    # Check if email already exists (case-insensitive)
+    existing_idx = None
+    for i, c in enumerate(customers):
+        if c.get("email", "").lower() == request.email.lower():
+            existing_idx = i
+            break
+    
+    if existing_idx is not None:
+        # Update existing mapping
+        customers[existing_idx]["file_search_store"] = request.file_search_store
+        customers[existing_idx]["name"] = request.name
+        customers[existing_idx]["status"] = request.status
+        save_customers(data)
+        logger.info(f"Updated access for {request.email} -> {request.file_search_store}")
+        return {"message": f"Updated access for {request.email}", "action": "updated"}
+    else:
+        # Create new mapping
+        new_customer = {
+            "id": generate_id("cust"),
+            "name": request.name,
+            "email": request.email,
+            "status": request.status,
+            "file_search_store": request.file_search_store,
+            "docs_synced": 0,
+            "last_sync": None,
+            "created_at": datetime.now().isoformat()
+        }
+        customers.append(new_customer)
+        save_customers(data)
+        logger.info(f"Granted access for {request.email} -> {request.file_search_store}")
+        return {"message": f"Granted access for {request.email}", "action": "created", "customer": new_customer}
+
+
+@router.delete("/access/{email}")
+async def revoke_access(email: str):
+    """Revoke an email's access by removing their customer entry."""
+    data = load_customers()
+    customers = data.get("customers", [])
+    
+    original_count = len(customers)
+    data["customers"] = [
+        c for c in customers 
+        if c.get("email", "").lower() != email.lower()
+    ]
+    
+    if len(data["customers"]) == original_count:
+        raise HTTPException(404, f"No mapping found for email: {email}")
+    
+    save_customers(data)
+    logger.info(f"Revoked access for {email}")
+    return {"message": f"Revoked access for {email}"}
+
+
+@router.get("/stores")
+async def list_available_stores():
+    """List all file search stores from Gemini API."""
+    import asyncio
+    try:
+        from google import genai
+        api_key = _get_gemini_key()
+        if not api_key:
+            raise HTTPException(500, "GEMINI_API_KEY not configured")
+        
+        client = genai.Client(api_key=api_key)
+        loop = asyncio.get_event_loop()
+        
+        def _fetch():
+            stores_pager = client.file_search_stores.list()
+            store_list = []
+            for store in stores_pager:
+                store_list.append({
+                    "name": store.name,
+                    "display_name": getattr(store, "display_name", store.name),
+                    "doc_count": "-", # Lazy-loaded when clicked
+                    "created_at": str(getattr(store, "create_time", "")),
+                })
+            return store_list
+        
+        stores = await loop.run_in_executor(None, _fetch)
+        return {"stores": stores, "total": len(stores)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to list stores: {e}")
+        raise HTTPException(500, f"Failed to list stores: {str(e)}")
+
+
+def _get_gemini_key():
+    """Get Gemini API key from env or api_keys.json."""
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        api_keys_file = DATA_DIR / "api_keys.json"
+        if api_keys_file.exists():
+            with open(api_keys_file, 'r') as f:
+                keys = json.load(f)
+            for cust_id, cust_keys in keys.items():
+                if "gemini_api_key" in cust_keys:
+                    return cust_keys["gemini_api_key"]
+    return api_key
+
+# ============== Store File Management ==============
+
+@router.get("/stores/{store_id}/documents")
+async def list_store_documents(store_id: str):
+    """List all documents in a specific file search store."""
+    import asyncio
+    try:
+        from google import genai
+        api_key = _get_gemini_key()
+        if not api_key:
+            raise HTTPException(500, "GEMINI_API_KEY not configured")
+        
+        client = genai.Client(api_key=api_key)
+        store_name = f"fileSearchStores/{store_id}"
+        loop = asyncio.get_event_loop()
+        
+        def _fetch_docs():
+            docs = []
+            docs_pager = client.file_search_stores.documents.list(parent=store_name)
+            for doc in docs_pager:
+                docs.append({
+                    "name": getattr(doc, "name", ""),
+                    "display_name": getattr(doc, "display_name", ""),
+                    "size_bytes": getattr(doc, "size_bytes", 0),
+                    "created_at": str(getattr(doc, "create_time", "")),
+                    "state": str(getattr(doc, "state", "")),
+                })
+            return docs
+        
+        docs = await loop.run_in_executor(None, _fetch_docs)
+        return {"documents": docs, "total": len(docs), "store": store_name}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to list documents for {store_id}: {e}")
+        raise HTTPException(500, f"Failed to list documents: {str(e)}")
+
+
+@router.post("/stores/{store_id}/upload")
+async def upload_to_store(
+    store_id: str,
+    file: UploadFile = File(...),
+    display_name: str = Form(None)
+):
+    """Upload a file to a specific file search store."""
+    import tempfile
+    
+    try:
+        from google import genai
+        api_key = _get_gemini_key()
+        if not api_key:
+            raise HTTPException(500, "GEMINI_API_KEY not configured")
+        
+        client = genai.Client(api_key=api_key)
+        store_name = f"fileSearchStores/{store_id}"
+        
+        # Save uploaded file temporarily
+        suffix = Path(file.filename).suffix
+        temp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+                content = await file.read()
+                temp_file.write(content)
+                temp_path = temp_file.name
+            
+            # Upload to File Search store
+            uploaded = client.files.upload(
+                file=temp_path,
+                config={"display_name": display_name or file.filename}
+            )
+            
+            # Ingest into store
+            client.file_search_stores.documents.create(
+                parent=store_name,
+                document=uploaded
+            )
+            
+            return {
+                "status": "uploaded",
+                "filename": file.filename,
+                "display_name": display_name or file.filename,
+                "store": store_name
+            }
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                os.unlink(temp_path)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Upload to {store_id} failed: {e}")
+        raise HTTPException(500, f"Failed to upload: {str(e)}")
+
+
+@router.delete("/stores/{store_id}/documents/{doc_id}")
+async def delete_store_document(store_id: str, doc_id: str):
+    """Delete a document from a file search store."""
+    try:
+        from google import genai
+        api_key = _get_gemini_key()
+        if not api_key:
+            raise HTTPException(500, "GEMINI_API_KEY not configured")
+        
+        client = genai.Client(api_key=api_key)
+        doc_name = f"fileSearchStores/{store_id}/documents/{doc_id}"
+        
+        client.file_search_stores.documents.delete(name=doc_name)
+        
+        return {"status": "deleted", "document": doc_name}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Delete document {doc_id} from {store_id} failed: {e}")
+        raise HTTPException(500, f"Failed to delete document: {str(e)}")
 

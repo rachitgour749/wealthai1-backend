@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException, Depends, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -43,11 +43,7 @@ root_env_path = os.path.join(root_dir, '.env')
 
 if os.path.exists(root_env_path):
     load_dotenv(root_env_path)
-    print(f"✅ ChatAI loaded .env from: {root_env_path}")
 else:
-    print(f"⚠️ ChatAI .env not found at {root_env_path}")
-    print(f"   Current file: {current_file}")
-    print(f"   Root dir: {root_dir}")
     load_dotenv()  # Fallback to default behavior
 
 # Configure logging
@@ -124,7 +120,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 # Request/Response models
 class QueryRequest(BaseModel):
-    query: str
+    query: str = Field(..., min_length=1, max_length=2000, description="User query text")
     
     class Config:
         json_schema_extra = {
@@ -140,6 +136,7 @@ class QueryResponse(BaseModel):
     citations: list = []
     active_client: str | None = None
     is_fallback: bool = False
+    follow_ups: list[str] = []
 
 
 # API Routes
@@ -183,6 +180,18 @@ async def handle_query(request: Request, body: QueryRequest):
         # Extract response text
         response_text = response.text if hasattr(response, 'text') else str(response)
         
+        # Log finish_reason for debugging truncation
+        try:
+            if hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                finish_reason = getattr(candidate, 'finish_reason', 'UNKNOWN')
+                token_count = getattr(getattr(candidate, 'token_count', None), '__class__', None)
+                logger.info(f"Gemini finish_reason: {finish_reason} | response_length: {len(response_text)} chars")
+                if str(finish_reason) not in ('FinishReason.STOP', 'STOP', '1'):
+                    logger.warning(f"Response may be incomplete! finish_reason={finish_reason}")
+        except Exception:
+            pass
+        
         # Update conversation history with effective intent (for context-aware routing)
         conversation.add_message("user", body.query, effective_intent.value)
         conversation.add_message("assistant", response_text)
@@ -192,17 +201,33 @@ async def handle_query(request: Request, body: QueryRequest):
         if hasattr(response, 'grounding_metadata'):
             citations = extract_citations(response.grounding_metadata)
         
+        # Generate follow-up questions (non-blocking, best-effort)
+        follow_ups = []
+        try:
+            follow_ups = await orchestrator.generate_follow_ups(
+                query=body.query,
+                response_text=response_text[:500],
+                intent=effective_intent.value,
+                conversation=conversation
+            )
+        except Exception:
+            pass  # Follow-ups are optional — never fail the main response
+        
         return QueryResponse(
             response=response_text,
-            intent=effective_intent.value,  # Use effective intent, not original
+            intent=effective_intent.value,
             citations=citations,
             active_client=conversation.active_client,
-            is_fallback=getattr(response, '_is_fallback', False)
+            is_fallback=getattr(response, '_is_fallback', False),
+            follow_ups=follow_ups
         )
     
     except Exception as e:
+        import traceback
         logger.error(f"Query processing error: {e}")
-        raise HTTPException(500, f"Failed to process query: {str(e)}")
+        logger.error(traceback.format_exc())
+        # SECURITY: Don't leak internal error details to client
+        raise HTTPException(500, "Failed to process query. Please try again.")
 
 
 @router.get("/api/session/{session_id}")

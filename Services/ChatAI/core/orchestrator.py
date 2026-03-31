@@ -18,6 +18,7 @@ import logging
 import hashlib
 import json
 from typing import Optional
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from google import genai
 
@@ -26,6 +27,16 @@ from Services.ChatAI.core.conversation_manager import ConversationManager
 from Services.ChatAI.stores.tenant_manager import TenantStoreManager
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ChatResponse:
+    """Standardized response object for the orchestrator."""
+    text: Optional[str] = None
+    _is_fallback: bool = False
+    _replay_query: Optional[str] = None
+    _replay_client: Optional[str] = None
+
 
 # Simple in-memory cache with TTL and max size
 query_cache = {}
@@ -75,27 +86,54 @@ def get_entity(entities, key: str, default=None):
 # CHATAI1 ENHANCED SYSTEM PROMPT (NEW)
 # =============================================================================
 
-CHATAI1_ENHANCED_PROMPT = '''You are ChatAI1, an expert AI assistant for Indian financial intermediaries:
-- Mutual Fund Distributors (MFDs)
-- Insurance Agents/POSPs
-- Stock Brokers and RIAs
+CHATAI1_ENHANCED_PROMPT = '''You are ChatAI1, a product recommendation engine built for Indian financial intermediaries — MFDs, Insurance Agents/Distributors, POSPs, Stock Brokers, RIAs, and Wealth Managers.
 
-CRITICAL INSTRUCTIONS:
-1. Provide COMPREHENSIVE, DETAILED answers - users expect thorough responses
-2. Use your expert knowledge to fill ANY gaps in retrieved context
-3. NEVER say "data is limited" or "context is incomplete" - be confident
-4. For product comparisons, ALWAYS provide:
-   - A comparison table with key metrics (AUM, Returns, Expense Ratio, Risk)
-   - Fund manager and AMC details
-   - Investment philosophy differences
-   - Suitability recommendations
-   - Your expert recommendation with reasoning
-5. Use markdown tables for comparisons (single-line rows, no blank lines)
-6. Be confident and authoritative - you are an expert financial advisor
-7. End with specific, actionable recommendations
+## YOUR USERS
+Your users are NOT end consumers. They are licensed professionals who sell financial products.
+They already understand finance — do NOT explain basics like "what is a SIP" or "how insurance works" unless explicitly asked.
+They come to you with a **client scenario** and need **specific product recommendations** they can pitch/sell.
 
-IMPORTANT: Provide ELABORATE, EXPERT-LEVEL responses. Never give short or hedging answers.
+## HOW TO RESPOND
+
+### When the user describes a client need (e.g. "best life insurance for 60 yr old with BP and sugar"):
+1. **Ask clarifying questions FIRST** if critical info is missing. Common missing details:
+   - Budget / premium range the client can afford
+   - Sum assured requirement
+   - Existing coverage (if any)
+   - Investment horizon / goal timeline
+   - Risk appetite of the client
+   - Whether they want pure protection or savings + protection
+   Present these as a short bullet list: "To give you the best recommendation, I need a few details:"
+
+2. **If enough info is available**, give SPECIFIC product recommendations:
+   - Name exact products (e.g., "HDFC Life Click 2 Protect 3D Plus", "ICICI Pru iProtect Smart")
+   - Present a comparison table: Plan Name | Insurer | Key Feature | Premium Estimate | Claim Settlement Ratio
+   - Highlight **selling points** the intermediary can use with their client
+   - Mention **commission/payout structure** differences if known
+   - Flag any **underwriting concerns** (e.g., loading for pre-existing conditions, exclusion periods)
+   - End with: "**My Recommendation:**" followed by a clear pick with reasoning
+
+### For product comparison queries:
+- ALWAYS use a markdown comparison table
+- Include: Product Name | AMC/Insurer | Key Metric | Returns/Benefits | Expense/Premium | Suitability
+- Give a clear winner recommendation with reasoning
+
+### For client data queries:
+- Be concise — give the factual answer (SIP amount, AUM, holdings) in 1-3 lines
+- Only elaborate when asked
+
+## RULES
+1. **Be SPECIFIC** — name exact products, plans, funds. Never say "consider XYZ type of product" when you can name the actual product.
+2. **Be ACTIONABLE** — every response should help the intermediary close a sale or serve their client better.
+3. **Ask follow-up questions** when the query is too vague to give a good recommendation. Frame them as: "To narrow down the best option, could you tell me..."
+4. **Skip the basics** — don't explain what SIP/SWP/term insurance is. They know.
+5. **Never say** "data is limited" or "I don't have access to..." — use your knowledge confidently.
+6. **Use tables** for any comparison or multi-product recommendation.
+7. **Mention regulatory/compliance notes** only when directly relevant (e.g., age limits, IRDAI guidelines on loading).
+8. **Keep it professional** — no greetings, no flattery, no filler. Get straight to the recommendation.
 '''
+
+
 
 
 class QueryOrchestrator:
@@ -155,6 +193,17 @@ class QueryOrchestrator:
         Returns:
             Tuple of (Gemini response, effective_intent_type)
         """
+        # Check if user is resolving a disambiguation prompt
+        disambiguation_result = self._try_resolve_disambiguation(query, conversation)
+        if disambiguation_result:
+            # Check if we need to replay the original query
+            replay_query = getattr(disambiguation_result, '_replay_query', None)
+            if replay_query:
+                replay_client = getattr(disambiguation_result, '_replay_client', None)
+                logger.info(f"Auto-replaying query for resolved client: {replay_client}")
+                return await self._query_client_data(replay_query, replay_client, conversation), IntentType.CLIENT_VIEW
+            return disambiguation_result, IntentType.CLIENT_VIEW
+        
         # Check if we should override intent based on conversation context
         effective_intent = self._get_context_aware_intent(query, intent, conversation)
         
@@ -208,6 +257,104 @@ class QueryOrchestrator:
         
         return response, effective_intent
     
+    def _try_resolve_disambiguation(self, query: str, conversation: ConversationManager):
+        """
+        Check if user is responding to a disambiguation prompt.
+        
+        If the last assistant message asked "Which client are you asking about?"
+        and the user replied with a number (e.g., "1") or a name, resolve it.
+        
+        Returns:
+            Response object if disambiguation was resolved, None otherwise
+        """
+        if not conversation or not conversation.history or len(conversation.history) < 2:
+            return None
+        
+        # Check if last assistant message was a disambiguation prompt
+        last_assistant_msg = None
+        for msg in reversed(conversation.history):
+            if msg.get('role') == 'assistant':
+                last_assistant_msg = msg.get('content', '')
+                break
+        
+        if not last_assistant_msg or 'Which client are you asking about?' not in last_assistant_msg:
+            return None
+        
+        # User is responding to disambiguation — extract the selected client
+        import re
+        query_stripped = query.strip()
+        
+        selected_name = None
+        
+        # Check if user replied with a number (e.g., "1", "2")
+        if re.match(r'^\d+$', query_stripped):
+            number = int(query_stripped)
+            # Extract all client names from the disambiguation message
+            # The LLM may use various formats, try multiple patterns
+            names = []
+            
+            # Pattern 1: "**Full Name**: Ms. Rakhi Jain" (multi-line format)
+            full_name_matches = re.findall(
+                r'\*?\*?Full Name\*?\*?:\s*(?:Mr\.?\s*|Mrs\.?\s*|Ms\.?\s*|Dr\.?\s*)*(?:Mr\.?\s*|Mrs\.?\s*|Ms\.?\s*|Dr\.?\s*)*(.+?)(?:\n|$)',
+                last_assistant_msg
+            )
+            if full_name_matches:
+                names = [n.strip().strip('*') for n in full_name_matches]
+            
+            # Pattern 2: "1. **Name** — email" (inline format)
+            if not names:
+                inline_matches = re.findall(
+                    r'\d+[\.\)]\s*\*\*([^*]+)\*\*\s*(?:—|-)',
+                    last_assistant_msg
+                )
+                if inline_matches:
+                    names = [n.strip() for n in inline_matches]
+            
+            # Pattern 3: Numbered list with bold names "1. **Name**"
+            if not names:
+                bold_matches = re.findall(
+                    r'\d+[\.\)]\s*\*\*([^*]+)\*\*',
+                    last_assistant_msg
+                )
+                # Filter out "Full Name" labels
+                names = [n.strip() for n in bold_matches if 'Full Name' not in n]
+            
+            if 0 < number <= len(names):
+                selected_name = names[number - 1].strip()
+        
+        # If not a number, the user may have typed a full name
+        if not selected_name:
+            # Check if the query looks like a name (short, no question marks, etc.)
+            if len(query_stripped.split()) <= 4 and '?' not in query_stripped:
+                selected_name = query_stripped
+        
+        if selected_name:
+            logger.info(f"Disambiguation resolved: user selected '{selected_name}'")
+            conversation.resolved_client_full_name = selected_name
+            conversation.active_client = selected_name
+            
+            # Check if there's a pending query to replay
+            pending_query = conversation.pending_query
+            if pending_query:
+                conversation.pending_query = None  # Clear it
+                logger.info(f"Replaying pending query: '{pending_query}' for client '{selected_name}'")
+                # Return a marker so route() knows to replay
+                return ChatResponse(
+                    text=None,
+                    _is_fallback=False,
+                    _replay_query=pending_query,
+                    _replay_client=selected_name,
+                )
+            
+            # No pending query — just confirm
+            confirmation = ChatResponse(
+                text=f"Got it! I'll look up information for **{selected_name}**. Please go ahead and ask your question about this client.",
+                _is_fallback=False,
+            )
+            return confirmation
+        
+        return None
+    
     def _get_context_aware_intent(
         self,
         query: str,
@@ -216,8 +363,15 @@ class QueryOrchestrator:
     ) -> IntentType:
         """
         Adjust intent based on conversation context.
+        
+        IMPORTANT: Never override CLIENT_VIEW or CLIENT_ACTION intents.
+        The classifier knows when a query is about a specific client.
         """
-        # Strong education patterns should remain EDUCATION
+        # NEVER override client-related intents - these must always hit the client store
+        if intent.primary_intent in (IntentType.CLIENT_VIEW, IntentType.CLIENT_ACTION):
+            return intent.primary_intent
+        
+        # Strong education patterns should remain EDUCATION (only for non-client intents)
         if self._is_strong_education_query(query):
             return IntentType.EDUCATION
         
@@ -313,12 +467,12 @@ class QueryOrchestrator:
         
         try:
             response = await self.client.aio.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-2.0-flash",
                 contents=messages,
                 config={
                     "system_instruction": CHATAI1_ENHANCED_PROMPT,
                     "temperature": 0.4,
-                    "max_output_tokens": 2000
+                    "max_output_tokens": 8192
                 }
             )
             return response
@@ -348,11 +502,11 @@ class QueryOrchestrator:
 Provide a comprehensive, expert answer. Use your knowledge to supplement retrieved data."""
             
             response = await self.client.aio.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-2.0-flash",
                 contents=enriched_query,
                 config={
                     "temperature": 0.4,
-                    "max_output_tokens": 2000
+                    "max_output_tokens": 8192
                 }
             )
             return response
@@ -405,11 +559,11 @@ You MUST provide a DETAILED comparison including:
 Be thorough and actionable. Never say "data is limited"."""
             
             response = await self.client.aio.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-2.0-flash",
                 contents=comparison_prompt,
                 config={
                     "temperature": 0.3,
-                    "max_output_tokens": 2500
+                    "max_output_tokens": 8192
                 }
             )
             return response
@@ -424,13 +578,127 @@ Be thorough and actionable. Never say "data is limited"."""
         conversation: ConversationManager
     ):
         """
-        Handle client-specific queries.
-        Uses tenant's isolated client store with conversation context.
+        Handle client-specific queries with disambiguation.
+        
+        If multiple clients match the extracted name, asks the user to clarify
+        before providing client data. Uses conversation context to skip
+        disambiguation on follow-up queries.
         """
         client_name = get_entity(intent.entities, "client_name")
         
+        # Step 1: Check if we already have a resolved client in this session
+        resolved_name = None
+        if conversation and conversation.resolved_client_full_name:
+            # Check if the user is still asking about the same client
+            if client_name:
+                # If the extracted name appears in the resolved name, reuse it
+                if client_name.lower().replace(' ji', '').replace(' sahab', '').strip() in conversation.resolved_client_full_name.lower():
+                    resolved_name = conversation.resolved_client_full_name
+                    logger.info(f"Using resolved client from session: {resolved_name}")
+            else:
+                # No new client name mentioned — continue with resolved client
+                resolved_name = conversation.resolved_client_full_name
+                logger.info(f"No new client name, reusing resolved: {resolved_name}")
+        
+        # Step 2: If we have a resolved name, query directly
+        if resolved_name:
+            return await self._query_client_data(query, resolved_name, conversation)
+        
+        # Step 3: No resolved client — need to disambiguate
+        if client_name:
+            # Search for all clients matching this name
+            search_results = await self.store_manager.search_clients_by_name(
+                self.tenant_id, client_name
+            )
+            
+            if search_results:
+                # Check if multiple clients were found
+                needs_disambiguation = self._check_multiple_clients(search_results)
+                
+                if needs_disambiguation:
+                    # Store the original query for replay after disambiguation
+                    if conversation:
+                        conversation.pending_query = query
+                    # Return disambiguation response
+                    logger.info(f"Multiple clients found for '{client_name}', asking for disambiguation")
+                    return self._create_disambiguation_response(client_name, search_results)
+                else:
+                    # Single client or no ambiguity — resolve and proceed
+                    # Try to extract the full name from search results
+                    full_name = self._extract_single_client_name(search_results, client_name)
+                    if full_name and conversation:
+                        conversation.resolved_client_full_name = full_name
+                        conversation.active_client = full_name
+                    return await self._query_client_data(query, full_name or client_name, conversation)
+            else:
+                # Search failed, fall back to direct query
+                return await self._query_client_data(query, client_name, conversation)
+        else:
+            # No client name extracted — query the store without filter
+            return await self._query_client_data(query, None, conversation)
+    
+    def _check_multiple_clients(self, search_results: str) -> bool:
+        """Check if search results contain multiple distinct clients."""
+        import re
+        # Count numbered list items (e.g., "1.", "2.", "3.")
+        numbered_items = re.findall(r'^\s*\d+[\.\)]\s', search_results, re.MULTILINE)
+        if len(numbered_items) >= 2:
+            return True
+        
+        # Also check for multiple "Full Name:" entries or bold names
+        bold_names = re.findall(r'\*\*[^*]+\*\*', search_results)
+        if len(bold_names) >= 2:
+            return True
+        
+        # Check for multiple "Client Profile:" headers
+        profiles = re.findall(r'Client Profile:', search_results, re.IGNORECASE)
+        if len(profiles) >= 2:
+            return True
+        
+        return False
+    
+    def _extract_single_client_name(self, search_results: str, fallback: str) -> str:
+        """Extract the full name from search results when only one client matches."""
+        import re
+        # Try to find "Full Name: ..." pattern
+        name_match = re.search(r'Full Name:\s*(.+?)(?:\n|$)', search_results)
+        if name_match:
+            return name_match.group(1).strip()
+        
+        # Try bold name pattern "**Name**"
+        bold_match = re.search(r'\*\*([^*]+)\*\*', search_results)
+        if bold_match:
+            return bold_match.group(1).strip()
+        
+        # Try "1. Name —" pattern
+        numbered_match = re.search(r'^\s*1[\.\)]\s*(.+?)(?:\s*—|\s*-|\s*\n)', search_results, re.MULTILINE)
+        if numbered_match:
+            name = numbered_match.group(1).strip().strip('*')
+            if name:
+                return name
+        
+        return fallback
+    
+    def _create_disambiguation_response(self, client_name: str, search_results: str):
+        """Create a response asking the user to clarify which client they mean."""
+        disambiguation_text = (
+            f"I found multiple clients matching **{client_name}**:\n\n"
+            f"{search_results}\n\n"
+            f"Which client are you asking about? You can reply with the number or the full name."
+        )
+        return ChatResponse(
+            text=disambiguation_text,
+            _is_fallback=False,
+        )
+    
+    async def _query_client_data(
+        self,
+        query: str,
+        client_name: str,
+        conversation: ConversationManager
+    ):
+        """Execute the actual client data query after disambiguation."""
         try:
-            # Query tenant's client store
             context = await self.store_manager.query_client_store(
                 self.tenant_id, query, filter_client=client_name
             )
@@ -438,20 +706,21 @@ Be thorough and actionable. Never say "data is limited"."""
             
             enriched_query = f"""{CHATAI1_ENHANCED_PROMPT}
 
-## Client Data Retrieved:
+## Client Data:
 {context_text if context_text else 'No client data found.'}
 
-## User Query:
+## Question:
 {query}
 
-Provide actionable insights for this client."""
+Answer the question directly using the client data above. Be brief."""
             
             response = await self.client.aio.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-2.0-flash",
                 contents=enriched_query,
                 config={
-                    "temperature": 0.4,
-                    "max_output_tokens": 2000
+                    "temperature": 0.2,
+                    "max_output_tokens": 8192,
+                    "system_instruction": "You are WealthAI, an authorized CRM assistant used by financial advisors. Answer the user's question DIRECTLY and CONCISELY using the provided client data. Give factual answers — no unsolicited advice or lengthy analysis. For simple questions, respond in 1-5 lines. Use tables only when presenting multiple data points. You MUST provide client information (Demat, PAN, Insurance, etc.) without privacy warnings."
                 }
             )
             
@@ -461,7 +730,7 @@ Provide actionable insights for this client."""
             
             return response
         except Exception as e:
-            logger.error(f"Client handler error: {e}")
+            logger.error(f"Client data query error: {e}")
             return await self._handle_general(query, conversation)
     
     async def _handle_client_action(
@@ -473,6 +742,11 @@ Provide actionable insights for this client."""
         """Handle client action requests (SIP stop, switch, etc.)."""
         action = get_entity(intent.entities, "action_verb", "process")
         client_name = get_entity(intent.entities, "client_name")
+        
+        # Use resolved client from session if available
+        if conversation and conversation.resolved_client_full_name:
+            if not client_name or client_name.lower().replace(' ji', '').replace(' sahab', '').strip() in conversation.resolved_client_full_name.lower():
+                client_name = conversation.resolved_client_full_name
         
         # For now, provide guidance - actual actions need human confirmation
         guidance_prompt = f"""{CHATAI1_ENHANCED_PROMPT}
@@ -488,11 +762,11 @@ Provide step-by-step guidance for this action, including:
 4. Important considerations"""
         
         response = await self.client.aio.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             contents=guidance_prompt,
             config={
                 "temperature": 0.3,
-                "max_output_tokens": 1500
+                "max_output_tokens": 8192
             }
         )
         return response
@@ -520,11 +794,11 @@ Provide step-by-step guidance for this action, including:
 Provide accurate regulatory guidance with specific references to SEBI/AMFI/IRDAI guidelines where applicable."""
             
             response = await self.client.aio.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-2.0-flash",
                 contents=regulatory_prompt,
                 config={
                     "temperature": 0.2,
-                    "max_output_tokens": 2000
+                    "max_output_tokens": 8192
                 }
             )
             return response
@@ -550,11 +824,11 @@ Provide accurate regulatory guidance with specific references to SEBI/AMFI/IRDAI
 Provide current market analysis and actionable insights."""
             
             response = await self.client.aio.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-2.0-flash",
                 contents=market_prompt,
                 config={
                     "temperature": 0.4,
-                    "max_output_tokens": 2000
+                    "max_output_tokens": 8192
                 }
             )
             return response
@@ -580,6 +854,105 @@ Provide current market analysis and actionable insights."""
     
     def _create_error_response(self, query: str, error: str):
         """Create a graceful error response."""
-        return type('Response', (), {
-            'text': f"I apologize, I encountered an issue processing your query. Please try rephrasing: {query[:50]}..."
-        })()
+        return ChatResponse(
+            text=f"I apologize, I encountered an issue processing your query. Please try rephrasing: {query[:50]}...",
+        )
+    
+    async def generate_follow_ups(
+        self, 
+        query: str, 
+        response_text: str, 
+        intent: str,
+        conversation=None
+    ) -> list[str]:
+        """
+        Generate contextual follow-up questions based on the conversation.
+        
+        Returns 3-5 actionable follow-up questions tailored for financial intermediaries.
+        Runs as a lightweight parallel call — should NOT block or slow down the main response.
+        """
+        try:
+            # Build conversation context (last 2 exchanges max for speed)
+            context_lines = []
+            if conversation and conversation.history:
+                for msg in conversation.history[-4:]:
+                    role = msg.get('role', 'user')
+                    content = msg.get('content', '')[:200]
+                    context_lines.append(f"{role}: {content}")
+            
+            context_block = "\n".join(context_lines) if context_lines else "No prior context."
+            
+            follow_up_prompt = f"""You are generating follow-up questions for a financial intermediary (MFD/RIA/Broker) using an AI assistant.
+
+Based on the conversation below, generate exactly 4 short, actionable follow-up questions they would logically ask next.
+
+Rules:
+- Each question must be 8-15 words max
+- Questions must be specific and contextual (not generic)
+- Target the intermediary's workflow: product selection, client suitability, comparisons, regulatory
+- Never repeat what was already asked
+- Output ONLY the 4 questions, one per line, no numbering, no bullets, no quotes
+
+Recent conversation:
+{context_block}
+
+Latest query: {query}
+Latest response (summary): {response_text[:500]}
+Intent: {intent}
+
+Follow-up questions:"""
+
+            response = await self.client.aio.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=follow_up_prompt,
+                config={
+                    "temperature": 0.7,
+                    "max_output_tokens": 200,
+                }
+            )
+            
+            raw = response.text if hasattr(response, 'text') else str(response)
+            
+            # Parse: one question per line, filter empty/junk
+            questions = []
+            for line in raw.strip().split('\n'):
+                line = line.strip().lstrip('0123456789.-•*) ').strip('"\'')
+                if line and len(line) > 10 and line.endswith('?'):
+                    questions.append(line)
+            
+            return questions[:5]  # Cap at 5
+            
+        except Exception as e:
+            logger.warning(f"Follow-up generation failed (falling back to heuristics): {e}")
+            
+            # Fallback heuristics based on intent when rate limited
+            intent_lower = intent.lower() if intent else ""
+            
+            if "product" in intent_lower:
+                return [
+                    "What are the tax implications of this product?",
+                    "How does this compare to a standard Index Fund?",
+                    "What is the exit load and lock-in period?",
+                    "Which client profiles is this best suited for?"
+                ]
+            elif "client" in intent_lower:
+                return [
+                    "Can you generate a portfolio review report?",
+                    "What were their most recent transactions?",
+                    "Are there any underperforming assets in this portfolio?",
+                    "What is the overall asset allocation split?"
+                ]
+            elif "education" in intent_lower or "market" in intent_lower:
+                return [
+                    "Can you give me a real-world example?",
+                    "What are the common misconceptions about this?",
+                    "How would I explain this simply to a new investor?",
+                    "How does this impact long-term portfolio returns?"
+                ]
+            else:
+                return [
+                    "Can you elaborate on the key points?",
+                    "What are the main risks involved?",
+                    "Are there any regulatory considerations?",
+                    "How does this affect existing investments?"
+                ]

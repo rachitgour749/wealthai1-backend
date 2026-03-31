@@ -106,6 +106,12 @@ async def list_strategies():
                 "description": "Monthly Buy-on-Dip strategy using 52-week high",
                 "required_params": ["tickers", "start_date", "end_date", "capital_per_month"],
                 "optional_params": ["brokerage_percent"]
+            },
+            {
+                "type": "ETF_Swing_Strategy",
+                "description": "Slot-based ETF swing strategy with SMA trend filter",
+                "required_params": ["tickers", "start_date", "end_date", "initial_capital"],
+                "optional_params": ["sma_lookback", "stop_loss_pct", "profit_threshold_pct", "number_of_slots", "risk_free_rate"]
             }
         ]
     }

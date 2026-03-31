@@ -5,12 +5,29 @@ __pycache__/
 *.pyd
 .Python
 .venv/
-.env
 *.sqlite
 *.db
 *.db-journal
 *.db-wal
 *.db-shm
+
+# Environment & Secrets (NEVER commit)
+.env
+.env.*
+
+# Data files (runtime-generated)
+dhan_token_cache.json
+moswal_token_cache.json
+Services/ChatAI/data/api_keys.json
+Services/ChatAI/data/customers.json
+Services/ChatAI/data/sync_status/
+
+# Logs and output
+logs/
+*.log
+discover_output.txt
+sample_output.txt
+test_output.txt
 
 # IDEs
 .idea/

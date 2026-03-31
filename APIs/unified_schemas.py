@@ -31,7 +31,8 @@ class UnifiedBacktestRequest(BaseModel):
         "Stock_Rotation",
         "ETF_Payout",
         "SuperTrend",
-        "ETF_Buy_on_Dip"
+        "ETF_Buy_on_Dip",
+        "ETF_Swing_Strategy"
     ] = Field(..., description="Type of strategy to run")
     
     start_date: str = Field(..., description="Backtest start date (YYYY-MM-DD or ISO format)")
@@ -107,6 +108,13 @@ class UnifiedBacktestRequest(BaseModel):
     max_holdings: Optional[int] = Field(None, description="Maximum holdings for SuperTrend")
     
     # ============================================================================
+    # ETF SWING STRATEGY SPECIFIC
+    # ============================================================================
+    sma_lookback: Optional[int] = Field(None, description="SMA lookback period")
+    profit_threshold_pct: Optional[float] = Field(None, description="Profit threshold percentage for exit")
+    number_of_slots: Optional[int] = Field(None, description="Number of concurrent positions (slots)")
+    
+    # ============================================================================
     # VALIDATORS
     # ============================================================================
     
@@ -117,7 +125,8 @@ class UnifiedBacktestRequest(BaseModel):
         valid_types = [
             "ETF_Rotation", "RS_ETF_Rotation", "RS_Stocks",
             "International_ETF_Rotation", "Stock_Rotation",
-            "ETF_Payout", "SuperTrend", "ETF_Buy_on_Dip"
+            "ETF_Payout", "SuperTrend", "ETF_Buy_on_Dip",
+            "ETF_Swing_Strategy"
         ]
         if v not in valid_types:
             raise ValueError(f"Invalid strategy_type. Must be one of: {valid_types}")
@@ -221,7 +230,8 @@ class SaveStrategyRequest(BaseModel):
         "International_ETF_Rotation",
         "Stock_Rotation",
         "ETF_Payout",
-        "ETF_Buy_on_Dip"
+        "ETF_Buy_on_Dip",
+        "ETF_Swing_Strategy"
     ]
     user_id: str
     strategy_name: str

@@ -1,8 +1,28 @@
 {
   "cust_d324d314": {
-    "gemini_api_key": "AIzaSyB23Xq84MYjlPTHoPhcqMnigkOnmIZOzlk",
+    "gemini_api_key": "AIzaSyCb-Lz97gfxdlny1FyJnjxqV6BlYdUOZe0",
     "zoho_org_id": null,
     "zoho_client_id": null,
     "zoho_client_secret": null
+  },
+  "cust_699df139": {
+    "zoho_client_id": "1000.GYYZ1XVI1TCHHIUAHT95Q6HUBWQ5LQ",
+    "zoho_client_secret": "df6d07e2db46aa7ad5b6ed956cf0561c573f1f785f",
+    "zoho_redirect_uri": "http://localhost:5173/zoho-callback",
+    "zoho_domain": "https://accounts.zoho.in",
+    "zoho_access_token": "1000.435a6f0f98c9a13daf9174123324eed1.c4d3075c0f1cc2a10b32472d7b583604",
+    "zoho_refresh_token": "1000.ce9818b791c985bdf2081704a278e425.4430be6a23ffdbcbd8aff8c5a84efabc",
+    "zoho_api_domain": "https://www.zohoapis.in",
+    "zoho_token_expires_at": 1772004491.361071
+  },
+  "cust_98a74f27": {
+    "zoho_client_id": "1000.FTSXZ3I377JO18ZPKG4YCOSU47KG6A",
+    "zoho_client_secret": "68f9cc963237364cb75de44a3b84558aaee356f60f",
+    "zoho_redirect_uri": "http://localhost:5173/zoho-callback",
+    "zoho_domain": "https://accounts.zoho.in",
+    "zoho_access_token": "1000.ec0406739883848016f3cc459cd5856b.1a79edac5f0f9a30b8d5a1f966deae6e",
+    "zoho_refresh_token": "1000.71eb79efae552e3fdbb5f97fb47feb7c.6994c874bf8461f5ed50a160c59198fb",
+    "zoho_api_domain": "https://www.zohoapis.in",
+    "zoho_token_expires_at": 1771915627.452481
   }
 }

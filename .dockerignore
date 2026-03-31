@@ -3,20 +3,48 @@ __pycache__/
 *.pyo
 *.pyd
 
+# Environment and secrets
+.env
+.env.*
 
-
+# Virtual environments
 venv/
 .venv/
 env/
+
+# IDE
 .idea/
 .vscode/
 .pytest_cache/
 .mypy_cache/
 
+# Git
 .git
 .gitignore
+.github
 
-tests/
+# Test files
+test_*.py
+*_test.py
+
+# Output/log files
 *.log
 *.db
 *.sqlite
+*.txt
+
+# Cache files
+dhan_token_cache.json
+moswal_token_cache.json
+
+# Development scripts
+discover_*.py
+find_*.py
+search_*.py
+sanity_check.py
+sample_*.py
+run_sync.py
+exchange_token.py
+refresh_token.py
+verify_broker_apis.py
+create_zips.py

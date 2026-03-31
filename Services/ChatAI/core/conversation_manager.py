@@ -20,6 +20,8 @@ class ConversationManager:
         self.history: list[dict] = []
         self.active_client: Optional[str] = None
         self.active_scheme: Optional[str] = None
+        self.resolved_client_full_name: Optional[str] = None  # Disambiguated client identity
+        self.pending_query: Optional[str] = None  # Original query awaiting disambiguation
         self.created_at = datetime.now()
         self.last_activity = datetime.now()
         self.ttl = timedelta(minutes=ttl_minutes)
@@ -121,6 +123,8 @@ class ConversationManager:
         self.history = []
         self.active_client = None
         self.active_scheme = None
+        self.resolved_client_full_name = None
+        self.pending_query = None
 
 
 # In-memory session store (use Redis in production)

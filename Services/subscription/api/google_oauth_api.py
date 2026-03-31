@@ -42,7 +42,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Google OAuth settings (these should be environment variables in production)
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', 'your-google-client-id')
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '503421457549-215abjb62mkqh341rvi04de2b2arqld6.apps.googleusercontent.com')
 
 def serialize_datetime_dict(data):
     """Convert datetime objects in a dictionary to ISO format strings for JSON serialization"""
