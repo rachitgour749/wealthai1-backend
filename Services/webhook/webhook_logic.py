@@ -36,8 +36,9 @@ from Services.broker_manager import login_broker, dispatch_place_order
 from Services.notification_service import WebhookNotifier
 from Services.subscription.subscription_models import ProductManager
 from Services.portfolio.portfolio_models import PortfolioTrade
-import asyncio
 from .models import TradeExecuteRequest, TradeExecuteResponse, UserExecutionDetail
+from helpers.order_utils import generate_random_mac, calculate_limit_price, validate_user_ip_creds
+from Databases.broker_models import BrokerSession
 
 # Get configuration
 config_name = os.environ.get('FASTAPI_ENV', 'default')
@@ -496,6 +497,18 @@ class WebhookLogic:
             
             logger.info(f"Checking broker for {email}: Target={target_client_id}, Stored={stored_client_id}")
             
+            # --- IP CREDENTIAL VALIDATION ---
+            client_record = session.query(BrokerSession).filter_by(user_email=email).first()
+            is_valid_ip, ip_err = validate_user_ip_creds(client_record)
+            if not is_valid_ip:
+                status = "error"
+                message = f"IP Validation Failed: {ip_err}"
+                logger.warning(f"Trade Rejected for {email}: {message}")
+                notify_background(email, signal.strategy_type, signal.symbol, signal.order_side, status, message)
+                self._save_execution_log(session, email, signal, status, message, ra_email)
+                return UserExecutionDetail(email=email, status=status, message=message)
+            # -------------------------------
+
             if not full_details or stored_client_id != target_client_id:
                 status = "error"
                 message = f"broker is different (Target:{target_client_id}, Stored:{stored_client_id}, RA:{signal.ra_code})"
@@ -566,15 +579,27 @@ class WebhookLogic:
                 return UserExecutionDetail(email=email, status=status, message=message)
 
             # E. Order Dispatch
+            # --- CALCULATE LIMIT PRICE (SEBI COMPLIANCE) ---
+            limit_price, price_err = calculate_limit_price(signal.symbol, signal.exchnge, signal.order_side)
+            if price_err:
+                status = "error"
+                message = f"Limit Price Calculation Failed: {price_err}"
+                notify_background(email, signal.strategy_type, signal.symbol, signal.order_side, status, message)
+                self._save_execution_log(session, email, signal, status, message, ra_email)
+                return UserExecutionDetail(email=email, status=status, message=message)
+            
             order_data = {
                 'symbol': signal.symbol,
                 'exchange': signal.exchnge,
                 'order_side': signal.order_side.upper(),
                 'product_type': 'DELIVERY' if conf.category == 'EQUITY' else 'MARGIN',
-                'order_type': 'MARKET',
+                'order_type': 'LIMIT',
+                'price': limit_price,
                 'quantity': qty,
-                'validity': 'DAY',
-                'variety': 'regular'
+                'validity': 'IOC', # Immediate Or Cancel
+                'variety': 'regular',
+                'static_ip': client_record.static_ip,
+                'mac_address': generate_random_mac()
             }
             
             credentials = {

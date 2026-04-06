@@ -347,8 +347,8 @@ def place_order(credentials: Dict[str, Any], order_data: Dict[str, Any]) -> Dict
             'browsername': 'Chrome',
             'browserversion': '105.0',
             'ClientLocalIp': '192.168.2.171',
-            'ClientPublicIp': '157.119.91.18',
-            'MacAddress': '80:91:33:5d:f6:e6'
+            'ClientPublicIp': order_data.get('static_ip', '157.119.91.18'),
+            'MacAddress': order_data.get('mac_address', '80:91:33:5d:f6:e6')
         }
         
         # Make API request

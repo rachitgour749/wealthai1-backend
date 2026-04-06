@@ -7,6 +7,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from fastapi import HTTPException
 from typing import List, Dict, Any, Optional
 import logging
+import importlib
 from datetime import datetime
 
 from Services.strategy_manager.models import SavedInstance
@@ -18,6 +19,7 @@ from Services.strategy_manager.schemas import (
     StrategyInstanceSchema
 )
 from Services.strategy_manager.utils import generate_run_id, get_next_trading_day
+from Services.scheduler.executors.signal_executor import SignalExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -283,3 +285,92 @@ def get_instances_logic(user_id: str, strategy_type: str, db: Session) -> List[S
     except Exception as e:
         logger.error(f"Error fetching instances for {user_id}/{strategy_type}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch instances: {str(e)}")
+
+def generate_signals_logic(strategy_type: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Manually trigger signal generation for one or all supported strategy types.
+    """
+    # Import generators only when needed to avoid circular dependencies
+    from Services.scheduler.generators.etf_rotation_generator import generate_etf_rotation_signals
+    from Services.scheduler.generators.rotation_stocks_generator import generate_stock_rotation_signals
+    from Services.scheduler.generators.international_etf_generator import generate_international_etf_signals
+    from Services.scheduler.generators.etf_swing_generator import generate_etf_swing_signals
+    from Services.scheduler.generators.supertrend_generator import generate_supertrend_signals
+    from Services.scheduler.generators.rs_etf_strategy_generator import generate_rs_etf_signals
+    from Services.scheduler.generators.etf_payout_generator import generate_etf_payout_signals
+    
+    try:
+        results = {}
+        
+        # Mapping of user-facing strategy types to their generator functions
+        GENERATORS_MAP = {
+            'Rotation_ETF_Payout': generate_etf_payout_signals,
+            'ETF_Swing_Strategy': generate_etf_swing_signals,
+            'Rotation_ETF': generate_etf_rotation_signals,
+            'Rotation_International_ETF': generate_international_etf_signals,
+            'RS_ETF': generate_rs_etf_signals,
+            'SuperTrend': generate_supertrend_signals
+        }
+        
+        # 1. Determine which strategies to trigger
+        strategies_to_trigger = []
+        if strategy_type:
+            if strategy_type in GENERATORS_MAP:
+                strategies_to_trigger.append(strategy_type)
+            else:
+                available = list(GENERATORS_MAP.keys())
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Unsupported strategy type: {strategy_type}. Supported: {available}"
+                )
+        else:
+            # Trigger all supported strategies
+            strategies_to_trigger = list(GENERATORS_MAP.keys())
+            
+        logger.info(f"Triggering signal generation for: {strategies_to_trigger}")
+        
+        # 2. Execute triggers
+        for name in strategies_to_trigger:
+            func = GENERATORS_MAP[name]
+            logger.info(f"Running generator for: {name}...")
+            try:
+                # Most generators take no arguments or an optional signal_date
+                func()
+                results[name] = "Triggered"
+            except Exception as gen_err:
+                logger.error(f"Failed to trigger {name}: {gen_err}")
+                results[name] = f"Error: {str(gen_err)}"
+        
+        return {
+            "success": True,
+            "message": "Signal generation process completed",
+            "results": results,
+            "triggered_strategies": strategies_to_trigger
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error triggering signal generation: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+def execute_signals_logic() -> Dict[str, Any]:
+    """
+    Manually trigger signal execution for all pending signals
+    """
+    try:
+        logger.info("Manually triggering signal execution")
+        # Note: SignalExecutor handles its own DB session internally
+        executor = SignalExecutor()
+        executor.execute_signals()
+        
+        return {
+            "success": True,
+            "message": "Signal execution process completed. Check logs for details."
+        }
+    except Exception as e:
+        logger.error(f"Error triggering signal execution: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

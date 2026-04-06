@@ -54,6 +54,14 @@ def save_broker_session(user_email: str, broker_name: str, client_id: str, respo
             if base_url:
                 credentials['base_url'] = base_url
             user.broker_credentials = json.dumps(credentials)
+            
+            # Extract new SEBI fields if they exist in the payload
+            if 'static_ip_username' in credentials:
+                user.static_ip_username = credentials['static_ip_username']
+            if 'static_ip_password' in credentials:
+                user.static_ip_password = credentials['static_ip_password']
+            if 'static_ip_port' in credentials:
+                user.static_ip_port = credentials['static_ip_port']
         elif sid or base_url:
              try:
                 creds_to_save = {}
