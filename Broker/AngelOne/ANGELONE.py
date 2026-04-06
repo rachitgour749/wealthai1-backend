@@ -314,7 +314,7 @@ def place_order(credentials: Dict[str, Any], order_data: Dict[str, Any]) -> Dict
             "Accept": "application/json",
             "X-ClientLocalIP": "127.0.0.1",
             "X-ClientPublicIP": order_data.get('static_ip', "106.193.147.98"),
-            "X-MACAddress": order_data.get('mac_address', "00:00:00:00:00:00"),
+            "X-MACAddress": "00:00:00:00:00:00",
             "X-PrivateKey": api_key,
             "X-UserType": "USER",
             "X-SourceID": "WEB",

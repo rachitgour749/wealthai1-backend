@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional
 from sqlalchemy.orm import Session
 try:
-    from Strategies.RS_Stocks.database import StockData, IndexData, SavedRSStrategy as StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
+    from .database import StockData, IndexData, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
 except ImportError:
     from database import StockData, IndexData, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot
 import json
@@ -182,7 +182,6 @@ class RSStrategyBacktester:
             self.min_turnover = config_dict.get('min_turnover', 1000000.0)  # Default: ₹10L
             self.stock_universe = config_dict.get('stock_universe', 'NIFTY500')
             self.custom_stocks = config_dict.get('custom_stocks', None)  # Custom stock selection
-            self.market = config_dict.get('market', 'INDIA').upper()
             self.config = None  # No database config object for custom configs
         elif config_id:
             # Load from database (existing behavior)
@@ -206,7 +205,6 @@ class RSStrategyBacktester:
             # Removed min_price - no price filtering, all stocks eligible
             self.min_turnover = self.config.min_turnover
             self.stock_universe = getattr(self.config, 'stock_universe', 'NIFTY500')
-            self.market = getattr(self.config, 'market', 'INDIA').upper()
         else:
             raise ValueError("Either config_id or config_dict must be provided")
         
@@ -304,15 +302,11 @@ class RSStrategyBacktester:
         # Use SQLAlchemy text() for PostgreSQL-compatible queries
         from sqlalchemy import text
         
-        # Determine table name based on market
-        table_name = "us_stock_market" if self.market == 'US' else "stock_market"
-        adj_close_col = "adj_close" # Both tables use adj_close
-        
         # Query using SQLAlchemy text() with PostgreSQL parameter binding and symbol filtering
         # Using ANY(:symbols) for efficient array filtering in Postgres
-        query = text(f"""
-            SELECT symbol, date, {adj_close_col} as adjusted_close
-            FROM {table_name} 
+        query = text("""
+            SELECT symbol, date, adj_close as adjusted_close
+            FROM stock_market 
             WHERE symbol = ANY(:symbols) 
             AND date >= :start_date AND date <= :end_date
             ORDER BY symbol, date
@@ -365,16 +359,13 @@ class RSStrategyBacktester:
             # Build placeholders for IN clause
             placeholders = ','.join([f':symbol_{i}' for i in range(len(selected_stocks))])
             
-            # Determine table name based on market
-            table_name = "us_stock_market" if self.market == 'US' else "stock_market"
-            
             # Single query to get min/max dates for all stocks
             query = text(f"""
                 SELECT 
                     symbol,
                     MIN(date) as min_date, 
                     MAX(date) as max_date
-                FROM {table_name}
+                FROM stock_market
                 WHERE symbol IN ({placeholders})
                 GROUP BY symbol
             """)
@@ -510,17 +501,12 @@ class RSStrategyBacktester:
         # Use SQLAlchemy text() for PostgreSQL-compatible queries
         from sqlalchemy import text
         
-        # Determine table name and symbol variants based on market
-        if self.market == 'US':
-            symbol_variants = [self.main_index, 'S&P_500', '^GSPC', 'SPY']
-            table_name = "s_p_500_index_market"
-        else:
-            symbol_variants = [self.main_index]
-            if self.main_index in ['^NSEI', 'NSEI', 'NIFTY50', 'NIFTY_50']:
-                symbol_variants = ['^NSEI', 'NSEI', 'NIFTY50', 'NIFTY_50']
-            elif self.main_index in ['^NIFTY50', 'NIFTY50', 'NIFTY_50']:
-                symbol_variants = ['^NIFTY50', 'NIFTY50', 'NSEI', 'NIFTY_50']
-            table_name = "nifty_50_index_market"
+        # Handle multiple symbol formats for NSEI index
+        symbol_variants = [self.main_index]
+        if self.main_index in ['^NSEI', 'NSEI', 'NIFTY50', 'NIFTY_50']:
+            symbol_variants = ['^NSEI', 'NSEI', 'NIFTY50', 'NIFTY_50']
+        elif self.main_index in ['^NIFTY50', 'NIFTY50', 'NIFTY_50']:
+            symbol_variants = ['^NIFTY50', 'NIFTY50', 'NSEI', 'NIFTY_50']
         
         # Build placeholders for IN clause
         placeholders = ','.join([f':symbol_{i}' for i in range(len(symbol_variants))])
@@ -528,7 +514,7 @@ class RSStrategyBacktester:
         # Query using SQLAlchemy text() with PostgreSQL parameter binding
         query = text(f"""
             SELECT symbol, date, open, high, low, close, COALESCE(adj_close, close) AS adjusted_close, volume
-            FROM {table_name} 
+            FROM nifty_50_index_market 
             WHERE symbol IN ({placeholders}) AND date >= :start_date AND date <= :end_date
             ORDER BY date
         """)

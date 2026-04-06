@@ -18,8 +18,6 @@ class UnifiedBacktestRequest(BaseModel):
     - Rotation_Stocks: Weekly SIP-based stock rotation
     - ETF_Payout: ETF rotation with periodic withdrawals
     - SuperTrend: Technical indicator-based strategy
-    - ETF_Swing_Strategy: Indian ETF Swing Strategy
-    - US_ETF_Swing_Strategy: US ETF Swing Strategy
     """
     
     # ============================================================================
@@ -34,8 +32,7 @@ class UnifiedBacktestRequest(BaseModel):
         "ETF_Payout",
         "SuperTrend",
         "ETF_Buy_on_Dip",
-        "ETF_Swing_Strategy",
-        "US_ETF_Swing_Strategy"
+        "ETF_Swing_Strategy"
     ] = Field(..., description="Type of strategy to run")
     
     start_date: str = Field(..., description="Backtest start date (YYYY-MM-DD or ISO format)")
@@ -116,8 +113,6 @@ class UnifiedBacktestRequest(BaseModel):
     sma_lookback: Optional[int] = Field(None, description="SMA lookback period")
     profit_threshold_pct: Optional[float] = Field(None, description="Profit threshold percentage for exit")
     number_of_slots: Optional[int] = Field(None, description="Number of concurrent positions (slots)")
-    market: Optional[str] = Field("INDIA", description="Market name (INDIA, US)")
-    asset_type: Optional[str] = Field("ETF", description="Asset type (ETF, STOCK)")
     
     # ============================================================================
     # VALIDATORS
@@ -131,7 +126,7 @@ class UnifiedBacktestRequest(BaseModel):
             "ETF_Rotation", "RS_ETF_Rotation", "RS_Stocks",
             "International_ETF_Rotation", "Stock_Rotation",
             "ETF_Payout", "SuperTrend", "ETF_Buy_on_Dip",
-            "ETF_Swing_Strategy", "US_ETF_Swing_Strategy"
+            "ETF_Swing_Strategy"
         ]
         if v not in valid_types:
             raise ValueError(f"Invalid strategy_type. Must be one of: {valid_types}")
@@ -200,7 +195,7 @@ class UnifiedBacktestResponse(BaseModel):
 
 class DateRangeRequest(BaseModel):
     """Request for calculating available date range"""
-    strategy_type: Optional[Literal[
+    strategy_type: Literal[
         "ETF_Rotation", 
         "RS_ETF_Rotation", 
         "RS_Stocks",
@@ -208,14 +203,11 @@ class DateRangeRequest(BaseModel):
         "Stock_Rotation",
         "ETF_Payout",
         "SuperTrend",
-        "ETF_Buy_on_Dip",
-        "ETF_Swing_Strategy",
-        "US_ETF_Swing_Strategy"
-    ]] = Field(None, description="Optional type of strategy to calculate date range for")
+        "ETF_Buy_on_Dip"
+    ]
     
-    market: Optional[str] = Field(None, description="Market name (INDIA, US)")
-    asset_type: Optional[str] = Field(None, description="Asset type (ETF, STOCK)")
-    tickers: Optional[List[str]] = Field(None, description="List of symbols/tickers")
+    # For Rotation strategies
+    tickers: Optional[List[str]] = None
     
     # For RS strategies
     etf_universe: Optional[str] = None
@@ -239,8 +231,7 @@ class SaveStrategyRequest(BaseModel):
         "Stock_Rotation",
         "ETF_Payout",
         "ETF_Buy_on_Dip",
-        "ETF_Swing_Strategy",
-        "US_ETF_Swing_Strategy"
+        "ETF_Swing_Strategy"
     ]
     user_id: str
     strategy_name: str

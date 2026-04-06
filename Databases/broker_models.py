@@ -12,9 +12,6 @@ class BrokerSession(Base):
     access_token = Column(String)
     token_expire = Column(DateTime)
     static_ip = Column(String, nullable=True)  # Whitelisted IP for algo trading
-    static_ip_username = Column(String, nullable=True)
-    static_ip_password = Column(String, nullable=True)
-    static_ip_port = Column(String, nullable=True)
     broker_credentials = Column(String, nullable=True) # JSON store of user credentials
     created_at = Column(DateTime, default=datetime.utcnow)
 

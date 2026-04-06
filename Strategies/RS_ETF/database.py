@@ -180,8 +180,29 @@ class PortfolioSnapshot(Base):
     cumulative_pnl = Column(Float)
     drawdown_pct = Column(Float)
 
-# Additional fields for strategy management
-    # removed SavedETFStrategy as requested by user
+# Saved ETF Strategy
+class SavedETFStrategy(Base):
+    __tablename__ = "rs_etf_saved_strategies"
+    __table_args__ = {'extend_existing': True}
+    
+    id = Column(Integer, primary_key=True, index=True)
+    strategy_name = Column(String, index=True)
+    strategy_type = Column(String, default="RS ETF Strategy")
+    user_id = Column(String, index=True)
+    start_date = Column(DateTime, index=True)
+    end_date = Column(DateTime, index=True)
+    rs_etf_universe = Column(String)  # ALL_ETFS or custom list
+    backtest_results = Column(Text)  # JSON string of backtest results
+    strategy_config = Column(Text)  # JSON string of strategy configuration
+    created_at = Column(DateTime, default=datetime.now)
+    is_active = Column(Boolean, default=True)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    # Additional fields for strategy management
+    last_run_date = Column(DateTime, nullable=True)
+    next_run_date = Column(DateTime, nullable=True)
+    run_frequency = Column(String, default="daily")  # daily, weekly, monthly
+    status = Column(String, default="deploy")   # deploy, paused, stopped
 
 # Backtest database setup - use same PostgreSQL connection for market data
 # Strategy-specific tables (backtest_results, trade_logs, etc.) use the same ApplicationData connection
@@ -365,4 +386,3 @@ def get_main_session():
             except Exception as e:
                 logging.error(f"Error closing database session: {e}")
 
-# Removed alias as part of deprecated DB cleanup

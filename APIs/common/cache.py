@@ -106,13 +106,13 @@ def cache_backtest_results(strategy_type: str, backtester_instance: Any) -> None
         }
         
         cached_count = len(_backtest_results_cache[strategy_type]['portfolio_log'])
-        print(f"[CACHE] Successfully cached {cached_count} transactions for {strategy_type}")
-        logger.info(f"Cached backtest results for {strategy_type}: {cached_count} transactions")
+        print(f"[CACHE] ✅ Successfully cached {cached_count} transactions for {strategy_type}")
+        logger.info(f"✅ Cached backtest results for {strategy_type}: {cached_count} transactions")
     except Exception as e:
-        print(f"[CACHE] ERROR: {e}")
+        print(f"[CACHE] ❌ ERROR: {e}")
         import traceback
         traceback.print_exc()
-        logger.error(f"Failed to cache backtest results for {strategy_type}: {e}")
+        logger.error(f"❌ Failed to cache backtest results for {strategy_type}: {e}")
 
 def get_cached_backtest_results(strategy_type: str) -> Dict[str, Any]:
     """Retrieve cached backtest results"""

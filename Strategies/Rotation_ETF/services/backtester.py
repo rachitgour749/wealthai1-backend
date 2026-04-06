@@ -16,15 +16,8 @@ from Databases.app_data_db_connection import (
 # Import base class for OOP refactoring
 from Strategies.Rotation.RotationStrategy import RotationStrategy
 
-# Import centralized logging system (new: backed by Python logging module)
-from Strategies.utilities.strategyLogger import StrategyLogger
-
-# Import centralized market config
-from Strategies.base.marketConfig import getMarketConfig
-
-# Import exchange policies
-from Exchange.USExchangePolicy import USExchangePolicy
-from Exchange.IndianExchangePolicy import IndianExchangePolicy
+# Import centralized logging system
+from Strategies.utilities.logging_config import StrategyLogger
 
 try:
     import plotly.graph_objects as go
@@ -38,24 +31,15 @@ except ImportError:
 
 
 class ETFRotationBacktester(RotationStrategy):
-    def __init__(self, market: str = "INDIA", db_path: str = None):
+    def __init__(self, db_path: str = None):
         """
         Initialize ETF Rotation Backtester
 
         Args:
-            market: Market name (INDIA, US)
             db_path: Deprecated - kept for compatibility. Now uses PostgreSQL MarketData database.
         """
-        self.market = market.upper()
-        
-        # Initialize appropriate exchange policy
-        if self.market == 'US':
-            policy = USExchangePolicy()
-        else:
-            policy = IndianExchangePolicy()
-
         # Call base class constructor (initializes common attributes)
-        super().__init__(policy=policy)
+        super().__init__()
         
         # Initialize PostgreSQL connection to ApplicationData
         if not create_app_data_connection():
@@ -75,23 +59,11 @@ class ETFRotationBacktester(RotationStrategy):
         self._data_cache = {}
         self._verbose = False  # Set to True for debugging
         
-        # Initialize centralized logger (backed by Python logging module)
-        self.logger = StrategyLogger(f'Rotation.{self.market}')
+        # Initialize centralized logger
+        self.logger = StrategyLogger('Rotation_ETF')
         
-        # Resolve table configuration from centralized marketConfig
-        try:
-            _cfg = getMarketConfig(self.market, 'ETF')
-            self.data_table = _cfg['dataTable']
-            self.benchmark   = _cfg['benchmark']
-            self.benchmarkSymbols = _cfg['benchmarkSymbols']
-        except ValueError:
-            # Fallback for unexpected market values
-            self.data_table = 'us_etf_market' if self.market == 'US' else 'etf_market'
-            self.benchmark  = 'S&P_500' if self.market == 'US' else 'NIFTY_50'
-            self.benchmarkSymbols = (
-                ['S&P_500', '^GSPC', 'SPY'] if self.market == 'US'
-                else ['NIFTY_50', '^NSEI', 'NSEI', 'NIFTY50']
-            )
+        # Strategy-specific table configuration (must be set before method calls)
+        self.data_table = "etf_market"  # ETFs are stored in etf_market table
         
         self.available_databases = []  # Not needed for PostgreSQL
         
@@ -117,29 +89,43 @@ class ETFRotationBacktester(RotationStrategy):
         self._load_logging_config()
 
     def _load_logging_config(self):
-        """Load purchase-limit config from the centralized strategyLogger (config/logging_config.json)."""
-        # The new StrategyLogger already reads purchaseLimitConfig from config/logging_config.json
-        # We just expose it as self.logging_config for backward compat with initialize_purchase_limits()
-        plc = getattr(self.logger, 'purchaseLimitConfig',
-                      {'enabled': True, 'allocationMultiplier': 1.5})
-        self.logging_config = {
-            'purchase_limit_config': {
-                'enabled':              plc.get('enabled', True),
-                'allocation_multiplier': plc.get('allocationMultiplier', 1.5),
-            },
-            'logging': {'limit': True, 'trade': True, 'error': True}
-        }
-
+        """Load logging configuration from JSON file"""
+        try:
+            config_path = os.path.join(os.path.dirname(__file__), '..', 'logging_config.json')
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    self.logging_config = json.load(f)
+                self.logger.info("Loaded logging configuration from logging_config.json")
+            else:
+                # Default configuration
+                self.logging_config = {
+                    "purchase_limit_config": {
+                        "enabled": True,
+                        "allocation_multiplier": 1.5
+                    },
+                    "logging": {
+                        "limit": True,
+                        "trade": True,
+                        "error": True
+                    }
+                }
+                self.logger.info("Using default logging configuration (file not found)")
+        except Exception as e:
+            self.logger.error(f"Error loading logging config: {e}")
+            self.logging_config = {}
+    
     def _log(self, category: str, message: str):
-        """Log message via the centralized StrategyLogger."""
-        if category == 'error':
-            self.logger.error(message)
-        elif category == 'trade':
-            self.logger.trade(message)
-        elif category == 'limit':
-            self.logger.limit(message)
-        else:
-            self.logger.info(message)
+        """Log message if category is enabled in config"""
+        logging_settings = self.logging_config.get("logging", {})
+        if logging_settings.get(category, False):
+            if category == "limit":
+                self.logger.info(message)
+            elif category == "trade":
+                self.logger.info(message)
+            elif category == "error":
+                self.logger.error(message)
+            else:
+                self.logger.info(message)
     
     def initialize_purchase_limits(self, tickers: List[str], accumulation_weeks: int):
         """
@@ -364,21 +350,21 @@ class ETFRotationBacktester(RotationStrategy):
             if self._verbose:
                 self.logger.debug(f"Found {total_count} total records in {table_name} table")
             
-            # Query metadata from the dynamic data table
+            # Query metadata from etf_market - date column is of type DATE
             # Fix: Cast dates to timestamp to get proper interval for EXTRACT
-            query_str = f"""
+            query_str = """
                 SELECT 
                     symbol,
                     MIN(date)::text as start_date,
                     MAX(date)::text as end_date,
                     COUNT(*) as total_records,
                     ROUND(EXTRACT(EPOCH FROM (MAX(date)::timestamp - MIN(date)::timestamp)) / 86400.0 / 365.25, 1) as years_available
-                FROM {self.data_table}
+                FROM etf_market
                 GROUP BY symbol
                 ORDER BY symbol
             """
             
-            self.logger.debug(f"Executing metadata query from {self.data_table}...")
+            self.logger.debug("Executing metadata query from etf_market...")
             result = session.execute(text(query_str))
             rows = result.fetchall()
             
@@ -402,7 +388,7 @@ class ETFRotationBacktester(RotationStrategy):
                         'end_date': str(end_date) if end_date else None,
                         'years_available': float(years_available) if years_available else 0,
                         'total_records': int(total_records) if total_records else 0,
-                        'data_source': self.data_table,
+                        'data_source': 'etf_market',
                         'category': category,
                         'name': name
                     }
@@ -410,12 +396,12 @@ class ETFRotationBacktester(RotationStrategy):
                     self.logger.error(f"Error processing row: {row_error}")
                     continue
             
-            self.logger.debug(f"Successfully processed {len(metadata)} ETFs from {self.data_table}")
+            self.logger.debug(f"Successfully processed {len(metadata)} ETFs from etf_market")
             return metadata
             
         except Exception as e:
             import traceback
-            self.logger.error(f"Error calculating metadata from {self.data_table}: {e}")
+            self.logger.error(f"Error calculating metadata from etf_market: {e}")
             self.logger.error(f"Traceback: {traceback.format_exc()}")
             
             # Rollback the session to clear the failed transaction
@@ -632,7 +618,7 @@ class ETFRotationBacktester(RotationStrategy):
         return selected
 
     def calculate_common_date_range(self, selected_etfs: List[str]) -> Tuple[Optional[str], Optional[str], float]:
-        """Calculate common date range for selected ETFs by querying the dynamic data table directly"""
+        """Calculate common date range for selected ETFs by querying etf_market table directly"""
         if not selected_etfs:
             self.logger.error("No ETFs provided for date range calculation")
             return None, None, 0.0
@@ -642,29 +628,32 @@ class ETFRotationBacktester(RotationStrategy):
             session = self._get_session()
             from sqlalchemy import text
             
-            self.logger.debug(f"Querying {self.data_table} table for date ranges of: {selected_etfs}")
+            self.logger.debug(f"Querying etf_market table for date ranges of: {selected_etfs}")
             
-            # 1. Get availability for all selected ETFs
+            # Build placeholders for IN clause
             placeholders = ','.join([f':ticker_{i}' for i in range(len(selected_etfs))])
-            params = {f'ticker_{i}': t for i, t in enumerate(selected_etfs)}
-
+            
+            # Query to get MIN and MAX dates for each ETF directly from etf_market table
             query = text(f"""
                 SELECT 
                     symbol,
                     MIN(date) as start_date,
                     MAX(date) as end_date,
                     COUNT(*) as total_records
-                FROM {self.data_table}
+                FROM etf_market
                 WHERE symbol IN ({placeholders})
                 GROUP BY symbol
                 ORDER BY symbol
             """)
             
+            # Build parameters dict
+            params = {f'ticker_{i}': ticker for i, ticker in enumerate(selected_etfs)}
+            
             result = session.execute(query, params)
             rows = result.fetchall()
             
             if not rows:
-                self.logger.error(f"No data found in {self.data_table} table for: {selected_etfs}")
+                self.logger.error(f"No data found in etf_market table for: {selected_etfs}")
                 return None, None, 0.0
             
             # Parse results
@@ -675,10 +664,10 @@ class ETFRotationBacktester(RotationStrategy):
                 end_date = row[2]
                 total_records = row[3]
                 
-                # Convert to datetime if they're strings/dates
-                if not isinstance(start_date, datetime):
+                # Convert to datetime if they're strings
+                if isinstance(start_date, str):
                     start_date = pd.to_datetime(start_date)
-                if not isinstance(end_date, datetime):
+                if isinstance(end_date, str):
                     end_date = pd.to_datetime(end_date)
                 
                 years_available = (end_date - start_date).days / 365.25
@@ -696,7 +685,7 @@ class ETFRotationBacktester(RotationStrategy):
                 self.logger.info(f"No data found for: {missing_etfs}")
             
             if not etf_date_ranges:
-                self.logger.error(f"None of the requested ETFs found in {self.data_table} table: {selected_etfs}")
+                self.logger.error(f"None of the requested ETFs found in etf_market table: {selected_etfs}")
                 return None, None, 0.0
             
             # Calculate common date range
@@ -707,30 +696,58 @@ class ETFRotationBacktester(RotationStrategy):
             latest_start = max(start_dates)
             common_end = min(end_dates)
             
-            self.logger.info(f"📅 ETF Data Ranges (from {self.data_table} table):")
+            self.logger.info(f"📅 ETF Data Ranges (from etf_market table):")
             for symbol, data in etf_date_ranges.items():
                 years = data['years_available']
                 self.logger.info(f"   {symbol:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years:.1f} years, {data['total_records']} records)")
             
             self.logger.info(f"📊 Common data range: {latest_start.strftime('%Y-%m-%d')} to {common_end.strftime('%Y-%m-%d')}")
             
-            # OPTIMIZED BUFFER: Use 53 weeks (~371 days) for momentum calculations
+            # OPTIMIZED BUFFER: Use 60 weeks (420 days) for 252+ trading days
             buffer_weeks = 53
-            buffer_days = buffer_weeks * 7
+            buffer_days = buffer_weeks * 7  # 420 calendar days (~300 trading days)
             strategy_start = latest_start + timedelta(days=buffer_days)
             
-            self.logger.info(f"🎯 Buffer Strategy:")
+            self.logger.info(f"🎯 Enhanced Buffer Strategy:")
             self.logger.info(f"   Buffer period: {buffer_weeks} weeks ({buffer_days} calendar days)")
+            self.logger.info(f"   Expected trading days: ~{int(buffer_days * 5 / 7)} days")
+            self.logger.info(f"   Required for momentum: 252 trading days")
+            self.logger.info(f"   Safety margin: ~{int(buffer_days * 5 / 7) - 252} trading days")
             self.logger.info(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
             
-            # Ensure we have at least some backtest data after the strategy start
+            # Ensure we have at least 1 year of backtest data after the strategy start
             if strategy_start >= common_end:
-                self.logger.info(f"❌ Insufficient data with {buffer_weeks}-week buffer")
-                return None, None, 0.0
+                self.logger.info(f"❌ Insufficient data even with {buffer_weeks}-week buffer:")
+                self.logger.info(f"   Strategy start: {strategy_start.strftime('%Y-%m-%d')}")
+                self.logger.info(f"   Data ends: {common_end.strftime('%Y-%m-%d')}")
+                shortage_days = (strategy_start - common_end).days
+                self.logger.info(f"   Shortage: {shortage_days} days")
+                
+                # Try with maximum possible buffer
+                max_possible_days = (common_end - latest_start).days - 365  # Reserve 1 year for backtesting
+                if max_possible_days > 252:  # At least need 252 trading days
+                    alt_strategy_start = latest_start + timedelta(days=max_possible_days)
+                    self.logger.info(f"🔄 Alternative with maximum buffer:")
+                    self.logger.info(f"   Maximum buffer: {max_possible_days} days ({max_possible_days / 7:.1f} weeks)")
+                    self.logger.info(f"   Alternative start: {alt_strategy_start.strftime('%Y-%m-%d')}")
+                    
+                    years_available = (common_end - alt_strategy_start).days / 365.25
+                    return alt_strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
+                else:
+                    return None, None, 0.0
             
             # Check if we have sufficient backtest period
-            total_days = (common_end - strategy_start).days
-            years_available = total_days / 365.25
+            years_available = (common_end - strategy_start).days / 365.25
+            
+            self.logger.info(f"📈 Backtest Feasibility:")
+            if years_available >= 10:
+                self.logger.info(f"   ✅ Excellent: {years_available:.1f} years provides statistically robust results")
+            elif years_available >= 5:
+                self.logger.info(f"   ✅ Good: {years_available:.1f} years allows reasonable strategy validation")
+            elif years_available >= 2:
+                self.logger.info(f"   ⚠️ Fair: {years_available:.1f} years provides basic validation")
+            else:
+                self.logger.info(f"   ⚠️ Limited: {years_available:.1f} years may not be reliable")
             
             return strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
             
@@ -766,14 +783,14 @@ class ETFRotationBacktester(RotationStrategy):
                 self.logger.progress(f"   Data loading period: {buffer_start_date} to {end_date}")
                 self.logger.info(f"   Buffer: 400 calendar days (~252 trading days) for momentum calculations")
 
-            # Use dynamic data table - column names match directly
+            # Use etf_market table - column names match directly
             # Get available symbols using proper parameterization
             # Build placeholders for IN clause
             placeholders = ','.join([f':ticker_{i}' for i in range(len(tickers))])
 
             query = text(f"""
                 SELECT DISTINCT symbol 
-                FROM {self.data_table} 
+                FROM etf_market 
                 WHERE symbol IN ({placeholders})
                 AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
             """)
@@ -793,7 +810,7 @@ class ETFRotationBacktester(RotationStrategy):
                 self.logger.info(f"⚠️ Missing data for: {', '.join(missing_tickers)}")
 
             if not available_tickers:
-                raise ValueError(f"No data available for any of the selected ETFs in {self.data_table}")
+                raise ValueError("No data available for any of the selected ETFs")
 
             # Load data - column names match directly
             placeholders = ','.join([f':ticker_{i}' for i in range(len(available_tickers))])
@@ -807,7 +824,7 @@ class ETFRotationBacktester(RotationStrategy):
                     close,
                     volume,
                     adj_close AS adjusted_close
-                FROM {self.data_table}
+                FROM etf_market
                 WHERE symbol IN ({placeholders})
                 AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
                 ORDER BY date, symbol
@@ -920,33 +937,22 @@ class ETFRotationBacktester(RotationStrategy):
             self.logger.info("   ❌ Window data is empty after filtering")
             return pd.DataFrame()
 
-        # Calculate 52-week highs and lows using the stock-indicators library
-        highs_52w = {}
-        lows_52w = {}
-        
-        for symbol in historical_data.columns:
-            series = historical_data[symbol].dropna()
-            if len(series) < 252: continue
-            
-            # Use pandas for rolling max/min (Old method)
-            window_series = series.tail(252)
-            highs_52w[symbol] = float(window_series.max())
-            lows_52w[symbol] = float(window_series.min())
-            
-        highs_52w = pd.Series(highs_52w)
-        lows_52w = pd.Series(lows_52w)
+        # Calculate 52-week highs and lows as per PDF specification
+        highs_52w = window_data.max()  # Maximum closing price in trailing 252 trading days
+        lows_52w = window_data.min()  # Minimum closing price in trailing 252 trading days
         current_prices = historical_data.iloc[-1] if not historical_data.empty else pd.Series()
-        
-        self.logger.info(f"   📈 52-week highs (indicator-based) calculated for {len(highs_52w)} ETFs")
-        self.logger.info(f"   📉 52-week lows (indicator-based) calculated for {len(lows_52w)} ETFs")
-        self.logger.info(f"   💰 Current prices available for {len(current_prices)} ETFs")
+
+        self.logger.progress(f"   📈 52-week highs calculated for {len(highs_52w)} ETFs")
+        self.logger.progress(f"   📉 52-week lows calculated for {len(lows_52w)} ETFs")
+        self.logger.progress(f"   💰 Current prices available for {len(current_prices)} ETFs")
 
         # Create result DataFrame with exact PDF specification calculations
         result_data = []
+        valid_etfs = 0
 
         for symbol in highs_52w.index:
             if (not pd.isna(highs_52w[symbol]) and not pd.isna(lows_52w[symbol]) and
-                    not pd.isna(current_prices.get(symbol)) and
+                    not pd.isna(current_prices[symbol]) and
                     highs_52w[symbol] > 0 and lows_52w[symbol] > 0 and current_prices[symbol] > 0):
 
                 # Ensure data integrity: high >= low
@@ -964,6 +970,7 @@ class ETFRotationBacktester(RotationStrategy):
                         'distance_from_high': distance_from_high
                     })
 
+                    valid_etfs += 1
                     self.logger.progress(
                         f"   ✅ {symbol}: High=₹{highs_52w[symbol]:.2f}, Low=₹{lows_52w[symbol]:.2f}, Current=₹{current_prices[symbol]:.2f}")
                     self.logger.progress(
@@ -2208,86 +2215,84 @@ class ETFRotationBacktester(RotationStrategy):
             session = self._get_session()
             from sqlalchemy import text
 
-            market = getattr(self, 'market', 'INDIA').upper()
+            # Check for NIFTY_50 in index market table first
+            index_query = text("""
+                SELECT date, COALESCE(adj_close, close) as close 
+                FROM nifty_50_index_market 
+                WHERE symbol = 'NIFTY_50'
+                AND date >= CAST(:start_date AS DATE)
+                AND date <= CAST(:end_date AS DATE)
+                ORDER BY date
+            """)
             
-            if market == 'US':
-                # Use S&P 500 Index as benchmark for US market
-                benchmark_symbols = ['S&P_500', '^GSPC', 'SPY']
-                table_name = "s_p_500_index_market"
-                benchmark_name = "S&P 500"
+            result = session.execute(index_query, {
+                "start_date": start_date,
+                "end_date": end_date
+            })
+            rows = result.fetchall()
+            
+            if rows:
+                benchmark_symbol = 'NIFTY_50'
+                self.logger.progress(f"Using {benchmark_symbol} as market benchmark (Index Data)")
+                columns = result.keys()
+                nifty_df = pd.DataFrame(rows, columns=columns)
             else:
-                # Default to INDIA / Nifty 50
-                benchmark_symbols = ['NIFTY_50', 'NIFTYBEES', 'NIFTY50']
-                table_name = "nifty_50_index_market"
-                benchmark_name = "Nifty 50"
+                # Fallback to ETF Market search
+                # Try multiple potential benchmark symbols in order of preference
+                benchmark_symbols = [
+                    'NIFTYBEES',  # Nifty ETF (without suffix) - HAS DATA
+                    'BANKBEES',  # Banking ETF (without suffix) - HAS DATA
+                    'JUNIORBEES',  # Nifty Next 50 ETF (without suffix) - HAS DATA
+                    'ITBEES',  # IT Sector ETF (without suffix) - HAS DATA
+                    'NIFTYBEES.NS',  # Nifty ETF (with suffix) - LIMITED DATA
+                    'NIFTY50',  # NSE Nifty 50 Index
+                    'SENSEX',  # BSE Sensex
+                    'BANKBEES.NS',  # Banking ETF (with suffix) - LIMITED DATA
+                    'JUNIORBEES.NS',  # Nifty Next 50 ETF (with suffix) - LIMITED DATA
+                    'ITBEES.NS'  # IT Sector ETF (with suffix) - LIMITED DATA
+                ]
 
-            # Check for primary benchmark in index market table first
-            benchmark_symbol = None
-            for symbol in benchmark_symbols:
-                index_query = text(f"""
-                    SELECT date, COALESCE(adj_close, close) as close 
-                    FROM {table_name} 
+                benchmark_symbol = None
+                for symbol in benchmark_symbols:
+                    query = text("SELECT DISTINCT symbol FROM etf_market WHERE symbol = :symbol LIMIT 1")
+                    result = session.execute(query, {"symbol": symbol})
+                    if result.fetchone():
+                        benchmark_symbol = symbol
+                        self.logger.progress(f"Using {benchmark_symbol} as market benchmark (SIP Mode)")
+                        break
+
+                if not benchmark_symbol:
+                    self.logger.info("⚠️ No suitable benchmark found in database. Benchmark comparison will be skipped.")
+                    return pd.DataFrame()
+
+                # Load benchmark data for the entire period
+                query = text("""
+                    SELECT date, close
+                    FROM etf_market
                     WHERE symbol = :symbol
                     AND date >= CAST(:start_date AS DATE)
                     AND date <= CAST(:end_date AS DATE)
                     ORDER BY date
                 """)
-                
-                result = session.execute(index_query, {
-                    "symbol": symbol,
+
+                result = session.execute(query, {
+                    "symbol": benchmark_symbol,
                     "start_date": start_date,
                     "end_date": end_date
                 })
                 rows = result.fetchall()
-                if rows:
-                    benchmark_symbol = symbol
-                    self.logger.progress(f"Using {benchmark_symbol} as {benchmark_name} benchmark (Index Data)")
-                    columns = result.keys()
-                    benchmark_df = pd.DataFrame(rows, columns=columns)
-                    break
-            
-            if not benchmark_symbol and market == 'INDIA':
-                # Fallback to ETF Market search for India
-                fallback_symbols = [
-                    'NIFTYBEES', 'BANKBEES', 'JUNIORBEES', 'ITBEES', 'NIFTYBEES.NS'
-                ]
+                columns = result.keys()
+                nifty_df = pd.DataFrame(rows, columns=columns)
 
-                for symbol in fallback_symbols:
-                    query = text("SELECT DISTINCT symbol FROM etf_market WHERE symbol = :symbol LIMIT 1")
-                    result = session.execute(query, {"symbol": symbol})
-                    if result.fetchone():
-                        benchmark_symbol = symbol
-                        self.logger.progress(f"Using {benchmark_symbol} as market benchmark (ETF Fallback)")
-                        break
-
-                if benchmark_symbol:
-                    query = text("""
-                        SELECT date, close
-                        FROM etf_market
-                        WHERE symbol = :symbol
-                        AND date >= CAST(:start_date AS DATE)
-                        AND date <= CAST(:end_date AS DATE)
-                        ORDER BY date
-                    """)
-
-                    result = session.execute(query, {
-                        "symbol": benchmark_symbol,
-                        "start_date": start_date,
-                        "end_date": end_date
-                    })
-                    rows = result.fetchall()
-                    columns = result.keys()
-                    benchmark_df = pd.DataFrame(rows, columns=columns)
-
-            if not benchmark_symbol or benchmark_df.empty:
-                self.logger.info(f"⚠️ No suitable {benchmark_name} benchmark found in database. Benchmark comparison will be skipped.")
+            if nifty_df.empty:
+                self.logger.info("⚠️ No benchmark data found")
                 return pd.DataFrame()
 
-            benchmark_df['date'] = pd.to_datetime(benchmark_df['date'])
-            benchmark_df = benchmark_df.set_index('date', drop=False).sort_index()
+            nifty_df['date'] = pd.to_datetime(nifty_df['date'])
+            nifty_df = nifty_df.set_index('date', drop=False).sort_index()
             # Ensure index is DatetimeIndex
-            if not isinstance(benchmark_df.index, pd.DatetimeIndex):
-                benchmark_df.index = pd.to_datetime(benchmark_df.index)
+            if not isinstance(nifty_df.index, pd.DatetimeIndex):
+                nifty_df.index = pd.to_datetime(nifty_df.index)
 
             # Get strategy execution dates and capital flows from weekly_nav_df
             if hasattr(self, 'weekly_nav_df') and not self.weekly_nav_df.empty:
@@ -2302,7 +2307,7 @@ class ETFRotationBacktester(RotationStrategy):
                 cash_balance = 0
                 total_invested_so_far = 0
                 
-                self.logger.progress(f"📊 Calculating {benchmark_name} SIP Benchmark Performance...")
+                self.logger.progress(f"Calculating SIP Benchmark Performance...")
                 
                 for _, row in weekly_data.iterrows():
                     try:
@@ -2331,18 +2336,17 @@ class ETFRotationBacktester(RotationStrategy):
                             # Use asof to find the nearest date in the sorted index
                             # ENSURE DATE IS TIMESTAMP
                             search_date = pd.to_datetime(date)
-                            asof_date = benchmark_df.index.asof(search_date)
+                            asof_date = nifty_df.index.asof(search_date)
                             if pd.notna(asof_date):
-                                price_val = benchmark_df.loc[asof_date]['close']
+                                price_val = nifty_df.loc[asof_date]['close']
                                 # Handle cases where loc might return a Series
                                 price = float(price_val.iloc[0]) if hasattr(price_val, 'iloc') else float(price_val)
                         except:
                             # Fallback to nearest prior date comparison if asof fails
                             try:
-                                prior_dates = benchmark_df.index[benchmark_df.index <= date]
-                                if not prior_dates.empty:
-                                    price_val = benchmark_df.loc[prior_dates[-1]]['close']
-                                    price = float(price_val.iloc[0]) if hasattr(price_val, 'iloc') else float(price_val)
+                                subset = nifty_df[nifty_df.index <= date]
+                                if not subset.empty:
+                                    price = float(subset['close'].iloc[-1])
                             except:
                                 price = 0
 
@@ -2924,21 +2928,51 @@ class ETFRotationBacktester(RotationStrategy):
         Check if a strategy with the same parameters already exists in the PostgreSQL database
         
         Database: PostgreSQL (Neon) - app_data_db_connection
-        Table: saved_instance (via SavedInstance model)
+        Table: etf_saved_strategy
         
         Returns:
             Dict with 'exists' boolean and 'existing_strategy' details if found
         """
         session = None
         try:
-            # Import app_data_db_connection and SavedInstance model
+            # Import app_data_db_connection for ETF strategies
             from Databases.app_data_db_connection import get_session
-            from Services.strategy_manager.models import SavedInstance
             session = get_session()
+            from sqlalchemy import text
             
-            # Prepare the parameters as a dictionary for JSON comparison
-            strategy_params = {
-                "tickers": sorted(tickers),
+            # Check if the etf_saved_strategy table exists
+            table_check = session.execute(text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' AND table_name = 'etf_saved_strategy'
+            """))
+            if not table_check.fetchone():
+                return {"exists": False, "message": "Strategy table not found"}
+            
+            # Convert tickers to JSON for comparison
+            tickers_json = json.dumps(sorted(tickers))
+            
+            # Check for exact match of all parameters
+            query = text("""
+                SELECT id, strategy_name, created_at, created_timestamp
+                FROM etf_saved_strategy 
+                WHERE user_id = :user_id 
+                AND strategy_name = :strategy_name
+                AND tickers::text = :tickers
+                AND start_date = :start_date
+                AND end_date = :end_date
+                AND capital_per_week = :capital_per_week
+                AND accumulation_weeks = :accumulation_weeks
+                AND brokerage_percent = :brokerage_percent
+                AND compounding_enabled = :compounding_enabled
+                AND risk_free_rate = :risk_free_rate
+                AND use_custom_dates = :use_custom_dates
+            """)
+            
+            result = session.execute(query, {
+                "user_id": user_id,
+                "strategy_name": strategy_name,
+                "tickers": tickers_json,
                 "start_date": start_date,
                 "end_date": end_date,
                 "capital_per_week": capital_per_week,
@@ -2947,36 +2981,27 @@ class ETFRotationBacktester(RotationStrategy):
                 "compounding_enabled": compounding_enabled,
                 "risk_free_rate": risk_free_rate,
                 "use_custom_dates": use_custom_dates
-            }
+            })
             
-            # Query for exact match in saved_instance table
-            # We filter by user_id, strategy_name, and strategy_type
-            # 'Rotation_ETF' is the type for this strategy
-            existing = session.query(SavedInstance).filter(
-                SavedInstance.user_id == user_id,
-                SavedInstance.strategy_name == strategy_name,
-                SavedInstance.strategy_type == 'Rotation_ETF'
-            ).all()
+            existing_strategy = result.fetchone()
             
-            for instance in existing:
-                # Compare strategy_parameters JSON
-                instance_params = instance.strategies_parameters
-                if instance_params == strategy_params:
-                    return {
-                        "exists": True,
-                        "message": "A strategy with these parameters already exists",
-                        "existing_strategy": {
-                            "id": instance.id,
-                            "strategy_name": instance.strategy_name,
-                            "created_at": str(instance.created_at) if instance.created_at else None
-                        }
-                    }
-            
-            return {
-                "exists": False,
-                "message": "No identical strategy found"
-            }
-            
+            if existing_strategy:
+                return {
+                    "exists": True,
+                    "existing_strategy": {
+                        "id": existing_strategy[0],
+                        "strategy_name": existing_strategy[1],
+                        "created_at": str(existing_strategy[2]) if existing_strategy[2] else None,
+                        "created_timestamp": str(existing_strategy[3]) if existing_strategy[3] else None
+                    },
+                    "message": f"ETF Strategy already exists"
+                }
+            else:
+                return {
+                    "exists": False,
+                    "message": "No identical strategy found"
+                }
+                
         except Exception as e:
             return {
                 "exists": False,

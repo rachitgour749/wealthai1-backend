@@ -3,7 +3,6 @@ import pandas as pd
 from typing import Dict
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
-from Strategies.base.marketConfig import getMarketConfig, getBenchmarkSymbolsClause
 
 class RSETFStrategy(RSBaseStrategy):
     """
@@ -15,13 +14,16 @@ class RSETFStrategy(RSBaseStrategy):
     def __init__(self, db_session: Session, config: Dict):
         config['strategy_name'] = 'RS_ETF_Level4'
         super().__init__(db_session, config)
-        self.market = config.get('market', 'INDIA').upper()
         
     def load_data(self, start_date: datetime, end_date: datetime):
         """
         Optimized Data Loading for ETFs with Lookback Buffer.
         """
         # Calculate max lookback in TRADING DAYS
+        # lookback_weeks = 5 trading days (1 week)
+        # lookback_months = 20 trading days (1 month)
+        # lookback_quarters = 60 trading days (1 quarter)
+        
         max_lookback_trading_days = max(
             self.config.get('lookback_weeks', 5),
             self.config.get('lookback_months', 20),
@@ -33,35 +35,23 @@ class RSETFStrategy(RSBaseStrategy):
         
         buffer_date = start_date - timedelta(days=buffer_days)
         
-        self.logger.progress(f"📥 Loading ETF Data (Market: {self.market}, Buffer: {max_lookback_trading_days} trading days = ~{buffer_days} calendar days)")
+        self.logger.progress(f"📥 Loading ETF Data (Buffer: {max_lookback_trading_days} trading days = ~{buffer_days} calendar days)")
         
         # Format dates for SQL
         start_str = buffer_date.strftime('%Y-%m-%d') # Use buffered start
         end_str = end_date.strftime('%Y-%m-%d')
         
-        # 1. Fetch Index Data — resolved from centralized marketConfig
-        _cfg   = getMarketConfig(self.market, 'ETF')
-        index_table   = _cfg['indexTable']
-        index_symbols = _cfg['benchmarkSymbols']
-        
-        # Build the symbol IN clause dynamically
-        symbol_placeholders = ", ".join([f"'{s}'" for s in index_symbols])
+        # 1. Fetch Index Data (Nifty 50)
         index_query = f"""
-        SELECT date, COALESCE(adj_close, close) as adjusted_close 
-        FROM {index_table}
-        WHERE symbol IN ({symbol_placeholders})
-        AND date >= '{start_str}' AND date <= '{end_str}'
+        SELECT date, close as adjusted_close 
+        FROM nifty_50_index_market 
+        WHERE date >= '{start_str}' AND date <= '{end_str}'
         ORDER BY date
         """
-        # Ensure we get a single time series if multiple symbols exist
         index_df = pd.read_sql(index_query, self.db_session.bind, index_col='date', parse_dates=['date'])
-        if not index_df.empty:
-            # If multiple symbols matched, group by date and take first price
-            index_df = index_df.groupby('date').first()
         
-        # 2. Fetch ETF Data based on market
+        # 2. Fetch ETF Data
         etf_list = self.config.get('custom_etfs', [])
-        etf_table = "us_etf_market" if self.market == 'US' else "etf_market"
         
         universe_filter = ""
         if etf_list and len(etf_list) > 0:
@@ -70,22 +60,21 @@ class RSETFStrategy(RSBaseStrategy):
         
         etf_query = f"""
         SELECT date, symbol, adj_close as adjusted_close
-        FROM {etf_table}
+        FROM etf_market
         WHERE date >= '{start_str}' AND date <= '{end_str}' {universe_filter}
         ORDER BY date, symbol
         """
         
         etf_df = pd.read_sql(etf_query, self.db_session.bind, parse_dates=['date'])
             
-        self.logger.info(f"Loaded {len(etf_df)} ETF records from {etf_table} and {len(index_df)} Index records from {index_table}.")
-
+        self.logger.info(f"Loaded {len(etf_df)} ETF records and {len(index_df)} Index records.")
         return etf_df, index_df
 
     def run_backtest(self, start_date: datetime, end_date: datetime):
         """
         Main Execution Loop
         """
-        self.logger.info(f"🏁 Starting RS ETF Backtest ({self.market}) ({start_date} to {end_date})")
+        self.logger.info(f"🏁 Starting RS ETF Backtest ({start_date} to {end_date})")
         
         # 1. Load Data
         etf_df, index_df = self.load_data(start_date, end_date)
@@ -127,7 +116,7 @@ class RSETFStrategy(RSBaseStrategy):
                 
         self.logger.info("✅ Backtest Completed.")
         
-        # Calculate Benchmark Performance (Buy & Hold Market Index)
+        # Calculate Benchmark Performance (Buy & Hold Nifty 50)
         # Filter index to match backtest period
         mask = (index_df.index >= pd.to_datetime(start_date)) & (index_df.index <= pd.to_datetime(end_date))
         period_index = index_df.loc[mask].copy()

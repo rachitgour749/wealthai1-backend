@@ -55,10 +55,8 @@ PRODUCT_CODE_FROM_DB: Dict[str, ProductCode] = {
     "2": ProductCode.MARKETAI,
     "3": ProductCode.CHATAI,
     "4": ProductCode.AUTOMATIONAI,
-}
 
-BACKTEST_TRIAL_CREDITS = 25
-BACKTEST_PAID_CREDITS = 1000  # Placeholder until user decides
+}
 
 CHATAI_DEFAULT_TOKENS = settings.CHATAI_DEFAULT_TOKENS
 
@@ -296,8 +294,6 @@ class SubscriptionManager:
                     user_name=user_name,
                     status="TRIAL",
                     role="CLIENT",
-                    total_credits=BACKTEST_TRIAL_CREDITS,
-                    used_credits=0,
                     created_at=now,
                     updated_at=now,
                 )
@@ -307,8 +303,6 @@ class SubscriptionManager:
                 # Existing user successfully activating trial – flip status to TRIAL
                 if user.status != "TRIAL":
                     user.status = "TRIAL"
-                    user.total_credits = BACKTEST_TRIAL_CREDITS
-                    user.used_credits = 0
                     user.updated_at = now
 
             end_date = now + timedelta(days=plan_info["extension_days"] or settings.DEFAULT_TRIAL_DAYS)
@@ -421,34 +415,6 @@ class SubscriptionManager:
         finally:
             self.close_session(session)
 
-    def validate_plan_code(self, plan_code: int) -> Dict[str, Any]:
-        """Validate plan_code against plan_master table"""
-        session = self.get_session()
-        try:
-            result = session.execute(
-                text(
-                    """
-                    SELECT plan_code, plan_name, extension_days
-                    FROM plan_master
-                    WHERE plan_code = :plan_code
-                    """
-                ),
-                {"plan_code": plan_code},
-            )
-            row = result.fetchone()
-
-            if not row:
-                return {"valid": False, "message": f"Plan code {plan_code} not found"}
-
-            return {
-                "valid": True,
-                "plan_code": int(row[0]),
-                "plan_name": row[1],
-                "extension_days": int(row[2]) if row[2] else settings.DEFAULT_TRIAL_DAYS,
-            }
-        finally:
-            self.close_session(session)
-
     def activate_paid_subscription(
         self,
         user_email: str,
@@ -513,8 +479,6 @@ class SubscriptionManager:
                 session.add(user)
             else:
                 user.status = "PAID"
-                user.total_credits = BACKTEST_PAID_CREDITS
-                user.used_credits = 0 # Optional: user might want to carry over used credits or reset? Resetting for now.
                 user.updated_at = now
             
             # Step 3: Update products
@@ -604,33 +568,27 @@ class SubscriptionManager:
         finally:
             self.close_session(session)
 
-    def has_backtest_credits(self, user_email: str) -> bool:
-        """Check if a user has remaining backtest credits."""
+    def validate_plan_code(self, plan_code: int) -> Dict[str, Optional[str]]:
         session = self.get_session()
         try:
-            user = session.query(UserDetails).filter(UserDetails.user_email == user_email.lower()).first()
-            if not user:
-                return False
-            return (user.total_credits or 0) > (user.used_credits or 0)
-        finally:
-            self.close_session(session)
-
-    def deduct_backtest_credit(self, user_email: str) -> bool:
-        """Increment used_credits for a user."""
-        session = self.get_session()
-        try:
-            user = session.query(UserDetails).filter(UserDetails.user_email == user_email.lower()).first()
-            if not user:
-                return False
-            
-            # Allow deduction even if at limit (policy can be strict in caller)
-            user.used_credits = (user.used_credits or 0) + 1
-            user.updated_at = utcnow()
-            session.commit()
-            return True
-        except Exception:
-            session.rollback()
-            raise
+            result = session.execute(
+                text(
+                    """
+                    SELECT plan_code, plan_name, extension_days
+                    FROM plan_master
+                    WHERE plan_code = :plan_code
+                    """
+                ),
+                {"plan_code": plan_code},
+            )
+            row = result.fetchone()
+            if not row:
+                return {"valid": False, "message": f"Plan code {plan_code} not found", "plan_name": None, "extension_days": None}
+            return {
+                "valid": True,
+                "plan_name": row[1],
+                "extension_days": int(row[2]) if row[2] else settings.DEFAULT_TRIAL_DAYS,
+            }
         finally:
             self.close_session(session)
     

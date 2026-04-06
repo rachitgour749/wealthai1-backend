@@ -32,7 +32,6 @@ test_*.py
 *.db
 *.sqlite
 *.txt
-!requirements.txt
 
 # Cache files
 dhan_token_cache.json

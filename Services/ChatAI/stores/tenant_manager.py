@@ -198,11 +198,13 @@ class TenantStoreManager:
             return ""
         
         disambiguation_query = (
-            f"Search for ALL clients whose name contains or matches '{name}'. "
+            f"Search for clients whose FULL NAME closely matches '{name}'. "
+            f"The match must include ALL parts of the name '{name}' — do NOT return clients "
+            f"who only share a first name or partial match. "
             f"For EACH matching client, provide ONLY these details in a numbered list:\n"
             f"- Full Name\n- Email\n- Phone or Mobile\n- City\n\n"
-            f"List ALL matches, even if there is only one. "
-            f"If no clients match, say 'No clients found matching {name}'."
+            f"List ALL close matches. "
+            f"If no clients closely match the full name '{name}', say 'No clients found matching {name}'."
         )
         
         try:

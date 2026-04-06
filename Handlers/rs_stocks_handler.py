@@ -41,11 +41,6 @@ class RSStocksHandler(BaseStrategyHandler):
             from Strategies.RS.rs_config_loader import get_rs_config
             rs_global_config = get_rs_config()
             
-            # Extract market
-            market = getattr(request, 'market', 'INDIA') or 'INDIA'
-            if hasattr(request, 'parameters') and isinstance(request.parameters, dict):
-                market = request.parameters.get('market', market)
-            
             # Prepare config
             # Priority: API Parameter (stop_loss_pct or stop_loss) > Global Config Default
             sl_val = request.stop_loss_pct if request.stop_loss_pct is not None else getattr(request, 'stop_loss', None)
@@ -53,7 +48,6 @@ class RSStocksHandler(BaseStrategyHandler):
                 sl_val = rs_global_config.get_stop_loss_pct()
             
             config_dict = {
-                'market': market,
                 'main_index': self._clean_tickers(request.main_index) or "^NSEI",
                 'stock_universe': request.stock_universe or "NIFTY_500",
                 'custom_stocks': self._clean_tickers(request.custom_stocks),

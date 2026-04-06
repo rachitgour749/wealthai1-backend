@@ -197,16 +197,73 @@ def normalize_query(query: str) -> str:
 
 
 def extract_client_name(query: str) -> Optional[str]:
-    """Extract client name using Indian honorific patterns."""
-    query_lower = query.lower()
+    """Extract client name using Indian honorific patterns.
     
-    for pattern in CLIENT_HONORIFIC_PATTERNS:
+    Captures the FULL multi-word name after honorifics, e.g.:
+      "Mrs. Swati Jain"  → "Swati Jain"
+      "Sharma ji"        → "Sharma"
+      "Mr. Arun Kumar"   → "Arun Kumar"
+    """
+
+    # Full-name patterns: capture all words after the title/honorific
+    FULL_NAME_PATTERNS = [
+        r'\bMr\.?\s+((?:[A-Z][a-z]+)(?:\s+[A-Z][a-z]+)*)',      # Mr. Arun Kumar
+        r'\bMrs\.?\s+((?:[A-Z][a-z]+)(?:\s+[A-Z][a-z]+)*)',     # Mrs. Swati Jain
+        r'\bMs\.?\s+((?:[A-Z][a-z]+)(?:\s+[A-Z][a-z]+)*)',      # Ms. Priya Mehta
+        r'\bDr\.?\s+((?:[A-Z][a-z]+)(?:\s+[A-Z][a-z]+)*)',      # Dr. Ravi Tandon
+    ]
+
+    # Try full-name capture first (case-sensitive — relies on proper capitalization)
+    for pattern in FULL_NAME_PATTERNS:
+        match = re.search(pattern, query)
+        if match:
+            return match.group(1).strip()
+
+    # Case-insensitive fallback patterns (captures multi-word names)
+    FULL_NAME_PATTERNS_CI = [
+        r'(?i)\bMr\.?\s+(\w+(?:\s+\w+)*?)(?:\s+(?:ji|sahab|saheb|bhai|madam|ka|ki|ke|ko|of|for|has|is|SIP|sip|portfolio|total|details|amount)\b|[?,.\n]|$)',
+        r'(?i)\bMrs\.?\s+(\w+(?:\s+\w+)*?)(?:\s+(?:ji|sahab|saheb|bhai|madam|ka|ki|ke|ko|of|for|has|is|SIP|sip|portfolio|total|details|amount)\b|[?,.\n]|$)',
+        r'(?i)\bMs\.?\s+(\w+(?:\s+\w+)*?)(?:\s+(?:ji|sahab|saheb|bhai|madam|ka|ki|ke|ko|of|for|has|is|SIP|sip|portfolio|total|details|amount)\b|[?,.\n]|$)',
+        r'(?i)\bDr\.?\s+(\w+(?:\s+\w+)*?)(?:\s+(?:ji|sahab|saheb|bhai|madam|ka|ki|ke|ko|of|for|has|is|SIP|sip|portfolio|total|details|amount)\b|[?,.\n]|$)',
+    ]
+
+    for pattern in FULL_NAME_PATTERNS_CI:
+        match = re.search(pattern, query)
+        if match:
+            name = match.group(1).strip()
+            if name and len(name) > 1:
+                return name
+
+    # Hindi/Hinglish honorific patterns (single name + suffix)
+    HONORIFIC_SUFFIX_PATTERNS = [
+        r'\b(\w+)\s+ji\b',           # Sharma ji
+        r'\b(\w+)\s+sahab\b',        # Patel sahab
+        r'\b(\w+)\s+saheb\b',        # Khan saheb
+        r'\b(\w+)\s+bhai\b',         # Ramesh bhai
+        r'\b(\w+)\s+madam\b',        # Sunita madam
+    ]
+
+    for pattern in HONORIFIC_SUFFIX_PATTERNS:
         match = re.search(pattern, query, re.IGNORECASE)
         if match:
-            # Return the full matched client reference
-            return match.group(0).strip()
-    
+            return match.group(1).strip()
+
     return None
+
+
+# Title prefixes to strip during normalization
+_TITLE_RE = re.compile(r'\b(mr|mrs|ms|dr|shri|smt|late)\.?\s*', re.IGNORECASE)
+
+def normalize_client_name(name: str) -> str:
+    """Normalize a client name for comparison.
+    
+    Strips titles, collapses spaces, and lowercases:
+      "Mrs. Swati Jain" → "swati jain"
+      "  Mr.  Arun  Kumar " → "arun kumar"
+    """
+    cleaned = _TITLE_RE.sub('', name)
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip().lower()
+    return cleaned
 
 
 def detect_language(query: str) -> str:

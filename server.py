@@ -17,10 +17,18 @@ from pydantic import BaseModel
 import json
 import concurrent.futures
 
-# Logging is bootstrapped AFTER sys.path setup — see below.
-# (moving it here would cause ModuleNotFoundError before BASE_DIR is on sys.path)
+# Configure concise structured logging
+logging.basicConfig(
+    level=logging.INFO,  # Changed from ERROR for debugging
+    format='[%(levelname)s] %(name)s: %(message)s',
+    datefmt='%H:%M:%S'
+)
 logger = logging.getLogger(__name__)
 
+# Suppress all verbose logs from third-party libraries
+for lib in ["uvicorn", "uvicorn.access", "sqlalchemy", "sqlalchemy.engine", 
+            "sqlalchemy.pool", "sqlalchemy.dialects", "fastapi", "httpx"]:
+    logging.getLogger(lib).setLevel(logging.ERROR)
 
 # =========================
 # PATH SETUP (Critical - must run before any imports)
@@ -31,29 +39,6 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 # Ensure BASE_DIR is in sys.path first (for package imports like Services.Subscription)
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
-
-# ── Centralized logging (MUST be after sys.path setup) ───────────
-try:
-    from core.loggingSetup import setupLogging
-    setupLogging()
-except Exception as _log_err:
-    # Fallback: basic logging so the server still starts
-    logging.basicConfig(
-        level=logging.INFO,
-        format='[%(levelname)s] %(name)s: %(message)s'
-    )
-    logging.getLogger(__name__).warning(
-        f"centralized logging setup failed ({_log_err}), using basicConfig fallback"
-    )
-
-# Re-assign logger now that logging is configured
-logger = logging.getLogger(__name__)
-
-# Suppress verbose third-party library logs
-for lib in ["uvicorn", "uvicorn.access", "sqlalchemy", "sqlalchemy.engine",
-            "sqlalchemy.pool", "sqlalchemy.dialects", "fastapi", "httpx"]:
-    logging.getLogger(lib).setLevel(logging.ERROR)
-
 
 # Verify critical directories exist
 SERVICES_DIR = os.path.join(BASE_DIR, 'Services')
@@ -380,7 +365,7 @@ async def lifespan(app: FastAPI):
 # FASTAPI APP CREATION (Fast - no blocking operations)
 # =========================
 # Define global security dependency to force header input in Swagger
-def security_header(Authorization: Optional[str] = Header(None, description="Enter 'Bearer <token>'")):
+def security_header(Authorization: str = Header(None, description="Enter 'Bearer <token>'")):
     pass
 
 app = FastAPI(
@@ -492,46 +477,18 @@ try:
             "/",
             "/api/chat/health", # Exempt ChatAI health
             "/health", # ChatAI health
-            "/single-sign-on", # Exempt SSO to allow login/token update
-            "/api/auth", # Exempt Google OAuth
-            "/paymentSuccess", # Exempt payment callback
-            "/api/portfolio/webhook/trade-executed", # Exempt portfolio webhook callback
-            "/api/portfolio", # Exempt all portfolio endpoints for testing
-            "/api/hierarchy", # Exempt all hierarchy endpoints for testing
-            "/docs",
-            "/redoc",
-            "/openapi.json",
-            "/health_check",
-            "/",
-            "/api/chat/health", # Exempt ChatAI health
-            "/health", # ChatAI health
-            "/api/v2/run_backtest",       # Backtest engine
-            "/api/v2/strategies",         # List all strategies
-            "/api/v2/strategy",           # /api/v2/strategy/* (assets, defaults, date-range, metrics, log)
-            "/api/v2/health",             # Health check
-            "/api/v2/save_strategies",    # Strategy management
-            "/api/v2/deploy_strategy",
-            "/api/v2/stop_strategy",
-            "/api/v2/restart_strategy",
-            "/api/v2/delete_strategy",
-            "/api/v2/delete_strategy_client",
-            "/api/v2/get_instances",
-            "/api/strategy",              # Centralized backtest endpoints (assets, defaults, date-range, metrics, log)
-            "/api/broker/place_order", # Exempt broker place order
-            "/api/broker/broker_login", # Exempt broker login
-            "/api/webhook/wealthai1.in/trade_execute", # Exempt trade execution webhook
-            "/api/webhook/trade_execute", # Exempt unified trade execution
-            "/api/webhook/ra", # Exempt RA CRUD
-            "/admin", # ChatAI Admin routes (has own X-Admin-Key auth)
-            "/api/mfd", # MFD Self-Service routes (has own x-user-email auth)
-            "/api/query", # ChatAI query endpoint
             "/api/health", # ChatAI health endpoint
             "/api/run_backtest", # Exempt centralized backtest for verified access
             "/api/strategies", # Exempt centralized list strategies
-            "/api/generate_signals",
-            "/api/execute_signals",
+            "/api/strategy", # Exempt centralized strategy details
+            "/api/broker/place_order", # Exempt broker place order
+            "/api/broker/broker_login", # Exempt broker login
+            "/admin", # ChatAI Admin routes (has own X-Admin-Key auth)
+            "/api/mfd", # MFD Self-Service routes (has own x-user-email auth)
+            "/api/query", # ChatAI query endpoint
         ]
     )
+    logger.info("[OK] SingleSessionMiddleware added")
 except Exception as e:
     logger.error(f"Failed to add SingleSessionMiddleware: {e}")
 
@@ -547,8 +504,7 @@ app.add_middleware(
         "https://wealthai1.in",
         "https://www.wealthai1.in",
         "https://trade.wealthai1.in",
-        "http://localhost:5173",
-        "http://localhost:5174", # ChatAI frontend dev
+        "http://localhost:5173", # ChatAI frontend dev
     ],
     allow_credentials=True,
     allow_headers=["*", "x-admin-key", "x-user-email", "x-session-id", "x-tenant-id", "Authorization", "Content-Type"],
@@ -581,7 +537,7 @@ chatai1_new = None
 
 
 try:
-    pass # from Strategies.customStrategy.api import custom_strategy_router
+    from Strategies.customStrategy.api import custom_strategy_router
 except Exception as e:
     logger.error(f"Failed to import custom_strategy_router: {e}")
 
@@ -597,12 +553,6 @@ rotation_etf_payout_router = None
 initialize_rotation_etf_payout_backtester = None
 
 webhook_router = None
-
-try:
-    from Services.webhook.webhook_api import router as webhook_router
-    logger.info("New Webhook router loaded successfully from Services.webhook.webhook_api")
-except Exception as e:
-    logger.error(f"Failed to import new webhook_router: {e}")
 
 # Critical: Subscription routers - provide detailed error info
 try:
@@ -683,13 +633,6 @@ try:
     chatai1_new_settings, _, _, chatai1_new = _lazy_import_chatai()
 except Exception as e:
     logger.error(f"Failed to import ChatAI1 (Legacy): {e}")
-
-try:
-    from Admin.routes import admin_router
-    logger.info("Admin router loaded successfully")
-except Exception as e:
-    logger.error(f"Failed to import admin_router: {e}")
-    admin_router = None
 
 # Centralized Backtest API (New)
 # Centralized Backtest API (New) - Consolidated in APIs.routes
@@ -801,10 +744,6 @@ if broker_router:
 
 # Rotation ETF Payout router
 
-if webhook_router:
-    app.include_router(webhook_router, prefix="/api/webhook", tags=["Webhook Integration"])
-
-
 
 # ChatAI router (Legacy)
 if chatai1_new and hasattr(chatai1_new, 'router'):
@@ -829,6 +768,7 @@ if chatai_availabe and chatai_router:
         logger.info("[OK] MFD Self-Service router mounted at /api/mfd")
     except Exception as e:
         logger.error(f"[FAIL] MFD router: {e}")
+
 
 # SuperTrend router (handle duplicate root route)
 

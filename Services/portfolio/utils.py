@@ -20,19 +20,20 @@ if not logger.handlers:
 
 def get_strategy_by_run_id(run_id: str, db: Session) -> Optional[Dict]:
     """
-    Get strategy details from run_id.
+    Get strategy details from run_id
     
-    Checks saved_instances first (backtest strategies), then falls back to
-    webhook_conf (webhook-executed strategies like EXT_DDMMYYYYXXX).
+    Queries the saved_instances table only.
     """
+    
     try:
-        # 1. Check saved_instances first (backtest/saved strategies)
         query = text("""
             SELECT id, user_id, strategy_name, strategy_type, status 
             FROM saved_instances 
             WHERE run_id = :run_id
         """)
+        
         result = db.execute(query, {"run_id": run_id}).fetchone()
+        
         if result:
             return {
                 'id': result[0],
@@ -41,29 +42,11 @@ def get_strategy_by_run_id(run_id: str, db: Session) -> Optional[Dict]:
                 'strategy_type': result[3],
                 'status': result[4] or 'deploy'
             }
-
-        # 2. Fallback: check webhook_conf (webhook-executed strategies like EXT_...)
-        wh_query = text("""
-            SELECT id, user_id, name, strategy_type, status
-            FROM webhook_conf
-            WHERE run_id = :run_id
-        """)
-        wh_result = db.execute(wh_query, {"run_id": run_id}).fetchone()
-        if wh_result:
-            logger.info(f"Found run_id={run_id} in webhook_conf table")
-            return {
-                'id': wh_result[0],
-                'user_id': wh_result[1],
-                'strategy_name': wh_result[2] or f"Webhook Strategy ({run_id})",
-                'strategy_type': wh_result[3] or 'WEBHOOK',
-                'status': wh_result[4] or 'active'
-            }
-
-        logger.warning(f"run_id={run_id} not found in saved_instances or webhook_conf")
+            
         return None
-
+        
     except Exception as e:
-        logger.warning(f"Error querying for run_id {run_id}: {e}")
+        logger.warning(f"Error querying saved_instances for run_id {run_id}: {e}")
         return None
 
 

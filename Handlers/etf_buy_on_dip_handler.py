@@ -27,20 +27,12 @@ class ETFBuyOnDipHandler(BaseStrategyHandler):
             # Clean tickers
             request.tickers = self._clean_tickers(request.tickers)
 
-            # Extract market
-            market = getattr(request, 'market', 'INDIA') or 'INDIA'
-            if hasattr(request, 'parameters') and isinstance(request.parameters, dict):
-                market = request.parameters.get('market', market)
-            
             # Extract parameters
             # Use capital_per_month explicitly
             capital = request.capital_per_month or request.capital_per_week or 5000.0
             
             if not request.tickers:
                 raise HTTPException(status_code=400, detail="Tickers are required for ETF Buy-on-Dip strategy")
-            
-            # Re-initialize backtester with correct market context
-            self.backtester = ETFBuyOnDipBacktester(market=market, db_path="unified_etf_data.sqlite")
 
             # Run Backtest
             results = self.backtester.run_backtest(

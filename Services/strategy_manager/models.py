@@ -19,7 +19,6 @@ class SavedInstance(Base):
     run_id = Column(String(100), unique=True, index=True)
     client_info = Column(JSON, nullable=True)
     webhook_url = Column(Text, nullable=True)
-    webhook_key = Column(String(100), nullable=True)
     status = Column(String(50), default='not deploy', index=True)
     reference_capital = Column(Float, nullable=True)
     last_execution_date = Column(DateTime(timezone=True), nullable=True)
@@ -28,6 +27,5 @@ class SavedInstance(Base):
     telegram_notification = Column(Boolean, default=False)
     user_code = Column(String(100), nullable=True)
     rem_exe_count = Column(Integer, default=0) # Added as per user request
-    source = Column(String(50), default='internal') # internal or other
     created_at = Column(DateTime(timezone=True), default=func.now())
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())

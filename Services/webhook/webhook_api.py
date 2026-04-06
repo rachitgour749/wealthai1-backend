@@ -12,15 +12,8 @@ from typing import List, Optional
 from .config import config
 from .models import (
     StrategyCreate, StrategyUpdate, StrategyStatusUpdate,
-    JsonGenerate, JsonSave, DeployRequest, StrategyResponse, HealthResponse,
-    WebhookCreateRequest, WebhookCreateResponse,
-    RACreateRequest, RAUpdateRequest, RAResponse,
-    TradeExecuteRequest, TradeExecuteResponse,
-    WebhookDetailResponse, WebhookListResponse, TradeExecuteIndividualRequest, UnifiedTradeExecuteRequest,
-    RAListResponse, RAStrategiesResponse
+    JsonGenerate, JsonSave, DeployRequest, StrategyResponse, HealthResponse
 )
-from fastapi import Request, Header
-from Services.subscription.services.auth_integration import get_current_user_from_google_token
 from .webhook_logic import (
     WebhookLogic, init_db
 )
@@ -34,34 +27,10 @@ app_config = config[config_name]
 logger = logging.getLogger(__name__)
 
 # Create router
-router = APIRouter(tags=["webhook"])
+router = APIRouter(prefix="/api", tags=["webhook"])
 
 # Initialize webhook logic
 webhook_logic = WebhookLogic()
-
-@router.post("/create", response_model=WebhookCreateResponse, status_code=201)
-async def create_webhook(
-    request: WebhookCreateRequest,
-    current_user: dict = Depends(get_current_user_from_google_token)
-):
-    """
-    Create a new webhook configuration and managed keys.
-    Security: Validates that the request user_id matches the authenticated user.
-    """
-    try:
-        # Check if requested user_id matches authenticated user
-        if request.user_id != current_user["email"]:
-             logger.warning(f"User {current_user['email']} attempted to create webhook for {request.user_id}")
-             # We might allow this for RAs or admins, but generally it's a security risk.
-             # For now, let's enforce it or at least log it.
-             # raise HTTPException(status_code=403, detail="Forbidden: Cannot create webhook for another user")
-        
-        return await webhook_logic.create_webhook(request)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error creating webhook: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/strategies", response_model=List[StrategyResponse])
 async def get_strategies():
@@ -226,123 +195,3 @@ async def deploy_legacy(data: dict):
     except Exception as e:
         logger.error(f"Error in legacy deploy: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to deploy strategy")
-
-# RA CRUD Endpoints
-@router.post("/trade_execute/{x_webhook_secret}", response_model=TradeExecuteResponse)
-async def unified_trade_execute(
-    x_webhook_secret: str,
-    request: UnifiedTradeExecuteRequest
-):
-    """
-    Unified trade execution for both RA and Individual signals (Secret in URL).
-    """
-    logger.info(f"Received unified trade execution request (RA: {request.ra_code}, RunID: {request.run_id})")
-    return await webhook_logic.unified_execute_trade(request, x_webhook_secret)
-
-@router.post("/wealthai1.in/trade_execute/{x_webhook_secret}", response_model=TradeExecuteResponse)
-async def legacy_ra_trade_execute(
-    x_webhook_secret: str,
-    request: UnifiedTradeExecuteRequest
-):
-    """Legacy RA endpoint (redirects to unified logic)"""
-    return await webhook_logic.unified_execute_trade(request, x_webhook_secret)
-
-@router.get("/user/{user_id}", response_model=WebhookListResponse)
-async def get_user_webhooks(user_id: str):
-    """Fetch all webhooks for a specific user"""
-    webhooks = await webhook_logic.get_user_webhooks(user_id)
-    return WebhookListResponse(user_id=user_id, webhooks=webhooks)
-
-@router.post("/status/{run_id}/{status}")
-async def update_webhook_status(run_id: str, status: str):
-    """Toggle active/inactive status using path parameters"""
-    if status not in ['active', 'inactive']:
-        raise HTTPException(status_code=400, detail="Status must be 'active' or 'inactive'")
-        
-    success = await webhook_logic.update_webhook_status(run_id, status)
-    if not success:
-        raise HTTPException(status_code=404, detail="Webhook configuration not found")
-    return {"status": "success", "message": f"Webhook status updated to {status}"}
-
-@router.delete("/delete/{run_id}")
-async def delete_webhook(run_id: str):
-    """Delete a webhook configuration using path parameter"""
-    success = await webhook_logic.delete_webhook(run_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Webhook configuration not found")
-    return {"status": "success", "message": "Webhook deleted successfully"}
-
-@router.post("/ra", response_model=RAResponse, status_code=201)
-async def create_ra(request: RACreateRequest):
-    """Add a new Research Analyst configuration"""
-    try:
-        return webhook_logic.create_ra(request)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error creating RA: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-
-@router.get("/ra", response_model=RAListResponse)
-async def get_ras():
-    """List all Research Analyst configurations"""
-    try:
-        data = webhook_logic.get_ras()
-        return RAListResponse(
-            status_code=200,
-            data=data,
-            message="RAs fetched successfully"
-        )
-    except Exception as e:
-        logger.error(f"Error listing RAs: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/ra/{ra_code}/strategies", response_model=RAStrategiesResponse)
-async def get_ra_strategies(ra_code: str):
-    """Fetch all strategy types associated with a specific RA code"""
-    try:
-        strategies = webhook_logic.get_ra_strategies(ra_code)
-        return RAStrategiesResponse(
-            status_code=200,
-            ra_code=ra_code,
-            strategies=strategies,
-            message="Strategies fetched successfully"
-        )
-    except Exception as e:
-        logger.error(f"Error getting strategies for RA {ra_code}: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/ra/{ra_code}/{strategy_type}", response_model=RAResponse)
-async def get_ra(ra_code: str, strategy_type: str):
-    """Get a specific RA configuration"""
-    try:
-        return webhook_logic.get_ra(ra_code, strategy_type)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting RA: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.put("/ra/{ra_code}/{strategy_type}", response_model=RAResponse)
-async def update_ra(ra_code: str, strategy_type: str, request: RAUpdateRequest):
-    """Update RA configuration"""
-    try:
-        return webhook_logic.update_ra(ra_code, strategy_type, request)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error updating RA: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.delete("/ra/{ra_code}/{strategy_type}")
-async def delete_ra(ra_code: str, strategy_type: str):
-    """Delete RA configuration"""
-    try:
-        webhook_logic.delete_ra(ra_code, strategy_type)
-        return {"message": "RA deleted successfully"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error deleting RA: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
