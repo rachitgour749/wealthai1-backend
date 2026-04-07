@@ -9,6 +9,8 @@ from helpers.broker_session_manager import save_broker_session, get_broker_sessi
 from Databases.app_data_db_connection import get_session
 from Databases.broker_models import BrokerSession
 from helpers.broker_market_utils import is_market_open
+from helpers.order_utils import generate_random_mac, calculate_limit_price, validate_user_ip_creds
+from Services.notification_service import WebhookNotifier
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -16,6 +18,7 @@ logger = logging.getLogger(__name__)
 class LoginRequest(BaseModel):
     broker_name: str
     user_email: str  # App User Email provided by the user
+    static_ip: str = None # Option to provide static_ip in body
 
     class Config:
         extra = "allow"
@@ -82,13 +85,13 @@ async def broker_login(
         if result.get("status") == "success":
             logger.info(f"Login successful for {login_request.broker_name}") # Changed success to info as logger might not have success
             
-            # Get static IP from header parameter (optional)
-            static_ip = x_static_ip
+            # Get static IP from body first, then fallback to header parameter
+            static_ip = login_request.static_ip or x_static_ip
             
             if static_ip:
-                logger.info(f"Received static IP from header: {static_ip}")
+                logger.info(f"Using static IP: {static_ip}")
             else:
-                logger.info("No static IP provided in headers, will set to NULL in database")
+                logger.info("No static IP provided, will set to NULL in database")
             
             # Save session to database
             client_id = credentials.get('client_id') or credentials.get('username') or result.get('client_id') or 'unknown_client'
@@ -101,7 +104,7 @@ async def broker_login(
                 logger.error(f"Session not saved: {message}")
                 raise HTTPException(status_code=400, detail=message)
             
-            # Update static_ip in database (optional - won't fail if it doesn't work)
+            # Update static_ip in database
             db = get_session()
             try:
                 user_record = db.query(BrokerSession).filter(BrokerSession.user_email == user_email).first()
@@ -206,36 +209,58 @@ async def place_order(request: OrderRequest):
             for client_id, quantity in request.clients.items():
                 logger.info(f"Placing order for symbol: {symbol}, client: {client_id}, quantity: {quantity}")
                 
-                # Retrieve Static IP for the client (optional)
-                static_ip = None
+                # --- IP CREDENTIAL VALIDATION ---
                 db = get_session()
+                notifier = WebhookNotifier()
                 try:
                     user_record = db.query(BrokerSession).filter(BrokerSession.client_id == client_id).first()
-                    if user_record and user_record.static_ip:
-                        static_ip = user_record.static_ip
-                        logger.info(f"Using static IP for client {client_id}: {static_ip}")
-                    else:
-                        logger.warning(f"No static IP found for client {client_id}, placing order without IP")
+                    is_valid_ip, ip_err = validate_user_ip_creds(user_record)
+                    
+                    if not is_valid_ip:
+                        err_msg = f"IP Validation Failed for {client_id}: {ip_err}"
+                        logger.warning(err_msg)
+                        results.append({"symbol": symbol, "client": client_id, "status": "error", "message": err_msg})
+                        failed_count += 1
+                        # Notify Failure
+                        notifier.send_client_notification(request.user_id, "Manual Trade", symbol, request.order_side, "error", err_msg)
+                        continue
+
+                    static_ip = user_record.static_ip
+                    logger.info(f"Using static IP for client {client_id}: {static_ip}")
                 except Exception as e:
                     logger.warning(f"Error retrieving static IP for {client_id}: {e}")
+                    static_ip = None # Fallback (though validation should have caught it)
                 finally:
                     db.close()
 
+                # --- CALCULATE LIMIT PRICE (SEBI COMPLIANCE) ---
+                limit_price, price_err = calculate_limit_price(symbol, request.exchange, request.order_side)
+                if price_err:
+                    err_msg = f"Limit Price Calculation Failed: {price_err}"
+                    results.append({"symbol": symbol, "client": client_id, "status": "error", "message": err_msg})
+                    failed_count += 1
+                    notifier.send_client_notification(request.user_id, "Manual Trade", symbol, request.order_side, "error", err_msg)
+                    continue
+
                 # Create order data for this specific combination
                 order_data = {
-                    **common_order_data, 
+                    'exchange': request.exchange,
                     'symbol': symbol,
-                    'quantity': quantity
+                    'order_side': request.order_side.upper(),
+                    'product_type': request.product_type,
+                    'order_type': 'LIMIT',
+                    'price': limit_price,
+                    'quantity': quantity,
+                    'validity': 'IOC', # Immediate Or Cancel
+                    'variety': variety,
+                    'static_ip': static_ip,
+                    'mac_address': generate_random_mac()
                 }
                 
                 # Add exchange_instrument_id if provided (required for AngelOne)
                 if hasattr(request, 'exchange_instrument_id') and request.exchange_instrument_id:
                     order_data['exchange_instrument_id'] = request.exchange_instrument_id
-                
-                # Add static_ip to order_data if available
-                if static_ip:
-                    order_data['static_ip'] = static_ip
-                
+
                 credentials = {
                     'api_key': api_key,
                     'access_token': access_token,
@@ -268,8 +293,12 @@ async def place_order(request: OrderRequest):
                 if result.get('status') == 'success':
                     res['order_id'] = result.get('data', {}).get('order_id')
                     success_count += 1
+                    msg = f"Order successful for {symbol} ({client_id})"
+                    notifier.send_client_notification(request.user_id, "Manual Trade", symbol, request.order_side, "executed", msg)
                 else:
                     failed_count += 1
+                    msg = result.get("message", "Order failed")
+                    notifier.send_client_notification(request.user_id, "Manual Trade", symbol, request.order_side, "error", msg)
                 
                 results.append(res)
         

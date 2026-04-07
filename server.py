@@ -528,6 +528,8 @@ try:
             "/api/health", # ChatAI health endpoint
             "/api/run_backtest", # Exempt centralized backtest for verified access
             "/api/strategies", # Exempt centralized list strategies
+            "/api/generate_signals",
+            "/api/execute_signals",
         ]
     )
 except Exception as e:

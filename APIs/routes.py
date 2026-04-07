@@ -278,3 +278,15 @@ async def get_instances(
 ):
     """Fetch all strategy instances for a specific user and strategy type"""
     return management_service.get_instances_logic(user_id, strategy_type, db)
+
+@api_router.post("/generate_signals", tags=["Centralized APIs"])
+async def generate_signals(
+    strategy_type: Optional[str] = Query(None, description="Strategy type to generate signals for (optional)")
+):
+    """Manually trigger signal generation for one or all strategy types"""
+    return management_service.generate_signals_logic(strategy_type)
+
+@api_router.post("/execute_signals", tags=["Centralized APIs"])
+async def execute_signals():
+    """Manually trigger signal execution for all pending signals"""
+    return management_service.execute_signals_logic()
