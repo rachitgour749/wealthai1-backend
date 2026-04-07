@@ -5,14 +5,13 @@ from typing import Dict, List, Optional, Tuple, Any
 from sqlalchemy.orm import Session
 from Strategies.utilities.logging_config import StrategyLogger
 from Segments.EquitySegment import EquitySegment
-from Strategies.utilities.indicator_utils import IndicatorHelper
 
 class RSBaseStrategy(EquitySegment):
     """
     RS Level 4: Base Strategy Implementation
     
-    Implements optimized ranking and execution logic for Relative Strength strategies.
-    Now reverted to pandas for standardized PRS calculations.
+    Implements optimized vectorized ranking and execution logic for Relative Strength strategies.
+    Inherits from EquitySegment to access shared market logic.
     """
     
     def __init__(self, db_session: Session, config: Dict):
@@ -23,6 +22,7 @@ class RSBaseStrategy(EquitySegment):
         strategy_name = config.get('strategy_name', 'RS_Strategy')
         self.logger = StrategyLogger(strategy_name)
         
+        # Strategy Parameters
         # Strategy Parameters
         self.lookback_weeks = config.get('lookback_weeks', 5)
         self.lookback_months = config.get('lookback_months', 20)
@@ -69,63 +69,68 @@ class RSBaseStrategy(EquitySegment):
         
     def precalculate_signals(self, univ_df: pd.DataFrame, index_df: pd.DataFrame):
         """
-        Calculation of RS Scores and Ranks using the stock-indicators PRS logic.
+        Vectorized calculation of RS Scores and Ranks for the entire history.
+        This moves the heavy lifting outside the event loop (O(1) lookup during backtest).
         """
-        self.logger.progress("🚀 Starting signal pre-calculation (via stock-indicators library)...")
+        self.logger.progress("🚀 Starting vectorized signal pre-calculation...")
         
         # 1. Pivot data to wide format (Dates x Symbols)
-        closes = univ_df.pivot_table(index='date', columns='symbol', values='adjusted_close').ffill()
-        # index_df may already have 'date' as its index (e.g. loaded via pd.read_sql with index_col='date')
-        if 'date' in index_df.columns:
-            index_df = index_df.set_index('date').sort_index()
-        else:
-            index_df = index_df.sort_index()
-        index_closes = index_df['adjusted_close'].reindex(closes.index).ffill()
+        closes = univ_df.pivot_table(index='date', columns='symbol', values='adjusted_close')
+        
+        # Add Forward Fill to handle missing data points for individual symbols
+        closes = closes.ffill()
+        
+        index_closes = index_df['adjusted_close']
+        
+        # Reindex index to match universe dates (forward fill)
+        index_closes = index_closes.reindex(closes.index).ffill()
         
         # Store for logging
         self.closes_df = closes
         self.index_closes_df = index_closes
         
-        # 2. Conversion to Quotes
-        index_quotes = IndicatorHelper.df_to_quotes(pd.DataFrame({'open': index_closes, 'high': index_closes, 'low': index_closes, 'close': index_closes}))
+        # 2. Calculate Returns for 3 Timeframes (Vectorized)
+        # Short Term (user provided in trading days, e.g. 5)
+        self.univ_ret_w = closes.pct_change(periods=self.lookback_weeks)
+        self.idx_ret_w = index_closes.pct_change(periods=self.lookback_weeks)
         
-        # Dictionary to store results per symbol
-        all_rs_w = {}
-        all_rs_m = {}
-        all_rs_q = {}
+        # Medium Term (user provided in trading days, e.g. 20)
+        self.univ_ret_m = closes.pct_change(periods=self.lookback_months)
+        self.idx_ret_m = index_closes.pct_change(periods=self.lookback_months)
         
-        symbols = closes.columns.tolist()
-        total = len(symbols)
+        # Long Term (user provided in trading days, e.g. 60)
+        self.univ_ret_q = closes.pct_change(periods=self.lookback_quarters)
+        self.idx_ret_q = index_closes.pct_change(periods=self.lookback_quarters)
         
-        for i, symbol in enumerate(symbols):
-            if i % 10 == 0:
-                self.logger.info(f"  Calculating PRS for {i}/{total} symbols...")
-                
-            # Manual PRS calculation (Old method)
-            # PRS = Ticker / Index
-            prs_series = (closes[symbol] / index_closes)
-            
-            # (PRS_t / PRS_t-n) - 1
-            all_rs_w[symbol] = prs_series / prs_series.shift(self.lookback_weeks) - 1
-            all_rs_m[symbol] = prs_series / prs_series.shift(self.lookback_months) - 1
-            all_rs_q[symbol] = prs_series / prs_series.shift(self.lookback_quarters) - 1
-            
-        # 3. Combine into Scores
-        self.rs_w_df = pd.DataFrame(all_rs_w)
-        self.rs_m_df = pd.DataFrame(all_rs_m)
-        self.rs_q_df = pd.DataFrame(all_rs_q)
+        # 3. Calculate RS Score (Ratio of Price Relatives)
+        # RS = ( (Asset_Curr / Asset_Past) / (Index_Curr / Index_Past) ) - 1
+        
+        # Calculate Price Relatives (Price_t / Price_t-n)
+        asset_rel_w = closes / closes.shift(self.lookback_weeks)
+        idx_rel_w = index_closes / index_closes.shift(self.lookback_weeks)
+        self.rs_w_df = asset_rel_w.div(idx_rel_w, axis=0) - 1
+        
+        asset_rel_m = closes / closes.shift(self.lookback_months)
+        idx_rel_m = index_closes / index_closes.shift(self.lookback_months)
+        self.rs_m_df = asset_rel_m.div(idx_rel_m, axis=0) - 1
+        
+        asset_rel_q = closes / closes.shift(self.lookback_quarters)
+        idx_rel_q = index_closes / index_closes.shift(self.lookback_quarters)
+        self.rs_q_df = asset_rel_q.div(idx_rel_q, axis=0) - 1
         
         # Average RS Score
         self.rs_scores_df = (self.rs_w_df + self.rs_m_df + self.rs_q_df) / 3
         
-        # 4. Filter Negative RS (Must be > 0)
+        # 4. Filter Negative RS (Set to NaN so they rank last)
+        # Strategy Rule: Must be > 0
         positive_rs_scores = self.rs_scores_df.where(self.rs_scores_df > 0)
         
         # 5. Generate Ranks (Higher Score = Rank 1)
         self.ranks_df = positive_rs_scores.rank(axis=1, ascending=False, method='min')
         
-        self.logger.progress("✅ Indicator-based calculation complete!")
+        self.logger.progress("✅ Vectorized pre-calculation complete!")
         self.logger.info(f"  [DEBUG] RS Scores Shape: {self.rs_scores_df.shape}")
+        self.logger.info(f"  [DEBUG] Valid (Positive) RS Scores: {positive_rs_scores.notna().sum().sum()}")
         
     def get_weekly_rebalance_dates(self, start_date: datetime, end_date: datetime) -> List[datetime]:
         """Get list of Fridays (Signal Days)"""
@@ -135,6 +140,7 @@ class RSBaseStrategy(EquitySegment):
         period_dates = all_dates[mask]
         
         # Filter for Fridays (weekday == 4)
+        # Using Series.dt accessor if it's a Series, or directly on DatetimeIndex
         is_friday = period_dates.weekday == 4
         fridays = period_dates[is_friday].tolist()
         

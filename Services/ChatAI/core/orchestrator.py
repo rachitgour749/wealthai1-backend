@@ -22,9 +22,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from google import genai
 
-from Services.ChatAI.core.intent_classifier import IntentType, ClassifiedIntent
+from Services.ChatAI.core.intent_classifier import IntentType, ClassifiedIntent, normalize_client_name
 from Services.ChatAI.core.conversation_manager import ConversationManager
 from Services.ChatAI.stores.tenant_manager import TenantStoreManager
+from Services.ChatAI.data.mfapi_client import MFApiClient
 
 logger = logging.getLogger(__name__)
 
@@ -143,6 +144,7 @@ class QueryOrchestrator:
         self.client = client
         self.tenant_id = tenant_id
         self.store_manager = TenantStoreManager(client)
+        self.mfapi_client = MFApiClient()
         self.use_cache = True  # Enable caching
     
     def _get_cache_key(self, query: str, intent_type: str) -> str:
@@ -224,7 +226,7 @@ class QueryOrchestrator:
         match effective_intent:
             # Product-related intents
             case IntentType.PRODUCT_INFO:
-                response = await self._handle_product(context_query, conversation)
+                response = await self._handle_product(context_query, conversation, intent)
             case IntentType.PRODUCT_COMPARE:
                 response = await self._handle_product_compare(context_query, intent, conversation)
             
@@ -480,7 +482,7 @@ class QueryOrchestrator:
             logger.error(f"General handler error: {e}")
             return self._create_error_response(query, str(e))
     
-    async def _handle_product(self, query: str, conversation: ConversationManager):
+    async def _handle_product(self, query: str, conversation: ConversationManager, intent: ClassifiedIntent = None):
         """
         Handle product-related queries.
         Uses shared products File Search store with conversation context.
@@ -490,11 +492,35 @@ class QueryOrchestrator:
             context = await self.store_manager.query_product_store(query)
             context_text = self._extract_text(context)
             
+            # --- MFAPI Integration ---
+            mf_data_context = ""
+            if intent:
+                scheme_name = get_entity(intent.entities, "scheme_name")
+                if not scheme_name and intent.entities.scheme_names:
+                    scheme_name = intent.entities.scheme_names[0]
+                
+                # Fetch live NAV data if scheme name is identified
+                if scheme_name:
+                    logger.info(f"MFAPI: Searching for fund {scheme_name}")
+                    search_results = await self.mfapi_client.search_fund(scheme_name)
+                    if search_results:
+                        top_match = search_results[0]
+                        fund_data = await self.mfapi_client.get_fund_data(top_match["schemeCode"])
+                        if fund_data and "data" in fund_data:
+                            # get last 10 days NAV
+                            recent_data = fund_data["data"][:10]
+                            meta = fund_data.get("meta", {})
+                            mf_data_context = f"\\n\\n## Live MFAPI Daily NAV Data for {top_match['schemeName']} (AMC: {meta.get('fund_house', 'Unknown')}):\\n"
+                            for entry in recent_data:
+                                mf_data_context += f"- Date: {entry['date']}, NAV: {entry['nav']}\\n"
+            # -------------------------
+            
             # Build enriched prompt with CHATAI1 enhanced instructions
             enriched_query = f"""{CHATAI1_ENHANCED_PROMPT}
 
 ## Retrieved Product Information:
 {context_text if context_text else 'No specific product data found.'}
+{mf_data_context}
 
 ## User Query:
 {query}
@@ -578,25 +604,26 @@ Be thorough and actionable. Never say "data is limited"."""
         conversation: ConversationManager
     ):
         """
-        Handle client-specific queries with disambiguation.
+        Handle client-specific queries with exact-match-first disambiguation.
         
-        If multiple clients match the extracted name, asks the user to clarify
-        before providing client data. Uses conversation context to skip
-        disambiguation on follow-up queries.
+        Matching priority:
+          1. Exact full name match (case-insensitive, title-stripped)
+          2. Multiple matches → ask user to clarify
+          3. Single partial match → use it
         """
         client_name = get_entity(intent.entities, "client_name")
         
         # Step 1: Check if we already have a resolved client in this session
         resolved_name = None
         if conversation and conversation.resolved_client_full_name:
-            # Check if the user is still asking about the same client
             if client_name:
-                # If the extracted name appears in the resolved name, reuse it
-                if client_name.lower().replace(' ji', '').replace(' sahab', '').strip() in conversation.resolved_client_full_name.lower():
+                # Normalize both for comparison
+                norm_query = normalize_client_name(client_name)
+                norm_resolved = normalize_client_name(conversation.resolved_client_full_name)
+                if norm_query == norm_resolved or norm_query in norm_resolved:
                     resolved_name = conversation.resolved_client_full_name
                     logger.info(f"Using resolved client from session: {resolved_name}")
             else:
-                # No new client name mentioned — continue with resolved client
                 resolved_name = conversation.resolved_client_full_name
                 logger.info(f"No new client name, reusing resolved: {resolved_name}")
         
@@ -604,79 +631,86 @@ Be thorough and actionable. Never say "data is limited"."""
         if resolved_name:
             return await self._query_client_data(query, resolved_name, conversation)
         
-        # Step 3: No resolved client — need to disambiguate
+        # Step 3: No resolved client — need to search and disambiguate
         if client_name:
-            # Search for all clients matching this name
             search_results = await self.store_manager.search_clients_by_name(
                 self.tenant_id, client_name
             )
             
             if search_results:
-                # Check if multiple clients were found
-                needs_disambiguation = self._check_multiple_clients(search_results)
+                # --- Exact-match-first logic ---
+                all_names = self._extract_all_client_names(search_results)
+                norm_query_name = normalize_client_name(client_name)
                 
-                if needs_disambiguation:
-                    # Store the original query for replay after disambiguation
+                # 1. Try exact full-name match
+                exact_matches = [
+                    name for name in all_names
+                    if normalize_client_name(name) == norm_query_name
+                ]
+                
+                if len(exact_matches) == 1:
+                    # Perfect single exact match → skip disambiguation
+                    full_name = exact_matches[0]
+                    logger.info(f"Exact match found: '{full_name}' for query '{client_name}'")
                     if conversation:
-                        conversation.pending_query = query
-                    # Return disambiguation response
-                    logger.info(f"Multiple clients found for '{client_name}', asking for disambiguation")
-                    return self._create_disambiguation_response(client_name, search_results)
-                else:
-                    # Single client or no ambiguity — resolve and proceed
-                    # Try to extract the full name from search results
-                    full_name = self._extract_single_client_name(search_results, client_name)
-                    if full_name and conversation:
                         conversation.resolved_client_full_name = full_name
                         conversation.active_client = full_name
-                    return await self._query_client_data(query, full_name or client_name, conversation)
+                    return await self._query_client_data(query, full_name, conversation)
+                
+                # 2. No exact match → check how many partial matches we have
+                if len(all_names) >= 2 and len(exact_matches) == 0:
+                    if conversation:
+                        conversation.pending_query = query
+                    logger.info(f"Multiple clients found for '{client_name}', asking for disambiguation")
+                    return self._create_disambiguation_response(client_name, search_results)
+                
+                # 3. Single result (or single exact) → use it
+                full_name = self._extract_single_client_name(search_results, client_name)
+                if full_name and conversation:
+                    conversation.resolved_client_full_name = full_name
+                    conversation.active_client = full_name
+                return await self._query_client_data(query, full_name or client_name, conversation)
             else:
-                # Search failed, fall back to direct query
                 return await self._query_client_data(query, client_name, conversation)
         else:
-            # No client name extracted — query the store without filter
             return await self._query_client_data(query, None, conversation)
+    
+    def _extract_all_client_names(self, search_results: str) -> list:
+        """Extract ALL client names from search results for matching."""
+        import re
+        names = []
+        
+        # Pattern 1: "Full Name: ..." lines
+        for m in re.finditer(r'(?:Full Name|Name)\s*:\s*(?:Mr\.?\s*|Mrs\.?\s*|Ms\.?\s*|Dr\.?\s*)*(.+?)(?:\n|$)', search_results, re.IGNORECASE):
+            name = m.group(1).strip().strip('*')
+            if name and len(name) > 1:
+                names.append(name)
+        
+        # Pattern 2: Numbered bold names "1. **Name**"
+        if not names:
+            for m in re.finditer(r'\d+[\.\)]\s*\*\*([^*]+)\*\*', search_results):
+                name = m.group(1).strip()
+                if name and 'Full Name' not in name:
+                    names.append(name)
+        
+        # Pattern 3: Numbered list "1. Name — ..."
+        if not names:
+            for m in re.finditer(r'\d+[\.\)]\s*(.+?)(?:\s*[—\-]|\s*\n)', search_results):
+                name = m.group(1).strip().strip('*')
+                if name and len(name) > 1:
+                    names.append(name)
+        
+        return names
     
     def _check_multiple_clients(self, search_results: str) -> bool:
         """Check if search results contain multiple distinct clients."""
-        import re
-        # Count numbered list items (e.g., "1.", "2.", "3.")
-        numbered_items = re.findall(r'^\s*\d+[\.\)]\s', search_results, re.MULTILINE)
-        if len(numbered_items) >= 2:
-            return True
-        
-        # Also check for multiple "Full Name:" entries or bold names
-        bold_names = re.findall(r'\*\*[^*]+\*\*', search_results)
-        if len(bold_names) >= 2:
-            return True
-        
-        # Check for multiple "Client Profile:" headers
-        profiles = re.findall(r'Client Profile:', search_results, re.IGNORECASE)
-        if len(profiles) >= 2:
-            return True
-        
-        return False
+        return len(self._extract_all_client_names(search_results)) >= 2
     
     def _extract_single_client_name(self, search_results: str, fallback: str) -> str:
         """Extract the full name from search results when only one client matches."""
-        import re
-        # Try to find "Full Name: ..." pattern
-        name_match = re.search(r'Full Name:\s*(.+?)(?:\n|$)', search_results)
-        if name_match:
-            return name_match.group(1).strip()
-        
-        # Try bold name pattern "**Name**"
-        bold_match = re.search(r'\*\*([^*]+)\*\*', search_results)
-        if bold_match:
-            return bold_match.group(1).strip()
-        
-        # Try "1. Name —" pattern
-        numbered_match = re.search(r'^\s*1[\.\)]\s*(.+?)(?:\s*—|\s*-|\s*\n)', search_results, re.MULTILINE)
-        if numbered_match:
-            name = numbered_match.group(1).strip().strip('*')
-            if name:
-                return name
-        
+        names = self._extract_all_client_names(search_results)
+        if names:
+            return names[0]
         return fallback
     
     def _create_disambiguation_response(self, client_name: str, search_results: str):
@@ -745,8 +779,13 @@ Answer the question directly using the client data above. Be brief."""
         
         # Use resolved client from session if available
         if conversation and conversation.resolved_client_full_name:
-            if not client_name or client_name.lower().replace(' ji', '').replace(' sahab', '').strip() in conversation.resolved_client_full_name.lower():
+            if not client_name:
                 client_name = conversation.resolved_client_full_name
+            else:
+                norm_query = normalize_client_name(client_name)
+                norm_resolved = normalize_client_name(conversation.resolved_client_full_name)
+                if norm_query == norm_resolved or norm_query in norm_resolved:
+                    client_name = conversation.resolved_client_full_name
         
         # For now, provide guidance - actual actions need human confirmation
         guidance_prompt = f"""{CHATAI1_ENHANCED_PROMPT}

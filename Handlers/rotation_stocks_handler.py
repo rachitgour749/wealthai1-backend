@@ -32,16 +32,11 @@ class RotationStocksHandler(BaseStrategyHandler):
         try:
             self.validate_request(request)
             
-            # Extract market
-            market = getattr(request, 'market', 'INDIA') or 'INDIA'
-            if hasattr(request, 'parameters') and isinstance(request.parameters, dict):
-                market = request.parameters.get('market', market)
-            
             # Clean tickers (remove .NS)
             request.tickers = self._clean_tickers(request.tickers)
             
-            # Initialize backtester with correct market context
-            backtester = StockRotationBacktester(market=market, db_path="unified_stock_data.sqlite")
+            # Initialize backtester
+            backtester = StockRotationBacktester(db_path="unified_stock_data.sqlite")
             
             # Run backtest
             result = backtester.run_backtest(

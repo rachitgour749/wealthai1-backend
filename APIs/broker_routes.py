@@ -341,64 +341,6 @@ async def delete_account(user_email: str, client_id: str):
         raise HTTPException(status_code=404, detail=message)
     return {"status": "success", "message": message}
 
-@router.get("/relogin")
-async def relogin(user_email: str):
-    """Re-authenticate with the broker using stored credentials."""
-    from helpers.broker_session_manager import get_full_broker_session
-    details = get_full_broker_session(user_email)
-    
-    if not details:
-        raise HTTPException(status_code=404, detail="No broker account found for this user")
-    
-    broker_name = details.get("broker_name")
-    credentials = details.get("broker_credentials")
-    
-    if not credentials:
-        raise HTTPException(status_code=400, detail="No stored credentials found for relogin")
-    
-    logger.info(f"Attempting relogin for {user_email} with broker {broker_name}")
-    
-    try:
-        # Call login_broker (re-using the logic from broker_login)
-        result = login_broker(broker_name, credentials)
-        
-        if result.get("status") == "error":
-             logger.error(f"Relogin failed for {broker_name}: {result.get('message')}")
-             raise HTTPException(status_code=400, detail=result.get("message"))
-        
-        if result.get("status") == "success":
-            # Save session to database
-            client_id = credentials.get('client_id') or credentials.get('username') or result.get('client_id') or details.get('client_id')
-            api_key = credentials.get('api_key') or details.get('api_key')
-            
-            from helpers.broker_session_manager import save_broker_session
-            saved, message = save_broker_session(user_email, broker_name, client_id, result, api_key, credentials=credentials)
-            
-            if not saved:
-                logger.error(f"Relogin session not saved: {message}")
-                raise HTTPException(status_code=400, detail=message)
-            
-            # Calculate expiry
-            expiry_time = datetime.utcnow() + timedelta(hours=24)
-            
-            return {
-                "status": "success",
-                "message": f"{broker_name} relogin successful",
-                "access_token": result.get('access_token') or result.get('data', {}).get('access_token'),
-                "expire": expiry_time.strftime("%Y-%m-%d %H:%M:%S"),
-                "broker_name": broker_name,
-                "user_email": user_email,
-                "client_id": client_id
-            }
-        else:
-            raise HTTPException(status_code=400, detail=result.get("message", "Relogin failed"))
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Internal error during relogin: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
 @router.post("/update_credentials")
 async def update_credentials(payload: Dict[str, Any] = Body(...)):
     """Update broker credentials for an existing account."""

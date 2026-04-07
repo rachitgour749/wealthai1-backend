@@ -754,10 +754,9 @@ async def get_user_portfolio_summary(
         
         # 1. Get all unique strategies (run_ids) for all accessible users
         query_strategies = text("""
-            SELECT DISTINCT pt.run_id, pt.strategy_name, pt.strategy_type, pt.user_email, ud.user_name, si.status
+            SELECT DISTINCT pt.run_id, pt.strategy_name, pt.strategy_type, pt.user_email, ud.user_name
             FROM portfolio_trades pt
             LEFT JOIN user_details ud ON pt.user_email = ud.user_email
-            LEFT JOIN saved_instances si ON pt.run_id = si.run_id
             WHERE pt.user_email IN :user_emails
         """)
         
@@ -784,7 +783,7 @@ async def get_user_portfolio_summary(
         overall_aum = 0.0
         
         # 2. For each strategy, calculate performance
-        for run_id, strategy_name, strategy_type, owner_email, owner_name, strat_status in strategy_rows:
+        for run_id, strategy_name, strategy_type, owner_email, owner_name in strategy_rows:
             # A. Get Client Allocations
             allocations = get_client_allocations(run_id, db)
             
@@ -1027,7 +1026,6 @@ async def get_user_portfolio_summary(
                 cagr=strategy_cagr,
                 xirr=strategy_xirr,
                 holdings_count=strat_holdings_count,
-                running_status=strat_status or "deploy",
                 owner_email=owner_email,
                 owner_name=owner_name,
                 clients=clients_list

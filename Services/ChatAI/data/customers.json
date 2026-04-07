@@ -31,14 +31,14 @@
       "created_at": "2026-02-23T14:59:36.496476"
     },
     {
-      "id": "cust_5348dd04",
-      "name": "rachit.gour749",
-      "email": "rachit.gour749@gmail.com",
+      "id": "cust_975d441d",
+      "name": "Anshika",
+      "email": "anshika8690@gmail.com",
       "status": "active",
-      "file_search_store": null,
+      "file_search_store": "fileSearchStores/moneycompchattest-5r1aebaffgan",
       "docs_synced": 0,
       "last_sync": null,
-      "created_at": "2026-03-31T13:31:23.597538"
+      "created_at": "2026-04-01T16:51:36.410583"
     }
   ]
 }

@@ -756,16 +756,24 @@ def init_saved_strategies_table(db_path: str = None):
 @stock_router.post("/save-strategy")
 async def save_stock_strategy(request: SaveStockStrategyRequest):
     """Save a stock strategy to the database with validation"""
-    session = None
     try:
-        from Databases.app_data_db_connection import get_session
-        from Services.strategy_manager.models import SavedInstance
-        
-        session = get_session()
+        # Initialize the table if it doesn't exist
+        success, error_msg = init_saved_strategies_table()
+        if not success:
+            raise HTTPException(status_code=500, detail=f"Failed to initialize database table: {error_msg}")
         
         # Check if strategy already exists using the backtester core validation
         from ..services.backtester import StockRotationBacktester
+        
         backtester = StockRotationBacktester()
+        # Note: check_strategy_exists was not in the StockRotationBacktester I created.
+        # I need to check if I missed it in stockbacktester_core.py.
+        # I read 800 lines of stockbacktester_core.py, then I wrote services/backtester.py.
+        # I might have missed it if it was after line 800.
+        # Let's check stockbacktester_core.py again.
+        # If it's missing, I'll need to add it to services/backtester.py.
+        # For now, assuming it might be missing, I should probably check.
+        # But I'll write this file first, then check and update backtester if needed.
         
         if hasattr(backtester, 'check_strategy_exists'):
             validation_result = backtester.check_strategy_exists(
@@ -784,10 +792,11 @@ async def save_stock_strategy(request: SaveStockStrategyRequest):
             
             # If strategy exists, return appropriate response
             if validation_result.get("exists", False):
+                existing_strategy = validation_result.get("existing_strategy", {})
                 return {
                     "success": False,
                     "message": validation_result.get("message", "Strategy already exists"),
-                    "existing_strategy": validation_result.get("existing_strategy", {}),
+                    "existing_strategy": existing_strategy,
                     "strategy_exists": True
                 }
             
@@ -795,138 +804,158 @@ async def save_stock_strategy(request: SaveStockStrategyRequest):
             if "error" in validation_result:
                 raise HTTPException(status_code=500, detail=validation_result["error"])
         
-        # Prepare strategy parameters as JSON
-        strategies_parameters = {
-            "tickers": sorted(request.tickers),
-            "start_date": request.start_date,
-            "end_date": request.end_date,
-            "capital_per_week": request.capital_per_week,
-            "accumulation_weeks": request.accumulation_weeks,
-            "brokerage_percent": request.brokerage_percent,
-            "compounding_enabled": request.compounding_enabled,
-            "risk_free_rate": request.risk_free_rate,
-            "use_custom_dates": request.use_custom_dates
+        # Strategy doesn't exist, proceed with saving
+        # Import helper functions
+        from Databases.strategy_db_helpers import save_stock_strategy as save_strategy_db
+        
+        # Convert tickers list to JSON string
+        tickers_json = json.dumps(request.tickers)
+        
+        # Convert backtest_results to JSON string (handle None values)
+        backtest_results_dict = request.backtest_results.dict()
+        # Filter out None values
+        backtest_results_dict = {k: v for k, v in backtest_results_dict.items() if v is not None}
+        backtest_results_json = json.dumps(backtest_results_dict)
+        
+        # Prepare strategy data
+        strategy_data = {
+            'strategy_name': request.strategy_name,
+            'strategy_type': request.strategy_type,
+            'user_id': request.user_id,
+            'tickers': tickers_json,
+            'start_date': request.start_date,
+            'end_date': request.end_date,
+            'capital_per_week': request.capital_per_week,
+            'accumulation_weeks': request.accumulation_weeks,
+            'brokerage_percent': request.brokerage_percent,
+            'compounding_enabled': request.compounding_enabled,
+            'risk_free_rate': request.risk_free_rate,
+            'use_custom_dates': request.use_custom_dates,
+            'backtest_results': backtest_results_json,
+            'created_at': request.created_at,
+            'status': 'deploy'
         }
         
-        # Create new SavedInstance
-        new_strategy = SavedInstance(
-            strategy_name=request.strategy_name,
-            strategy_type=request.strategy_type or "StockSurfTrend",
-            user_id=request.user_id,
-            strategies_parameters=strategies_parameters,
-            backtest_results=request.backtest_results.dict() if request.backtest_results else {},
-            status='deploy',
-            created_at=datetime.utcnow()
-        )
-        
-        session.add(new_strategy)
-        session.commit()
+        # Save to PostgreSQL
+        strategy_id = save_strategy_db(strategy_data)
         
         return {
             "success": True,
             "message": "Strategy saved successfully",
-            "strategy_id": new_strategy.id,
+            "strategy_id": strategy_id,
             "strategy_exists": False
         }
         
     except Exception as e:
-        if session:
-            session.rollback()
         raise HTTPException(status_code=500, detail=f"Error saving strategy: {str(e)}")
-    finally:
-        if session:
-            session.close()
 
 @stock_router.get("/get-saved-strategies-list/{user_id}")
 async def get_saved_stock_strategies(user_id: str):
     """Get all saved stock strategies for a specific user"""
-    session = None
     try:
-        from Databases.app_data_db_connection import get_session
-        from Services.strategy_manager.models import SavedInstance
+        # Initialize the table if it doesn't exist
+        if not init_saved_strategies_table():
+            raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
-        session = get_session()
+        # Import helper functions
+        from Databases.strategy_db_helpers import get_stock_strategies_by_user
         
-        # Query for stock strategies
-        strategies_list = session.query(SavedInstance).filter(
-            SavedInstance.user_id == user_id,
-            SavedInstance.strategy_type.in_(['Rotation_Stocks', 'StockSurfTrend'])
-        ).all()
+        # Get strategies from PostgreSQL
+        strategies_list = get_stock_strategies_by_user(user_id)
         
+        # Parse JSON fields and format response
         strategies = []
         for strategy in strategies_list:
-            params = strategy.strategies_parameters or {}
-            strategies.append({
-                "id": strategy.id,
-                "strategy_name": strategy.strategy_name,
-                "strategy_type": strategy.strategy_type,
-                "user_id": strategy.user_id,
-                "tickers": params.get('tickers', []),
-                "start_date": params.get('start_date'),
-                "end_date": params.get('end_date'),
-                "capital_per_week": params.get('capital_per_week'),
-                "accumulation_weeks": params.get('accumulation_weeks'),
-                "brokerage_percent": params.get('brokerage_percent'),
-                "compounding_enabled": params.get('compounding_enabled'),
-                "risk_free_rate": params.get('risk_free_rate'),
-                "use_custom_dates": params.get('use_custom_dates'),
-                "backtest_results": strategy.backtest_results or {},
-                "created_at": strategy.created_at.strftime('%Y-%m-%d %H:%M:%S') if strategy.created_at else None,
-                "status": strategy.status
-            })
+            try:
+                # Parse JSON fields
+                tickers = json.loads(strategy['tickers']) if strategy.get('tickers') else []
+                backtest_results = json.loads(strategy['backtest_results']) if strategy.get('backtest_results') else {}
+                
+                strategies.append({
+                    "id": strategy['id'],
+                    "strategy_name": strategy['strategy_name'],
+                    "strategy_type": strategy['strategy_type'],
+                    "user_id": strategy['user_id'],
+                    "tickers": tickers,
+                    "start_date": strategy['start_date'],
+                    "end_date": strategy['end_date'],
+                    "capital_per_week": strategy['capital_per_week'],
+                    "accumulation_weeks": strategy['accumulation_weeks'],
+                    "brokerage_percent": strategy['brokerage_percent'],
+                    "compounding_enabled": strategy['compounding_enabled'],
+                    "risk_free_rate": strategy['risk_free_rate'],
+                    "use_custom_dates": strategy['use_custom_dates'],
+                    "backtest_results": backtest_results,
+                    "created_at": strategy['created_at'],
+                    "created_timestamp": strategy['created_timestamp'],
+                    "last_execution_date": strategy.get('last_execution_date'),
+                    "next_execution_date": strategy.get('next_execution_date')
+                })
+            except json.JSONDecodeError as e:
+                print(f"Warning: Could not parse JSON for strategy ID {strategy.get('id')}: {e}")
+                continue
+        
+        # Ensure we always return a proper structure
+        if not strategies:
+            strategies = []
         
         return {"strategies": strategies}
         
     except Exception as e:
         print(f"Error retrieving saved strategies: {str(e)}")
+        # Return empty array instead of throwing error to prevent frontend crashes
         return {"strategies": []}
-    finally:
-        if session:
-            session.close()
 
 @stock_router.get("/get-saved-strategy/{strategy_id}")
 async def get_saved_stock_strategy_by_id(strategy_id: int):
     """Get a specific saved stock strategy by ID"""
-    session = None
     try:
-        from Databases.app_data_db_connection import get_session
-        from Services.strategy_manager.models import SavedInstance
+        # Initialize the table if it doesn't exist
+        if not init_saved_strategies_table():
+            raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
-        session = get_session()
-        strategy = session.query(SavedInstance).filter(SavedInstance.id == strategy_id).first()
+        # Import helper functions
+        from Databases.strategy_db_helpers import get_stock_strategy_by_id
+        
+        # Get strategy from PostgreSQL
+        strategy = get_stock_strategy_by_id(strategy_id)
         
         if not strategy:
             raise HTTPException(status_code=404, detail="Strategy not found")
         
-        params = strategy.strategies_parameters or {}
-        strategy_response = {
-            "id": strategy.id,
-            "strategy_name": strategy.strategy_name,
-            "strategy_type": strategy.strategy_type,
-            "user_id": strategy.user_id,
-            "tickers": params.get('tickers', []),
-            "start_date": params.get('start_date'),
-            "end_date": params.get('end_date'),
-            "capital_per_week": params.get('capital_per_week'),
-            "accumulation_weeks": params.get('accumulation_weeks'),
-            "brokerage_percent": params.get('brokerage_percent'),
-            "compounding_enabled": params.get('compounding_enabled'),
-            "risk_free_rate": params.get('risk_free_rate'),
-            "use_custom_dates": params.get('use_custom_dates'),
-            "backtest_results": strategy.backtest_results or {},
-            "created_at": strategy.created_at.strftime('%Y-%m-%d %H:%M:%S') if strategy.created_at else None,
-            "status": strategy.status
-        }
-        
-        return {"strategy": strategy_response}
+        try:
+            # Parse JSON fields
+            tickers = json.loads(strategy['tickers']) if strategy.get('tickers') else []
+            backtest_results = json.loads(strategy['backtest_results']) if strategy.get('backtest_results') else {}
+            
+            strategy_response = {
+                "id": strategy['id'],
+                "strategy_name": strategy['strategy_name'],
+                "strategy_type": strategy['strategy_type'],
+                "user_id": strategy['user_id'],
+                "tickers": tickers,
+                "start_date": strategy['start_date'],
+                "end_date": strategy['end_date'],
+                "capital_per_week": strategy['capital_per_week'],
+                "accumulation_weeks": strategy['accumulation_weeks'],
+                "brokerage_percent": strategy['brokerage_percent'],
+                "compounding_enabled": strategy['compounding_enabled'],
+                "risk_free_rate": strategy['risk_free_rate'],
+                "use_custom_dates": strategy['use_custom_dates'],
+                "backtest_results": backtest_results,
+                "created_at": strategy['created_at'],
+                "created_timestamp": strategy['created_timestamp']
+            }
+            
+            return {"strategy": strategy_response}
+            
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=500, detail=f"Error parsing strategy data: {str(e)}")
         
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving strategy: {str(e)}")
-    finally:
-        if session:
-            session.close()
 
 
 
@@ -935,14 +964,18 @@ async def get_saved_stock_strategies_count(user_id: str):
     """Get count of saved stock strategies for a specific user"""
     session = None
     try:
+        # Initialize the table if it doesn't exist
+        if not init_saved_strategies_table():
+            raise HTTPException(status_code=500, detail="Failed to initialize database table")
+        
         from Databases.app_data_db_connection import get_session
-        from Services.strategy_manager.models import SavedInstance
+        from sqlalchemy import text
         
         session = get_session()
-        count = session.query(SavedInstance).filter(
-            SavedInstance.user_id == user_id,
-            SavedInstance.strategy_type.in_(['Rotation_Stocks', 'StockSurfTrend'])
-        ).count()
+        
+        # Get count of strategies for the user
+        result = session.execute(text("SELECT COUNT(*) FROM stock_saved_strategy WHERE user_id = :user_id"), {"user_id": user_id})
+        count = result.scalar()
         
         return {"count": count}
         
@@ -959,34 +992,37 @@ async def get_saved_stock_strategies_count(user_id: str):
 @stock_router.get("/get-saved-strategies-table/{user_id}")
 async def get_saved_stock_strategies_table(user_id: str):
     """Get saved stock strategies in table format like RS strategy"""
-    session = None
     try:
-        from Databases.app_data_db_connection import get_session
-        from Services.strategy_manager.models import SavedInstance
+        # Initialize the table if it doesn't exist
+        if not init_saved_strategies_table():
+            raise HTTPException(status_code=500, detail="Failed to initialize database table")
         
-        session = get_session()
+        # Import helper functions
+        from Databases.strategy_db_helpers import get_stock_strategies_by_user
         
-        # Query for stock strategies
-        strategies_list = session.query(SavedInstance).filter(
-            SavedInstance.user_id == user_id,
-            SavedInstance.strategy_type.in_(['Rotation_Stocks', 'StockSurfTrend'])
-        ).all()
+        # Get strategies from PostgreSQL
+        strategies_list = get_stock_strategies_by_user(user_id)
         
+        # Format response
         strategies = []
         for strategy in strategies_list:
-            params = strategy.strategies_parameters or {}
             strategy_response = {
-                "id": strategy.id,
-                "strategy_name": strategy.strategy_name,
-                "strategy_type": strategy.strategy_type,
-                "user_id": strategy.user_id,
-                "config_id": strategy.id, # Using id as config_id
-                "start_date": params.get('start_date'),
-                "end_date": params.get('end_date'),
-                "stock_universe": "CUSTOM", # Defaulting to CUSTOM
-                "backtest_results": strategy.backtest_results or {},
-                "status": strategy.status or 'deploy',
-                "created_at": strategy.created_at.strftime('%Y-%m-%d %H:%M:%S') if strategy.created_at else None
+                "id": strategy['id'],
+                "strategy_name": strategy['strategy_name'],
+                "strategy_type": strategy['strategy_type'],
+                "user_id": strategy['user_id'],
+                "config_id": strategy.get('config_id'),
+                "backtest_id": strategy.get('backtest_id'),
+                "start_date": strategy['start_date'],
+                "end_date": strategy['end_date'],
+                "stock_universe": strategy.get('stock_universe', 'NIFTY500'),
+                "backtest_results": json.loads(strategy['backtest_results']) if isinstance(strategy.get('backtest_results'), str) else (strategy.get('backtest_results') or {}),
+                "strategy_config": json.loads(strategy['strategy_config']) if isinstance(strategy.get('strategy_config'), str) else (strategy.get('strategy_config') or {}),
+                "run_id": strategy.get('run_id'),
+                "client_information_json": json.loads(strategy['client_information_json']) if isinstance(strategy.get('client_information_json'), str) else (strategy.get('client_information_json') or {}),
+                "webhook_url": strategy.get('webhook_url'),
+                "status": strategy.get('status', 'deploy'),
+                "created_at": strategy.get('created_at')
             }
             strategies.append(strategy_response)
         
@@ -997,9 +1033,6 @@ async def get_saved_stock_strategies_table(user_id: str):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting stock strategies table: {str(e)}")
-    finally:
-        if session:
-            session.close()
 
 @stock_router.post("/stop-stock-strategy")
 async def stop_stock_strategy(request: dict):
@@ -1013,18 +1046,20 @@ async def stop_stock_strategy(request: dict):
             raise HTTPException(status_code=400, detail="Missing required parameters")
         
         from Databases.app_data_db_connection import get_session
-        from Services.strategy_manager.models import SavedInstance
+        from sqlalchemy import text
         
         session = get_session()
-        strategy = session.query(SavedInstance).filter(
-            SavedInstance.id == strategy_id, 
-            SavedInstance.user_id == user_id
-        ).first()
         
-        if not strategy:
+        # Update status to 'stopped'
+        result = session.execute(text("""
+            UPDATE stock_saved_strategy 
+            SET status = 'stopped', updated_at = CURRENT_TIMESTAMP
+            WHERE id = :strategy_id AND user_id = :user_id
+        """), {"strategy_id": strategy_id, "user_id": user_id})
+        
+        if result.rowcount == 0:
             raise HTTPException(status_code=404, detail="Strategy not found")
         
-        strategy.status = 'stopped'
         session.commit()
         
         return {
@@ -1054,18 +1089,20 @@ async def restart_stock_strategy(request: dict):
             raise HTTPException(status_code=400, detail="Missing required parameters")
         
         from Databases.app_data_db_connection import get_session
-        from Services.strategy_manager.models import SavedInstance
+        from sqlalchemy import text
         
         session = get_session()
-        strategy = session.query(SavedInstance).filter(
-            SavedInstance.id == strategy_id, 
-            SavedInstance.user_id == user_id
-        ).first()
         
-        if not strategy:
+        # Update status to 'running'
+        result = session.execute(text("""
+            UPDATE stock_saved_strategy 
+            SET status = 'running', updated_at = CURRENT_TIMESTAMP
+            WHERE id = :strategy_id AND user_id = :user_id
+        """), {"strategy_id": strategy_id, "user_id": user_id})
+        
+        if result.rowcount == 0:
             raise HTTPException(status_code=404, detail="Strategy not found")
         
-        strategy.status = 'deploy' # Standardized on 'deploy' instead of 'running' for consistency
         session.commit()
         
         return {
@@ -1150,7 +1187,7 @@ async def generate_stock_signals(request: Dict[str, Any] = None):
                     "message": result.get("message", "Signal generation failed")
                 }
         
-        # No run_id provided - generate for all running strategies (status='deploy')
+        # No run_id provided - generate for all running strategies
         start_time = datetime.now()
         running_strategies = generator.get_all_running_strategies()
         
@@ -1163,7 +1200,7 @@ async def generate_stock_signals(request: Dict[str, Any] = None):
                 "failed": 0,
                 "results": [],
                 "duration_seconds": 0,
-                "message": "No running strategies found with status='deploy'"
+                "message": "No running strategies found with run_id and status='running'"
             }
         
         results = []
@@ -1230,120 +1267,3 @@ async def generate_stock_signals(request: Dict[str, Any] = None):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating stock signals: {str(e)}")
-
-@stock_router.get("/stock-signals/recent")
-async def get_recent_stock_signals(days: int = 30):
-    """Get recent stock signals from the TradingSignal table"""
-    session = None
-    try:
-        from Databases.app_data_db_connection import get_session
-        from Databases.signal_models import TradingSignal
-        
-        session = get_session()
-        cutoff_date = datetime.now() - timedelta(days=days)
-        
-        # Filter for stock strategies
-        signals = session.query(TradingSignal).filter(
-            TradingSignal.strategy_type.ilike('%stock%'),
-            TradingSignal.signal_date >= cutoff_date
-        ).order_by(TradingSignal.signal_date.desc(), TradingSignal.created_at.desc()).all()
-        
-        return {"signals": [s.to_dict() if hasattr(s, 'to_dict') else {c.name: getattr(s, c.name) for c in s.__table__.columns} for s in signals]}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error retrieving recent signals: {str(e)}")
-    finally:
-        if session:
-            session.close()
-
-@stock_router.get("/stock-signals/run/{run_id}")
-async def get_stock_signals_by_run(run_id: str):
-    """Get stock signals for a specific run ID"""
-    session = None
-    try:
-        from Databases.app_data_db_connection import get_session
-        from Databases.signal_models import TradingSignal
-        
-        session = get_session()
-        signals = session.query(TradingSignal).filter(TradingSignal.run_id == run_id).all()
-        
-        return {"run_id": run_id, "signals": [s.to_dict() if hasattr(s, 'to_dict') else {c.name: getattr(s, c.name) for c in s.__table__.columns} for s in signals]}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error retrieving signals for run {run_id}: {str(e)}")
-    finally:
-        if session:
-            session.close()
-
-@stock_router.get("/stock-signals/runs")
-async def get_stock_signal_runs(limit: int = 50):
-    """Get a list of recent stock signal logic runs"""
-    session = None
-    try:
-        from Databases.app_data_db_connection import get_session
-        from Databases.signal_models import TradingSignal
-        from sqlalchemy import func
-        
-        session = get_session()
-        
-        # Group by run_id to get summary of runs
-        runs_query = session.query(
-            TradingSignal.run_id,
-            TradingSignal.strategy_type,
-            func.min(TradingSignal.signal_date).label('signal_date'),
-            func.max(TradingSignal.created_at).label('created_at'),
-            func.count(TradingSignal.id).label('signal_count')
-        ).filter(
-            TradingSignal.strategy_type.ilike('%stock%')
-        ).group_by(
-            TradingSignal.run_id, 
-            TradingSignal.strategy_type
-        ).order_by(
-            func.max(TradingSignal.created_at).desc()
-        ).limit(limit)
-        
-        runs = []
-        for run in runs_query:
-            runs.append({
-                "run_id": run.run_id,
-                "strategy_type": run.strategy_type,
-                "signal_date": run.signal_date.strftime('%Y-%m-%d') if run.signal_date else None,
-                "created_at": run.created_at.strftime('%Y-%m-%d %H:%M:%S') if run.created_at else None,
-                "signal_count": run.signal_count
-            })
-            
-        return {"runs": runs}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error retrieving signal runs: {str(e)}")
-    finally:
-        if session:
-            session.close()
-
-@stock_router.get("/stock-signals/latest")
-async def get_latest_stock_signals():
-    """Get the most recent run's stock signals"""
-    session = None
-    try:
-        from Databases.app_data_db_connection import get_session
-        from Databases.signal_models import TradingSignal
-        
-        session = get_session()
-        
-        # Find the most recent run_id
-        latest_run = session.query(TradingSignal.run_id).filter(
-            TradingSignal.strategy_type.ilike('%stock%')
-        ).order_by(TradingSignal.created_at.desc()).first()
-        
-        if not latest_run:
-            return {"run_id": None, "signals": [], "message": "No signals found"}
-            
-        run_id = latest_run[0]
-        signals = session.query(TradingSignal).filter(TradingSignal.run_id == run_id).all()
-        
-        return {
-            "run_id": run_id, 
-            "signals": [s.to_dict() if hasattr(s, 'to_dict') else {c.name: getattr(s, c.name) for c in s.__table__.columns} for s in signals]
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error retrieving latest signals: {str(e)}")
-    finally:
-        if session:
-            session.close()

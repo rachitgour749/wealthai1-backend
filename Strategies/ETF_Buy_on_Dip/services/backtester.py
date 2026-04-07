@@ -25,8 +25,8 @@ from Strategies.Rotation_ETF.services.backtester import ETFRotationBacktester
 from Strategies.utilities.logging_config import StrategyLogger
 
 class ETFBuyOnDipBacktester(ETFRotationBacktester):
-    def __init__(self, market: str = "INDIA", db_path: str = None):
-        super().__init__(market=market, db_path=db_path)
+    def __init__(self, db_path: str = None):
+        super().__init__(db_path)
         self.logger = StrategyLogger('ETF_Buy_on_Dip')
         self.strategy_config = {}
         self._load_strategy_config()

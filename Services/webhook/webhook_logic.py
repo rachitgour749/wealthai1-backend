@@ -5,22 +5,13 @@ Webhook logic implementation for the Strategy Management Backend
 import json
 import os
 import logging
-import secrets
-import random
 from datetime import datetime
-from typing import List, Optional, Dict, Any, Union
-
-from fastapi import HTTPException
+from typing import List, Optional, Dict, Any
 
 from .config import config
 from .models import (
     StrategyCreate, StrategyUpdate, StrategyStatusUpdate,
-    JsonGenerate, JsonSave, StrategyResponse, HealthResponse,
-    WebhookCreateRequest, WebhookCreateResponse,
-    RACreateRequest, RAUpdateRequest, RAResponse,
-    WebhookDetailResponse, TradeExecuteIndividualRequest,
-    TradeExecuteRequest, TradeExecuteResponse,
-    UnifiedTradeExecuteRequest
+    JsonGenerate, JsonSave, StrategyResponse, HealthResponse
 )
 from .utils import (
     validate_strategy_data, generate_json_data, send_webhook_notification,

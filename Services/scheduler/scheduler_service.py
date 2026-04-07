@@ -46,23 +46,6 @@ class SchedulerService:
             # Start the scheduler
             self.scheduler.start()
             logger.info("✓ Scheduler started successfully")
-
-            # ---------------------------------------------------------
-            # Register System Jobs (Daily Report at Market Close)
-            # ---------------------------------------------------------
-            try:
-                from Services.scheduler.jobs.daily_report_job import run_daily_trade_report
-                # Schedule for 15:35 (3:35 PM IST) - 5 mins after NSE close
-                self.scheduler.add_job(
-                    run_daily_trade_report,
-                    trigger=CronTrigger(hour=15, minute=35, day_of_week='mon-fri', timezone=self.timezone),
-                    id='system_daily_trade_report',
-                    name='System: Daily Trade Report (Excel)',
-                    replace_existing=True
-                )
-                logger.info("✓ Registered system job: Daily Trade Report (15:35 IST)")
-            except Exception as e:
-                logger.error(f"Failed to register system job: {e}")
             
             # Log scheduled jobs
             self._log_scheduled_jobs()

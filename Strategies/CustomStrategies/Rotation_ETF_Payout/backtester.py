@@ -32,17 +32,16 @@ class RotationETFPayoutBacktester(ETFRotationBacktester):
     - Tracks total withdrawn amount throughout the backtest
     """
     
-    def __init__(self, market: str = "INDIA", db_path: str = None, config_path: str = None):
+    def __init__(self, db_path: str = None, config_path: str = None):
         """
         Initialize Rotation ETF Payout Backtester
         
         Args:
-            market: Market name (INDIA, US)
             db_path: Deprecated - kept for compatibility
             config_path: Path to configuration JSON file
         """
         # Call parent constructor
-        super().__init__(market=market, db_path=db_path)
+        super().__init__(db_path)
         
         # Override logger for this strategy
         self.logger = StrategyLogger('Rotation_ETF_Payout')

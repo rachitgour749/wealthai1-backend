@@ -138,26 +138,6 @@ class USETFMarket(Base):
         UniqueConstraint('symbol', 'date', name='uq_us_etf_market_symbol_date'),
     )
 
-
-class USStockMarket(Base):
-    """Model for US Stock market data"""
-    __tablename__ = "us_stock_market"
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    symbol = Column(String, nullable=False, index=True)
-    date = Column(DateTime, nullable=False, index=True)
-    open = Column(Float)
-    high = Column(Float)
-    low = Column(Float)
-    close = Column(Float)
-    volume = Column(Integer)
-    adj_close = Column(Float)
-    created_at = Column(DateTime, server_default=func.now())
-    
-    __table_args__ = (
-        UniqueConstraint('symbol', 'date', name='uq_us_stock_market_symbol_date'),
-    )
-
 # Global engine and session maker
 engine = None
 SessionLocal = None
@@ -282,8 +262,6 @@ def init_database():
         from Databases import strategy_models  # noqa: F401
         from Databases import broker_models # noqa: F401
         from Databases import signal_models  # noqa: F401  # Trading signals for all strategies
-        from Databases import webhook_models  # noqa: F401  # Webhook security tables
-        from Services.subscription import subscription_models # noqa: F401
         
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables initialized successfully")

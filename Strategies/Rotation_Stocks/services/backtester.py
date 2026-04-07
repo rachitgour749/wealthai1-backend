@@ -48,17 +48,15 @@ except ImportError:
 
 
 class StockRotationBacktester(RotationStrategy):
-    def __init__(self, market: str = "INDIA", db_path: str = None):
+    def __init__(self, db_path: str = None):
         """
         Initialize Stock Rotation Backtester
         
         Args:
-            market: Market name (INDIA, US)
             db_path: Deprecated - kept for compatibility. Now uses PostgreSQL MarketData database.
         """
         # Call base class constructor (initializes common attributes)
         super().__init__()
-        self.market = market.upper()
         
         # Initialize centralized logger AFTER parent init to prevent override
         self.logger = StrategyLogger('Rotation_Stocks')
@@ -77,7 +75,8 @@ class StockRotationBacktester(RotationStrategy):
         self.purchase_history = {}
         
         # Strategy-specific table configuration (must be set before method calls)
-        self.data_table = "us_stock_market" if self.market == 'US' else "stock_market"
+        # Strategy-specific table configuration (must be set before method calls)
+        self.data_table = "stock_market"  # Stocks are stored in stock_market table
         
         self.available_databases = []  # Not needed for PostgreSQL
         self.stock_metadata = self.load_metadata()
@@ -403,19 +402,19 @@ class StockRotationBacktester(RotationStrategy):
             session = self._get_session()
             from sqlalchemy import text
             
-            self.logger.debug(f"Querying {self.data_table} table for date ranges of: {selected_stocks}")
+            self.logger.debug(f"Querying stock_data table for date ranges of: {selected_stocks}")
             
             # Build placeholders for IN clause
             placeholders = ','.join([f':ticker_{i}' for i in range(len(selected_stocks))])
             
-            # Query to get MIN and MAX dates for each stock directly from the dynamic data table
+            # Query to get MIN and MAX dates for each stock directly from stock_data table
             query = text(f"""
                 SELECT 
                     symbol,
                     MIN(date) as start_date,
                     MAX(date) as end_date,
                     COUNT(*) as total_records
-                FROM {self.data_table}
+                FROM stock_market
                 WHERE symbol IN ({placeholders})
                 GROUP BY symbol
                 ORDER BY symbol
@@ -428,7 +427,7 @@ class StockRotationBacktester(RotationStrategy):
             rows = result.fetchall()
             
             if not rows:
-                self.logger.error(f"No data found in {self.data_table} table for: {selected_stocks}")
+                self.logger.error(f"No data found in stock_data table for: {selected_stocks}")
                 return None, None, 0.0
             
             # Parse results
@@ -471,7 +470,7 @@ class StockRotationBacktester(RotationStrategy):
             latest_start = max(start_dates)
             common_end = min(end_dates)
             
-            self.logger.info(f"📅 Stock Data Ranges (from {self.data_table} table):")
+            self.logger.info(f"📅 Stock Data Ranges (from stock_data table):")
             for symbol, data in stock_date_ranges.items():
                 years = data['years_available']
                 self.logger.info(f"   {symbol:12s}: {data['start_date'].strftime('%Y-%m-%d')} to {data['end_date'].strftime('%Y-%m-%d')} ({years:.1f} years, {data['total_records']} records)")
@@ -527,7 +526,7 @@ class StockRotationBacktester(RotationStrategy):
             return strategy_start.strftime('%Y-%m-%d'), common_end.strftime('%Y-%m-%d'), years_available
             
         except Exception as e:
-            self.logger.error(f"Error calculating date range from {self.data_table} table: {e}")
+            self.logger.error(f"Error calculating date range from stock_data table: {e}")
             import traceback
             self.logger.error(f"Traceback: {traceback.format_exc()}")
             return None, None, 0.0
@@ -558,19 +557,18 @@ class StockRotationBacktester(RotationStrategy):
                 self.logger.progress(f"   Data loading period: {buffer_start_date} to {end_date}")
                 self.logger.info(f"   Buffer: 400 calendar days (~252 trading days) for momentum calculations")
 
-            # Use dynamic data table - column names match directly
+            # Use stock_data table - column names match directly
             # Get available symbols using proper parameterization
-            # Build placeholders for IN clause
+            from sqlalchemy import bindparam
             placeholders = ','.join([f':ticker_{i}' for i in range(len(tickers))])
             
             query = text(f"""
                 SELECT DISTINCT symbol 
-                FROM {self.data_table} 
+                FROM stock_market 
                 WHERE symbol IN ({placeholders})
                 AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
             """)
             
-            # Build parameters dict with all tickers and dates
             params = {f'ticker_{i}': t for i, t in enumerate(tickers)}
             params.update({
                 "start_date": buffer_start_date,
@@ -580,13 +578,13 @@ class StockRotationBacktester(RotationStrategy):
             result = session.execute(query, params)
             available_tickers = [row[0] for row in result.fetchall()]
             missing_tickers = [t for t in tickers if t not in available_tickers]
-            
+
             if missing_tickers and self._verbose:
                 self.logger.info(f"⚠️ Missing data for: {', '.join(missing_tickers)}")
-            
+
             if not available_tickers:
-                raise ValueError(f"No data available in {self.data_table} for any of the selected stocks")
-            
+                raise ValueError("No data available for any of the selected stocks")
+
             # Load data - column names match directly
             placeholders = ','.join([f':ticker_{i}' for i in range(len(available_tickers))])
             query = text(f"""
@@ -599,7 +597,7 @@ class StockRotationBacktester(RotationStrategy):
                     close,
                     volume,
                     adj_close AS adjusted_close
-                FROM {self.data_table}
+                FROM stock_market
                 WHERE symbol IN ({placeholders})
                 AND date >= CAST(:start_date AS DATE) AND date <= CAST(:end_date AS DATE)
                 ORDER BY date, symbol
@@ -703,25 +701,13 @@ class StockRotationBacktester(RotationStrategy):
             self.logger.info("   ❌ Window data is empty after filtering")
             return pd.DataFrame()
 
-        # Calculate 52-week highs and lows using the stock-indicators library
-        highs_52w = {}
-        lows_52w = {}
-        
-        for symbol in historical_data.columns:
-            series = historical_data[symbol].dropna()
-            if len(series) < 252: continue
-            
-            # Use pandas for rolling max/min (Old method)
-            window_series = series.tail(252)
-            highs_52w[symbol] = float(window_series.max())
-            lows_52w[symbol] = float(window_series.min())
-            
-        highs_52w = pd.Series(highs_52w)
-        lows_52w = pd.Series(lows_52w)
+        # Calculate 52-week highs and lows as per PDF specification
+        highs_52w = window_data.max()  # Maximum closing price in trailing 252 trading days
+        lows_52w = window_data.min()  # Minimum closing price in trailing 252 trading days
         current_prices = historical_data.iloc[-1] if not historical_data.empty else pd.Series()
-        
-        self.logger.info(f"   📈 52-week highs (indicator-based) calculated for {len(highs_52w)} stocks")
-        self.logger.info(f"   📉 52-week lows (indicator-based) calculated for {len(lows_52w)} stocks")
+
+        self.logger.info(f"   📈 52-week highs calculated for {len(highs_52w)} stocks")
+        self.logger.info(f"   📉 52-week lows calculated for {len(lows_52w)} stocks")
         self.logger.info(f"   💰 Current prices available for {len(current_prices)} stocks")
 
         # Create result DataFrame with exact PDF specification calculations
@@ -730,7 +716,7 @@ class StockRotationBacktester(RotationStrategy):
 
         for symbol in highs_52w.index:
             if (not pd.isna(highs_52w[symbol]) and not pd.isna(lows_52w[symbol]) and
-                    not pd.isna(current_prices.get(symbol)) and
+                    not pd.isna(current_prices[symbol]) and
                     highs_52w[symbol] > 0 and lows_52w[symbol] > 0 and current_prices[symbol] > 0):
 
                 # Ensure data integrity: high >= low
@@ -749,8 +735,8 @@ class StockRotationBacktester(RotationStrategy):
                     })
 
                     valid_stocks += 1
-                    # self.logger.progress(f"   ✅ {symbol}: High=₹{highs_52w[symbol]:.2f}, Low=₹{lows_52w[symbol]:.2f}, Current=₹{current_prices[symbol]:.2f}")
-                    # self.logger.info(f"       Distance from Low: {distance_from_low:.2f}%, Distance from High: {distance_from_high:.2f}%")
+                    self.logger.progress(f"   ✅ {symbol}: High=₹{highs_52w[symbol]:.2f}, Low=₹{lows_52w[symbol]:.2f}, Current=₹{current_prices[symbol]:.2f}")
+                    self.logger.info(f"       Distance from Low: {distance_from_low:.2f}%, Distance from High: {distance_from_high:.2f}%")
                 else:
                     self.logger.info(f"   ❌ {symbol}: Data integrity issue - high ({highs_52w[symbol]:.2f}) < low ({lows_52w[symbol]:.2f})")
             else:
@@ -1142,21 +1128,51 @@ class StockRotationBacktester(RotationStrategy):
         Check if a strategy with the same parameters already exists in the PostgreSQL database
 
         Database: PostgreSQL (Neon) - app_data_db_connection
-        Table: saved_instance (via SavedInstance model)
+        Table: stock_saved_strategy
 
         Returns:
             Dict with 'exists' boolean and 'existing_strategy' details if found
         """
         session = None
         try:
-            # Import app_data_db_connection and SavedInstance model
+            # Import app_data_db_connection for Stock strategies
             from Databases.app_data_db_connection import get_session
-            from Services.strategy_manager.models import SavedInstance
             session = get_session()
+            from sqlalchemy import text
 
-            # Prepare the parameters as a dictionary for JSON comparison
-            strategy_params = {
-                "tickers": sorted(tickers),
+            # Check if the stock_saved_strategy table exists
+            table_check = session.execute(text("""
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_name = 'stock_saved_strategy'
+            """))
+            if not table_check.fetchone():
+                return {"exists": False, "message": "Strategy table not found"}
+
+            # Convert tickers to JSON for comparison
+            tickers_json = json.dumps(sorted(tickers))
+
+            # Check for exact match of all parameters
+            query = text("""
+                SELECT id, strategy_name, created_at, created_timestamp
+                FROM stock_saved_strategy
+                WHERE user_id = :user_id
+                AND strategy_name = :strategy_name
+                AND tickers::text = :tickers
+                AND start_date = :start_date
+                AND end_date = :end_date
+                AND capital_per_week = :capital_per_week
+                AND accumulation_weeks = :accumulation_weeks
+                AND brokerage_percent = :brokerage_percent
+                AND compounding_enabled = :compounding_enabled
+                AND risk_free_rate = :risk_free_rate
+                AND use_custom_dates = :use_custom_dates
+            """)
+
+            result = session.execute(query, {
+                "user_id": user_id,
+                "strategy_name": strategy_name,
+                "tickers": tickers_json,
                 "start_date": start_date,
                 "end_date": end_date,
                 "capital_per_week": capital_per_week,
@@ -1165,37 +1181,26 @@ class StockRotationBacktester(RotationStrategy):
                 "compounding_enabled": compounding_enabled,
                 "risk_free_rate": risk_free_rate,
                 "use_custom_dates": use_custom_dates
-            }
+            })
 
-            # Query for exact match in saved_instance table
-            # We filter by user_id, strategy_name, and strategy_type
-            # 'StockSurfTrend' is a common type for stock strategies, but we should match the one used
-            # Based on stock_routes.py, it seems to use 'StockSurfTrend' or the request's strategy_type
-            # For checking existence, we check across possible stock strategy types or just use the current one
-            existing = session.query(SavedInstance).filter(
-                SavedInstance.user_id == user_id,
-                SavedInstance.strategy_name == strategy_name,
-                SavedInstance.strategy_type.in_(['Rotation_Stocks', 'StockSurfTrend'])
-            ).all()
+            existing_strategy = result.fetchone()
 
-            for instance in existing:
-                # Compare strategy_parameters JSON
-                instance_params = instance.strategies_parameters
-                if instance_params == strategy_params:
-                    return {
-                        "exists": True,
-                        "message": "A strategy with these parameters already exists",
-                        "existing_strategy": {
-                            "id": instance.id,
-                            "strategy_name": instance.strategy_name,
-                            "created_at": str(instance.created_at) if instance.created_at else None
-                        }
-                    }
-
-            return {
-                "exists": False,
-                "message": "No identical strategy found"
-            }
+            if existing_strategy:
+                return {
+                    "exists": True,
+                    "existing_strategy": {
+                        "id": existing_strategy[0],
+                        "strategy_name": existing_strategy[1],
+                        "created_at": str(existing_strategy[2]) if existing_strategy[2] else None,
+                        "created_timestamp": str(existing_strategy[3]) if existing_strategy[3] else None
+                    },
+                    "message": f"Stock Strategy already exists"
+                }
+            else:
+                return {
+                    "exists": False,
+                    "message": "No identical strategy found"
+                }
 
         except Exception as e:
             return {
@@ -1712,56 +1717,40 @@ class StockRotationBacktester(RotationStrategy):
         """
         Calculate benchmark performance using SIP (Systematic Investment Plan) approach
         to match the strategy's weekly capital injection during accumulation phase.
+        Uses NIFTY50 from index_data.
         """
         session = None
         try:
             session = self._get_session()
             from sqlalchemy import text
             
-            market = getattr(self, 'market', 'INDIA').upper()
-            
-            if market == 'US':
-                # Use S&P 500 Index as benchmark for US market
-                benchmark_symbols = ['S&P_500', '^GSPC', 'SPY']
-                table_name = "s_p_500_index_market"
-                benchmark_name = "S&P 500"
-            else:
-                # Default to INDIA / Nifty 50
-                benchmark_symbols = ['NIFTY_50', 'NIFTYBEES', 'NIFTY50']
-                table_name = "nifty_50_index_market"
-                benchmark_name = "Nifty 50"
+            benchmark_symbol = "NIFTY_50"
 
-            # Check for primary benchmark in index market table first
-            benchmark_symbol = None
-            for symbol in benchmark_symbols:
-                index_query = text(f"""
-                    SELECT date, COALESCE(adj_close, close) AS close
-                    FROM {table_name}
-                    WHERE symbol = :symbol
-                    AND date >= CAST(:start_date AS DATE)
-                    AND date <= CAST(:end_date AS DATE)
-                    ORDER BY date
-                """)
+            # Load benchmark data for the entire period
+            query = text("""
+                SELECT date, COALESCE(adj_close, close) AS close
+                FROM nifty_50_index_market
+                WHERE symbol = :symbol
+                AND date >= CAST(:start_date AS DATE)
+                AND date <= CAST(:end_date AS DATE)
+                ORDER BY date
+            """)
 
-                result = session.execute(index_query, {
-                    "symbol": symbol,
-                    "start_date": start_date,
-                    "end_date": end_date
-                })
-                rows = result.fetchall()
-                if rows:
-                    benchmark_symbol = symbol
-                    self.logger.progress(f"Using {benchmark_symbol} as {benchmark_name} benchmark (Index Data)")
-                    columns = result.keys()
-                    benchmark_df = pd.DataFrame(rows, columns=columns)
-                    break
+            result = session.execute(query, {
+                "symbol": benchmark_symbol,
+                "start_date": start_date,
+                "end_date": end_date
+            })
+            rows = result.fetchall()
+            columns = result.keys()
+            nifty_df = pd.DataFrame(rows, columns=columns)
 
-            if not benchmark_symbol or benchmark_df.empty:
-                self.logger.info(f"⚠️ No suitable {benchmark_name} benchmark data found in database")
+            if nifty_df.empty:
+                self.logger.info("⚠️ No Nifty50 benchmark data found in index_data")
                 return pd.DataFrame()
 
-            benchmark_df['date'] = pd.to_datetime(benchmark_df['date'])
-            benchmark_df = benchmark_df.set_index('date')
+            nifty_df['date'] = pd.to_datetime(nifty_df['date'])
+            nifty_df = nifty_df.set_index('date')
 
             # Get strategy execution dates and capital flows from weekly_nav_df
             if hasattr(self, 'weekly_nav_df') and not self.weekly_nav_df.empty:
@@ -1776,7 +1765,7 @@ class StockRotationBacktester(RotationStrategy):
                 cash_balance = 0
                 total_invested_so_far = 0
                 
-                self.logger.progress(f"📊 Calculating {benchmark_name} SIP Benchmark Performance...")
+                self.logger.progress(f"📊 Calculating Nift50 SIP Benchmark Performance...")
                 
                 for _, row in weekly_data.iterrows():
                     date = row['date']
@@ -1801,13 +1790,13 @@ class StockRotationBacktester(RotationStrategy):
                     
                     # 3. Find benchmark price for this date (or nearest prior)
                     price = 0
-                    if date in benchmark_df.index:
-                        price = benchmark_df.loc[date]['close']
+                    if date in nifty_df.index:
+                        price = nifty_df.loc[date]['close']
                     else:
                         # Find nearest prior date
-                        prior_dates = benchmark_df.index[benchmark_df.index <= date]
+                        prior_dates = nifty_df.index[nifty_df.index <= date]
                         if not prior_dates.empty:
-                            price = benchmark_df.loc[prior_dates[-1]]['close']
+                            price = nifty_df.loc[prior_dates[-1]]['close']
 
                     if price is not None:
                         try:

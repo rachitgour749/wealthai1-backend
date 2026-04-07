@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from sqlalchemy.orm import Session
-from Strategies.RS_Stocks.database import get_db, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot, execute_with_retry, check_database_health, save_backtest_result_safely, save_additional_data_safely, reset_database_connections, force_unlock_database, BacktestSessionLocal, SessionLocal, get_backtest_session, get_main_session, SavedRSStrategy
-from Strategies.RS_Stocks.rs_backtester_core import RSStrategyBacktester
+from .database import get_db, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot, execute_with_retry, check_database_health, save_backtest_result_safely, save_additional_data_safely, reset_database_connections, force_unlock_database, BacktestSessionLocal, SessionLocal, get_backtest_session, get_main_session, SavedRSStrategy
+from .rs_backtester_core import RSStrategyBacktester
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
@@ -12,7 +12,9 @@ import logging
 import os
 import sys
 
-# RS strategy modules (silent - no warning if missing)
+# Add current directory to path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
 
 # Import RS strategy modules (silent - no warning if missing)
 try:

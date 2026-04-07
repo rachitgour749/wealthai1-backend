@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from sqlalchemy.orm import Session
-from Strategies.RS_ETF.database import get_db, BacktestResult, TradeLog, PortfolioSnapshot, execute_with_retry, check_database_health, save_backtest_result_safely, save_additional_data_safely, reset_database_connections, force_unlock_database, BacktestSessionLocal, SessionLocal, get_backtest_session, get_main_session
-from Strategies.RS_ETF.rs_etf_backtester_core import RSETFStrategyBacktester
+from .database import get_db, StrategyConfig, BacktestResult, TradeLog, PortfolioSnapshot, execute_with_retry, check_database_health, save_backtest_result_safely, save_additional_data_safely, reset_database_connections, force_unlock_database, BacktestSessionLocal, SessionLocal, get_backtest_session, get_main_session, SavedETFStrategy
+from .rs_etf_backtester_core import RSETFStrategyBacktester
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
@@ -12,7 +12,9 @@ import logging
 import os
 import sys
 
-# RS EOD Data Fetcher not available for RS_ETF - removed import
+# Add current directory to path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
 
 # RS EOD Data Fetcher not available for RS_ETF - removed import
 RSEODDataFetcher = None
